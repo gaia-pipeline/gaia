@@ -1,2 +1,2 @@
-# gaia
-Pipeline automation with full power of golang
+# Gaia
+Build powerful pipelines with pure Go

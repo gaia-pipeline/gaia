@@ -2,7 +2,7 @@
   <nav class="level app-levelbar">
     <div class="level-left">
       <div class="level-item">
-        <h3 class="subtitle is-2">
+        <h3 class="subtitle is-3">
           <strong>{{ name }}</strong>
         </h3>
       </div>
@@ -59,6 +59,14 @@ export default {
 
 <style lang="scss">
 
+.subtitle strong {
+  font-family: 'Lobster', 'Times', 'serif';
+  font-size: 3rem;
+  color: whitesmoke;
+}
 
+.breadcrumb {
+  color: #51a0f6;
+}
 
 </style>

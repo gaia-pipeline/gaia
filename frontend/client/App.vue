@@ -60,8 +60,8 @@ export default {
   animation-duration: .377s;
 }
 
+$footer-background-color: rgba(42, 38, 53, 1.0);
 @import '~bulma';
-
 @import '~wysiwyg.css/wysiwyg.sass';
 
 $fa-font-path: '~font-awesome/fonts/';
@@ -69,6 +69,11 @@ $fa-font-path: '~font-awesome/fonts/';
 
 html {
   background-color: rgb(42, 38, 53);
+}
+
+@font-face {
+  font-family: 'Lobster';
+  src: url('~assets/Lobster-Regular.ttf');
 }
 
 .nprogress-container {

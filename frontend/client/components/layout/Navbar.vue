@@ -37,13 +37,8 @@ export default {
 
 <style lang="scss">
 
-@font-face {
-  font-family: 'Lobster';
-  src: url('~assets/Lobster-Regular.ttf');
-}
-
 .header-text {
-  font-family: 'Lobster';
+  font-family: 'Lobster', 'Times', 'serif';
   font-size: 2rem;
   color: #4da2fc;
 }
@@ -77,6 +72,10 @@ export default {
     margin-left: auto;
     margin-right: auto;
   }
+}
+
+a.navbar-item:hover {
+  background-color: #2a2735;
 }
 
 .hero-brand {

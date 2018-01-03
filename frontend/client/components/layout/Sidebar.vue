@@ -183,12 +183,14 @@ export default {
       border-right: 3px solid #51a0f6;
     }
 
+    li a:hover {
+      background-color: #2a2735;
+    }
+
     li a {
       color: #8c91a0;
-      display: block;
-      text-align: center;
-      width: 230px;
-      height: 60px;
+      width: 180px;
+      margin-left: 50px;
       line-height: 40px;
 
       &[aria-expanded="true"] {
