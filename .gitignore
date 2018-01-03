@@ -12,3 +12,14 @@
 
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
+
+# Node/Javascript
+.DS_Store
+node_modules/
+dist/
+.idea
+npm-debug.log
+yarn-error.log
+selenium-debug.log
+test/unit/coverage
+test/e2e/reports
