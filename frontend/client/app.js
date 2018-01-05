@@ -7,11 +7,18 @@ import router from './router'
 import store from './store'
 import * as filters from './filters'
 import { TOGGLE_SIDEBAR } from 'vuex-store/mutation-types'
+import auth from './auth'
 
 Vue.prototype.$http = axios
 Vue.axios = axios
 Vue.router = router
 Vue.use(NProgress)
+
+// Auth interceptors
+axios.interceptors.request.use(function (request) {
+  request.headers['Authorization'] = 'Bearer ' + auth.getToken()
+  return request
+})
 
 // Enable devtools
 Vue.config.devtools = true

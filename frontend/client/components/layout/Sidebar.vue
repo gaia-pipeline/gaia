@@ -1,5 +1,11 @@
 <template>
   <aside class="menu app-sidebar animated" :class="{ slideInLeft: show, slideOutLeft: !show }">
+    <div class="">
+      <a class="navbar-item brand-top" href="/">
+        <img src="~assets/logo.png">
+        &nbsp;&nbsp;<div class="header-text">Gaia</div>
+      </a>
+    </div>
     <ul class="menu-list">
       <li v-for="(item, index) in menu">
         <router-link :to="item.path" :exact="true" :aria-expanded="isExpanded(item) ? 'true' : 'false'" v-if="item.path" @click.native="toggle(index, item)">
@@ -132,24 +138,33 @@ export default {
 <style lang="scss">
 @import '~bulma/sass/utilities/mixins';
 
+.header-text {
+  font-family: 'Lobster', 'Times', 'serif';
+  font-size: 2rem;
+  color: #4da2fc;
+}
+
+a.navbar-item:hover {
+  background-color: #2a2735;
+}
+
 .app-sidebar {
   position: fixed;
-  top: 50px;
+  top: 0px;
   left: 0;
-  bottom: 0;
-  padding: 60px 0px 50px;
+  padding: 0px 0px 50px;
   width: 240px;
   min-width: 175px;
   max-height: 100vh;
-  height: calc(100% - 50px);
-  z-index: 1024 - 1;
+  height: 100%;
+  z-index: 1024;
   background: rgb(60, 57, 74);
   box-shadow: 20px 0 30px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   overflow-y: auto;
   overflow-x: hidden;
 
   @include mobile() {
-    transform: translate3d(-180px, 0, 0);
+    transform: translate3d(-240px, 0, 0);
   }
 
   .icon {
@@ -162,9 +177,16 @@ export default {
     }
   }
 
+  .brand-top {
+    margin: auto;
+    width: 240px;
+    padding-left: 60px;
+    padding-bottom: 50px;
+  }
+
   .icon-left {
     position: absolute;
-    left: 30px;
+    left: 40px;
     margin-top: 13px;
   }
 
@@ -190,7 +212,7 @@ export default {
     li a {
       color: #8c91a0;
       width: 180px;
-      margin-left: 50px;
+      margin-left: 60px;
       line-height: 40px;
 
       &[aria-expanded="true"] {

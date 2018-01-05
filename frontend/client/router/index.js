@@ -8,11 +8,6 @@ export default new Router({
   linkActiveClass: 'is-active',
   scrollBehavior: () => ({ y: 0 }),
   routes: [
-    {
-      name: 'Overview',
-      path: '/overview',
-      component: require('../views/overview/index.vue')
-    },
     ...generateRoutesFromMenu(menuModule.state.items),
     {
       path: '*',

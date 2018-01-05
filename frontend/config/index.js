@@ -20,16 +20,16 @@ module.exports = {
   },
   dev: {
     env: require('./dev.env'),
-    port: process.env.DEV_PORT || 8080,
+    port: process.env.DEV_PORT || 8081,
     autoOpenBrowser: true,
     assetsSubDirectory: 'assets',
     assetsPublicPath: '/',
     proxyTable: {
-        '/v1': {
-            target: 'http://localhost:8081',
+        '/api/v1': {
+            target: 'http://localhost:8080',
             changeOrigin: true,
             pathRewrite: {
-              '^/v1': 'v1'
+              '^/api/v1': 'api/v1'
             }
         }
     },
