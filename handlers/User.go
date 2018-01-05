@@ -2,11 +2,17 @@ package handlers
 
 import (
 	"fmt"
+	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/kataras/iris"
 	"github.com/michelvocks/gaia"
 )
+
+type jwtCustomClaims struct {
+	Username string `json:"username"`
+	jwt.StandardClaims
+}
 
 // UserLogin authenticates the user with
 // the given credentials.
@@ -24,10 +30,19 @@ func UserLogin(ctx iris.Context) {
 	// Remove password from object
 	u.Password = ""
 
-	// Wrap User object in JWT
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": u.Username,
-	})
+	// Setup custom claims
+	claims := jwtCustomClaims{
+		u.Username,
+		jwt.StandardClaims{
+			// Valid for 5 hours
+			ExpiresAt: time.Now().Unix() + (5 * 60 * 60),
+			IssuedAt:  time.Now().Unix(),
+			Subject:   "Gaia Session Token",
+		},
+	}
+
+	// Generate JWT token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// Sign and get encoded token
 	b := []byte{'f', '2', 'f', 'f', 's', 'h', 's'}
@@ -43,7 +58,4 @@ func UserLogin(ctx iris.Context) {
 
 	// Return JWT token and display name
 	ctx.JSON(u)
-
-	fmt.Println("Token returned!")
-	fmt.Printf("User obj: %+v\n", u)
 }

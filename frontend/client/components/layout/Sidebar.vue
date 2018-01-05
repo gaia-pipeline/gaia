@@ -1,6 +1,6 @@
 <template>
   <aside class="menu app-sidebar animated" :class="{ slideInLeft: show, slideOutLeft: !show }">
-    <div class="">
+    <div>
       <a class="navbar-item brand-top" href="/">
         <img src="~assets/logo.png">
         &nbsp;&nbsp;<div class="header-text">Gaia</div>
@@ -153,7 +153,7 @@ a.navbar-item:hover {
   top: 0px;
   left: 0;
   padding: 0px 0px 50px;
-  width: 240px;
+  width: 200px;
   min-width: 175px;
   max-height: 100vh;
   height: 100%;
@@ -179,20 +179,20 @@ a.navbar-item:hover {
 
   .brand-top {
     margin: auto;
-    width: 240px;
-    padding-left: 60px;
-    padding-bottom: 50px;
+    width: 200px;
+    padding-left: 45px;
+    padding-bottom: 40px;
   }
 
   .icon-left {
     position: absolute;
-    left: 40px;
+    left: 20px;
     margin-top: 13px;
   }
 
   .menu-list {  
     margin: auto;
-    width: 220px;
+    width: 200px;
 
     li {
       float: left;
@@ -211,7 +211,7 @@ a.navbar-item:hover {
 
     li a {
       color: #8c91a0;
-      width: 180px;
+      width: 140px;
       margin-left: 60px;
       line-height: 40px;
 

@@ -12,7 +12,8 @@
         </div>
         <div class="navbar-end">
           <a class="navbar-item" v-if="session === null" v-on:click="showLoginModal">
-            <span class="has-text-white">Login</span>
+            <i class="fa fa-sign-in fa-2x sign-in-icon" aria-hidden="true"/>
+            <span class="sign-in-text">Sign in</span>
           </a>
           <span class="has-text-white" v-if="session">{{ session.display_name }}</span>
         </div>
@@ -21,22 +22,26 @@
 
     <!-- Login modal -->
     <modal :visible="loginModal" class="modal-z-index" @close="close">
-      <div class="tile is-parent is-4">
-        <article class="tile is-child box">
-          <h1 class="title">Sign In</h1>
-          <div class="block">
-            <p class="control">
-              <input class="input is-large" type="text" v-model="username" placeholder="Username">
-            </p>
-            <p class="control">
-              <input class="input is-large" type="password" v-model="password" placeholder="Password">
-            </p>
-            <p class="control">
-              <button class="button is-primary" @click="login">Sign In</button>
-            </p>
-          </div>
-        </article> 
-      </div>
+          <article class="tile is-child box">
+            <h1 class="title">Sign In</h1>
+            <div class="block">
+              <p class="control has-icons-left">
+                <input class="input is-large" type="text" v-model="username" placeholder="Username">
+                <span class="icon is-small is-left">
+                  <i class="fa fa-user-circle"></i>
+                </span>
+              </p>
+              <p class="control has-icons-left">
+                <input class="input is-large" type="password" v-model="password" placeholder="Password">
+                <span class="icon is-small is-left">
+                  <i class="fa fa-lock"></i>
+                </span>
+              </p>
+              <p class="control">
+                <button class="button is-primary" @click="login">Sign In</button>
+              </p>
+            </div>
+          </article> 
     </modal>
   </section>
 </template>
@@ -116,7 +121,7 @@ export default {
 <style lang="scss">
 
 .navbar-start {
-  padding-left: 280px;
+  padding-left: 240px;
 }
 
 .search-icon {
@@ -149,7 +154,7 @@ export default {
 }
 
 .app-navbar {
-  position: fixed;
+  position: static;
   min-width: 100%;
   height: 70px;
   z-index: 1024 - 1;
@@ -163,5 +168,18 @@ export default {
 
 .modal-z-index {
   z-index: 1025;
+}
+
+.sign-in-text {
+  font-size: 20px;
+  font-weight: bold;
+  color: whitesmoke;
+  padding-top: 7px;
+}
+
+.sign-in-icon {
+  color: #4da2fc;
+  padding-right: 15px;
+  padding-top: 7px;
 }
 </style>
