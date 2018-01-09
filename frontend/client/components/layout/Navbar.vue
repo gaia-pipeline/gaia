@@ -15,33 +15,48 @@
             <i class="fa fa-sign-in fa-2x sign-in-icon" aria-hidden="true"/>
             <span class="sign-in-text">Sign in</span>
           </a>
-          <span class="has-text-white" v-if="session">{{ session.display_name }}</span>
+          <a class="navbar-item signed-text" v-if="session">
+            <span>Hi, {{ session.display_name }}</span>
+            <div class="avatar">
+              <svg width="40" height="40" data-jdenticon-value="session.display_name"></svg>
+            </div>
+          </a>
+          <a class="navbar-item" v-if="session">
+            <i class="fa fa-refresh fa-lg signed-in-icons" aria-hidden="true"/>
+          </a>
+          <a class="navbar-item" v-if="session">
+            <i class="fa fa-sign-out fa-lg signed-in-icons" aria-hidden="true"/>
+          </a>
         </div>
       </nav>
     </div>
 
     <!-- Login modal -->
     <modal :visible="loginModal" class="modal-z-index" @close="close">
-          <article class="tile is-child box">
-            <h1 class="title">Sign In</h1>
-            <div class="block">
-              <p class="control has-icons-left">
-                <input class="input is-large" type="text" v-model="username" placeholder="Username">
-                <span class="icon is-small is-left">
-                  <i class="fa fa-user-circle"></i>
-                </span>
-              </p>
-              <p class="control has-icons-left">
-                <input class="input is-large" type="password" v-model="password" placeholder="Password">
-                <span class="icon is-small is-left">
-                  <i class="fa fa-lock"></i>
-                </span>
-              </p>
-              <p class="control">
-                <button class="button is-primary" @click="login">Sign In</button>
-              </p>
-            </div>
-          </article> 
+      <div class="box login-modal">
+        <h1 class="title header-text" style="padding-bottom: 20px;">Sign In</h1>
+        <div class="block login-modal-content">
+          <div class="login-modal-content">
+            <p class="control has-icons-left">
+              <input class="input is-large login-input" v-focus type="text" v-model="username" @keyup.enter="login" placeholder="Username">
+              <span class="icon is-small is-left">
+                <i class="fa fa-user-circle"></i>
+              </span>
+            </p>
+          </div>
+          <div class="login-modal-content">
+            <p class="control has-icons-left">
+              <input class="input is-large login-input" type="password" @keyup.enter="login" v-model="password" placeholder="Password">
+              <span class="icon is-small is-left">
+                <i class="fa fa-lock"></i>
+              </span>
+            </p>
+          </div>
+          <div class="login-modal-content">
+            <button class="button is-primary login-button" @click="login">Sign In</button>
+          </div>
+        </div>
+      </div> 
     </modal>
   </section>
 </template>
@@ -50,6 +65,7 @@
 import { mapGetters, mapActions } from 'vuex'
 import { Modal } from 'vue-bulma-modal'
 import auth from '../../auth'
+import jdenticon from 'jdenticon'
 
 export default {
 
@@ -63,7 +79,8 @@ export default {
   },
 
   components: {
-    Modal
+    Modal,
+    jdenticon
   },
 
   props: {
@@ -120,6 +137,52 @@ export default {
 
 <style lang="scss">
 
+.avatar {
+  margin-left: 10px;
+}
+
+.signed-text {
+  color: #8c91a0;
+  font-weight: bold;
+  text-transform: capitalize;
+  border-right: solid 1px #8c91a0;
+  padding-right: 30px;
+}
+
+.login-modal {
+  text-align: center;
+  background-color: #2a2735;
+}
+
+.login-modal-content {
+  margin: auto;
+  padding: 10px;
+}
+
+.login-input {
+  background-color: #3f3d49;
+  color: white;
+  border-color: #2a2735;
+}
+
+.login-input::-webkit-input-placeholder {
+    color: #8c91a0;
+    text-shadow: none;
+    -webkit-text-fill-color: initial;
+}
+
+.login-button {
+  background-color: #4da2fc !important;
+  width: 150px;
+  height: 50px;
+}
+
+@media screen and (min-width: 768px) {
+  .modal-content {
+    width: 480px; /* either % (e.g. 60%) or px (400px) */
+  }
+}
+
 .navbar-start {
   padding-left: 240px;
 }
@@ -127,6 +190,11 @@ export default {
 .search-icon {
   padding-top: 22px;
   color: whitesmoke;
+}
+
+.signed-in-icons {
+  color: whitesmoke;
+  padding: 10px;
 }
 
 .borderless-search {
