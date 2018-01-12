@@ -1,0 +1,44 @@
+// plugin.proto
+// Defines the gRPC interface between gaia and the user defined
+// pipelines (plugins). All rpc Methods are called from Gaia and
+// executed in the plugin. 
+
+syntax = "proto3";
+package proto;
+
+// Job represents a single job
+message Job {
+    string   unique_id   = 1;    
+    string   title       = 2;
+    string   description = 3;
+    int32    priority    = 4;
+    Question question    = 5;
+}
+
+// Question represents a manual question
+message Question {
+    string description = 1;
+    string type        = 2;
+    string answer      = 3;
+}
+
+// JobResult represents the result of an executed job
+message JobResult {
+    string unique_id      = 1;
+    bool   failed         = 2;
+    bool   exit_pipeline  = 3;
+    string message        = 4;
+}
+
+// Empty message 
+message Empty {}
+
+service Plugin {
+    // GetJobs returns a stream of Job objects.
+    // Used to expose jobs to gaia.
+    rpc GetJobs(Empty) returns (stream Job);
+
+    // ExecuteJob signals the plugin to execute the given job.
+    // Used to execute one job from a pipeline.
+    rpc ExecuteJob(Job) returns (JobResult);
+}
