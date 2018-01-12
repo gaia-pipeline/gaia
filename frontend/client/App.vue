@@ -58,7 +58,6 @@ export default {
   animation-duration: .377s;
 }
 
-$footer-background-color: rgba(42, 38, 53, 1.0);
 @import '~bulma';
 @import '~wysiwyg.css/wysiwyg.sass';
 

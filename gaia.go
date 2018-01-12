@@ -6,4 +6,5 @@ type User struct {
 	Password    string `json:"password,omitempty"`
 	DisplayName string `json:"display_name"`
 	Tokenstring string `json:"tokenstring"`
+	JwtExpiry   int64  `json:"jwtexpiry"`
 }

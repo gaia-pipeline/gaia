@@ -37,7 +37,9 @@
     "axios": "^0.17.1",
     "bulma": "^0.6.1",
     "font-awesome": "4.7.0",
+    "jdenticon": "^1.8.0",
     "mdi": "^1.8.36",
+    "moment": "^2.20.1",
     "plotly.js": "^1.24.2",
     "vue": "^2.5.13",
     "vue-bulma-brace": "^0.1.0",
@@ -67,8 +69,7 @@
     "vue-router": "^3.0.1",
     "vuex": "^3.0.1",
     "vuex-router-sync": "^5.0.0",
-    "wysiwyg.css": "0.0.2",
-    "jdenticon": "^1.8.0"
+    "wysiwyg.css": "0.0.2"
   },
   "devDependencies": {
     "autoprefixer": "^6.7.7",

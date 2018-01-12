@@ -41,10 +41,6 @@ export default {
   methods: {
     getList () {
       let matched = this.$route.matched.filter(item => item.name)
-      let first = matched[0]
-      if (first && (first.name !== 'Overview')) {
-        matched = [{ name: 'Overview', path: '/' }].concat(matched)
-      }
       this.list = matched
     }
   },

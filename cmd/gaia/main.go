@@ -21,7 +21,7 @@ func init() {
 	cfg = &Config{}
 
 	// command line arguments
-	flag.StringVar(&cfg.ListenPort, "port", "8080", "Listen port for gaia WebUI")
+	flag.StringVar(&cfg.ListenPort, "port", "8080", "Listen port for gaia")
 }
 
 func main() {

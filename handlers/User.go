@@ -9,6 +9,10 @@ import (
 	"github.com/michelvocks/gaia"
 )
 
+// jwtExpiry defines how long the produced jwt tokens
+// are valid. By default 12 hours.
+const jwtExpiry = (12 * 60 * 60)
+
 type jwtCustomClaims struct {
 	Username string `json:"username"`
 	jwt.StandardClaims
@@ -34,8 +38,7 @@ func UserLogin(ctx iris.Context) {
 	claims := jwtCustomClaims{
 		u.Username,
 		jwt.StandardClaims{
-			// Valid for 5 hours
-			ExpiresAt: time.Now().Unix() + (5 * 60 * 60),
+			ExpiresAt: time.Now().Unix() + jwtExpiry,
 			IssuedAt:  time.Now().Unix(),
 			Subject:   "Gaia Session Token",
 		},
@@ -53,6 +56,7 @@ func UserLogin(ctx iris.Context) {
 		fmt.Printf("Error signing jwt token: %s", err.Error())
 		return
 	}
+	u.JwtExpiry = claims.ExpiresAt
 	u.Tokenstring = tokenstring
 	u.DisplayName = "Michel Vocks"
 

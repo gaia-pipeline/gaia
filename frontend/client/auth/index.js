@@ -5,7 +5,8 @@ export default {
       .then((response) => {
         var newSession = {
           'token': response.data.tokenstring,
-          'display_name': response.data.display_name
+          'display_name': response.data.display_name,
+          'jwtexpiry': response.data.jwtexpiry
         }
         window.localStorage.setItem('session', JSON.stringify(newSession))
         context.$store.commit('setSession', newSession)

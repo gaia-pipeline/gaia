@@ -9,6 +9,14 @@
           <div>
             <input class="borderless-search" type="text" placeholder="Find a pipeline ..." v-model="search">
           </div>
+          <div class="navbar-button">
+            <a class="button create-pipeline-button" @click="createPipeline">
+              <span class="icon">
+                <i class="fa fa-plus"></i>
+              </span>
+              <span>Create Pipeline</span>
+            </a>
+          </div>
         </div>
         <div class="navbar-end">
           <a class="navbar-item" v-if="session === null" v-on:click="showLoginModal">
@@ -18,13 +26,13 @@
           <a class="navbar-item signed-text" v-if="session">
             <span>Hi, {{ session.display_name }}</span>
             <div class="avatar">
-              <svg width="40" height="40" data-jdenticon-value="session.display_name"></svg>
+              <svg width="35" height="35" data-jdenticon-value="session.display_name"></svg>
             </div>
           </a>
           <a class="navbar-item" v-if="session">
             <i class="fa fa-refresh fa-lg signed-in-icons" aria-hidden="true"/>
           </a>
-          <a class="navbar-item" v-if="session">
+          <a class="navbar-item" @click="logout" v-if="session">
             <i class="fa fa-sign-out fa-lg signed-in-icons" aria-hidden="true"/>
           </a>
         </div>
@@ -66,6 +74,7 @@ import { mapGetters, mapActions } from 'vuex'
 import { Modal } from 'vue-bulma-modal'
 import auth from '../../auth'
 import jdenticon from 'jdenticon'
+import moment from 'moment'
 
 export default {
 
@@ -105,8 +114,16 @@ export default {
     fetchData () {
       let session = auth.getSession()
       if (session) {
-        this.$store.commit('setSession', session)
+        // check if jwt has been expired
+        if (moment().isAfter(moment.unix(session['jwtexpiry']))) {
+          auth.logout(this)
+        } else {
+          this.$store.commit('setSession', session)
+        }
       }
+
+      // Update jdenticon to prevent rendering issues
+      jdenticon()
     },
 
     login () {
@@ -119,6 +136,14 @@ export default {
       this.close()
     },
 
+    logout () {
+      auth.logout(this)
+    },
+
+    createPipeline () {
+      this.$router.push('/pipelines/create')
+    },
+
     showLoginModal () {
       this.loginModal = true
     },
@@ -126,6 +151,9 @@ export default {
     close () {
       this.loginModal = false
       this.$emit('close')
+
+      // Update jdenticon to prevent rendering issues
+      jdenticon()
     },
 
     ...mapActions([
@@ -136,6 +164,22 @@ export default {
 </script>
 
 <style lang="scss">
+
+.create-pipeline-button {
+  background-color: #4da2fc !important;
+  font-weight: bold;
+  border-color: transparent;
+  color: whitesmoke;
+}
+
+.create-pipeline-button:hover, .create-pipeline-button:active, .create-pipeline-button:focus {
+  color: whitesmoke;
+  border-color: transparent;
+}
+
+.navbar-button {
+  padding-top: 17px;  
+}
 
 .avatar {
   margin-left: 10px;
@@ -242,7 +286,8 @@ export default {
   font-size: 20px;
   font-weight: bold;
   color: whitesmoke;
-  padding-top: 7px;
+  padding-top: 6px;
+  padding-right: 10px;
 }
 
 .sign-in-icon {

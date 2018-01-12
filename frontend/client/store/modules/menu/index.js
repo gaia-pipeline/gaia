@@ -1,6 +1,6 @@
 import * as types from '../../mutation-types'
 import lazyLoading from './lazyLoading'
-import charts from './charts'
+import pipelines from './pipelines'
 
 // show: meta.label -> name
 // name: component name
@@ -17,7 +17,7 @@ const state = {
       },
       component: lazyLoading('overview', true)
     },
-    charts
+    pipelines
   ]
 }
 
