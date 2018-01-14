@@ -38,6 +38,10 @@ var (
 // CachedJobs holds a list of JobsWrapper for later processing
 var cachedJobs Jobs
 
+// Args are the args passed from client.
+// They are injected before job will be started.
+var Args map[string]string
+
 // GRPCServer is the plugin gRPC implementation.
 type GRPCServer struct{}
 
@@ -59,6 +63,9 @@ func (GRPCServer) ExecuteJob(ctx context.Context, j *proto.Job) (*proto.JobResul
 	if job == nil {
 		return nil, ErrorJobNotFound
 	}
+
+	// Set passed arguments
+	Args = job.Job.Args
 
 	// Execute Job
 	err := job.FuncPointer()

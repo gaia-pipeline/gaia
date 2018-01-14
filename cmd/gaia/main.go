@@ -4,24 +4,24 @@ import (
 	"flag"
 
 	"github.com/kataras/iris"
+	"github.com/michelvocks/gaia"
 	"github.com/michelvocks/gaia/handlers"
 )
 
 var (
-	cfg          *Config
+	cfg          *gaia.Config
 	irisInstance *iris.Application
 )
 
-// Config holds all config options
-type Config struct {
-	ListenPort string
-}
-
 func init() {
-	cfg = &Config{}
+	cfg = &gaia.Config{}
 
 	// command line arguments
 	flag.StringVar(&cfg.ListenPort, "port", "8080", "Listen port for gaia")
+	flag.StringVar(&cfg.Bolt.Path, "dbpath", "gaia.db", "Path to gaia bolt db file")
+
+	// Default values
+	cfg.Bolt.Mode = 0600
 }
 
 func main() {

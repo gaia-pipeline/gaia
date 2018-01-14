@@ -8,11 +8,12 @@ package proto;
 
 // Job represents a single job
 message Job {
-    string   unique_id   = 1;    
-    string   title       = 2;
-    string   description = 3;
-    int32    priority    = 4;
-    Question question    = 5;
+    string   unique_id       = 1;    
+    string   title           = 2;
+    string   description     = 3;
+    int32    priority        = 4;
+    map<string, string> args = 5;
+    Question question        = 6;
 }
 
 // Question represents a manual question
