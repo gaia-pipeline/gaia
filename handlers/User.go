@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"fmt"
+	"log"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -30,20 +30,20 @@ func UserLogin(ctx iris.Context) {
 
 	// Authenticate user
 	user, err := storeService.UserAuth(u)
-	if err != nil || user == nil {
+	if err != nil {
+		log.Printf("error during UserAuth: %s", err)
+		ctx.StatusCode(iris.StatusInternalServerError)
+		return
+	}
+	if user == nil {
 		ctx.StatusCode(iris.StatusForbidden)
 		ctx.WriteString("invalid username and/or password")
-		fmt.Printf("Error: %s", err)
 		return
 	}
 
-	// Remove password from object.
-	// It's not needed anymore.
-	u.Password = ""
-
 	// Setup custom claims
 	claims := jwtCustomClaims{
-		u.Username,
+		user.Username,
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Unix() + jwtExpiry,
 			IssuedAt:  time.Now().Unix(),
@@ -59,13 +59,12 @@ func UserLogin(ctx iris.Context) {
 	tokenstring, err := token.SignedString(b)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.WriteString("Error during signing jwt token!")
-		fmt.Printf("Error signing jwt token: %s", err.Error())
+		log.Printf("Error signing jwt token: %s", err)
 		return
 	}
-	u.JwtExpiry = claims.ExpiresAt
-	u.Tokenstring = tokenstring
+	user.JwtExpiry = claims.ExpiresAt
+	user.Tokenstring = tokenstring
 
 	// Return JWT token and display name
-	ctx.JSON(u)
+	ctx.JSON(user)
 }

@@ -11,7 +11,7 @@ export default {
 
   subroute: [
     {
-      name: 'Create Pipelines',
+      name: 'Create Pipeline',
       path: '/pipelines/create',
       component: lazyLoading('pipelines/create'),
       meta: {

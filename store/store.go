@@ -14,6 +14,10 @@ var (
 
 	// Name of the bucket where we store information about pipelines
 	pipelineBucket = []byte("Pipelines")
+
+	// Username and password of the first admin user
+	adminUsername = "admin"
+	adminPassword = "admin"
 )
 
 // Store represents the access type for store
@@ -52,17 +56,42 @@ func (s *Store) UserUpdate(u *gaia.User) error {
 // given password is valid. Returns nil if password was
 // wrong or user not found.
 func (s *Store) UserAuth(u *gaia.User) (*gaia.User, error) {
+	// Look up user
+	user, err := s.UserGet(u.Username)
+
+	// Error occured and/or user not found
+	if err != nil || user == nil {
+		return nil, err
+	}
+
+	// Check if password is valid
+	if user.Password != u.Password {
+		return nil, nil
+	}
+
+	// We will use the user object later.
+	// But we don't need the password anymore.
+	user.Password = ""
+
+	// Return user
+	return user, nil
+}
+
+// UserGet looks up a user by given username.
+// Returns nil if user was not found.
+func (s *Store) UserGet(username string) (*gaia.User, error) {
 	user := &gaia.User{}
 	err := s.db.View(func(tx *bolt.Tx) error {
 		// Get bucket
 		b := tx.Bucket(userBucket)
 
 		// Lookup user
-		userRaw := b.Get([]byte(u.Username))
+		userRaw := b.Get([]byte(username))
 
 		// User found?
 		if userRaw == nil {
 			// Nope. That is not an error so just leave
+			user = nil
 			return nil
 		}
 
@@ -70,13 +99,7 @@ func (s *Store) UserAuth(u *gaia.User) (*gaia.User, error) {
 		return json.Unmarshal(userRaw, user)
 	})
 
-	// Check if password is valid
-	if err != nil || u.Password != user.Password {
-		return nil, err
-	}
-
-	// Return outcome
-	return user, nil
+	return user, err
 }
 
 // Init initalizes the connection to the database.
@@ -89,7 +112,7 @@ func (s *Store) Init(cfg *gaia.Config) error {
 	}
 	s.db = db
 
-	// Create bucket if not exists
+	// Create bucket if not exists function
 	var bucketName []byte
 	c := func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists(bucketName)
@@ -109,6 +132,25 @@ func (s *Store) Init(cfg *gaia.Config) error {
 	err = db.Update(c)
 	if err != nil {
 		return err
+	}
+
+	// Make sure that the user "admin" does exist
+	admin, err := s.UserGet(adminUsername)
+	if err != nil {
+		return err
+	}
+
+	// Create admin user if we cannot find it
+	if admin == nil {
+		err = s.UserUpdate(&gaia.User{
+			DisplayName: adminUsername,
+			Username:    adminUsername,
+			Password:    adminPassword,
+		})
+
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

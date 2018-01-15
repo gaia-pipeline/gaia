@@ -1,6 +1,17 @@
 <template>
-  <div class="content has-text-centered">
-    <h1 class="is-title is-bold">Create pipelines...</h1>
+  <div class="tile is-ancestor">
+    <div class="tile is-vertical is-3">
+      <div class="tile">
+        <div class="tile is-parent is-vertical">
+          <article class="tile is-child notification content-article">
+            <p class="subtitle">From Git repository</p>
+            <div class="content">
+              
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -10,7 +21,5 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.is-title {
-  text-transform: capitalize;
-}
+
 </style>

@@ -26,7 +26,7 @@
           <a class="navbar-item signed-text" v-if="session">
             <span>Hi, {{ session.display_name }}</span>
             <div class="avatar">
-              <svg width="35" height="35" data-jdenticon-value="session.display_name"></svg>
+              <svg class="avatar-img" data-jdenticon-value="session.display_name"></svg>
             </div>
           </a>
           <a class="navbar-item" v-if="session">
@@ -183,6 +183,22 @@ export default {
 
 .avatar {
   margin-left: 10px;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border-radius: 50%;
+  position: relative;
+  border-color: whitesmoke;
+  border-style: solid;
+}
+
+.avatar-img {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .signed-text {

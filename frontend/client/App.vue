@@ -96,4 +96,9 @@ html {
     }
   }
 }
+
+.content-article {
+  color: whitesmoke;
+  background-color: #3f3d49;
+}
 </style>
