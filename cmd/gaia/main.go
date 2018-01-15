@@ -6,6 +6,7 @@ import (
 	"github.com/kataras/iris"
 	"github.com/michelvocks/gaia"
 	"github.com/michelvocks/gaia/handlers"
+	"github.com/michelvocks/gaia/store"
 )
 
 var (
@@ -31,8 +32,15 @@ func main() {
 	// Initialize IRIS
 	irisInstance = iris.New()
 
+	// Initialize store
+	s := store.NewStore()
+	err := s.Init(cfg)
+	if err != nil {
+		panic(err)
+	}
+
 	// Initialize handlers
-	handlers.InitHandlers(irisInstance)
+	handlers.InitHandlers(irisInstance, s)
 
 	// Start listen
 	irisInstance.Run(iris.Addr(":" + cfg.ListenPort))

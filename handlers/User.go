@@ -29,9 +29,16 @@ func UserLogin(ctx iris.Context) {
 	}
 
 	// Authenticate user
-	// TODO
+	user, err := storeService.UserAuth(u)
+	if err != nil || user == nil {
+		ctx.StatusCode(iris.StatusForbidden)
+		ctx.WriteString("invalid username and/or password")
+		fmt.Printf("Error: %s", err)
+		return
+	}
 
-	// Remove password from object
+	// Remove password from object.
+	// It's not needed anymore.
 	u.Password = ""
 
 	// Setup custom claims
@@ -58,7 +65,6 @@ func UserLogin(ctx iris.Context) {
 	}
 	u.JwtExpiry = claims.ExpiresAt
 	u.Tokenstring = tokenstring
-	u.DisplayName = "Michel Vocks"
 
 	// Return JWT token and display name
 	ctx.JSON(u)
