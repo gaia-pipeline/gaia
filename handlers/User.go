@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"log"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -31,7 +30,7 @@ func UserLogin(ctx iris.Context) {
 	// Authenticate user
 	user, err := storeService.UserAuth(u)
 	if err != nil {
-		log.Printf("error during UserAuth: %s", err)
+		cfg.Logger.Error("error during UserAuth: %s", err)
 		ctx.StatusCode(iris.StatusInternalServerError)
 		return
 	}
@@ -55,11 +54,10 @@ func UserLogin(ctx iris.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// Sign and get encoded token
-	b := []byte{'f', '2', 'f', 'f', 's', 'h', 's'}
-	tokenstring, err := token.SignedString(b)
+	tokenstring, err := token.SignedString(jwtKey)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
-		log.Printf("Error signing jwt token: %s", err)
+		cfg.Logger.Error("error signing jwt token: %s", err)
 		return
 	}
 	user.JwtExpiry = claims.ExpiresAt

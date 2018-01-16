@@ -3,9 +3,11 @@ package store
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	bolt "github.com/coreos/bbolt"
 	"github.com/michelvocks/gaia"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -32,10 +34,18 @@ func NewStore() *Store {
 	return s
 }
 
-// UserUpdate takes the given user and saves it
+// UserPut takes the given user and saves it
 // to the bolt database. User will be overwritten
 // if it already exists.
-func (s *Store) UserUpdate(u *gaia.User) error {
+// It also clears the password field afterwards.
+func (s *Store) UserPut(u *gaia.User) error {
+	// Encrypt password before we save it
+	hash, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.MinCost)
+	if err != nil {
+		return err
+	}
+	u.Password = string(hash)
+
 	return s.db.Update(func(tx *bolt.Tx) error {
 		// Get bucket
 		b := tx.Bucket(userBucket)
@@ -45,6 +55,9 @@ func (s *Store) UserUpdate(u *gaia.User) error {
 		if err != nil {
 			return err
 		}
+
+		// Clear password from origin object
+		u.Password = ""
 
 		// Put user
 		return b.Put([]byte(u.Username), m)
@@ -65,7 +78,7 @@ func (s *Store) UserAuth(u *gaia.User) (*gaia.User, error) {
 	}
 
 	// Check if password is valid
-	if user.Password != u.Password {
+	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(u.Password)); err != nil {
 		return nil, nil
 	}
 
@@ -102,16 +115,32 @@ func (s *Store) UserGet(username string) (*gaia.User, error) {
 	return user, err
 }
 
-// Init initalizes the connection to the database.
+// Init creates the data folder if not exists,
+// generates private key and bolt database.
 // This should be called only once per database
 // because bolt holds a lock on the database file.
 func (s *Store) Init(cfg *gaia.Config) error {
-	db, err := bolt.Open(cfg.Bolt.Path, cfg.Bolt.Mode, nil)
+	// Make sure data folder exists
+	err := os.MkdirAll(cfg.DataPath, 0700)
+	if err != nil {
+		return err
+	}
+
+	// Open connection to bolt database
+	path := cfg.DataPath + string(os.PathSeparator) + cfg.Bolt.Path
+	db, err := bolt.Open(path, cfg.Bolt.Mode, nil)
 	if err != nil {
 		return err
 	}
 	s.db = db
 
+	// Setup database
+	return setupDatabase(s)
+}
+
+// setupDatabase create all buckets in the db.
+// Additionally, it makes sure that the admin user exists.
+func setupDatabase(s *Store) error {
 	// Create bucket if not exists function
 	var bucketName []byte
 	c := func(tx *bolt.Tx) error {
@@ -124,12 +153,12 @@ func (s *Store) Init(cfg *gaia.Config) error {
 
 	// Make sure buckets exist
 	bucketName = userBucket
-	err = db.Update(c)
+	err := s.db.Update(c)
 	if err != nil {
 		return err
 	}
 	bucketName = pipelineBucket
-	err = db.Update(c)
+	err = s.db.Update(c)
 	if err != nil {
 		return err
 	}
@@ -142,7 +171,7 @@ func (s *Store) Init(cfg *gaia.Config) error {
 
 	// Create admin user if we cannot find it
 	if admin == nil {
-		err = s.UserUpdate(&gaia.User{
+		err = s.UserPut(&gaia.User{
 			DisplayName: adminUsername,
 			Username:    adminUsername,
 			Password:    adminPassword,

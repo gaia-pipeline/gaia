@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -13,10 +14,19 @@ var config *gaia.Config
 func TestMain(m *testing.M) {
 	store = NewStore()
 	config = &gaia.Config{}
+	config.DataPath = "data"
 	config.Bolt.Path = "test.db"
 	config.Bolt.Mode = 0600
 
-	os.Exit(m.Run())
+	r := m.Run()
+
+	// cleanup
+	err := os.Remove("data")
+	if err != nil {
+		fmt.Printf("cannot remove data folder: %s\n", err.Error())
+		r = 1
+	}
+	os.Exit(r)
 }
 
 func TestInit(t *testing.T) {
@@ -26,7 +36,7 @@ func TestInit(t *testing.T) {
 	}
 
 	// cleanup
-	err = os.Remove("test.db")
+	err = os.Remove("data/test.db")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +52,7 @@ func TestUserGet(t *testing.T) {
 	u.Username = "testuser"
 	u.Password = "12345!#+21+"
 	u.DisplayName = "Test"
-	err = store.UserUpdate(u)
+	err = store.UserPut(u)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,13 +74,13 @@ func TestUserGet(t *testing.T) {
 	}
 
 	// cleanup
-	err = os.Remove("test.db")
+	err = os.Remove("data/test.db")
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
-func TestUserUpdate(t *testing.T) {
+func TestUserPut(t *testing.T) {
 	err := store.Init(config)
 	if err != nil {
 		t.Fatal(err)
@@ -80,13 +90,13 @@ func TestUserUpdate(t *testing.T) {
 	u.Username = "testuser"
 	u.Password = "12345!#+21+"
 	u.DisplayName = "Test"
-	err = store.UserUpdate(u)
+	err = store.UserPut(u)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// cleanup
-	err = os.Remove("test.db")
+	err = os.Remove("data/test.db")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,12 +112,14 @@ func TestUserAuth(t *testing.T) {
 	u.Username = "testuser"
 	u.Password = "12345!#+21+"
 	u.DisplayName = "Test"
-	err = store.UserUpdate(u)
+	err = store.UserPut(u)
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
 
+	// Password field has been cleared after last UserPut
+	u.Password = "12345!#+21+"
 	r, err := store.UserAuth(u)
 	if err != nil {
 		t.Fatal(err)
@@ -140,7 +152,7 @@ func TestUserAuth(t *testing.T) {
 	}
 
 	// cleanup
-	err = os.Remove("test.db")
+	err = os.Remove("data/test.db")
 	if err != nil {
 		t.Fatal(err)
 	}

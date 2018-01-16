@@ -2,6 +2,8 @@ package gaia
 
 import (
 	"os"
+
+	hclog "github.com/hashicorp/go-hclog"
 )
 
 // User is the user object
@@ -16,6 +18,8 @@ type User struct {
 // Config holds all config options
 type Config struct {
 	ListenPort string
+	DataPath   string
+	Logger     hclog.Logger
 
 	Bolt struct {
 		Path string
