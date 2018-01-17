@@ -97,8 +97,42 @@ html {
   }
 }
 
+.button {
+  background-color: #4da2fc !important;
+  font-weight: bold;
+  border-color: transparent;
+  color: whitesmoke;
+}
+
+.button:hover, .button:active, .button:focus {
+  color: whitesmoke;
+  border-color: transparent;
+}
+
 .content-article {
   color: whitesmoke;
   background-color: #3f3d49;
+}
+
+.content-article label {
+  color: whitesmoke;
+  font-weight: normal;
+}
+
+.input-bar {
+  background-color: #19191b;
+  color: white;
+  border-color: #2a2735;
+}
+
+.input-bar::-webkit-input-placeholder {
+    color: #8c91a0;
+    text-shadow: none;
+    -webkit-text-fill-color: initial;
+}
+
+.title-text {
+  border-bottom: 1px solid;
+  padding-bottom: 8px;
 }
 </style>

@@ -7,10 +7,10 @@
             <i class="fa fa-search fa-lg" aria-hidden="true"/>
           </div>
           <div>
-            <input class="borderless-search" type="text" placeholder="Find a pipeline ..." v-model="search">
+            <input class="borderless-search" type="text" placeholder="Find pipeline ..." v-model="search">
           </div>
           <div class="navbar-button">
-            <a class="button create-pipeline-button" @click="createPipeline">
+            <a class="button" @click="createPipeline">
               <span class="icon">
                 <i class="fa fa-plus"></i>
               </span>
@@ -46,7 +46,7 @@
         <div class="block login-modal-content">
           <div class="login-modal-content">
             <p class="control has-icons-left">
-              <input class="input is-large login-input" v-focus type="text" v-model="username" @keyup.enter="login" placeholder="Username">
+              <input class="input is-large input-bar" v-focus type="text" v-model="username" @keyup.enter="login" placeholder="Username">
               <span class="icon is-small is-left">
                 <i class="fa fa-user-circle"></i>
               </span>
@@ -54,7 +54,7 @@
           </div>
           <div class="login-modal-content">
             <p class="control has-icons-left">
-              <input class="input is-large login-input" type="password" @keyup.enter="login" v-model="password" placeholder="Password">
+              <input class="input is-large input-bar" type="password" @keyup.enter="login" v-model="password" placeholder="Password">
               <span class="icon is-small is-left">
                 <i class="fa fa-lock"></i>
               </span>
@@ -165,18 +165,6 @@ export default {
 
 <style lang="scss">
 
-.create-pipeline-button {
-  background-color: #4da2fc !important;
-  font-weight: bold;
-  border-color: transparent;
-  color: whitesmoke;
-}
-
-.create-pipeline-button:hover, .create-pipeline-button:active, .create-pipeline-button:focus {
-  color: whitesmoke;
-  border-color: transparent;
-}
-
 .navbar-button {
   padding-top: 17px;  
 }
@@ -219,20 +207,7 @@ export default {
   padding: 10px;
 }
 
-.login-input {
-  background-color: #3f3d49;
-  color: white;
-  border-color: #2a2735;
-}
-
-.login-input::-webkit-input-placeholder {
-    color: #8c91a0;
-    text-shadow: none;
-    -webkit-text-fill-color: initial;
-}
-
 .login-button {
-  background-color: #4da2fc !important;
   width: 150px;
   height: 50px;
 }
