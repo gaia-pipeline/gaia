@@ -114,7 +114,7 @@ html {
   background-color: #3f3d49;
 }
 
-.content-article label {
+.label {
   color: whitesmoke;
   font-weight: normal;
 }
@@ -132,7 +132,19 @@ html {
 }
 
 .title-text {
-  border-bottom: 1px solid;
+  border-bottom: 1px whitesmoke solid;
   padding-bottom: 8px;
+  text-align: center;
+  color: #ff651d !important;
+}
+
+.modal-z-index {
+  z-index: 1025;
+}
+
+@media screen and (min-width: 768px) {
+  .modal-content {
+    width: 480px; /* either % (e.g. 60%) or px (400px) */
+  }
 }
 </style>

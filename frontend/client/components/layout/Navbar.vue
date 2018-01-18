@@ -212,12 +212,6 @@ export default {
   height: 50px;
 }
 
-@media screen and (min-width: 768px) {
-  .modal-content {
-    width: 480px; /* either % (e.g. 60%) or px (400px) */
-  }
-}
-
 .navbar-start {
   padding-left: 240px;
 }
@@ -267,10 +261,6 @@ export default {
   .container {
     margin: auto 10px;
   }
-}
-
-.modal-z-index {
-  z-index: 1025;
 }
 
 .sign-in-text {

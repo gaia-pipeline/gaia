@@ -42,6 +42,7 @@ func InitHandlers(c *gaia.Config, i *iris.Application, s *store.Store) error {
 	p := "/api/" + apiVersion + "/"
 
 	i.Post(p+"users/login", UserLogin)
+	i.Post(p+"pipelines/gitlsremote", PipelineGitLSRemote)
 
 	return nil
 }
