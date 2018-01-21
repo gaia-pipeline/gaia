@@ -10,7 +10,7 @@
             <input class="borderless-search" type="text" placeholder="Find pipeline ..." v-model="search">
           </div>
           <div class="navbar-button">
-            <a class="button" @click="createPipeline">
+            <a class="button is-primary" @click="createPipeline">
               <span class="icon">
                 <i class="fa fa-plus"></i>
               </span>
@@ -233,7 +233,7 @@ export default {
   height: 70px;
   background-color: transparent;
   padding-left: 20px;
-  color: #4da2fc;
+  color: whitesmoke;
   font-size: 20px;
 }
 
@@ -248,6 +248,12 @@ export default {
     color: #8c91a0;
     text-shadow: none;
     -webkit-text-fill-color: initial;
+}
+
+.borderless-search::-moz-placeholder {
+    color: #8c91a0;
+    text-shadow: none;
+    opacity: 1;
 }
 
 .app-navbar {

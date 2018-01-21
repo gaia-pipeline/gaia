@@ -97,14 +97,14 @@ html {
   }
 }
 
-.button {
+.is-primary {
   background-color: #4da2fc !important;
   font-weight: bold;
   border-color: transparent;
   color: whitesmoke;
 }
 
-.button:hover, .button:active, .button:focus {
+.is-primary:hover, .button:active, .button:focus {
   color: whitesmoke;
   border-color: transparent;
 }
@@ -131,6 +131,12 @@ html {
     -webkit-text-fill-color: initial;
 }
 
+.input-bar::-moz-placeholder { 
+    color: #8c91a0;
+    text-shadow: none;
+    opacity: 1;
+}
+
 .title-text {
   border-bottom: 1px whitesmoke solid;
   padding-bottom: 8px;
@@ -147,4 +153,17 @@ html {
     width: 480px; /* either % (e.g. 60%) or px (400px) */
   }
 }
+
+.collapse-item {
+  background-color: black;
+
+  .card-header {
+    background-color: #3f3d49;
+  }
+}
+
+.card-header-title {
+  color: whitesmoke;
+}
+
 </style>

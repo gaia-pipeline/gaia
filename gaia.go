@@ -23,11 +23,18 @@ type Pipeline struct {
 
 // GitRepo represents a single git repository
 type GitRepo struct {
-	URL        string   `json:"giturl"`
-	Username   string   `json:"gituser"`
-	Password   string   `json:"gitpassword"`
-	PrivateKey string   `json:"gitkey"`
-	Branches   []string `json:"branches"`
+	URL        string     `json:"giturl"`
+	Username   string     `json:"gituser"`
+	Password   string     `json:"gitpassword"`
+	PrivateKey PrivateKey `json:"privatekey"`
+	Branches   []string   `json:"gitbranches"`
+}
+
+// PrivateKey represents a pem encoded private key
+type PrivateKey struct {
+	Key      string `json:"key"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 // Config holds all config options

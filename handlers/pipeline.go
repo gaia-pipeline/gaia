@@ -35,6 +35,8 @@ func PipelineGitLSRemote(ctx iris.Context) {
 	if repo.Username != "" && repo.Password != "" {
 		ep.User = repo.Username
 		ep.Password = repo.Password
+	} else if repo.PrivateKey != "" {
+
 	}
 
 	// Create client
