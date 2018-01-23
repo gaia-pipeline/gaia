@@ -24,7 +24,7 @@ func UserLogin(ctx iris.Context) {
 	if err := ctx.ReadJSON(u); err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.WriteString(err.Error())
-		cfg.Logger.Error("error reading json during UserLogin", "error", err.Error())
+		cfg.Logger.Debug("error reading json during UserLogin", "error", err.Error())
 		return
 	}
 

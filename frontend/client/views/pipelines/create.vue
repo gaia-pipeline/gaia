@@ -4,7 +4,6 @@
       <div class="tile">
         <div class="tile is-parent is-vertical">
           <article class="tile is-child notification content-article">
-            <!--<p class="title title-text">Compile from source</p>-->
             <div class="content">
               <label class="label">Copy the link of your <strong>git repo</strong> here.</label>
               <p class="control has-icons-left">

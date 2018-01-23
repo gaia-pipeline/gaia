@@ -6,6 +6,14 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 )
 
+// PluginType represents supported plugin types
+type PluginType int
+
+const (
+	// GOLANG plugin type
+	GOLANG PluginType = iota
+)
+
 // User is the user object
 type User struct {
 	Username    string `json:"username"`
@@ -17,8 +25,9 @@ type User struct {
 
 // Pipeline represents a single pipeline
 type Pipeline struct {
-	Name string  `json:"pipelinename"`
-	Repo GitRepo `json:"gitrepo"`
+	Name string     `json:"pipelinename"`
+	Repo GitRepo    `json:"gitrepo"`
+	Type PluginType `json:"plugintype"`
 }
 
 // GitRepo represents a single git repository
@@ -28,6 +37,7 @@ type GitRepo struct {
 	Password   string     `json:"gitpassword"`
 	PrivateKey PrivateKey `json:"privatekey"`
 	Branches   []string   `json:"gitbranches"`
+	LocalDest  string
 }
 
 // PrivateKey represents a pem encoded private key
