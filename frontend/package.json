@@ -1,9 +1,9 @@
 {
   "name": "gaia",
   "version": "0.1.1",
-  "description": "Build powerful pipelines with any language",
-  "repository": "michelvocks/gaia",
-  "homepage": "https://github.com/michelvocks/gaia",
+  "description": "Build powerful automation pipelines in the langauge you think is the best.",
+  "repository": "gaia-pipeline/gaia",
+  "homepage": "https://github.com/gaia-pipeline/gaia",
   "license": "Apache-2.0",
   "author": {
     "name": "Michel Vocks",
@@ -15,8 +15,7 @@
     "pipeline",
     "golang",
     "build",
-    "deployment",
-    "kubernetes"
+    "deployment"
   ],
   "engines": {
     "node": ">=4",

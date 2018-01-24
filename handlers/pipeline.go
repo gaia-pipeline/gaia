@@ -39,8 +39,18 @@ func PipelineBuildFromSource(ctx iris.Context) {
 	}
 
 	// Clone git repo
+	err := pipeline.GitCloneRepo(&p.Repo)
+	if err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.WriteString(err.Error())
+		return
+	}
 
-	// set go compiler variables
-	// compile
+	// Start compiling process for given plugin type
+	switch p.Type {
+	case gaia.GOLANG:
+		// Start compile process for golang TODO
+	}
+
 	// copy compiled binary to plugins folder
 }

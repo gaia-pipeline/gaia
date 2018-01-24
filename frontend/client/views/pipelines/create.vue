@@ -39,7 +39,7 @@
                 </span>
               </p>
               <hr class="dotted-line">
-              <a class="button is-primary">
+              <a class="button is-primary" v-on:click="createPipeline">
                 <span class="icon">
                   <i class="fa fa-plus"></i>
                 </span>
@@ -176,7 +176,7 @@ export default {
         }
 
         // if we cannot find master
-        if (!this.gitBranchSelected) {
+        if (!this.gitBranchSelected && this.gitBranches.length > 0) {
           this.gitBranchSelected = this.gitBranches[0]
         }
 
@@ -192,6 +192,33 @@ export default {
           this.gitNeedAuth = false
         }
         console.log(error.response.data)
+      })
+    },
+
+    createPipeline () {
+      var gitrepo = {
+        giturl: this.gitURL,
+        gituser: this.gitUsername,
+        gitpassword: this.gitPassword,
+        selectedbranch: this.gitBranchSelected,
+        privatekey: {
+          key: this.privateKey,
+          username: this.keyUsername,
+          password: this.keyPassword
+        }
+      }
+
+      var pipeline = {
+        pipelinename: this.pipelineName,
+        gitrepo: gitrepo
+      }
+
+      this.$http.post('/api/v1/pipelines/create', pipeline)
+      .then((response) => {
+        console.log("Pipeline successful created!")
+      })
+      .catch((error) => {
+        console.log(error)
       })
     },
 

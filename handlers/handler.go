@@ -41,8 +41,10 @@ func InitHandlers(c *gaia.Config, i *iris.Application, s *store.Store) error {
 	// Define prefix
 	p := "/api/" + apiVersion + "/"
 
+	// Register handlers at iris instance
 	i.Post(p+"users/login", UserLogin)
 	i.Post(p+"pipelines/gitlsremote", PipelineGitLSRemote)
+	i.Post(p+"pipelines/create", PipelineBuildFromSource)
 
 	return nil
 }
