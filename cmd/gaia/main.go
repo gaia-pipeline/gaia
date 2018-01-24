@@ -4,11 +4,11 @@ import (
 	"flag"
 	"os"
 
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/handlers"
+	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/kataras/iris"
-	"github.com/michelvocks/gaia"
-	"github.com/michelvocks/gaia/handlers"
-	"github.com/michelvocks/gaia/store"
 )
 
 var (

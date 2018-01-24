@@ -9,7 +9,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/michelvocks/gaia/proto"
+	"github.com/gaia-pipeline/gaia/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"

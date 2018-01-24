@@ -1,6 +1,6 @@
 package golang
 
-import "github.com/michelvocks/gaia/proto"
+import "github.com/gaia-pipeline/gaia/proto"
 
 // Jobs new type for wrapper around proto.job
 type Jobs []JobsWrapper

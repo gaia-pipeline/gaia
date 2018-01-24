@@ -4,12 +4,12 @@ import (
 	"os"
 	"testing"
 
-	"github.com/michelvocks/gaia"
+	"github.com/gaia-pipeline/gaia"
 )
 
 func TestGitCloneRepo(t *testing.T) {
 	repo := &gaia.GitRepo{
-		URL: "https://github.com/michelvocks/gaia",
+		URL: "https://github.com/gaia-pipeline/gaia",
 	}
 	err := GitCloneRepo(repo)
 	if err != nil {

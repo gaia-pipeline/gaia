@@ -4,8 +4,8 @@ import (
 	"errors"
 	"os/exec"
 
+	"github.com/gaia-pipeline/gaia/proto"
 	plugin "github.com/hashicorp/go-plugin"
-	"github.com/michelvocks/gaia/proto"
 )
 
 const (

@@ -6,7 +6,7 @@ import (
 	"os"
 
 	bolt "github.com/coreos/bbolt"
-	"github.com/michelvocks/gaia"
+	"github.com/gaia-pipeline/gaia"
 	"golang.org/x/crypto/bcrypt"
 )
 

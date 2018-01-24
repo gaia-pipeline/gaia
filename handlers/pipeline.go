@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/pipeline"
 	"github.com/kataras/iris"
-	"github.com/michelvocks/gaia"
-	"github.com/michelvocks/gaia/pipeline"
 )
 
 // PipelineGitLSRemote checks for available git remote branches.

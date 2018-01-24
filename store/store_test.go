@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/michelvocks/gaia"
+	"github.com/gaia-pipeline/gaia"
 )
 
 var store *Store

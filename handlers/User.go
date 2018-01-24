@@ -4,8 +4,8 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/gaia-pipeline/gaia"
 	"github.com/kataras/iris"
-	"github.com/michelvocks/gaia"
 )
 
 // jwtExpiry defines how long the produced jwt tokens

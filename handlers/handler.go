@@ -3,9 +3,9 @@ package handlers
 import (
 	"crypto/rand"
 
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/store"
 	"github.com/kataras/iris"
-	"github.com/michelvocks/gaia"
-	"github.com/michelvocks/gaia/store"
 )
 
 const (
