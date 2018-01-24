@@ -166,4 +166,14 @@ html {
   color: whitesmoke;
 }
 
+.select select {
+  background-color: #19191b;
+  color: white;
+  border-color: #2a2735;
+}
+
+.is-blue {
+  color: #4da2fc !important;
+}
+
 </style>

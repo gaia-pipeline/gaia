@@ -4,6 +4,8 @@ import (
 	"os"
 	"strings"
 
+	"gopkg.in/src-d/go-git.v4/plumbing"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/satori/go.uuid"
 	git "gopkg.in/src-d/go-git.v4"
@@ -29,12 +31,12 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 	}
 
 	// Attach credentials if provided
-	var sshKey *ssh.PublicKeys
+	var auth transport.AuthMethod
 	if repo.Username != "" && repo.Password != "" {
 		ep.User = repo.Username
 		ep.Password = repo.Password
 	} else if repo.PrivateKey.Key != "" {
-		sshKey, err = ssh.NewPublicKeys(repo.PrivateKey.Username, []byte(repo.PrivateKey.Key), repo.PrivateKey.Password)
+		auth, err = ssh.NewPublicKeys(repo.PrivateKey.Username, []byte(repo.PrivateKey.Key), repo.PrivateKey.Password)
 		if err != nil {
 			return err
 		}
@@ -47,7 +49,7 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 	}
 
 	// Open new session
-	s, err := cl.NewUploadPackSession(ep, sshKey)
+	s, err := cl.NewUploadPackSession(ep, auth)
 	if err != nil {
 		return err
 	}
@@ -112,7 +114,7 @@ func GitCloneRepo(repo *gaia.GitRepo) error {
 		URL:               repo.URL,
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 		SingleBranch:      true,
-		RemoteName:        repo.SelectedBranch,
+		ReferenceName:     plumbing.ReferenceName(repo.SelectedBranch),
 	})
 	if err != nil {
 		return err

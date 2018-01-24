@@ -1,53 +1,70 @@
 <template>
   <div class="tile is-ancestor">
-    <div class="tile is-vertical is-5">
-      <div class="tile">
-        <div class="tile is-parent is-vertical">
-          <article class="tile is-child notification content-article">
-            <div class="content">
-              <label class="label">Copy the link of your <strong>git repo</strong> here.</label>
-              <p class="control has-icons-left">
-                <input class="input is-medium input-bar" v-focus v-model.lazy="gitURL" type="text" placeholder="Link to git repo ...">
-                <span class="icon is-small is-left">
-                  <i class="fa fa-git"></i>
-                </span>
-                <span style="color: red;" v-if="gitNeedAuth">You are not authorized. Invalid username and/or password!</span>
-                <span style="color: red;" v-if="gitInvalidURL">Invalid link to git repo provided!</span>
-                <div v-if="gitBranches.length > 0">
-                  <span>Branch:</span>
-                  <div class="select is-fullwidth">
-                    <select v-model="gitBranchSelected">
-                      <option v-for="branch in gitBranches" :key="branch" :value="branch">{{ branch }}</option>
-                    </select>
-                  </div>
-                </div>
-              </p>
-              <p class="control">
-                <a class="button is-primary" v-on:click="showCredentialsModal">
-                  <span class="icon">
-                    <i class="fa fa-certificate"></i>
-                  </span>
-                  <span>Add credentials</span>
-                </a>
-              </p>
-              <hr class="dotted-line">
-              <label class="label">Type the name of your pipeline. You can put your pipelines into folders by defining a path. For example <strong>MyFolder/MyAwesomePipeline</strong>.</label>
-              <p class="control has-icons-left">
-                <input class="input is-medium input-bar" v-model="pipelineName" type="text" placeholder="Pipeline name ...">
-                <span class="icon is-small is-left">
-                  <i class="fa fa-book"></i>
-                </span>
-              </p>
-              <hr class="dotted-line">
-              <a class="button is-primary" v-on:click="createPipeline">
-                <span class="icon">
-                  <i class="fa fa-plus"></i>
-                </span>
-                <span>Create Pipeline</span>
-              </a>
+    <div class="tile is-vertical is-parent is-5">
+      <article class="tile is-child notification content-article">
+        <div class="content">
+          <label class="label">Copy the link of your <strong>git repo</strong> here.</label>
+          <p class="control has-icons-left" v-bind:class="{ 'has-icons-right': gitSuccess }">
+            <input class="input is-medium input-bar" v-focus v-model.lazy="gitURL" type="text" placeholder="Link to git repo ...">
+            <span class="icon is-small is-left">
+              <i class="fa fa-git"></i>
+            </span>
+            <span v-if="gitSuccess" class="icon is-small is-right is-blue">
+              <i class="fa fa-check"></i>
+            </span>
+          </p>
+          <span style="color: red" v-if="gitErrorMsg">Cannot access git repo: {{ gitErrorMsg }}</span>
+          <div v-if="gitBranches.length > 0">
+            <span>Branch:</span>
+            <div class="select is-fullwidth">
+              <select v-model="gitBranchSelected">
+                <option v-for="branch in gitBranches" :key="branch" :value="branch">{{ branch }}</option>
+              </select>
             </div>
-          </article>
+          </div>
+          <p class="control" style="padding-top: 10px;">
+            <a class="button is-primary" v-on:click="showCredentialsModal">
+              <span class="icon">
+                <i class="fa fa-certificate"></i>
+              </span>
+              <span>Add credentials</span>
+            </a>
+          </p>
+          <hr class="dotted-line">
+          <label class="label">Type the name of your pipeline. You can put your pipelines into folders by defining a path. For example <strong>MyFolder/MyAwesomePipeline</strong>.</label>
+          <p class="control has-icons-left">
+            <input class="input is-medium input-bar" v-model="pipelineName" type="text" placeholder="Pipeline name ...">
+            <span class="icon is-small is-left">
+              <i class="fa fa-book"></i>
+            </span>
+          </p>
+          <hr class="dotted-line">
+          <a class="button is-primary" v-on:click="createPipeline" v-bind:class="{ 'is-loading': createPipelineStatus }">
+            <span class="icon">
+              <i class="fa fa-plus"></i>
+            </span>
+            <span>Create Pipeline</span>
+          </a>
         </div>
+      </article>
+
+      <div class="tile is-child">
+        <article class="tile is-child notification content-article">
+          <div class="content">
+            Current Status: Some-Status-Here            
+            <progress-bar :type="'info'" :size="'medium'" :value="45" :max="100" :show-label="true"></progress-bar>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div class="tile is-vertical is-parent is-3">
+      <div class="tile is-child">
+        <article class="tile is-child notification content-article">
+          <div class="content">
+            Plugin Types here *TODO*
+          </div>
+        </article>
       </div>
     </div>
 
@@ -112,14 +129,15 @@
 <script>
 import { Modal } from 'vue-bulma-modal'
 import { Collapse, Item as CollapseItem } from 'vue-bulma-collapse'
+import ProgressBar from 'vue-bulma-progress-bar'
 
 export default {
 
   data () {
     return {
       gitURL: '',
-      gitNeedAuth: false,
-      gitInvalidURL: false,
+      gitErrorMsg: '',
+      gitSuccess: false,
       gitCredentialsModal: false,
       gitUsername: '',
       gitPassword: '',
@@ -128,14 +146,16 @@ export default {
       keyPassword: '',
       gitBranches: [],
       gitBranchSelected: '',
-      pipelineName: ''
+      pipelineName: '',
+      createPipelineStatus: '20'
     }
   },
 
   components: {
     Modal,
     Collapse,
-    CollapseItem
+    CollapseItem,
+    ProgressBar
   },
 
   watch: {
@@ -149,6 +169,11 @@ export default {
       if (this.gitURL === '') {
         return
       }
+
+      // Reset last fetches
+      this.gitBranches = []
+      this.gitBranchSelected = ''
+      this.gitSuccess = false
 
       var gitrepo = {
         giturl: this.gitURL,
@@ -164,8 +189,8 @@ export default {
       this.$http.post('/api/v1/pipelines/gitlsremote', gitrepo)
       .then((response) => {
         // Reset error message before
-        this.gitNeedAuth = false
-        this.gitInvalidURL = false
+        this.gitErrorMsg = ''
+        this.gitSuccess = true
 
         // Get branches and set to master if available
         this.gitBranches = response.data.gitbranches
@@ -179,19 +204,10 @@ export default {
         if (!this.gitBranchSelected && this.gitBranches.length > 0) {
           this.gitBranchSelected = this.gitBranches[0]
         }
-
-        console.log(response.data)
       })
       .catch((error) => {
-        // Need authentication
-        if (error.response && error.response.status === 403) {
-          this.gitNeedAuth = true
-          this.gitInvalidURL = false
-        } else if (error.response && error.response.status === 400) {
-          this.gitInvalidURL = true
-          this.gitNeedAuth = false
-        }
-        console.log(error.response.data)
+        // Add error message
+        this.gitErrorMsg = error.response.data
       })
     },
 
@@ -213,13 +229,15 @@ export default {
         gitrepo: gitrepo
       }
 
+      this.createPipelineStatus = '20'
       this.$http.post('/api/v1/pipelines/create', pipeline)
       .then((response) => {
-        console.log("Pipeline successful created!")
+        console.log('Pipeline successful created!')
       })
       .catch((error) => {
-        console.log(error)
+        console.log(error.response.data)
       })
+      this.createPipelineStatus = '100'
     },
 
     close () {
