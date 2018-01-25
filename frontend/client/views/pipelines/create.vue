@@ -5,7 +5,7 @@
         <div class="content">
           <label class="label">Copy the link of your <strong>git repo</strong> here.</label>
           <p class="control has-icons-left" v-bind:class="{ 'has-icons-right': gitSuccess }">
-            <input class="input is-medium input-bar" v-focus v-model.lazy="gitURL" type="text" placeholder="Link to git repo ...">
+            <input class="input is-medium input-bar" v-focus v-model.lazy="giturl" type="text" placeholder="Link to git repo ...">
             <span class="icon is-small is-left">
               <i class="fa fa-git"></i>
             </span>
@@ -17,7 +17,7 @@
           <div v-if="gitBranches.length > 0">
             <span>Branch:</span>
             <div class="select is-fullwidth">
-              <select v-model="gitBranchSelected">
+              <select v-model="pipeline.gitrepo.selectedbranch">
                 <option v-for="branch in gitBranches" :key="branch" :value="branch">{{ branch }}</option>
               </select>
             </div>
@@ -33,13 +33,13 @@
           <hr class="dotted-line">
           <label class="label">Type the name of your pipeline. You can put your pipelines into folders by defining a path. For example <strong>MyFolder/MyAwesomePipeline</strong>.</label>
           <p class="control has-icons-left">
-            <input class="input is-medium input-bar" v-model="pipelineName" type="text" placeholder="Pipeline name ...">
+            <input class="input is-medium input-bar" v-model="pipeline.pipelinename" type="text" placeholder="Pipeline name ...">
             <span class="icon is-small is-left">
               <i class="fa fa-book"></i>
             </span>
           </p>
           <hr class="dotted-line">
-          <a class="button is-primary" v-on:click="createPipeline" v-bind:class="{ 'is-loading': createPipelineStatus }">
+          <a class="button is-primary is-disabled" v-on:click="createPipeline" v-bind:class="{ 'is-loading': createPipelineStatus }">
             <span class="icon">
               <i class="fa fa-plus"></i>
             </span>
@@ -48,11 +48,11 @@
         </div>
       </article>
 
-      <div class="tile is-child">
+      <div class="tile is-child" v-if="createPipelineStatus">
         <article class="tile is-child notification content-article">
           <div class="content">
             Current Status: Some-Status-Here            
-            <progress-bar :type="'info'" :size="'medium'" :value="45" :max="100" :show-label="true"></progress-bar>
+            <progress-bar :type="'info'" :size="'medium'" :value="createPipelineStatus" :max="100" :show-label="true"></progress-bar>
           </div>
         </article>
       </div>
@@ -77,13 +77,13 @@
               <div class="credentials-modal-content">
                 <label class="label" style="text-align: left;">Add credentials for basic authentication:</label>
                 <p class="control has-icons-left" style="padding-bottom: 5px;">
-                  <input class="input is-medium input-bar" v-focus type="text" v-model="gitUsername" placeholder="Username">
+                  <input class="input is-medium input-bar" v-focus type="text" v-model="pipeline.gitrepo.gituser" placeholder="Username">
                   <span class="icon is-small is-left">
                     <i class="fa fa-user-circle"></i>
                   </span>
                 </p>
                 <p class="control has-icons-left">
-                  <input class="input is-medium input-bar" type="password" v-model="gitPassword" placeholder="Password">
+                  <input class="input is-medium input-bar" type="password" v-model="pipeline.gitrepo.password" placeholder="Password">
                   <span class="icon is-small is-left">
                     <i class="fa fa-lock"></i>
                   </span>
@@ -94,18 +94,18 @@
               <label class="label" style="text-align: left;">Instead of using basic authentication, provide a pem encoded private key.</label>
               <div class="block credentials-modal-content">
                 <p class="control">
-                  <textarea class="textarea input-bar" v-model="privateKey"></textarea>
+                  <textarea class="textarea input-bar" v-model="pipeline.gitrepo.privatekey.key"></textarea>
                 </p>
               </div>
               <h2><span>Additional:</span></h2>
               <p class="control has-icons-left" style="padding-bottom: 5px;">
-                <input class="input is-medium input-bar" v-focus type="text" v-model="keyUsername" placeholder="Username">
+                <input class="input is-medium input-bar" v-focus type="text" v-model="pipeline.gitrepo.privatekey.username" placeholder="Username">
                 <span class="icon is-small is-left">
                   <i class="fa fa-user-circle"></i>
                 </span>
               </p>
               <p class="control has-icons-left">
-                <input class="input is-medium input-bar" type="password" v-model="keyPassword" placeholder="Password">
+                <input class="input is-medium input-bar" type="password" v-model="pipeline.gitrepo.privatekey.password" placeholder="Password">
                 <span class="icon is-small is-left">
                   <i class="fa fa-lock"></i>
                 </span>
@@ -135,19 +135,26 @@ export default {
 
   data () {
     return {
-      gitURL: '',
       gitErrorMsg: '',
       gitSuccess: false,
       gitCredentialsModal: false,
-      gitUsername: '',
-      gitPassword: '',
-      privateKey: '',
-      keyUsername: '',
-      keyPassword: '',
       gitBranches: [],
-      gitBranchSelected: '',
-      pipelineName: '',
-      createPipelineStatus: '20'
+      createPipelineStatus: 0,
+      giturl: '',
+      pipeline: {
+        pipelinename: '',
+        gitrepo: {
+          giturl: '',
+          gituser: '',
+          gitpassword: '',
+          selectedbranch: '',
+          privatekey: {
+            key: '',
+            username: '',
+            password: ''
+          }
+        }
+      }
     }
   },
 
@@ -159,34 +166,26 @@ export default {
   },
 
   watch: {
-    gitURL: function () {
+    giturl: function () {
       this.checkGitRepo()
     }
   },
 
   methods: {
     checkGitRepo () {
-      if (this.gitURL === '') {
+      if (this.giturl === '') {
         return
       }
 
+      // copy giturl into our struct
+      this.pipeline.gitrepo.giturl = this.giturl
+
       // Reset last fetches
       this.gitBranches = []
-      this.gitBranchSelected = ''
+      this.pipeline.gitrepo.selectedbranch = ''
       this.gitSuccess = false
 
-      var gitrepo = {
-        giturl: this.gitURL,
-        gituser: this.gitUsername,
-        gitpassword: this.gitPassword,
-        privatekey: {
-          key: this.privateKey,
-          username: this.keyUsername,
-          password: this.keyPassword
-        }
-      }
-
-      this.$http.post('/api/v1/pipelines/gitlsremote', gitrepo)
+      this.$http.post('/api/v1/pipelines/gitlsremote', this.pipeline.gitrepo)
       .then((response) => {
         // Reset error message before
         this.gitErrorMsg = ''
@@ -196,13 +195,13 @@ export default {
         this.gitBranches = response.data.gitbranches
         for (var i = 0; i < this.gitBranches.length; i++) {
           if (this.gitBranches[i] === 'refs/heads/master') {
-            this.gitBranchSelected = this.gitBranches[i]
+            this.pipeline.gitrepo.selectedbranch = this.gitBranches[i]
           }
         }
 
         // if we cannot find master
-        if (!this.gitBranchSelected && this.gitBranches.length > 0) {
-          this.gitBranchSelected = this.gitBranches[0]
+        if (!this.pipeline.gitrepo.selectedbranch && this.gitBranches.length > 0) {
+          this.pipeline.gitrepo.selectedbranch = this.gitBranches[0]
         }
       })
       .catch((error) => {
@@ -212,32 +211,24 @@ export default {
     },
 
     createPipeline () {
-      var gitrepo = {
-        giturl: this.gitURL,
-        gituser: this.gitUsername,
-        gitpassword: this.gitPassword,
-        selectedbranch: this.gitBranchSelected,
-        privatekey: {
-          key: this.privateKey,
-          username: this.keyUsername,
-          password: this.keyPassword
-        }
-      }
+      // let's start with 10% for the progress bar
+      this.createPipelineStatus = 10
 
-      var pipeline = {
-        pipelinename: this.pipelineName,
-        gitrepo: gitrepo
-      }
+      // copy giturl into our struct
+      this.pipeline.gitrepo.giturl = this.giturl
 
-      this.createPipelineStatus = '20'
-      this.$http.post('/api/v1/pipelines/create', pipeline)
+      // Checkout git repo
+      this.$http.post('/api/v1/pipelines/create', this.pipeline)
       .then((response) => {
         console.log('Pipeline successful created!')
+        this.createPipelineStatus = 30
       })
       .catch((error) => {
         console.log(error.response.data)
       })
-      this.createPipelineStatus = '100'
+
+      // finish
+      this.createPipelineStatus = 100
     },
 
     close () {
@@ -248,11 +239,11 @@ export default {
 
     cancel () {
       // cancel means reset all stuff
-      this.gitUsername = ''
-      this.gitPassword = ''
-      this.privateKey = ''
-      this.keyUsername = ''
-      this.keyPassword = ''
+      this.pipeline.gitrepo.gituser = ''
+      this.pipeline.gitrepo.gitpassword = ''
+      this.pipeline.gitrepo.privatekey.key = ''
+      this.pipeline.gitrepo.privatekey.username = ''
+      this.pipeline.gitrepo.privatekey.password = ''
 
       this.close()
     },
