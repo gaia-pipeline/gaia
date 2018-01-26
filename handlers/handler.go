@@ -36,7 +36,6 @@ func InitHandlers(c *gaia.Config, i *iris.Application, s *store.Store) error {
 	if err != nil {
 		return err
 	}
-	cfg.Logger.Info("jwt signing key generated", "key", jwtKey)
 
 	// Define prefix
 	p := "/api/" + apiVersion + "/"
@@ -45,6 +44,7 @@ func InitHandlers(c *gaia.Config, i *iris.Application, s *store.Store) error {
 	i.Post(p+"users/login", UserLogin)
 	i.Post(p+"pipelines/gitlsremote", PipelineGitLSRemote)
 	i.Post(p+"pipelines/create", PipelineBuildFromSource)
+	i.Post(p+"pipelines/nameavailable", PipelineNameAvailable)
 
 	return nil
 }

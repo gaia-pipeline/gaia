@@ -109,6 +109,11 @@ html {
   border-color: transparent;
 }
 
+.is-disabled {
+  opacity: .5;
+  pointer-events: none;
+}
+
 .content-article {
   color: whitesmoke;
   background-color: #3f3d49;

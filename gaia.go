@@ -7,11 +7,11 @@ import (
 )
 
 // PluginType represents supported plugin types
-type PluginType int
+type PluginType string
 
 const (
 	// GOLANG plugin type
-	GOLANG PluginType = iota
+	GOLANG PluginType = "golang"
 )
 
 // User is the user object
@@ -27,7 +27,7 @@ type User struct {
 type Pipeline struct {
 	Name string     `json:"pipelinename"`
 	Repo GitRepo    `json:"gitrepo"`
-	Type PluginType `json:"plugintype"`
+	Type PluginType `json:"pipelinetype"`
 }
 
 // GitRepo represents a single git repository

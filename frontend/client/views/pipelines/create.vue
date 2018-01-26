@@ -32,14 +32,18 @@
           </p>
           <hr class="dotted-line">
           <label class="label">Type the name of your pipeline. You can put your pipelines into folders by defining a path. For example <strong>MyFolder/MyAwesomePipeline</strong>.</label>
-          <p class="control has-icons-left">
-            <input class="input is-medium input-bar" v-model="pipeline.pipelinename" type="text" placeholder="Pipeline name ...">
+          <p class="control has-icons-left" v-bind:class="{ 'has-icons-right': pipelineNameSuccess }">
+            <input class="input is-medium input-bar" v-model="pipelinename" type="text" placeholder="Pipeline name ...">
             <span class="icon is-small is-left">
               <i class="fa fa-book"></i>
             </span>
+            <span v-if="pipelineNameSuccess" class="icon is-small is-right is-blue">
+              <i class="fa fa-check"></i>
+            </span>
           </p>
+          <span style="color: red" v-if="pipelineErrorMsg">Pipeline Name incorrect: {{ pipelineErrorMsg }}</span>
           <hr class="dotted-line">
-          <a class="button is-primary is-disabled" v-on:click="createPipeline" v-bind:class="{ 'is-loading': createPipelineStatus }">
+          <a class="button is-primary" v-on:click="createPipeline" v-bind:class="{ 'is-loading': createPipelineStatus, 'is-disabled': !gitSuccess || !pipelineNameSuccess }">
             <span class="icon">
               <i class="fa fa-plus"></i>
             </span>
@@ -59,13 +63,28 @@
     </div>
 
     <div class="tile is-vertical is-parent is-3">
-      <div class="tile is-child">
-        <article class="tile is-child notification content-article">
-          <div class="content">
-            Plugin Types here *TODO*
+        <article class="tile is-child notification content-article box">
+          <p class="subtitle">Select pipeline language</p>
+          <div class="content" style="display: flex;">
+            <div class="pipelinetype tippy" title="Golang" v-on:click="pipeline.pipelinetype = 'golang'" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'golang' }" data-tippy-hideOnClick="false">
+              <img src="~assets/golang.png" class="typeimage">
+            </div>
+            <div class="pipelinetype tippy" title="Python (not yet supported)" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'python' }" data-tippy-hideOnClick="false">
+              <img src="~assets/python.png" class="typeimage typeimagenotyetsupported">
+            </div>
+            <div class="pipelinetype tippy" title="Java (not yet supported)" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'java' }" data-tippy-hideOnClick="false">
+              <img src="~assets/java.png" class="typeimage typeimagenotyetsupported">
+            </div>
+          </div>
+          <div class="content" style="display: flex;">
+            <div class="pipelinetype tippy" title="C++ (not yet supported)" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'cplusplus' }" data-tippy-hideOnClick="false">
+              <img src="~assets/cplusplus.png" class="typeimage typeimagenotyetsupported">
+            </div>
+            <div class="pipelinetype tippy" title="Node.js (not yet supported)" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'nodejs' }" data-tippy-hideOnClick="false">
+              <img src="~assets/nodejs.png" class="typeimage typeimagenotyetsupported">
+            </div>
           </div>
         </article>
-      </div>
     </div>
 
     <!-- Credentials modal -->
@@ -130,6 +149,7 @@
 import { Modal } from 'vue-bulma-modal'
 import { Collapse, Item as CollapseItem } from 'vue-bulma-collapse'
 import ProgressBar from 'vue-bulma-progress-bar'
+import Tippy from 'tippy.js'
 
 export default {
 
@@ -141,8 +161,12 @@ export default {
       gitBranches: [],
       createPipelineStatus: 0,
       giturl: '',
+      pipelinename: '',
+      pipelineNameSuccess: false,
+      pipelineErrorMsg: '',
       pipeline: {
         pipelinename: '',
+        pipelinetype: 'golang',
         gitrepo: {
           giturl: '',
           gituser: '',
@@ -162,12 +186,26 @@ export default {
     Modal,
     Collapse,
     CollapseItem,
-    ProgressBar
+    ProgressBar,
+    Tippy
+  },
+
+  mounted () {
+    // tippy
+    Tippy('.tippy', {
+      placement: 'top',
+      animation: 'scale',
+      duration: 500,
+      arrow: true
+    })
   },
 
   watch: {
     giturl: function () {
       this.checkGitRepo()
+    },
+    pipelinename: function () {
+      this.checkPipelineNameAvailable()
     }
   },
 
@@ -210,12 +248,30 @@ export default {
       })
     },
 
+    checkPipelineNameAvailable () {
+      // copy pipeline name into struct
+      this.pipeline.pipelinename = this.pipelinename
+
+      // Request for availability
+      this.$http.post('/api/v1/pipelines/nameavailable', this.pipeline)
+      .then((response) => {
+        // pipeline name valid and available
+        this.pipelineErrorMsg = ''
+        this.pipelineNameSuccess = true
+      })
+      .catch((error) => {
+        this.pipelineErrorMsg = error.response.data
+        this.pipelineNameSuccess = false
+      })
+    },
+
     createPipeline () {
       // let's start with 10% for the progress bar
       this.createPipelineStatus = 10
 
-      // copy giturl into our struct
+      // copy giturl into our struct and pipeline name
       this.pipeline.gitrepo.giturl = this.giturl
+      this.pipeline.pipelinename = this.pipelinename
 
       // Checkout git repo
       this.$http.post('/api/v1/pipelines/create', this.pipeline)
@@ -293,6 +349,36 @@ h2 span {
 .modal-footer {
   height: 35px;
   padding-top: 15px;
+}
+
+.pipelinetype {
+  height: 100px;
+  width: 100px;
+  border: 1px solid;
+  color: black;
+  margin: 0 5px;
+  box-shadow: 4px 4px 4px 4px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.19);
+}
+
+.pipelinetype:hover {
+  -moz-transform: scale(1.1);
+  -webkit-transform: scale(1.1);
+  transform: scale(1.1);
+}
+
+.pipelinetypeactive {
+  color: #4da2fc;
+  border: 2px solid;
+}
+
+.typeimage {
+  display: block;
+  margin: 0 auto;
+  height: 100%;
+}
+
+.typeimagenotyetsupported {
+  opacity: 0.5;
 }
 
 </style>

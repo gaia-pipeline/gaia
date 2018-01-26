@@ -40,6 +40,7 @@
     "mdi": "^1.8.36",
     "moment": "^2.20.1",
     "plotly.js": "^1.24.2",
+    "tippy.js": "^2.0.9",
     "vue": "^2.5.13",
     "vue-bulma-brace": "^0.1.0",
     "vue-bulma-breadcrumb": "^1.0.1",
