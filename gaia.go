@@ -2,6 +2,7 @@ package gaia
 
 import (
 	"os"
+	"time"
 
 	hclog "github.com/hashicorp/go-hclog"
 )
@@ -25,9 +26,10 @@ type User struct {
 
 // Pipeline represents a single pipeline
 type Pipeline struct {
-	Name string     `json:"pipelinename"`
-	Repo GitRepo    `json:"gitrepo"`
-	Type PluginType `json:"pipelinetype"`
+	Name         string     `json:"pipelinename"`
+	Repo         GitRepo    `json:"gitrepo"`
+	Type         PluginType `json:"pipelinetype"`
+	CreationDate time.Time  `json:"creationdate"`
 }
 
 // GitRepo represents a single git repository

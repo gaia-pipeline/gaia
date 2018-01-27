@@ -1,90 +1,131 @@
 <template>
   <div class="tile is-ancestor">
-    <div class="tile is-vertical is-parent is-5">
-      <article class="tile is-child notification content-article">
-        <div class="content">
-          <label class="label">Copy the link of your <strong>git repo</strong> here.</label>
-          <p class="control has-icons-left" v-bind:class="{ 'has-icons-right': gitSuccess }">
-            <input class="input is-medium input-bar" v-focus v-model.lazy="giturl" type="text" placeholder="Link to git repo ...">
-            <span class="icon is-small is-left">
-              <i class="fa fa-git"></i>
-            </span>
-            <span v-if="gitSuccess" class="icon is-small is-right is-blue">
-              <i class="fa fa-check"></i>
-            </span>
-          </p>
-          <span style="color: red" v-if="gitErrorMsg">Cannot access git repo: {{ gitErrorMsg }}</span>
-          <div v-if="gitBranches.length > 0">
-            <span>Branch:</span>
-            <div class="select is-fullwidth">
-              <select v-model="pipeline.gitrepo.selectedbranch">
-                <option v-for="branch in gitBranches" :key="branch" :value="branch">{{ branch }}</option>
-              </select>
+    <div class="tile is-vertical">
+      <div class="tile">
+        <div class="tile is-vertical is-parent is-5">
+          <article class="tile is-child notification content-article">
+            <div class="content">
+              <label class="label">Copy the link of your
+                <strong>git repo</strong> here.</label>
+              <p class="control has-icons-left" v-bind:class="{ 'has-icons-right': gitSuccess }">
+                <input class="input is-medium input-bar" v-focus v-model.lazy="giturl" type="text" placeholder="Link to git repo ...">
+                <span class="icon is-small is-left">
+                  <i class="fa fa-git"></i>
+                </span>
+                <span v-if="gitSuccess" class="icon is-small is-right is-blue">
+                  <i class="fa fa-check"></i>
+                </span>
+              </p>
+              <span style="color: red" v-if="gitErrorMsg">Cannot access git repo: {{ gitErrorMsg }}</span>
+              <div v-if="gitBranches.length > 0">
+                <span>Branch:</span>
+                <div class="select is-fullwidth">
+                  <select v-model="pipeline.gitrepo.selectedbranch">
+                    <option v-for="branch in gitBranches" :key="branch" :value="branch">{{ branch }}</option>
+                  </select>
+                </div>
+              </div>
+              <p class="control" style="padding-top: 10px;">
+                <a class="button is-primary" v-on:click="showCredentialsModal">
+                  <span class="icon">
+                    <i class="fa fa-certificate"></i>
+                  </span>
+                  <span>Add credentials</span>
+                </a>
+              </p>
+              <hr class="dotted-line">
+              <label class="label">Type the name of your pipeline. You can put your pipelines into folders by defining a path. For example
+                <strong>MyFolder/MyAwesomePipeline</strong>.</label>
+              <p class="control has-icons-left" v-bind:class="{ 'has-icons-right': pipelineNameSuccess }">
+                <input class="input is-medium input-bar" v-model="pipelinename" type="text" placeholder="Pipeline name ...">
+                <span class="icon is-small is-left">
+                  <i class="fa fa-book"></i>
+                </span>
+                <span v-if="pipelineNameSuccess" class="icon is-small is-right is-blue">
+                  <i class="fa fa-check"></i>
+                </span>
+              </p>
+              <span style="color: red" v-if="pipelineErrorMsg">Pipeline Name incorrect: {{ pipelineErrorMsg }}</span>
+              <hr class="dotted-line">
+              <a class="button is-primary" v-on:click="createPipeline" v-bind:class="{ 'is-loading': createPipelineStatus, 'is-disabled': !gitSuccess || !pipelineNameSuccess }">
+                <span class="icon">
+                  <i class="fa fa-plus"></i>
+                </span>
+                <span>Create Pipeline</span>
+              </a>
             </div>
-          </div>
-          <p class="control" style="padding-top: 10px;">
-            <a class="button is-primary" v-on:click="showCredentialsModal">
-              <span class="icon">
-                <i class="fa fa-certificate"></i>
-              </span>
-              <span>Add credentials</span>
-            </a>
-          </p>
-          <hr class="dotted-line">
-          <label class="label">Type the name of your pipeline. You can put your pipelines into folders by defining a path. For example <strong>MyFolder/MyAwesomePipeline</strong>.</label>
-          <p class="control has-icons-left" v-bind:class="{ 'has-icons-right': pipelineNameSuccess }">
-            <input class="input is-medium input-bar" v-model="pipelinename" type="text" placeholder="Pipeline name ...">
-            <span class="icon is-small is-left">
-              <i class="fa fa-book"></i>
-            </span>
-            <span v-if="pipelineNameSuccess" class="icon is-small is-right is-blue">
-              <i class="fa fa-check"></i>
-            </span>
-          </p>
-          <span style="color: red" v-if="pipelineErrorMsg">Pipeline Name incorrect: {{ pipelineErrorMsg }}</span>
-          <hr class="dotted-line">
-          <a class="button is-primary" v-on:click="createPipeline" v-bind:class="{ 'is-loading': createPipelineStatus, 'is-disabled': !gitSuccess || !pipelineNameSuccess }">
-            <span class="icon">
-              <i class="fa fa-plus"></i>
-            </span>
-            <span>Create Pipeline</span>
-          </a>
+          </article>
         </div>
-      </article>
 
-      <div class="tile is-child" v-if="createPipelineStatus">
-        <article class="tile is-child notification content-article">
+        <div class="tile is-parent is-3">
+          <article class="tile is-child notification content-article box">
+            <p class="subtitle">Select pipeline language</p>
+            <div class="content" style="display: flex;">
+              <div class="pipelinetype tippy" title="Golang" v-on:click="pipeline.pipelinetype = 'golang'" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'golang' }" data-tippy-hideOnClick="false">
+                <img src="~assets/golang.png" class="typeimage">
+              </div>
+              <div class="pipelinetype tippy" title="Python (not yet supported)" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'python' }" data-tippy-hideOnClick="false">
+                <img src="~assets/python.png" class="typeimage typeimagenotyetsupported">
+              </div>
+              <div class="pipelinetype tippy" title="Java (not yet supported)" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'java' }" data-tippy-hideOnClick="false">
+                <img src="~assets/java.png" class="typeimage typeimagenotyetsupported">
+              </div>
+            </div>
+            <div class="content" style="display: flex;">
+              <div class="pipelinetype tippy" title="C++ (not yet supported)" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'cplusplus' }" data-tippy-hideOnClick="false">
+                <img src="~assets/cplusplus.png" class="typeimage typeimagenotyetsupported">
+              </div>
+              <div class="pipelinetype tippy" title="Node.js (not yet supported)" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'nodejs' }" data-tippy-hideOnClick="false">
+                <img src="~assets/nodejs.png" class="typeimage typeimagenotyetsupported">
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div class="tile is-parent is-8">
+        <article class="tile is-child notification content-article box">
+          <p class="subtitle">Created pipelines</p>
           <div class="content">
-            Current Status: Some-Status-Here            
-            <progress-bar :type="'info'" :size="'medium'" :value="createPipelineStatus" :max="100" :show-label="true"></progress-bar>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="th">Name</th>
+                    <th class="th">Status</th>
+                    <th class="th">Type</th>
+                    <th class="th">Creation date</th>
+                  </tr>
+                </thead>
+                <tfoot>
+                  <tr>
+                    <th class="th">Name</th>
+                    <th class="th">Status</th>
+                    <th class="th">Type</th>
+                    <th class="th">Creation date</th>
+                  </tr>
+                </tfoot>
+                <tbody>
+                  <tr class="blink">
+                    <td>
+                      Pipeline Name
+                    </td>
+                    <td class="th">
+                      <progress-bar :type="'info'" :size="'small'" :value="80" :max="100" :show-label="false"></progress-bar>
+                    </td>
+                    <td>
+                      Pipeline Type
+                    </td>
+                    <td>
+                      Pipeline Date
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </article>
       </div>
-    </div>
-
-    <div class="tile is-vertical is-parent is-3">
-        <article class="tile is-child notification content-article box">
-          <p class="subtitle">Select pipeline language</p>
-          <div class="content" style="display: flex;">
-            <div class="pipelinetype tippy" title="Golang" v-on:click="pipeline.pipelinetype = 'golang'" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'golang' }" data-tippy-hideOnClick="false">
-              <img src="~assets/golang.png" class="typeimage">
-            </div>
-            <div class="pipelinetype tippy" title="Python (not yet supported)" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'python' }" data-tippy-hideOnClick="false">
-              <img src="~assets/python.png" class="typeimage typeimagenotyetsupported">
-            </div>
-            <div class="pipelinetype tippy" title="Java (not yet supported)" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'java' }" data-tippy-hideOnClick="false">
-              <img src="~assets/java.png" class="typeimage typeimagenotyetsupported">
-            </div>
-          </div>
-          <div class="content" style="display: flex;">
-            <div class="pipelinetype tippy" title="C++ (not yet supported)" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'cplusplus' }" data-tippy-hideOnClick="false">
-              <img src="~assets/cplusplus.png" class="typeimage typeimagenotyetsupported">
-            </div>
-            <div class="pipelinetype tippy" title="Node.js (not yet supported)" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'nodejs' }" data-tippy-hideOnClick="false">
-              <img src="~assets/nodejs.png" class="typeimage typeimagenotyetsupported">
-            </div>
-          </div>
-        </article>
     </div>
 
     <!-- Credentials modal -->
@@ -107,8 +148,8 @@
                     <i class="fa fa-lock"></i>
                   </span>
                 </p>
-              </div>            
-            </collapse-item>            
+              </div>
+            </collapse-item>
             <collapse-item title="SSH Key">
               <label class="label" style="text-align: left;">Instead of using basic authentication, provide a pem encoded private key.</label>
               <div class="block credentials-modal-content">
@@ -116,7 +157,9 @@
                   <textarea class="textarea input-bar" v-model="pipeline.gitrepo.privatekey.key"></textarea>
                 </p>
               </div>
-              <h2><span>Additional:</span></h2>
+              <h2>
+                <span>Additional:</span>
+              </h2>
               <p class="control has-icons-left" style="padding-bottom: 5px;">
                 <input class="input is-medium input-bar" v-focus type="text" v-model="pipeline.gitrepo.privatekey.username" placeholder="Username">
                 <span class="icon is-small is-left">
@@ -140,7 +183,7 @@
             </div>
           </div>
         </div>
-      </div> 
+      </div>
     </modal>
   </div>
 </template>
@@ -152,7 +195,6 @@ import ProgressBar from 'vue-bulma-progress-bar'
 import Tippy from 'tippy.js'
 
 export default {
-
   data () {
     return {
       gitErrorMsg: '',
@@ -223,29 +265,33 @@ export default {
       this.pipeline.gitrepo.selectedbranch = ''
       this.gitSuccess = false
 
-      this.$http.post('/api/v1/pipelines/gitlsremote', this.pipeline.gitrepo)
-      .then((response) => {
-        // Reset error message before
-        this.gitErrorMsg = ''
-        this.gitSuccess = true
+      this.$http
+        .post('/api/v1/pipelines/gitlsremote', this.pipeline.gitrepo)
+        .then(response => {
+          // Reset error message before
+          this.gitErrorMsg = ''
+          this.gitSuccess = true
 
-        // Get branches and set to master if available
-        this.gitBranches = response.data.gitbranches
-        for (var i = 0; i < this.gitBranches.length; i++) {
-          if (this.gitBranches[i] === 'refs/heads/master') {
-            this.pipeline.gitrepo.selectedbranch = this.gitBranches[i]
+          // Get branches and set to master if available
+          this.gitBranches = response.data.gitbranches
+          for (var i = 0; i < this.gitBranches.length; i++) {
+            if (this.gitBranches[i] === 'refs/heads/master') {
+              this.pipeline.gitrepo.selectedbranch = this.gitBranches[i]
+            }
           }
-        }
 
-        // if we cannot find master
-        if (!this.pipeline.gitrepo.selectedbranch && this.gitBranches.length > 0) {
-          this.pipeline.gitrepo.selectedbranch = this.gitBranches[0]
-        }
-      })
-      .catch((error) => {
-        // Add error message
-        this.gitErrorMsg = error.response.data
-      })
+          // if we cannot find master
+          if (
+            !this.pipeline.gitrepo.selectedbranch &&
+            this.gitBranches.length > 0
+          ) {
+            this.pipeline.gitrepo.selectedbranch = this.gitBranches[0]
+          }
+        })
+        .catch(error => {
+          // Add error message
+          this.gitErrorMsg = error.response.data
+        })
     },
 
     checkPipelineNameAvailable () {
@@ -253,16 +299,17 @@ export default {
       this.pipeline.pipelinename = this.pipelinename
 
       // Request for availability
-      this.$http.post('/api/v1/pipelines/nameavailable', this.pipeline)
-      .then((response) => {
-        // pipeline name valid and available
-        this.pipelineErrorMsg = ''
-        this.pipelineNameSuccess = true
-      })
-      .catch((error) => {
-        this.pipelineErrorMsg = error.response.data
-        this.pipelineNameSuccess = false
-      })
+      this.$http
+        .post('/api/v1/pipelines/nameavailable', this.pipeline)
+        .then(response => {
+          // pipeline name valid and available
+          this.pipelineErrorMsg = ''
+          this.pipelineNameSuccess = true
+        })
+        .catch(error => {
+          this.pipelineErrorMsg = error.response.data
+          this.pipelineNameSuccess = false
+        })
     },
 
     createPipeline () {
@@ -274,14 +321,15 @@ export default {
       this.pipeline.pipelinename = this.pipelinename
 
       // Checkout git repo
-      this.$http.post('/api/v1/pipelines/create', this.pipeline)
-      .then((response) => {
-        console.log('Pipeline successful created!')
-        this.createPipelineStatus = 30
-      })
-      .catch((error) => {
-        console.log(error.response.data)
-      })
+      this.$http
+        .post('/api/v1/pipelines/create', this.pipeline)
+        .then(response => {
+          console.log('Pipeline successful created!')
+          this.createPipelineStatus = 30
+        })
+        .catch(error => {
+          console.log(error.response.data)
+        })
 
       // finish
       this.createPipelineStatus = 100
@@ -308,12 +356,10 @@ export default {
       this.gitCredentialsModal = true
     }
   }
-
 }
 </script>
 
 <style lang="scss" scoped>
-
 .credentials-modal {
   text-align: center;
   background-color: #2a2735;
@@ -325,25 +371,29 @@ export default {
 }
 
 .dotted-line {
-  background-image: linear-gradient(to right, black 33%, rgba(255,255,255,0) 0%);
+  background-image: linear-gradient(
+    to right,
+    black 33%,
+    rgba(255, 255, 255, 0) 0%
+  );
   background-position: bottom;
   background-size: 3px 1px;
   background-repeat: repeat-x;
 }
 
-h2 { 
-  width:100%; 
-  text-align:center; 
-  border-bottom: 1px solid #4da2fc; 
-  line-height:0.1em; 
+h2 {
+  width: 100%;
+  text-align: center;
+  border-bottom: 1px solid #4da2fc;
+  line-height: 0.1em;
   padding-top: 15px;
-  margin:10px 0 20px; 
-} 
+  margin: 10px 0 20px;
+}
 
-h2 span { 
-  background:black;
-  color: whitesmoke; 
-  padding:0 10px; 
+h2 span {
+  background: black;
+  color: whitesmoke;
+  padding: 0 10px;
 }
 
 .modal-footer {
@@ -357,7 +407,8 @@ h2 span {
   border: 1px solid;
   color: black;
   margin: 0 5px;
-  box-shadow: 4px 4px 4px 4px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.19);
+  box-shadow: 4px 4px 4px 4px rgba(0, 0, 0, 0.2),
+    0 1px 1px 0 rgba(0, 0, 0, 0.19);
 }
 
 .pipelinetype:hover {
@@ -381,4 +432,35 @@ h2 span {
   opacity: 0.5;
 }
 
+.table {
+  background-color: #3f3d49;
+  color: #4da2fc;
+}
+
+.th {
+  border-color: gray;
+  color: whitesmoke;
+  vertical-align: middle;
+}
+
+.content table tr:hover {
+  background-color: #2a2735;
+}
+
+.progress-container {
+  margin-bottom: 0px;
+}
+
+.blink {
+  animation: blink 700ms infinite alternate;
+}
+
+@keyframes blink {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.2;
+  }
+}
 </style>

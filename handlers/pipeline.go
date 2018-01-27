@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/pipeline"
@@ -49,11 +50,24 @@ func PipelineBuildFromSource(ctx iris.Context) {
 		return
 	}
 
-	// Clone git repo
-	err := pipeline.GitCloneRepo(&p.Repo)
+	// Set the creation date
+	p.CreationDate = time.Now()
+
+	// Save this pipeline to our store
+	err := storeService.CreatePipelinePut(p)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.WriteString(err.Error())
+		cfg.Logger.Debug("cannot put pipeline into store", "error", err.Error())
+		return
+	}
+
+	// Clone git repo
+	err = pipeline.GitCloneRepo(&p.Repo)
+	if err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.WriteString(err.Error())
+		cfg.Logger.Debug("cannot clone repo", "error", err.Error())
 		return
 	}
 
@@ -64,6 +78,23 @@ func PipelineBuildFromSource(ctx iris.Context) {
 	}
 
 	// copy compiled binary to plugins folder
+}
+
+// CreatePipelineGetAll returns a json array of
+// all pipelines which are about to get compiled and
+// all pipelines which have been compiled.
+func CreatePipelineGetAll(ctx iris.Context) {
+	// Get all create pipelines
+	pipelineList, err := storeService.CreatePipelineGet()
+	if err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.WriteString(err.Error())
+		cfg.Logger.Debug("cannot get create pipelines from store", "error", err.Error())
+		return
+	}
+
+	// Return all create pipelines
+	ctx.JSON(pipelineList)
 }
 
 // PipelineNameAvailable looks up if the given pipeline name is

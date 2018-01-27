@@ -45,6 +45,7 @@ func InitHandlers(c *gaia.Config, i *iris.Application, s *store.Store) error {
 	i.Post(p+"pipelines/gitlsremote", PipelineGitLSRemote)
 	i.Post(p+"pipelines/create", PipelineBuildFromSource)
 	i.Post(p+"pipelines/nameavailable", PipelineNameAvailable)
+	i.Get(p+"pipelines/creategetall", CreatePipelineGetAll)
 
 	return nil
 }
