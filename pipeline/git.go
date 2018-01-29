@@ -1,13 +1,11 @@
 package pipeline
 
 import (
-	"os"
 	"strings"
 
 	"gopkg.in/src-d/go-git.v4/plumbing"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/satori/go.uuid"
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/client"
@@ -16,8 +14,7 @@ import (
 )
 
 const (
-	refHead   = "refs/heads"
-	tmpFolder = "tmp"
+	refHead = "refs/heads"
 )
 
 // GitLSRemote get remote branches from a git repo
@@ -83,16 +80,6 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 // GitCloneRepo clones the given repo to a local folder.
 // The destination will be attached to the given repo obj.
 func GitCloneRepo(repo *gaia.GitRepo) error {
-	// create uuid for clone folder
-	uuid := uuid.Must(uuid.NewV4())
-
-	// Create local temp folder for clone
-	folder := tmpFolder + string(os.PathSeparator) + uuid.String()
-	err := os.MkdirAll(folder, 0700)
-	if err != nil {
-		return err
-	}
-
 	// Check if credentials were provided
 	var auth transport.AuthMethod
 	if repo.Username != "" && repo.Password != "" {
@@ -102,6 +89,7 @@ func GitCloneRepo(repo *gaia.GitRepo) error {
 			Password: repo.Password,
 		}
 	} else if repo.PrivateKey.Key != "" {
+		var err error
 		auth, err = ssh.NewPublicKeys(repo.PrivateKey.Username, []byte(repo.PrivateKey.Key), repo.PrivateKey.Password)
 		if err != nil {
 			return err
@@ -109,7 +97,7 @@ func GitCloneRepo(repo *gaia.GitRepo) error {
 	}
 
 	// Clone repo
-	_, err = git.PlainClone(folder, false, &git.CloneOptions{
+	_, err := git.PlainClone(repo.LocalDest, false, &git.CloneOptions{
 		Auth:              auth,
 		URL:               repo.URL,
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,

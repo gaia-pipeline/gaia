@@ -3,7 +3,6 @@ package handlers
 import (
 	"crypto/rand"
 
-	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/kataras/iris"
 )
@@ -16,17 +15,11 @@ const (
 // Use this to talk to the store.
 var storeService *store.Store
 
-// cfg is a pointer to the global config
-var cfg *gaia.Config
-
 // jwtKey is a random generated key for jwt signing
 var jwtKey []byte
 
 // InitHandlers initializes(registers) all handlers
-func InitHandlers(c *gaia.Config, i *iris.Application, s *store.Store) error {
-	// Set config
-	cfg = c
-
+func InitHandlers(i *iris.Application, s *store.Store) error {
 	// Set store instance
 	storeService = s
 

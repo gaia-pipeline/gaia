@@ -7,12 +7,12 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 )
 
-// PluginType represents supported plugin types
-type PluginType string
+// PipelineType represents supported plugin types
+type PipelineType string
 
 const (
 	// GOLANG plugin type
-	GOLANG PluginType = "golang"
+	GOLANG PipelineType = "golang"
 )
 
 // User is the user object
@@ -26,12 +26,12 @@ type User struct {
 
 // Pipeline represents a single pipeline
 type Pipeline struct {
-	Name         string     `json:"pipelinename"`
-	Repo         GitRepo    `json:"gitrepo"`
-	Type         PluginType `json:"pipelinetype"`
-	Status       int        `json:"status"`
-	ErrMsg       string     `json:"errmsg"`
-	CreationDate time.Time  `json:"creationdate"`
+	Name         string       `json:"pipelinename"`
+	Repo         GitRepo      `json:"gitrepo"`
+	Type         PipelineType `json:"pipelinetype"`
+	Status       int          `json:"status"`
+	ErrMsg       string       `json:"errmsg"`
+	CreationDate time.Time    `json:"creationdate"`
 }
 
 // GitRepo represents a single git repository
@@ -52,10 +52,13 @@ type PrivateKey struct {
 	Password string `json:"password"`
 }
 
+// Cfg represents the global config instance
+var Cfg *Config
+
 // Config holds all config options
 type Config struct {
 	ListenPort string
-	DataPath   string
+	HomePath   string
 	Logger     hclog.Logger
 
 	Bolt struct {

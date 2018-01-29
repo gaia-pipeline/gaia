@@ -24,14 +24,14 @@ func UserLogin(ctx iris.Context) {
 	if err := ctx.ReadJSON(u); err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.WriteString(err.Error())
-		cfg.Logger.Debug("error reading json during UserLogin", "error", err.Error())
+		gaia.Cfg.Logger.Debug("error reading json during UserLogin", "error", err.Error())
 		return
 	}
 
 	// Authenticate user
 	user, err := storeService.UserAuth(u)
 	if err != nil {
-		cfg.Logger.Error("error during UserAuth", "error", err.Error())
+		gaia.Cfg.Logger.Error("error during UserAuth", "error", err.Error())
 		ctx.StatusCode(iris.StatusInternalServerError)
 		return
 	}
@@ -58,7 +58,7 @@ func UserLogin(ctx iris.Context) {
 	tokenstring, err := token.SignedString(jwtKey)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
-		cfg.Logger.Error("error signing jwt token", "error", err.Error())
+		gaia.Cfg.Logger.Error("error signing jwt token", "error", err.Error())
 		return
 	}
 	user.JwtExpiry = claims.ExpiresAt

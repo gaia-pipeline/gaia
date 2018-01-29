@@ -21,6 +21,9 @@ const (
 	// Percent of pipeline creation progress after git clone
 	pipelineCloneStatus = 25
 
+	// Percent of pipeline creation progress after compile process done
+	pipelineCompileStatus = 75
+
 	// Completed percent progress
 	pipelineCompleteStatus = 100
 )
@@ -65,7 +68,7 @@ func PipelineBuildFromSource(ctx iris.Context) {
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.WriteString(err.Error())
-		cfg.Logger.Debug("cannot put pipeline into store", "error", err.Error())
+		gaia.Cfg.Logger.Debug("cannot put pipeline into store", "error", err.Error())
 		return
 	}
 
@@ -77,13 +80,28 @@ func PipelineBuildFromSource(ctx iris.Context) {
 // the pipeline. After every step, the status will be store.
 // This method is designed to be called async.
 func createPipelineExecute(p *gaia.Pipeline) {
+	// Define build process for the given type
+	bP := pipeline.NewBuildPipeline(p.Type)
+	if bP == nil {
+		// Pipeline type is not supported
+		gaia.Cfg.Logger.Debug("create pipeline failed. Pipeline type is not supported", "type", p.Type)
+		return
+	}
+
+	// Setup environment before cloning repo and command
+	cmd, err := bP.PrepareBuild(p)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot prepare build", "error", err.Error())
+		return
+	}
+
 	// Clone git repo
-	err := pipeline.GitCloneRepo(&p.Repo)
+	err = pipeline.GitCloneRepo(&p.Repo)
 	if err != nil {
 		// Add error message and store
 		p.ErrMsg = err.Error()
 		storeService.CreatePipelinePut(p)
-		cfg.Logger.Debug("cannot clone repo", "error", err.Error())
+		gaia.Cfg.Logger.Debug("cannot clone repo", "error", err.Error())
 		return
 	}
 
@@ -91,23 +109,43 @@ func createPipelineExecute(p *gaia.Pipeline) {
 	p.Status = pipelineCloneStatus
 	err = storeService.CreatePipelinePut(p)
 	if err != nil {
-		cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
+		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
 		return
 	}
 
-	// Start compiling process for given plugin type
-	switch p.Type {
-	case gaia.GOLANG:
-		// Start compile process for golang TODO
+	// Run compile process
+	err = bP.ExecuteBuild(cmd)
+	if err != nil {
+		// Add error message and store
+		p.ErrMsg = err.Error()
+		storeService.CreatePipelinePut(p)
+		gaia.Cfg.Logger.Debug("cannot compile pipeline", "error", err.Error())
+		return
 	}
 
-	// copy compiled binary to plugins folder
+	// Update status of our pipeline build
+	p.Status = pipelineCompileStatus
+	err = storeService.CreatePipelinePut(p)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
+		return
+	}
+
+	// Copy compiled binary to plugins folder
+	err = bP.CopyBinary(p)
+	if err != nil {
+		// Add error message and store
+		p.ErrMsg = err.Error()
+		storeService.CreatePipelinePut(p)
+		gaia.Cfg.Logger.Debug("cannot copy compiled binary", "error", err.Error())
+		return
+	}
 
 	// Set create pipeline status to complete
 	p.Status = pipelineCompleteStatus
 	err = storeService.CreatePipelinePut(p)
 	if err != nil {
-		cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
+		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
 		return
 	}
 }
@@ -121,7 +159,7 @@ func CreatePipelineGetAll(ctx iris.Context) {
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.WriteString(err.Error())
-		cfg.Logger.Debug("cannot get create pipelines from store", "error", err.Error())
+		gaia.Cfg.Logger.Debug("cannot get create pipelines from store", "error", err.Error())
 		return
 	}
 

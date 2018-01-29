@@ -98,11 +98,11 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr class="blink" v-for="pipeline in createdPipelines" :key="pipeline">
+                  <tr v-bind:class="{ blink: pipeline.status < 100 }" v-for="(pipeline, index) in createdPipelines" :key="index">
                     <td>
                       {{ pipeline.pipelinename }}
                     </td>
-                    <td class="th">
+                    <td>
                       <div v-if="pipeline.status < 100">
                         <progress-bar :type="'info'" :size="'small'" :value="pipeline.status" :max="100" :show-label="false"></progress-bar>
                       </div>
