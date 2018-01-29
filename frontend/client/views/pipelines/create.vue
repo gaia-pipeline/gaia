@@ -47,7 +47,7 @@
               </p>
               <span style="color: red" v-if="pipelineErrorMsg">Pipeline Name incorrect: {{ pipelineErrorMsg }}</span>
               <hr class="dotted-line">
-              <a class="button is-primary" v-on:click="createPipeline" v-bind:class="{ 'is-loading': createPipelineStatus, 'is-disabled': !gitSuccess || !pipelineNameSuccess }">
+              <a class="button is-primary" v-on:click="createPipeline" v-bind:class="{ 'is-disabled': !gitSuccess || !pipelineNameSuccess }">
                 <span class="icon">
                   <i class="fa fa-plus"></i>
                 </span>
@@ -85,7 +85,7 @@
 
       <div class="tile is-parent is-8">
         <article class="tile is-child notification content-article box">
-          <p class="subtitle">Created pipelines</p>
+          <p class="subtitle">Pipelines history</p>
           <div class="content">
             <div class="table-responsive">
               <table class="table">
@@ -97,27 +97,24 @@
                     <th class="th">Creation date</th>
                   </tr>
                 </thead>
-                <tfoot>
-                  <tr>
-                    <th class="th">Name</th>
-                    <th class="th">Status</th>
-                    <th class="th">Type</th>
-                    <th class="th">Creation date</th>
-                  </tr>
-                </tfoot>
                 <tbody>
-                  <tr class="blink">
+                  <tr class="blink" v-for="pipeline in createdPipelines" :key="pipeline">
                     <td>
-                      Pipeline Name
+                      {{ pipeline.pipelinename }}
                     </td>
                     <td class="th">
-                      <progress-bar :type="'info'" :size="'small'" :value="80" :max="100" :show-label="false"></progress-bar>
+                      <div v-if="pipeline.status < 100">
+                        <progress-bar :type="'info'" :size="'small'" :value="pipeline.status" :max="100" :show-label="false"></progress-bar>
+                      </div>
+                      <div v-if="pipeline.status === 100">
+                        <span style="color: green;">Completed</span>
+                      </div>
                     </td>
                     <td>
-                      Pipeline Type
+                      {{ pipeline.pipelinetype }}
                     </td>
                     <td>
-                      Pipeline Date
+                      {{ pipeline.creationdate }}
                     </td>
                   </tr>
                 </tbody>
@@ -201,11 +198,11 @@ export default {
       gitSuccess: false,
       gitCredentialsModal: false,
       gitBranches: [],
-      createPipelineStatus: 0,
       giturl: '',
       pipelinename: '',
       pipelineNameSuccess: false,
       pipelineErrorMsg: '',
+      createdPipelines: [],
       pipeline: {
         pipelinename: '',
         pipelinetype: 'golang',
@@ -240,6 +237,9 @@ export default {
       duration: 500,
       arrow: true
     })
+
+    // created pipelines history
+    this.fetchData()
   },
 
   watch: {
@@ -248,10 +248,22 @@ export default {
     },
     pipelinename: function () {
       this.checkPipelineNameAvailable()
-    }
+    },
+    '$route': 'fetchData'
   },
 
   methods: {
+    fetchData () {
+      this.$http
+        .get('/api/v1/pipelines/created')
+        .then(response => {
+          this.createdPipelines = response.data
+        })
+        .catch(error => {
+          console.log(error.response.data)
+        })
+    },
+
     checkGitRepo () {
       if (this.giturl === '') {
         return
@@ -300,7 +312,7 @@ export default {
 
       // Request for availability
       this.$http
-        .post('/api/v1/pipelines/nameavailable', this.pipeline)
+        .post('/api/v1/pipelines/name', this.pipeline)
         .then(response => {
           // pipeline name valid and available
           this.pipelineErrorMsg = ''
@@ -313,26 +325,20 @@ export default {
     },
 
     createPipeline () {
-      // let's start with 10% for the progress bar
-      this.createPipelineStatus = 10
-
       // copy giturl into our struct and pipeline name
       this.pipeline.gitrepo.giturl = this.giturl
       this.pipeline.pipelinename = this.pipelinename
 
-      // Checkout git repo
+      // Start the create pipeline process in the backend
       this.$http
         .post('/api/v1/pipelines/create', this.pipeline)
         .then(response => {
-          console.log('Pipeline successful created!')
-          this.createPipelineStatus = 30
+          // Run fetchData to see the pipeline in our history table
+          this.fetchData()
         })
         .catch(error => {
           console.log(error.response.data)
         })
-
-      // finish
-      this.createPipelineStatus = 100
     },
 
     close () {

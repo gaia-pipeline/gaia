@@ -29,6 +29,8 @@ type Pipeline struct {
 	Name         string     `json:"pipelinename"`
 	Repo         GitRepo    `json:"gitrepo"`
 	Type         PluginType `json:"pipelinetype"`
+	Status       int        `json:"status"`
+	ErrMsg       string     `json:"errmsg"`
 	CreationDate time.Time  `json:"creationdate"`
 }
 

@@ -15,7 +15,14 @@ var (
 )
 
 const (
+	// Split char to separate path from pipeline and name
 	pipelinePathSplitChar = "/"
+
+	// Percent of pipeline creation progress after git clone
+	pipelineCloneStatus = 25
+
+	// Completed percent progress
+	pipelineCompleteStatus = 100
 )
 
 // PipelineGitLSRemote checks for available git remote branches.
@@ -41,7 +48,7 @@ func PipelineGitLSRemote(ctx iris.Context) {
 }
 
 // PipelineBuildFromSource clones a given git repo and
-// compiles the included source file to a plugin.
+// compiles the included source file to a pipeline.
 func PipelineBuildFromSource(ctx iris.Context) {
 	p := &gaia.Pipeline{}
 	if err := ctx.ReadJSON(p); err != nil {
@@ -62,12 +69,29 @@ func PipelineBuildFromSource(ctx iris.Context) {
 		return
 	}
 
+	// Cloning the repo and compiling the pipeline will be done async
+	go createPipelineExecute(p)
+}
+
+// createPipelineExecute clones the given git repo and compiles
+// the pipeline. After every step, the status will be store.
+// This method is designed to be called async.
+func createPipelineExecute(p *gaia.Pipeline) {
 	// Clone git repo
-	err = pipeline.GitCloneRepo(&p.Repo)
+	err := pipeline.GitCloneRepo(&p.Repo)
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.WriteString(err.Error())
+		// Add error message and store
+		p.ErrMsg = err.Error()
+		storeService.CreatePipelinePut(p)
 		cfg.Logger.Debug("cannot clone repo", "error", err.Error())
+		return
+	}
+
+	// Update status of our pipeline build
+	p.Status = pipelineCloneStatus
+	err = storeService.CreatePipelinePut(p)
+	if err != nil {
+		cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
 		return
 	}
 
@@ -78,6 +102,14 @@ func PipelineBuildFromSource(ctx iris.Context) {
 	}
 
 	// copy compiled binary to plugins folder
+
+	// Set create pipeline status to complete
+	p.Status = pipelineCompleteStatus
+	err = storeService.CreatePipelinePut(p)
+	if err != nil {
+		cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
+		return
+	}
 }
 
 // CreatePipelineGetAll returns a json array of

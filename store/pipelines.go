@@ -25,7 +25,7 @@ func (s *Store) CreatePipelinePut(p *gaia.Pipeline) error {
 	})
 }
 
-// CreatePipelineGet returns all available createpipeline
+// CreatePipelineGet returns all available create pipeline
 // objects in the store.
 func (s *Store) CreatePipelineGet() ([]gaia.Pipeline, error) {
 	// create list
