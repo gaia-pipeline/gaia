@@ -47,7 +47,7 @@ func PipelineGitLSRemote(ctx iris.Context) {
 	}
 
 	// Return branches
-	ctx.JSON(repo)
+	ctx.JSON(repo.Branches)
 }
 
 // PipelineBuildFromSource clones a given git repo and
@@ -77,7 +77,7 @@ func PipelineBuildFromSource(ctx iris.Context) {
 }
 
 // createPipelineExecute clones the given git repo and compiles
-// the pipeline. After every step, the status will be store.
+// the pipeline. After every step, the status will be stored.
 // This method is designed to be called async.
 func createPipelineExecute(p *gaia.Pipeline) {
 	// Define build process for the given type

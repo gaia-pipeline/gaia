@@ -30,8 +30,11 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 	// Attach credentials if provided
 	var auth transport.AuthMethod
 	if repo.Username != "" && repo.Password != "" {
-		ep.User = repo.Username
-		ep.Password = repo.Password
+		// Basic auth provided
+		auth = &http.BasicAuth{
+			Username: repo.Username,
+			Password: repo.Password,
+		}
 	} else if repo.PrivateKey.Key != "" {
 		auth, err = ssh.NewPublicKeys(repo.PrivateKey.Username, []byte(repo.PrivateKey.Key), repo.PrivateKey.Password)
 		if err != nil {
@@ -53,13 +56,6 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 	defer s.Close()
 
 	// Get advertised references (e.g. branches)
-	// We have to reset the username and password to
-	// prevent go-git setting the credentials in the URL
-	// which will not be URL encoded.
-	// https://github.com/src-d/go-git/issues/723
-	ep.User = ""
-	ep.Password = ""
-	repo.Password = ""
 	ar, err := s.AdvertisedReferences()
 	if err != nil {
 		return err

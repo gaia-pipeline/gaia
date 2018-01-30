@@ -37,7 +37,7 @@
               <label class="label">Type the name of your pipeline. You can put your pipelines into folders by defining a path. For example
                 <strong>MyFolder/MyAwesomePipeline</strong>.</label>
               <p class="control has-icons-left" v-bind:class="{ 'has-icons-right': pipelineNameSuccess }">
-                <input class="input is-medium input-bar" v-model="pipelinename" type="text" placeholder="Pipeline name ...">
+                <input class="input is-medium input-bar" v-model.lazy="pipelinename" type="text" placeholder="Pipeline name ...">
                 <span class="icon is-small is-left">
                   <i class="fa fa-book"></i>
                 </span>
@@ -99,21 +99,21 @@
                 </thead>
                 <tbody>
                   <tr v-bind:class="{ blink: pipeline.status < 100 }" v-for="(pipeline, index) in createdPipelines" :key="index">
-                    <td>
+                    <td v-bind:class="{ th: pipeline.status === 100 }">
                       {{ pipeline.pipelinename }}
                     </td>
-                    <td>
+                    <td class="th">
                       <div v-if="pipeline.status < 100">
                         <progress-bar :type="'info'" :size="'small'" :value="pipeline.status" :max="100" :show-label="false"></progress-bar>
                       </div>
                       <div v-if="pipeline.status === 100">
-                        <span style="color: green;">Completed</span>
+                        <span>Completed</span>
                       </div>
                     </td>
-                    <td>
+                    <td v-bind:class="{ th: pipeline.status === 100 }">
                       {{ pipeline.pipelinetype }}
                     </td>
-                    <td>
+                    <td v-bind:class="{ th: pipeline.status === 100 }">
                       {{ pipeline.creationdate }}
                     </td>
                   </tr>
@@ -140,7 +140,7 @@
                   </span>
                 </p>
                 <p class="control has-icons-left">
-                  <input class="input is-medium input-bar" type="password" v-model="pipeline.gitrepo.password" placeholder="Password">
+                  <input class="input is-medium input-bar" type="password" v-model="pipeline.gitrepo.gitpassword" placeholder="Password">
                   <span class="icon is-small is-left">
                     <i class="fa fa-lock"></i>
                   </span>
@@ -285,7 +285,7 @@ export default {
           this.gitSuccess = true
 
           // Get branches and set to master if available
-          this.gitBranches = response.data.gitbranches
+          this.gitBranches = response.data
           for (var i = 0; i < this.gitBranches.length; i++) {
             if (this.gitBranches[i] === 'refs/heads/master') {
               this.pipeline.gitrepo.selectedbranch = this.gitBranches[i]
