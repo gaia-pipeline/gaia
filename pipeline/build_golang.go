@@ -51,8 +51,10 @@ func (b *BuildPipelineGolang) PrepareBuild(p *gaia.Pipeline) (*exec.Cmd, error) 
 		"GOPATH=" + goPath,
 	}
 	c.Args = []string{
+		path,
 		"build",
-		"-x",
+		"-o",
+		uuid.String(),
 	}
 
 	// return command
@@ -61,7 +63,19 @@ func (b *BuildPipelineGolang) PrepareBuild(p *gaia.Pipeline) (*exec.Cmd, error) 
 
 // ExecuteBuild executes the golang build process
 func (b *BuildPipelineGolang) ExecuteBuild(cmd *exec.Cmd) error {
-	// TODO
+	// Output command for debugging purpose
+	gaia.Cfg.Logger.Debug("create pipeline cmd", "cmd", cmd.Args)
+
+	// Execute command and get combined output
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		// TODO: Do something useful with the ouptut
+		gaia.Cfg.Logger.Debug("failed create pipeline build output", "output", string(output))
+		return err
+	}
+
+	// TODO: Do something useful with the output
+	gaia.Cfg.Logger.Debug("create pipeline build output", "output", string(output))
 	return nil
 }
 
