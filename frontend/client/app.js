@@ -8,11 +8,14 @@ import store from './store'
 import * as filters from './filters'
 import { TOGGLE_SIDEBAR } from 'vuex-store/mutation-types'
 import auth from './auth'
+import lodash from 'lodash'
+import VueLodash from 'vue-lodash'
 
 Vue.prototype.$http = axios
 Vue.axios = axios
 Vue.router = router
 Vue.use(NProgress)
+Vue.use(VueLodash, lodash)
 
 // Auth interceptors
 axios.interceptors.request.use(function (request) {

@@ -1,21 +1,30 @@
 <template>
   <div id="app">
-    <nprogress-container></nprogress-container>
-    <navbar :show="true"></navbar>
-    <sidebar :show="sidebar.opened && !sidebar.hidden"></sidebar>
-    <app-main></app-main>
+    <div v-if="session">
+      <nprogress-container></nprogress-container>
+      <navbar :show="true"></navbar>
+      <sidebar :show="sidebar.opened && !sidebar.hidden"></sidebar>
+      <app-main></app-main>
+    </div>
+    <div v-if="!session">
+      <nprogress-container></nprogress-container>
+      <login></login>
+    </div>
   </div>
 </template>
 
 <script>
 import NprogressContainer from 'vue-nprogress/src/NprogressContainer'
-import { Navbar, Sidebar, AppMain } from 'components/layout/'
+import { Navbar, Sidebar, Login, AppMain } from 'components/layout/'
 import { mapGetters, mapActions } from 'vuex'
+import auth from './auth'
+import moment from 'moment'
 
 export default {
   components: {
     Navbar,
     Sidebar,
+    Login,
     AppMain,
     NprogressContainer
   },
@@ -41,14 +50,38 @@ export default {
     window.addEventListener('resize', handler)
   },
 
+  mounted () {
+    this.checkAuth()
+  },
+
+  watch: {
+    '$route': 'checkAuth'
+  },
+
   computed: mapGetters({
-    sidebar: 'sidebar'
+    sidebar: 'sidebar',
+    session: 'session'
   }),
 
-  methods: mapActions([
-    'toggleDevice',
-    'toggleSidebar'
-  ])
+  methods: {
+
+    checkAuth () {
+      let session = auth.getSession()
+      if (session) {
+        // check if jwt has been expired
+        if (moment().isAfter(moment.unix(session['jwtexpiry']))) {
+          auth.logout(this)
+        } else {
+          this.$store.commit('setSession', session)
+        }
+      }
+    },
+
+    ...mapActions([
+      'toggleDevice',
+      'toggleSidebar'
+    ])
+  }
 }
 </script>
 

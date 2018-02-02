@@ -8,7 +8,7 @@
               <label class="label">Copy the link of your
                 <strong>git repo</strong> here.</label>
               <p class="control has-icons-left" v-bind:class="{ 'has-icons-right': gitSuccess }">
-                <input class="input is-medium input-bar" v-focus v-model.lazy="giturl" type="text" placeholder="Link to git repo ...">
+                <input class="input is-medium input-bar" v-focus v-model="giturl" v-on:input="checkGitRepoDebounce" type="text" placeholder="Link to git repo ...">
                 <span class="icon is-small is-left">
                   <i class="fa fa-git"></i>
                 </span>
@@ -37,7 +37,7 @@
               <label class="label">Type the name of your pipeline. You can put your pipelines into folders by defining a path. For example
                 <strong>MyFolder/MyAwesomePipeline</strong>.</label>
               <p class="control has-icons-left" v-bind:class="{ 'has-icons-right': pipelineNameSuccess }">
-                <input class="input is-medium input-bar" v-model.lazy="pipelinename" type="text" placeholder="Pipeline name ...">
+                <input class="input is-medium input-bar" v-model="pipelinename" v-on:input="checkPipelineNameAvailableDebounce" type="text" placeholder="Pipeline name ...">
                 <span class="icon is-small is-left">
                   <i class="fa fa-book"></i>
                 </span>
@@ -85,41 +85,7 @@
 
       <div class="tile is-parent is-8">
         <article class="tile is-child notification content-article box">
-          <p class="subtitle">Pipelines history</p>
           <div class="content">
-            <div class="table-responsive">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th class="th">Name</th>
-                    <th class="th">Status</th>
-                    <th class="th">Type</th>
-                    <th class="th">Creation date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-bind:class="{ blink: pipeline.status < 100 }" v-for="(pipeline, index) in createdPipelines" :key="index">
-                    <td v-bind:class="{ th: pipeline.status === 100 }">
-                      {{ pipeline.pipelinename }}
-                    </td>
-                    <td class="th">
-                      <div v-if="pipeline.status < 100">
-                        <progress-bar :type="'info'" :size="'small'" :value="pipeline.status" :max="100" :show-label="false"></progress-bar>
-                      </div>
-                      <div v-if="pipeline.status === 100">
-                        <span>Completed</span>
-                      </div>
-                    </td>
-                    <td v-bind:class="{ th: pipeline.status === 100 }">
-                      {{ pipeline.pipelinetype }}
-                    </td>
-                    <td v-bind:class="{ th: pipeline.status === 100 }">
-                      {{ pipeline.creationdate }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
           </div>
         </article>
       </div>
@@ -186,6 +152,7 @@
 </template>
 
 <script>
+import Vue from 'vue'
 import { Modal } from 'vue-bulma-modal'
 import { Collapse, Item as CollapseItem } from 'vue-bulma-collapse'
 import ProgressBar from 'vue-bulma-progress-bar'
@@ -202,7 +169,6 @@ export default {
       pipelinename: '',
       pipelineNameSuccess: false,
       pipelineErrorMsg: '',
-      createdPipelines: [],
       pipeline: {
         pipelinename: '',
         pipelinetype: 'golang',
@@ -217,6 +183,15 @@ export default {
             password: ''
           }
         }
+      },
+      historyColumns: ['pipelinename'],
+      historyRows: [],
+      historyOptions: {
+        headings: {
+          pipelinename: 'Name'
+        },
+        sortable: ['pipelinename'],
+        filterable: ['pipelinename']
       }
     }
   },
@@ -240,29 +215,32 @@ export default {
 
     // created pipelines history
     this.fetchData()
+
+    // periodically update history dashboard
+    setInterval(function () {
+      this.fetchData()
+    }.bind(this), 3000)
   },
 
   watch: {
-    giturl: function () {
-      this.checkGitRepo()
-    },
-    pipelinename: function () {
-      this.checkPipelineNameAvailable()
-    },
     '$route': 'fetchData'
   },
 
   methods: {
     fetchData () {
       this.$http
-        .get('/api/v1/pipelines/created')
+        .get('/api/v1/pipelines/create', { showProgressBar: false })
         .then(response => {
-          this.createdPipelines = response.data
+          this.historyRows = response.data
         })
         .catch(error => {
           console.log(error.response.data)
         })
     },
+
+    checkGitRepoDebounce: Vue._.debounce(function () {
+      this.checkGitRepo()
+    }, 500),
 
     checkGitRepo () {
       if (this.giturl === '') {
@@ -305,6 +283,10 @@ export default {
           this.gitErrorMsg = error.response.data
         })
     },
+
+    checkPipelineNameAvailableDebounce: Vue._.debounce(function () {
+      this.checkPipelineNameAvailable()
+    }, 500),
 
     checkPipelineNameAvailable () {
       // copy pipeline name into struct
@@ -436,25 +418,6 @@ h2 span {
 
 .typeimagenotyetsupported {
   opacity: 0.5;
-}
-
-.table {
-  background-color: #3f3d49;
-  color: #4da2fc;
-}
-
-.th {
-  border-color: gray;
-  color: whitesmoke;
-  vertical-align: middle;
-}
-
-.content table tr:hover {
-  background-color: #2a2735;
-}
-
-.progress-container {
-  margin-bottom: 0px;
 }
 
 .blink {

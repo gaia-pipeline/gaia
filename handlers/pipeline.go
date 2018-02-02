@@ -50,9 +50,9 @@ func PipelineGitLSRemote(ctx iris.Context) {
 	ctx.JSON(repo.Branches)
 }
 
-// PipelineBuildFromSource clones a given git repo and
+// CreatePipeline clones a given git repo and
 // compiles the included source file to a pipeline.
-func PipelineBuildFromSource(ctx iris.Context) {
+func CreatePipeline(ctx iris.Context) {
 	p := &gaia.Pipeline{}
 	if err := ctx.ReadJSON(p); err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)

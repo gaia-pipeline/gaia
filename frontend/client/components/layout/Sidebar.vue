@@ -7,7 +7,7 @@
       </a>
     </div>
     <ul class="menu-list">
-      <li v-for="(item, index) in menu">
+      <li v-for="(item, index) in menu" :key="index">
         <router-link :to="item.path" :exact="true" :aria-expanded="isExpanded(item) ? 'true' : 'false'" v-if="item.path" @click.native="toggle(index, item)">
           <span class="icon icon-left is-small"><i :class="['fa', item.meta.icon]"></i></span>
           {{ item.meta.label || item.name }}
@@ -25,7 +25,7 @@
 
         <expanding v-if="item.subroute && item.subroute.length">
           <ul v-show="isExpanded(item)" class="menu-list-expanded">
-            <li v-for="subItem in item.subroute" v-if="subItem.path">
+            <li v-for="(subItem, index) in item.subroute" v-if="subItem.path" :key="index">
               <router-link :to="subItem.path">
                 {{ subItem.meta && subItem.meta.label || subItem.name }}
               </router-link>

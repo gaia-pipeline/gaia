@@ -36,9 +36,9 @@ func InitHandlers(i *iris.Application, s *store.Store) error {
 	// Register handlers at iris instance
 	i.Post(p+"users/login", UserLogin)
 	i.Post(p+"pipelines/gitlsremote", PipelineGitLSRemote)
-	i.Post(p+"pipelines/create", PipelineBuildFromSource)
+	i.Post(p+"pipelines/create", CreatePipeline)
+	i.Get(p+"pipelines/create", CreatePipelineGetAll)
 	i.Post(p+"pipelines/name", PipelineNameAvailable)
-	i.Get(p+"pipelines/created", CreatePipelineGetAll)
 
 	return nil
 }

@@ -38,57 +38,23 @@
         </div>
       </nav>
     </div>
-
-    <!-- Login modal -->
-    <modal :visible="loginModal" class="modal-z-index" @close="close">
-      <div class="box login-modal">
-        <h1 class="title header-text" style="padding-bottom: 20px;">Sign In</h1>
-        <div class="block login-modal-content">
-          <div class="login-modal-content">
-            <p class="control has-icons-left">
-              <input class="input is-large input-bar" v-focus type="text" v-model="username" @keyup.enter="login" placeholder="Username">
-              <span class="icon is-small is-left">
-                <i class="fa fa-user-circle"></i>
-              </span>
-            </p>
-          </div>
-          <div class="login-modal-content">
-            <p class="control has-icons-left">
-              <input class="input is-large input-bar" type="password" @keyup.enter="login" v-model="password" placeholder="Password">
-              <span class="icon is-small is-left">
-                <i class="fa fa-lock"></i>
-              </span>
-            </p>
-          </div>
-          <div class="login-modal-content">
-            <button class="button is-primary login-button" @click="login">Sign In</button>
-          </div>
-        </div>
-      </div> 
-    </modal>
   </section>
 </template>
 
 <script>
 import { mapGetters, mapActions } from 'vuex'
-import { Modal } from 'vue-bulma-modal'
 import auth from '../../auth'
 import jdenticon from 'jdenticon'
-import moment from 'moment'
 
 export default {
 
   data () {
     return {
-      loginModal: false,
-      username: '',
-      password: '',
       search: ''
     }
   },
 
   components: {
-    Modal,
     jdenticon
   },
 
@@ -103,37 +69,17 @@ export default {
   }),
 
   mounted () {
-    this.fetchData()
+    this.reload()
   },
 
   watch: {
-    '$route': 'fetchData'
+    '$route': 'reload'
   },
 
   methods: {
-    fetchData () {
-      let session = auth.getSession()
-      if (session) {
-        // check if jwt has been expired
-        if (moment().isAfter(moment.unix(session['jwtexpiry']))) {
-          auth.logout(this)
-        } else {
-          this.$store.commit('setSession', session)
-        }
-      }
-
+    reload () {
       // Update jdenticon to prevent rendering issues
       jdenticon()
-    },
-
-    login () {
-      var credentials = {
-        username: this.username,
-        password: this.password
-      }
-
-      auth.login(this, credentials)
-      this.close()
     },
 
     logout () {
@@ -142,18 +88,6 @@ export default {
 
     createPipeline () {
       this.$router.push('/pipelines/create')
-    },
-
-    showLoginModal () {
-      this.loginModal = true
-    },
-
-    close () {
-      this.loginModal = false
-      this.$emit('close')
-
-      // Update jdenticon to prevent rendering issues
-      jdenticon()
     },
 
     ...mapActions([
@@ -195,21 +129,6 @@ export default {
   text-transform: capitalize;
   border-right: solid 1px #8c91a0;
   padding-right: 30px;
-}
-
-.login-modal {
-  text-align: center;
-  background-color: #2a2735;
-}
-
-.login-modal-content {
-  margin: auto;
-  padding: 10px;
-}
-
-.login-button {
-  width: 150px;
-  height: 50px;
 }
 
 .navbar-start {

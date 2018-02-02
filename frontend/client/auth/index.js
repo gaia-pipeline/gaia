@@ -1,7 +1,7 @@
 export default {
 
   login (context, creds) {
-    context.$http.post('/api/v1/users/login', creds)
+    return context.$http.post('/api/v1/users/login', creds)
       .then((response) => {
         var newSession = {
           'token': response.data.tokenstring,
@@ -10,9 +10,14 @@ export default {
         }
         window.localStorage.setItem('session', JSON.stringify(newSession))
         context.$store.commit('setSession', newSession)
+
+        // set success to true
+        return true
       })
       .catch((error) => {
-        console.log(error)
+        if (error) {
+          return false
+        }
       })
   },
 
