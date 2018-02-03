@@ -85,8 +85,14 @@
 
       <div class="tile is-parent is-8">
         <article class="tile is-child notification content-article box">
-          <div class="content">
-          </div>
+            <vue-good-table
+              title="Pipeline history"
+              :columns="historyColumns"
+              :rows="historyRows"
+              :paginate="true"
+              :line-numbers="true"
+              :global-search="true">
+            </vue-good-table>
         </article>
       </div>
     </div>
@@ -157,6 +163,9 @@ import { Modal } from 'vue-bulma-modal'
 import { Collapse, Item as CollapseItem } from 'vue-bulma-collapse'
 import ProgressBar from 'vue-bulma-progress-bar'
 import Tippy from 'tippy.js'
+import VueGoodTable from 'vue-good-table'
+
+Vue.use(VueGoodTable)
 
 export default {
   data () {
@@ -184,15 +193,25 @@ export default {
           }
         }
       },
-      historyColumns: ['pipelinename'],
-      historyRows: [],
-      historyOptions: {
-        headings: {
-          pipelinename: 'Name'
+      historyColumns: [
+        {
+          label: 'Name',
+          field: 'pipelinename'
         },
-        sortable: ['pipelinename'],
-        filterable: ['pipelinename']
-      }
+        {
+          label: 'Status',
+          field: 'status'
+        },
+        {
+          label: 'Type',
+          field: 'pipelinetype'
+        },
+        {
+          label: 'Creation date',
+          field: 'creationdate'
+        }
+      ],
+      historyRows: []
     }
   },
 
@@ -348,6 +367,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.global-search-input {
+  background-color: black !important;
+}
+
 .credentials-modal {
   text-align: center;
   background-color: #2a2735;
