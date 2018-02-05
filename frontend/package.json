@@ -1,7 +1,7 @@
 {
   "name": "gaia",
   "version": "0.1.1",
-  "description": "Build powerful automation pipelines with any language you prefer.",
+  "description": "Build powerful automation pipelines in any programming language.",
   "repository": "gaia-pipeline/gaia",
   "homepage": "https://github.com/gaia-pipeline/gaia",
   "license": "Apache-2.0",

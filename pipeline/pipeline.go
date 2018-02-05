@@ -1,30 +1,31 @@
 package pipeline
 
 import (
-	"os/exec"
-
 	"github.com/gaia-pipeline/gaia"
 )
 
 // BuildPipeline is the interface for pipelines which
 // are not yet compiled.
 type BuildPipeline interface {
-	// PrepareBuild prepares the environment and command before
-	// the build process is about to start.
-	PrepareBuild(*gaia.Pipeline) (*exec.Cmd, error)
+	// PrepareEnvironment prepares the environment before we start the
+	// build process.
+	PrepareEnvironment(*gaia.CreatePipeline) error
 
 	// ExecuteBuild executes the compiler and tracks the status of
 	// the compiling process.
-	ExecuteBuild(*exec.Cmd) error
+	ExecuteBuild(*gaia.CreatePipeline) error
 
 	// CopyBinary copies the result from the compile process
 	// to the plugins folder.
-	CopyBinary(*gaia.Pipeline) error
+	CopyBinary(*gaia.CreatePipeline) error
 }
 
 const (
 	// Temp folder where we store our temp files during build pipeline.
 	tmpFolder = "tmp"
+
+	// Max minutes until the build process will be interrupted and marked as failed
+	maxTimeoutMinutes = 60
 )
 
 // NewBuildPipeline creates a new build pipeline for the given

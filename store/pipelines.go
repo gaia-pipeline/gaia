@@ -9,7 +9,7 @@ import (
 
 // CreatePipelinePut adds a pipeline which
 // is not yet compiled but is about to.
-func (s *Store) CreatePipelinePut(p *gaia.Pipeline) error {
+func (s *Store) CreatePipelinePut(p *gaia.CreatePipeline) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		// Get bucket
 		b := tx.Bucket(createPipelineBucket)
@@ -21,15 +21,15 @@ func (s *Store) CreatePipelinePut(p *gaia.Pipeline) error {
 		}
 
 		// Put pipeline
-		return b.Put([]byte(p.Name), m)
+		return b.Put([]byte(p.ID), m)
 	})
 }
 
 // CreatePipelineGet returns all available create pipeline
 // objects in the store.
-func (s *Store) CreatePipelineGet() ([]gaia.Pipeline, error) {
+func (s *Store) CreatePipelineGet() ([]gaia.CreatePipeline, error) {
 	// create list
-	var pipelineList []gaia.Pipeline
+	var pipelineList []gaia.CreatePipeline
 
 	return pipelineList, s.db.View(func(tx *bolt.Tx) error {
 		// Get bucket
@@ -40,7 +40,7 @@ func (s *Store) CreatePipelineGet() ([]gaia.Pipeline, error) {
 		// to just search for the last 20 elements.
 		return b.ForEach(func(k, v []byte) error {
 			// create single pipeline object
-			p := &gaia.Pipeline{}
+			p := &gaia.CreatePipeline{}
 
 			// Unmarshal
 			err := json.Unmarshal(v, p)

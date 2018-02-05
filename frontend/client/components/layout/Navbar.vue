@@ -19,20 +19,16 @@
           </div>
         </div>
         <div class="navbar-end">
-          <a class="navbar-item" v-if="session === null" v-on:click="showLoginModal">
-            <i class="fa fa-sign-in fa-2x sign-in-icon" aria-hidden="true"/>
-            <span class="sign-in-text">Sign in</span>
-          </a>
           <a class="navbar-item signed-text" v-if="session">
             <span>Hi, {{ session.display_name }}</span>
             <div class="avatar">
               <svg class="avatar-img" data-jdenticon-value="session.display_name"></svg>
             </div>
           </a>
-          <a class="navbar-item" v-if="session">
+          <a class="navbar-item signed-in-icons-div" v-if="session">
             <i class="fa fa-refresh fa-lg signed-in-icons" aria-hidden="true"/>
           </a>
-          <a class="navbar-item" @click="logout" v-if="session">
+          <a class="navbar-item signed-in-icons-div" @click="logout" v-if="session">
             <i class="fa fa-sign-out fa-lg signed-in-icons" aria-hidden="true"/>
           </a>
         </div>
@@ -141,8 +137,11 @@ export default {
 }
 
 .signed-in-icons {
-  color: whitesmoke;
   padding: 10px;
+}
+
+.signed-in-icons-div {
+  color: whitesmoke;
 }
 
 .borderless-search {

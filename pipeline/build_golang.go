@@ -1,8 +1,10 @@
 package pipeline
 
 import (
+	"context"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/satori/go.uuid"
@@ -18,9 +20,8 @@ type BuildPipelineGolang struct {
 	Type gaia.PipelineType
 }
 
-// PrepareBuild prepares the environment and command before
-// starting the build process.
-func (b *BuildPipelineGolang) PrepareBuild(p *gaia.Pipeline) (*exec.Cmd, error) {
+// PrepareEnvironment prepares the environment before we start the build process.
+func (b *BuildPipelineGolang) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	// create uuid for destination folder
 	uuid := uuid.Must(uuid.NewV4())
 
@@ -29,59 +30,82 @@ func (b *BuildPipelineGolang) PrepareBuild(p *gaia.Pipeline) (*exec.Cmd, error) 
 	cloneFolder := goPath + string(os.PathSeparator) + srcFolder + string(os.PathSeparator) + uuid.String()
 	err := os.MkdirAll(cloneFolder, 0700)
 	if err != nil {
-		return nil, err
-	}
-
-	// Set new generated path in pipeline obj for later usage
-	p.Repo.LocalDest = cloneFolder
-
-	// Create empty command
-	c := &exec.Cmd{}
-
-	// Look for golang executeable
-	path, err := exec.LookPath(golangBinaryName)
-	if err != nil {
-		return nil, err
-	}
-
-	// Set command args
-	c.Path = path
-	c.Dir = cloneFolder
-	c.Env = []string{
-		"GOPATH=" + goPath,
-	}
-	c.Args = []string{
-		path,
-		"build",
-		"-o",
-		uuid.String(),
-	}
-
-	// return command
-	return c, nil
-}
-
-// ExecuteBuild executes the golang build process
-func (b *BuildPipelineGolang) ExecuteBuild(cmd *exec.Cmd) error {
-	// Output command for debugging purpose
-	gaia.Cfg.Logger.Debug("create pipeline cmd", "cmd", cmd.Args)
-
-	// Execute command and get combined output
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		// TODO: Do something useful with the ouptut
-		gaia.Cfg.Logger.Debug("failed create pipeline build output", "output", string(output))
 		return err
 	}
 
-	// TODO: Do something useful with the output
-	gaia.Cfg.Logger.Debug("create pipeline build output", "output", string(output))
+	// Set new generated path in pipeline obj for later usage
+	p.Pipeline.Repo.LocalDest = cloneFolder
 	return nil
+}
+
+// ExecuteBuild executes the golang build process
+func (b *BuildPipelineGolang) ExecuteBuild(p *gaia.CreatePipeline) error {
+	// Look for golang executeable
+	path, err := exec.LookPath(golangBinaryName)
+	if err != nil {
+		gaia.Cfg.Logger.Debug("cannot find go executeable", "error", err.Error())
+		return err
+	}
+	goPath := gaia.Cfg.HomePath + string(os.PathSeparator) + tmpFolder
+
+	// Set command args for get dependencies
+	args := []string{
+		path,
+		"get",
+		"./...",
+	}
+	env := []string{
+		"GOPATH=" + goPath,
+	}
+
+	// Execute and wait until finish or timeout
+	output, err := executeCmd(path, args, env, p.Pipeline.Repo.LocalDest)
+	if err != nil {
+		gaia.Cfg.Logger.Debug("cannot get dependencies", "error", err.Error())
+		p.Output = string(output)
+		return err
+	}
+
+	// Set command args for build
+	env = []string{
+		"GOPATH=" + goPath,
+	}
+	args = []string{
+		path,
+		"build",
+		"-o",
+		p.Pipeline.Name,
+	}
+
+	// Execute and wait until finish or timeout
+	output, err = executeCmd(path, args, env, p.Pipeline.Repo.LocalDest)
+	p.Output = string(output)
+	if err != nil {
+		gaia.Cfg.Logger.Debug("cannot build pipeline", "error", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+// executeCmd wraps a context around the command and executes it.
+func executeCmd(path string, args []string, env []string, dir string) ([]byte, error) {
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), maxTimeoutMinutes*time.Minute)
+	defer cancel()
+
+	// Create command
+	cmd := exec.CommandContext(ctx, path, args...)
+	cmd.Env = env
+	cmd.Dir = dir
+
+	// Execute command
+	return cmd.CombinedOutput()
 }
 
 // CopyBinary copies the final compiled archive to the
 // destination folder.
-func (b *BuildPipelineGolang) CopyBinary(p *gaia.Pipeline) error {
+func (b *BuildPipelineGolang) CopyBinary(p *gaia.CreatePipeline) error {
 	// TODO
 	return nil
 }

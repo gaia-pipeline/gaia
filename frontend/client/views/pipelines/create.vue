@@ -20,7 +20,7 @@
               <div v-if="gitBranches.length > 0">
                 <span>Branch:</span>
                 <div class="select is-fullwidth">
-                  <select v-model="pipeline.gitrepo.selectedbranch">
+                  <select v-model="createPipeline.pipeline.repo.selectedbranch">
                     <option v-for="branch in gitBranches" :key="branch" :value="branch">{{ branch }}</option>
                   </select>
                 </div>
@@ -47,7 +47,7 @@
               </p>
               <span style="color: red" v-if="pipelineErrorMsg">Pipeline Name incorrect: {{ pipelineErrorMsg }}</span>
               <hr class="dotted-line">
-              <a class="button is-primary" v-on:click="createPipeline" v-bind:class="{ 'is-disabled': !gitSuccess || !pipelineNameSuccess }">
+              <a class="button is-primary" v-on:click="startCreatePipeline" v-bind:class="{ 'is-disabled': !gitSuccess || !pipelineNameSuccess }">
                 <span class="icon">
                   <i class="fa fa-plus"></i>
                 </span>
@@ -57,25 +57,25 @@
           </article>
         </div>
 
-        <div class="tile is-parent is-3">
+        <div class="tile is-parent is-4">
           <article class="tile is-child notification content-article box">
             <p class="subtitle">Select pipeline language</p>
             <div class="content" style="display: flex;">
-              <div class="pipelinetype tippy" title="Golang" v-on:click="pipeline.pipelinetype = 'golang'" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'golang' }" data-tippy-hideOnClick="false">
+              <div class="pipelinetype tippy" title="Golang" v-on:click="createPipeline.pipeline.type = 'golang'" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'golang' }" data-tippy-hideOnClick="false">
                 <img src="~assets/golang.png" class="typeimage">
               </div>
-              <div class="pipelinetype tippy" title="Python (not yet supported)" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'python' }" data-tippy-hideOnClick="false">
+              <div class="pipelinetype tippy" title="Python (not yet supported)" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'python' }" data-tippy-hideOnClick="false">
                 <img src="~assets/python.png" class="typeimage typeimagenotyetsupported">
               </div>
-              <div class="pipelinetype tippy" title="Java (not yet supported)" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'java' }" data-tippy-hideOnClick="false">
+              <div class="pipelinetype tippy" title="Java (not yet supported)" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'java' }" data-tippy-hideOnClick="false">
                 <img src="~assets/java.png" class="typeimage typeimagenotyetsupported">
               </div>
             </div>
             <div class="content" style="display: flex;">
-              <div class="pipelinetype tippy" title="C++ (not yet supported)" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'cplusplus' }" data-tippy-hideOnClick="false">
+              <div class="pipelinetype tippy" title="C++ (not yet supported)" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'cplusplus' }" data-tippy-hideOnClick="false">
                 <img src="~assets/cplusplus.png" class="typeimage typeimagenotyetsupported">
               </div>
-              <div class="pipelinetype tippy" title="Node.js (not yet supported)" v-bind:class="{ pipelinetypeactive: pipeline.pipelinetype === 'nodejs' }" data-tippy-hideOnClick="false">
+              <div class="pipelinetype tippy" title="Node.js (not yet supported)" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'nodejs' }" data-tippy-hideOnClick="false">
                 <img src="~assets/nodejs.png" class="typeimage typeimagenotyetsupported">
               </div>
             </div>
@@ -83,15 +83,19 @@
         </div>
       </div>
 
-      <div class="tile is-parent is-8">
+      <div class="tile is-parent is-9">
         <article class="tile is-child notification content-article box">
             <vue-good-table
               title="Pipeline history"
               :columns="historyColumns"
               :rows="historyRows"
               :paginate="true"
-              :line-numbers="true"
-              :global-search="true">
+              :global-search="true"
+              globalSearchPlaceholder="Search ..."
+              styleClass="table table-own-bordered">
+              <div slot="emptystate" class="empty-table-text">
+                No pipelines found in database.
+              </div>
             </vue-good-table>
         </article>
       </div>
@@ -106,13 +110,13 @@
               <div class="credentials-modal-content">
                 <label class="label" style="text-align: left;">Add credentials for basic authentication:</label>
                 <p class="control has-icons-left" style="padding-bottom: 5px;">
-                  <input class="input is-medium input-bar" v-focus type="text" v-model="pipeline.gitrepo.gituser" placeholder="Username">
+                  <input class="input is-medium input-bar" v-focus type="text" v-model="createPipeline.pipeline.repo.user" placeholder="Username">
                   <span class="icon is-small is-left">
                     <i class="fa fa-user-circle"></i>
                   </span>
                 </p>
                 <p class="control has-icons-left">
-                  <input class="input is-medium input-bar" type="password" v-model="pipeline.gitrepo.gitpassword" placeholder="Password">
+                  <input class="input is-medium input-bar" type="password" v-model="createPipeline.pipeline.repo.password" placeholder="Password">
                   <span class="icon is-small is-left">
                     <i class="fa fa-lock"></i>
                   </span>
@@ -123,20 +127,20 @@
               <label class="label" style="text-align: left;">Instead of using basic authentication, provide a pem encoded private key.</label>
               <div class="block credentials-modal-content">
                 <p class="control">
-                  <textarea class="textarea input-bar" v-model="pipeline.gitrepo.privatekey.key"></textarea>
+                  <textarea class="textarea input-bar" v-model="createPipeline.pipeline.repo.privatekey.key"></textarea>
                 </p>
               </div>
-              <h2>
-                <span>Additional:</span>
+              <h2 class="separater">
+                <span class="span">Additional:</span>
               </h2>
               <p class="control has-icons-left" style="padding-bottom: 5px;">
-                <input class="input is-medium input-bar" v-focus type="text" v-model="pipeline.gitrepo.privatekey.username" placeholder="Username">
+                <input class="input is-medium input-bar" v-focus type="text" v-model="createPipeline.pipeline.repo.privatekey.username" placeholder="Username">
                 <span class="icon is-small is-left">
                   <i class="fa fa-user-circle"></i>
                 </span>
               </p>
               <p class="control has-icons-left">
-                <input class="input is-medium input-bar" type="password" v-model="pipeline.gitrepo.privatekey.password" placeholder="Password">
+                <input class="input is-medium input-bar" type="password" v-model="createPipeline.pipeline.repo.privatekey.password" placeholder="Password">
                 <span class="icon is-small is-left">
                   <i class="fa fa-lock"></i>
                 </span>
@@ -178,25 +182,31 @@ export default {
       pipelinename: '',
       pipelineNameSuccess: false,
       pipelineErrorMsg: '',
-      pipeline: {
-        pipelinename: '',
-        pipelinetype: 'golang',
-        gitrepo: {
-          giturl: '',
-          gituser: '',
-          gitpassword: '',
-          selectedbranch: '',
-          privatekey: {
-            key: '',
-            username: '',
-            password: ''
+      createPipeline: {
+        id: '',
+        output: '',
+        status: 0,
+        created: new Date(),
+        pipeline: {
+          name: '',
+          type: 'golang',
+          repo: {
+            url: '',
+            user: '',
+            password: '',
+            selectedbranch: '',
+            privatekey: {
+              key: '',
+              username: '',
+              password: ''
+            }
           }
         }
       },
       historyColumns: [
         {
           label: 'Name',
-          field: 'pipelinename'
+          field: 'pipeline.name'
         },
         {
           label: 'Status',
@@ -204,11 +214,11 @@ export default {
         },
         {
           label: 'Type',
-          field: 'pipelinetype'
+          field: 'pipeline.type'
         },
         {
           label: 'Creation date',
-          field: 'creationdate'
+          field: 'created'
         }
       ],
       historyRows: []
@@ -250,7 +260,9 @@ export default {
       this.$http
         .get('/api/v1/pipelines/create', { showProgressBar: false })
         .then(response => {
-          this.historyRows = response.data
+          if (response.data) {
+            this.historyRows = response.data
+          }
         })
         .catch(error => {
           console.log(error.response.data)
@@ -267,15 +279,15 @@ export default {
       }
 
       // copy giturl into our struct
-      this.pipeline.gitrepo.giturl = this.giturl
+      this.createPipeline.pipeline.repo.url = this.giturl
 
       // Reset last fetches
       this.gitBranches = []
-      this.pipeline.gitrepo.selectedbranch = ''
+      this.createPipeline.pipeline.repo.selectedbranch = ''
       this.gitSuccess = false
 
       this.$http
-        .post('/api/v1/pipelines/gitlsremote', this.pipeline.gitrepo)
+        .post('/api/v1/pipelines/gitlsremote', this.createPipeline.pipeline.repo)
         .then(response => {
           // Reset error message before
           this.gitErrorMsg = ''
@@ -285,16 +297,16 @@ export default {
           this.gitBranches = response.data
           for (var i = 0; i < this.gitBranches.length; i++) {
             if (this.gitBranches[i] === 'refs/heads/master') {
-              this.pipeline.gitrepo.selectedbranch = this.gitBranches[i]
+              this.createPipeline.pipeline.repo.selectedbranch = this.gitBranches[i]
             }
           }
 
           // if we cannot find master
           if (
-            !this.pipeline.gitrepo.selectedbranch &&
+            !this.createPipeline.pipeline.repo.selectedbranch &&
             this.gitBranches.length > 0
           ) {
-            this.pipeline.gitrepo.selectedbranch = this.gitBranches[0]
+            this.createPipeline.pipeline.repo.selectedbranch = this.gitBranches[0]
           }
         })
         .catch(error => {
@@ -309,11 +321,11 @@ export default {
 
     checkPipelineNameAvailable () {
       // copy pipeline name into struct
-      this.pipeline.pipelinename = this.pipelinename
+      this.createPipeline.pipeline.name = this.pipelinename
 
       // Request for availability
       this.$http
-        .post('/api/v1/pipelines/name', this.pipeline)
+        .post('/api/v1/pipelines/name', this.createPipeline)
         .then(response => {
           // pipeline name valid and available
           this.pipelineErrorMsg = ''
@@ -325,14 +337,14 @@ export default {
         })
     },
 
-    createPipeline () {
+    startCreatePipeline () {
       // copy giturl into our struct and pipeline name
-      this.pipeline.gitrepo.giturl = this.giturl
-      this.pipeline.pipelinename = this.pipelinename
+      this.createPipeline.pipeline.repo.url = this.giturl
+      this.createPipeline.pipeline.name = this.pipelinename
 
       // Start the create pipeline process in the backend
       this.$http
-        .post('/api/v1/pipelines/create', this.pipeline)
+        .post('/api/v1/pipelines/create', this.createPipeline.pipeline)
         .then(response => {
           // Run fetchData to see the pipeline in our history table
           this.fetchData()
@@ -350,11 +362,11 @@ export default {
 
     cancel () {
       // cancel means reset all stuff
-      this.pipeline.gitrepo.gituser = ''
-      this.pipeline.gitrepo.gitpassword = ''
-      this.pipeline.gitrepo.privatekey.key = ''
-      this.pipeline.gitrepo.privatekey.username = ''
-      this.pipeline.gitrepo.privatekey.password = ''
+      this.createPipeline.pipeline.repo.user = ''
+      this.createPipeline.pipeline.repo.password = ''
+      this.createPipeline.pipeline.repo.privatekey.key = ''
+      this.createPipeline.pipeline.repo.privatekey.username = ''
+      this.createPipeline.pipeline.repo.privatekey.password = ''
 
       this.close()
     },
@@ -366,9 +378,59 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .global-search-input {
-  background-color: black !important;
+  background-color: #19191b !important;
+  color: white !important;
+  border-color: #2a2735 !important;
+}
+
+.table td {
+  border: 0 !important;
+}
+
+.table th {
+  border-top: solid black 2px !important;
+  border-bottom: solid black 2px !important;
+}
+
+.table thead th {
+  color: #4da2fc;
+  text-align: center !important;
+}
+
+.table-own-bordered {
+  border-collapse: separate !important;
+  border: solid black 2px;
+  border-radius: 6px;
+}
+
+.responsive {
+  overflow-x: auto !important;
+}
+
+.table-footer {
+  border: solid black 2px !important;
+  border-radius: 6px;
+  margin-top: 10px !important;
+  color: whitesmoke !important;
+}
+
+.table-footer select {
+  color: #4da2fc !important;
+}
+
+.pagination-controls a span {
+  color: #4da2fc !important;
+}
+
+.pagination-controls .info {
+  color: whitesmoke !important;
+}
+
+.empty-table-text {
+  color: #8c91a0;
+  text-align: center;
 }
 
 .credentials-modal {
@@ -392,7 +454,7 @@ export default {
   background-repeat: repeat-x;
 }
 
-h2 {
+.separater {
   width: 100%;
   text-align: center;
   border-bottom: 1px solid #4da2fc;
@@ -401,7 +463,7 @@ h2 {
   margin: 10px 0 20px;
 }
 
-h2 span {
+.separater .span {
   background: black;
   color: whitesmoke;
   padding: 0 10px;
@@ -413,8 +475,8 @@ h2 span {
 }
 
 .pipelinetype {
-  height: 100px;
-  width: 100px;
+  height: 80px;
+  width: 80px;
   border: 1px solid;
   color: black;
   margin: 0 5px;

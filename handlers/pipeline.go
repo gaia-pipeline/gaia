@@ -8,6 +8,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/pipeline"
 	"github.com/kataras/iris"
+	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -53,15 +54,16 @@ func PipelineGitLSRemote(ctx iris.Context) {
 // CreatePipeline clones a given git repo and
 // compiles the included source file to a pipeline.
 func CreatePipeline(ctx iris.Context) {
-	p := &gaia.Pipeline{}
+	p := &gaia.CreatePipeline{}
 	if err := ctx.ReadJSON(p); err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.WriteString(err.Error())
 		return
 	}
 
-	// Set the creation date
-	p.CreationDate = time.Now()
+	// Set the creation date and unique id
+	p.Created = time.Now()
+	p.ID = uuid.Must(uuid.NewV4()).String()
 
 	// Save this pipeline to our store
 	err := storeService.CreatePipelinePut(p)
@@ -79,27 +81,27 @@ func CreatePipeline(ctx iris.Context) {
 // createPipelineExecute clones the given git repo and compiles
 // the pipeline. After every step, the status will be stored.
 // This method is designed to be called async.
-func createPipelineExecute(p *gaia.Pipeline) {
+func createPipelineExecute(p *gaia.CreatePipeline) {
 	// Define build process for the given type
-	bP := pipeline.NewBuildPipeline(p.Type)
+	bP := pipeline.NewBuildPipeline(p.Pipeline.Type)
 	if bP == nil {
 		// Pipeline type is not supported
-		gaia.Cfg.Logger.Debug("create pipeline failed. Pipeline type is not supported", "type", p.Type)
+		gaia.Cfg.Logger.Debug("create pipeline failed. Pipeline type is not supported", "type", p.Pipeline.Type)
 		return
 	}
 
 	// Setup environment before cloning repo and command
-	cmd, err := bP.PrepareBuild(p)
+	err := bP.PrepareEnvironment(p)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot prepare build", "error", err.Error())
 		return
 	}
 
 	// Clone git repo
-	err = pipeline.GitCloneRepo(&p.Repo)
+	err = pipeline.GitCloneRepo(&p.Pipeline.Repo)
 	if err != nil {
 		// Add error message and store
-		p.ErrMsg = err.Error()
+		p.Output = err.Error()
 		storeService.CreatePipelinePut(p)
 		gaia.Cfg.Logger.Debug("cannot clone repo", "error", err.Error())
 		return
@@ -114,10 +116,10 @@ func createPipelineExecute(p *gaia.Pipeline) {
 	}
 
 	// Run compile process
-	err = bP.ExecuteBuild(cmd)
+	err = bP.ExecuteBuild(p)
 	if err != nil {
 		// Add error message and store
-		p.ErrMsg = err.Error()
+		p.Output = err.Error()
 		storeService.CreatePipelinePut(p)
 		gaia.Cfg.Logger.Debug("cannot compile pipeline", "error", err.Error())
 		return
@@ -135,7 +137,7 @@ func createPipelineExecute(p *gaia.Pipeline) {
 	err = bP.CopyBinary(p)
 	if err != nil {
 		// Add error message and store
-		p.ErrMsg = err.Error()
+		p.Output = err.Error()
 		storeService.CreatePipelinePut(p)
 		gaia.Cfg.Logger.Debug("cannot copy compiled binary", "error", err.Error())
 		return
@@ -170,7 +172,7 @@ func CreatePipelineGetAll(ctx iris.Context) {
 // PipelineNameAvailable looks up if the given pipeline name is
 // available and valid.
 func PipelineNameAvailable(ctx iris.Context) {
-	p := &gaia.Pipeline{}
+	p := &gaia.CreatePipeline{}
 	if err := ctx.ReadJSON(p); err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.WriteString(err.Error())
@@ -178,12 +180,12 @@ func PipelineNameAvailable(ctx iris.Context) {
 	}
 
 	// The name could contain a path. Split it up
-	path := strings.Split(p.Name, pipelinePathSplitChar)
+	path := strings.Split(p.Pipeline.Name, pipelinePathSplitChar)
 
 	// Iterate all objects
-	for _, p := range path {
+	for _, s := range path {
 		// Length should be correct
-		if len(p) < 1 || len(p) > 50 {
+		if len(s) < 1 || len(s) > 50 {
 			ctx.StatusCode(iris.StatusBadRequest)
 			ctx.WriteString(errPathLength.Error())
 			return

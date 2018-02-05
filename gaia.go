@@ -26,23 +26,31 @@ type User struct {
 
 // Pipeline represents a single pipeline
 type Pipeline struct {
-	Name         string       `json:"pipelinename"`
-	Repo         GitRepo      `json:"gitrepo"`
-	Type         PipelineType `json:"pipelinetype"`
-	Status       int          `json:"status"`
-	ErrMsg       string       `json:"errmsg"`
-	CreationDate time.Time    `json:"creationdate"`
+	Name    string       `json:"name"`
+	Repo    GitRepo      `json:"repo"`
+	Type    PipelineType `json:"type"`
+	Created time.Time    `json:"created"`
 }
 
 // GitRepo represents a single git repository
 type GitRepo struct {
-	URL            string     `json:"giturl"`
-	Username       string     `json:"gituser"`
-	Password       string     `json:"gitpassword"`
+	URL            string     `json:"url"`
+	Username       string     `json:"user"`
+	Password       string     `json:"password"`
 	PrivateKey     PrivateKey `json:"privatekey"`
 	SelectedBranch string     `json:"selectedbranch"`
-	Branches       []string   `json:"gitbranches"`
+	Branches       []string   `json:"branches"`
 	LocalDest      string
+}
+
+// CreatePipeline represents a pipeline which is not yet
+// compiled.
+type CreatePipeline struct {
+	ID       string    `json:"id"`
+	Pipeline Pipeline  `json:"pipeline"`
+	Status   int       `json:"status"`
+	Output   string    `json:"errmsg"`
+	Created  time.Time `json:"created"`
 }
 
 // PrivateKey represents a pem encoded private key
