@@ -12,6 +12,7 @@ import (
 
 const (
 	golangBinaryName = "go"
+	golangFolder     = "golang"
 	srcFolder        = "src"
 )
 
@@ -26,7 +27,7 @@ func (b *BuildPipelineGolang) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	uuid := uuid.Must(uuid.NewV4())
 
 	// Create local temp folder for clone
-	goPath := gaia.Cfg.HomePath + string(os.PathSeparator) + tmpFolder
+	goPath := gaia.Cfg.HomePath + string(os.PathSeparator) + tmpFolder + string(os.PathSeparator) + golangFolder
 	cloneFolder := goPath + string(os.PathSeparator) + srcFolder + string(os.PathSeparator) + uuid.String()
 	err := os.MkdirAll(cloneFolder, 0700)
 	if err != nil {
@@ -46,32 +47,27 @@ func (b *BuildPipelineGolang) ExecuteBuild(p *gaia.CreatePipeline) error {
 		gaia.Cfg.Logger.Debug("cannot find go executeable", "error", err.Error())
 		return err
 	}
-	goPath := gaia.Cfg.HomePath + string(os.PathSeparator) + tmpFolder
+	goPath := gaia.Cfg.HomePath + string(os.PathSeparator) + tmpFolder + string(os.PathSeparator) + golangFolder
 
 	// Set command args for get dependencies
 	args := []string{
-		path,
 		"get",
+		"-d",
 		"./...",
 	}
-	env := []string{
-		"GOPATH=" + goPath,
-	}
+	env := os.Environ()
+	env = append(env, "GOPATH="+goPath)
 
 	// Execute and wait until finish or timeout
 	output, err := executeCmd(path, args, env, p.Pipeline.Repo.LocalDest)
 	if err != nil {
-		gaia.Cfg.Logger.Debug("cannot get dependencies", "error", err.Error())
+		gaia.Cfg.Logger.Debug("cannot get dependencies", "error", err.Error(), "output", string(output))
 		p.Output = string(output)
 		return err
 	}
 
 	// Set command args for build
-	env = []string{
-		"GOPATH=" + goPath,
-	}
 	args = []string{
-		path,
 		"build",
 		"-o",
 		p.Pipeline.Name,
@@ -81,7 +77,7 @@ func (b *BuildPipelineGolang) ExecuteBuild(p *gaia.CreatePipeline) error {
 	output, err = executeCmd(path, args, env, p.Pipeline.Repo.LocalDest)
 	p.Output = string(output)
 	if err != nil {
-		gaia.Cfg.Logger.Debug("cannot build pipeline", "error", err.Error())
+		gaia.Cfg.Logger.Debug("cannot build pipeline", "error", err.Error(), "output", string(output))
 		return err
 	}
 

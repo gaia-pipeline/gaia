@@ -61,21 +61,21 @@
           <article class="tile is-child notification content-article box">
             <p class="subtitle">Select pipeline language</p>
             <div class="content" style="display: flex;">
-              <div class="pipelinetype tippy" title="Golang" v-on:click="createPipeline.pipeline.type = 'golang'" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'golang' }" data-tippy-hideOnClick="false">
+              <div class="pipelinetype" title="Golang" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-on:click="createPipeline.pipeline.type = 'golang'" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'golang' }" data-tippy-hideOnClick="false">
                 <img src="~assets/golang.png" class="typeimage">
               </div>
-              <div class="pipelinetype tippy" title="Python (not yet supported)" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'python' }" data-tippy-hideOnClick="false">
+              <div class="pipelinetype" title="Python (not yet supported)" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'python' }" data-tippy-hideOnClick="false">
                 <img src="~assets/python.png" class="typeimage typeimagenotyetsupported">
               </div>
-              <div class="pipelinetype tippy" title="Java (not yet supported)" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'java' }" data-tippy-hideOnClick="false">
+              <div class="pipelinetype" title="Java (not yet supported)" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'java' }" data-tippy-hideOnClick="false">
                 <img src="~assets/java.png" class="typeimage typeimagenotyetsupported">
               </div>
             </div>
             <div class="content" style="display: flex;">
-              <div class="pipelinetype tippy" title="C++ (not yet supported)" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'cplusplus' }" data-tippy-hideOnClick="false">
+              <div class="pipelinetype" title="C++ (not yet supported)" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'cplusplus' }" data-tippy-hideOnClick="false">
                 <img src="~assets/cplusplus.png" class="typeimage typeimagenotyetsupported">
               </div>
-              <div class="pipelinetype tippy" title="Node.js (not yet supported)" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'nodejs' }" data-tippy-hideOnClick="false">
+              <div class="pipelinetype" title="Node.js (not yet supported)" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'nodejs' }" data-tippy-hideOnClick="false">
                 <img src="~assets/nodejs.png" class="typeimage typeimagenotyetsupported">
               </div>
             </div>
@@ -91,8 +91,15 @@
               :rows="historyRows"
               :paginate="true"
               :global-search="true"
+              :defaultSortBy="{field: 'status', type: 'asc'}"
               globalSearchPlaceholder="Search ..."
               styleClass="table table-own-bordered">
+              <template slot="table-row" slot-scope="props">
+                <td>{{ props.row.pipeline.name }}</td>
+                <td class="progress-bar-height"><div class="progress-bar-middle" v-bind:class="{ blink: props.row.status < 100 }"><progress-bar :type="'info'" :size="'small'" :value="props.row.status" :max="100" :show-label="false"></progress-bar></div></td>
+                <td>{{ props.row.pipeline.type }}</td>
+                <td :title="props.row.created" v-tippy="{ arrow : true,  animation : 'shift-away'}">{{ convertTime(props.row.created) }}</td>
+              </template>
               <div slot="emptystate" class="empty-table-text">
                 No pipelines found in database.
               </div>
@@ -166,10 +173,12 @@ import Vue from 'vue'
 import { Modal } from 'vue-bulma-modal'
 import { Collapse, Item as CollapseItem } from 'vue-bulma-collapse'
 import ProgressBar from 'vue-bulma-progress-bar'
-import Tippy from 'tippy.js'
+import VueTippy from 'vue-tippy'
 import VueGoodTable from 'vue-good-table'
+import moment from 'moment'
 
 Vue.use(VueGoodTable)
+Vue.use(VueTippy)
 
 export default {
   data () {
@@ -210,7 +219,8 @@ export default {
         },
         {
           label: 'Status',
-          field: 'status'
+          field: 'status',
+          type: 'number'
         },
         {
           label: 'Type',
@@ -229,19 +239,10 @@ export default {
     Modal,
     Collapse,
     CollapseItem,
-    ProgressBar,
-    Tippy
+    ProgressBar
   },
 
   mounted () {
-    // tippy
-    Tippy('.tippy', {
-      placement: 'top',
-      animation: 'scale',
-      duration: 500,
-      arrow: true
-    })
-
     // created pipelines history
     this.fetchData()
 
@@ -344,7 +345,7 @@ export default {
 
       // Start the create pipeline process in the backend
       this.$http
-        .post('/api/v1/pipelines/create', this.createPipeline.pipeline)
+        .post('/api/v1/pipelines/create', this.createPipeline)
         .then(response => {
           // Run fetchData to see the pipeline in our history table
           this.fetchData()
@@ -352,6 +353,10 @@ export default {
         .catch(error => {
           console.log(error.response.data)
         })
+    },
+
+    convertTime (time) {
+      return moment(time).fromNow()
     },
 
     close () {
@@ -385,13 +390,28 @@ export default {
   border-color: #2a2735 !important;
 }
 
+.progress-bar-middle {
+  position: relative;
+  -webkit-transform: translateY(-50%);
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+  top: 50%; 
+}
+
+.progress-bar-height {
+  height: 45px;
+}
+
 .table td {
   border: 0 !important;
+  color: #8c91a0 !important;
+  text-align: center !important;
 }
 
 .table th {
   border-top: solid black 2px !important;
   border-bottom: solid black 2px !important;
+  color: #4da2fc !important;
 }
 
 .table thead th {

@@ -43,7 +43,6 @@
     "mdi": "^1.8.36",
     "moment": "^2.20.1",
     "plotly.js": "^1.33.1",
-    "tippy.js": "^2.0.9",
     "vue": "^2.5.13",
     "vue-bulma-breadcrumb": "^1.0.1",
     "vue-bulma-collapse": "1.0.3",
@@ -56,6 +55,7 @@
     "vue-lodash": "^1.0.4",
     "vue-nprogress": "0.1.5",
     "vue-router": "^3.0.1",
+    "vue-tippy": "^2.0.7",
     "vuex": "^3.0.1",
     "vuex-router-sync": "^5.0.0",
     "wysiwyg.css": "0.0.2"

@@ -51,8 +51,8 @@ func PipelineGitLSRemote(ctx iris.Context) {
 	ctx.JSON(repo.Branches)
 }
 
-// CreatePipeline clones a given git repo and
-// compiles the included source file to a pipeline.
+// CreatePipeline accepts all data needed to create a pipeline.
+// It then starts the create pipeline execution process async.
 func CreatePipeline(ctx iris.Context) {
 	p := &gaia.CreatePipeline{}
 	if err := ctx.ReadJSON(p); err != nil {
@@ -60,6 +60,7 @@ func CreatePipeline(ctx iris.Context) {
 		ctx.WriteString(err.Error())
 		return
 	}
+	gaia.Cfg.Logger.Debug("create pipeline", "pipeline", (*p))
 
 	// Set the creation date and unique id
 	p.Created = time.Now()
