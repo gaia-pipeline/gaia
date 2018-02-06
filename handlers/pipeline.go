@@ -60,7 +60,6 @@ func CreatePipeline(ctx iris.Context) {
 		ctx.WriteString(err.Error())
 		return
 	}
-	gaia.Cfg.Logger.Debug("create pipeline", "pipeline", (*p))
 
 	// Set the creation date and unique id
 	p.Created = time.Now()

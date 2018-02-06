@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"context"
+	"io"
 	"os"
 	"os/exec"
 	"time"
@@ -102,6 +103,33 @@ func executeCmd(path string, args []string, env []string, dir string) ([]byte, e
 // CopyBinary copies the final compiled archive to the
 // destination folder.
 func (b *BuildPipelineGolang) CopyBinary(p *gaia.CreatePipeline) error {
-	// TODO
-	return nil
+	// Define src and destination
+	src := p.Pipeline.Repo.LocalDest + string(os.PathSeparator) + p.Pipeline.Name
+	dest := gaia.Cfg.PipelinePath + string(os.PathSeparator) + p.Pipeline.Name
+
+	return copyFileContents(src, dest)
+}
+
+// copyFileContents copies the content from source to destination.
+func copyFileContents(src, dst string) (err error) {
+	in, err := os.Open(src)
+	if err != nil {
+		return
+	}
+	defer in.Close()
+	out, err := os.Create(dst)
+	if err != nil {
+		return
+	}
+	defer func() {
+		cerr := out.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
+	if _, err = io.Copy(out, in); err != nil {
+		return
+	}
+	err = out.Sync()
+	return
 }

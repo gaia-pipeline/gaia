@@ -65,9 +65,11 @@ var Cfg *Config
 
 // Config holds all config options
 type Config struct {
-	ListenPort string
-	HomePath   string
-	Logger     hclog.Logger
+	ListenPort   string
+	HomePath     string
+	DataPath     string
+	PipelinePath string
+	Logger       hclog.Logger
 
 	Bolt struct {
 		Path string

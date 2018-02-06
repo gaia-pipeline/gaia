@@ -399,7 +399,7 @@ export default {
 }
 
 .progress-bar-height {
-  height: 45px;
+  height: 50px;
 }
 
 .table td {

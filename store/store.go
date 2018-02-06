@@ -8,10 +8,6 @@ import (
 	"github.com/gaia-pipeline/gaia"
 )
 
-const (
-	dataFolder = "data"
-)
-
 var (
 	// Name of the bucket where we store user objects
 	userBucket = []byte("Users")
@@ -45,15 +41,8 @@ func NewStore() *Store {
 // This should be called only once per database
 // because bolt holds a lock on the database file.
 func (s *Store) Init() error {
-	// Make sure data folder exists
-	folder := gaia.Cfg.HomePath + string(os.PathSeparator) + dataFolder
-	err := os.MkdirAll(folder, 0700)
-	if err != nil {
-		return err
-	}
-
 	// Open connection to bolt database
-	path := folder + string(os.PathSeparator) + gaia.Cfg.Bolt.Path
+	path := gaia.Cfg.DataPath + string(os.PathSeparator) + gaia.Cfg.Bolt.Path
 	db, err := bolt.Open(path, gaia.Cfg.Bolt.Mode, nil)
 	if err != nil {
 		return err

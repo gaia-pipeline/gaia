@@ -7,6 +7,7 @@ import (
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
+	"github.com/gaia-pipeline/gaia/pipeline"
 	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/kataras/iris"
@@ -14,6 +15,11 @@ import (
 
 var (
 	irisInstance *iris.Application
+)
+
+const (
+	dataFolder      = "data"
+	pipelinesFolder = "pipelines"
 )
 
 func init() {
@@ -51,12 +57,22 @@ func main() {
 		gaia.Cfg.Logger.Debug("executeable path found", "path", execPath)
 	}
 
+	// Set data path and pipeline path relative to home folder and create it
+	// if not exist.
+	gaia.Cfg.DataPath = gaia.Cfg.HomePath + string(os.PathSeparator) + dataFolder
+	gaia.Cfg.PipelinePath = gaia.Cfg.DataPath + string(os.PathSeparator) + pipelinesFolder
+	err := os.MkdirAll(gaia.Cfg.PipelinePath, 0700)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot create data folder", "error", err.Error(), "path", gaia.Cfg.DataPath)
+		os.Exit(1)
+	}
+
 	// Initialize IRIS
 	irisInstance = iris.New()
 
 	// Initialize store
 	s := store.NewStore()
-	err := s.Init()
+	err = s.Init()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize store", "error", err.Error())
 		os.Exit(1)
@@ -68,6 +84,9 @@ func main() {
 		gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
 		os.Exit(1)
 	}
+
+	// Start ticker. Periodic job to check for new plugins.
+	pipeline.InitTicker()
 
 	// Start listen
 	irisInstance.Run(iris.Addr(":" + gaia.Cfg.ListenPort))
