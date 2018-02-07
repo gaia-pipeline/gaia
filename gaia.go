@@ -11,6 +11,9 @@ import (
 type PipelineType string
 
 const (
+	// UNKNOWN plugin type
+	UNKNOWN PipelineType = "unknown"
+
 	// GOLANG plugin type
 	GOLANG PipelineType = "golang"
 )
@@ -75,4 +78,9 @@ type Config struct {
 		Path string
 		Mode os.FileMode
 	}
+}
+
+// String returns a pipeline type string back
+func (p PipelineType) String() string {
+	return string(p)
 }

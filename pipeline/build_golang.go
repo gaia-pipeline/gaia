@@ -71,7 +71,7 @@ func (b *BuildPipelineGolang) ExecuteBuild(p *gaia.CreatePipeline) error {
 	args = []string{
 		"build",
 		"-o",
-		p.Pipeline.Name,
+		appendTypeToName(p.Pipeline.Name, p.Pipeline.Type),
 	}
 
 	// Execute and wait until finish or timeout
@@ -104,8 +104,8 @@ func executeCmd(path string, args []string, env []string, dir string) ([]byte, e
 // destination folder.
 func (b *BuildPipelineGolang) CopyBinary(p *gaia.CreatePipeline) error {
 	// Define src and destination
-	src := p.Pipeline.Repo.LocalDest + string(os.PathSeparator) + p.Pipeline.Name
-	dest := gaia.Cfg.PipelinePath + string(os.PathSeparator) + p.Pipeline.Name
+	src := p.Pipeline.Repo.LocalDest + string(os.PathSeparator) + appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
+	dest := gaia.Cfg.PipelinePath + string(os.PathSeparator) + appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
 
 	return copyFileContents(src, dest)
 }
