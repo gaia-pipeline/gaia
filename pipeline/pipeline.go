@@ -1,7 +1,9 @@
 package pipeline
 
 import (
+	"errors"
 	"fmt"
+	"os/exec"
 	"sync"
 
 	"github.com/gaia-pipeline/gaia"
@@ -47,6 +49,10 @@ const (
 var (
 	// GlobalActivePipelines holds globally all current active pipleines.
 	GlobalActivePipelines *ActivePipelines
+
+	// errMissingType is the error thrown when a pipeline is missing the type
+	// in the file name.
+	errMissingType = errors.New("couldnt find pipeline type definition")
 )
 
 // NewBuildPipeline creates a new build pipeline for the given
@@ -63,6 +69,22 @@ func NewBuildPipeline(t gaia.PipelineType) BuildPipeline {
 	}
 
 	return bP
+}
+
+// createPipelineCmd creates the execute command for the plugin system
+// dependent on the plugin type.
+func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
+	c := &exec.Cmd{}
+
+	// Dependent on the pipeline type
+	switch p.Type {
+	case gaia.GOLANG:
+		c.Path = p.ExecPath
+	default:
+		c = nil
+	}
+
+	return c
 }
 
 // NewActivePipelines creates a new instance of ActivePipelines

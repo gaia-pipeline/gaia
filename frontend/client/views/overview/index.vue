@@ -6,13 +6,14 @@
           <div class="tile notification content-article">
             <div class="status-display-success"></div>
             <div class="outer-box">
-              <div class="outer-box-icon">
-                <i class="fa fa-2x fa-battery-full"></i>
+              <div class="outer-box-icon-image">
+                <img src="~assets/golang.png" class="outer-box-image">
               </div>
-              <div>
+              <div class="name-link">
                 <a href="/" class="subtitle">Testpipeline</a>
               </div>
-              <div style="padding-top: 10px;">
+              <div>
+                <hr style="color: lightgrey;">
                 this is some text ...
               </div>
             </div>
@@ -136,6 +137,31 @@ export default {
 .outer-box-icon {
   width: 50px;
   float: left;
+}
+
+.outer-box-icon-image {
+  float: left;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border-radius: 50%;
+  position: relative;
+  border-color: whitesmoke;
+  border-style: solid;
+  margin-right: 10px;
+}
+
+.outer-box-image {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  top: 70%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.name-link {
+  margin-top: 5px;
 }
 
 </style>

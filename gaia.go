@@ -29,10 +29,12 @@ type User struct {
 
 // Pipeline represents a single pipeline
 type Pipeline struct {
-	Name    string       `json:"name"`
-	Repo    GitRepo      `json:"repo"`
-	Type    PipelineType `json:"type"`
-	Created time.Time    `json:"created"`
+	Name     string       `json:"name"`
+	Repo     GitRepo      `json:"repo"`
+	Type     PipelineType `json:"type"`
+	ExecPath string       `json:"execpath"`
+	Jobs     []Job        `json:"jobs"`
+	Created  time.Time    `json:"created"`
 }
 
 // GitRepo represents a single git repository
@@ -44,6 +46,14 @@ type GitRepo struct {
 	SelectedBranch string     `json:"selectedbranch"`
 	Branches       []string   `json:"branches"`
 	LocalDest      string
+}
+
+// Job represents a single job of a pipeline
+type Job struct {
+	UniqueID    string `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"desc"`
+	Priority    int32  `json:"priority"`
 }
 
 // CreatePipeline represents a pipeline which is not yet

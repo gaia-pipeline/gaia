@@ -2,8 +2,10 @@ package plugin
 
 import (
 	"errors"
+	"io"
 	"os/exec"
 
+	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/proto"
 	plugin "github.com/hashicorp/go-plugin"
 )
@@ -82,12 +84,50 @@ func (p *Plugin) Execute(j *proto.Job) error {
 	return err
 }
 
+// GetJobs receives all implemented jobs from the given plugin.
+func (p *Plugin) GetJobs() ([]gaia.Job, error) {
+	l := []gaia.Job{}
+
+	// Get the stream
+	stream, err := p.pluginConn.GetJobs()
+	if err != nil {
+		return nil, err
+	}
+
+	// receive all jobs
+	for {
+		job, err := (*stream).Recv()
+
+		// Got all jobs
+		if err == io.EOF {
+			break
+		}
+
+		// Error during stream
+		if err != nil {
+			return nil, err
+		}
+
+		// Convert proto object to gaia.Job struct
+		j := gaia.Job{
+			UniqueID:    job.UniqueId,
+			Title:       job.Title,
+			Description: job.Description,
+			Priority:    job.Priority,
+		}
+		l = append(l, j)
+	}
+
+	// return list
+	return l, nil
+}
+
 // Close shutdown the plugin and kills the gRPC connection.
 // Remember to call this when you call plugin.Connect.
 func (p *Plugin) Close() {
 	// We start the kill command in a goroutine because kill
 	// is blocking until the subprocess successfully exits.
-	// The user should not notice the stopping process.
+	// The user should not wait for this.
 	go func() {
 		p.client.Kill()
 	}()

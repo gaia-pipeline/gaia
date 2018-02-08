@@ -1,8 +1,8 @@
 package pipeline
 
 import (
-	"errors"
 	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -13,12 +13,6 @@ const (
 	// tickerIntervalSeconds defines how often the ticker will tick.
 	// Definition in seconds.
 	tickerIntervalSeconds = 5
-)
-
-var (
-	// errMissingType is the error thrown when a pipeline is missing the type
-	// in the file name.
-	errMissingType = errors.New("couldnt find pipeline type definition")
 )
 
 // InitTicker inititates the pipeline ticker.
@@ -72,10 +66,14 @@ func checkActivePipelines() {
 
 			// Create pipeline object and fill it with information
 			p := gaia.Pipeline{
-				Name:    pName,
-				Type:    pType,
-				Created: time.Now(),
+				Name:     pName,
+				Type:     pType,
+				ExecPath: gaia.Cfg.PipelinePath + string(os.PathSeparator) + file.Name(),
+				Created:  time.Now(),
 			}
+
+			// Let us try to start the plugin and receive all implemented jobs
+			setPipelineJobs(&p)
 
 			// Append new pipeline
 			GlobalActivePipelines.Append(p)
