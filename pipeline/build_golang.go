@@ -107,7 +107,13 @@ func (b *BuildPipelineGolang) CopyBinary(p *gaia.CreatePipeline) error {
 	src := p.Pipeline.Repo.LocalDest + string(os.PathSeparator) + appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
 	dest := gaia.Cfg.PipelinePath + string(os.PathSeparator) + appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
 
-	return copyFileContents(src, dest)
+	// Copy binary
+	if err := copyFileContents(src, dest); err != nil {
+		return err
+	}
+
+	// Set +x (execution right) for pipeline
+	return os.Chmod(dest, 0766)
 }
 
 // copyFileContents copies the content from source to destination.
