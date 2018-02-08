@@ -80,7 +80,9 @@ func checkActivePipelines() {
 						setPipelineJobsTicker(p)
 
 						// Replace pipeline
-						GlobalActivePipelines.Replace(*p)
+						if ok := GlobalActivePipelines.Replace(*p); !ok {
+							gaia.Cfg.Logger.Debug("cannot replace pipeline in global pipeline list", "pipeline", p)
+						}
 					}
 				}
 
