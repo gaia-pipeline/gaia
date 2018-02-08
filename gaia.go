@@ -29,12 +29,13 @@ type User struct {
 
 // Pipeline represents a single pipeline
 type Pipeline struct {
-	Name     string       `json:"name"`
-	Repo     GitRepo      `json:"repo"`
-	Type     PipelineType `json:"type"`
-	ExecPath string       `json:"execpath"`
-	Jobs     []Job        `json:"jobs"`
-	Created  time.Time    `json:"created"`
+	Name        string       `json:"name"`
+	Repo        GitRepo      `json:"repo"`
+	Type        PipelineType `json:"type"`
+	ExecPath    string       `json:"execpath"`
+	Md5Checksum []byte       `json:"md5checksum"`
+	Jobs        []Job        `json:"jobs"`
+	Created     time.Time    `json:"created"`
 }
 
 // GitRepo represents a single git repository

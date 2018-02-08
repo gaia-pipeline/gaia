@@ -1,6 +1,9 @@
 package pipeline
 
 import (
+	"bytes"
+	"crypto/md5"
+	"io"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -61,6 +64,27 @@ func checkActivePipelines() {
 			// already contains it.
 			pName := getRealPipelineName(n, pType)
 			if GlobalActivePipelines.Contains(pName) {
+				// If Md5Checksum is set, we should check if pipeline has been changed.
+				p := GlobalActivePipelines.Get(pName)
+				if p != nil && p.Md5Checksum != nil {
+					// Get MD5 Checksum
+					checksum, err := getMd5Checksum(gaia.Cfg.PipelinePath + string(os.PathSeparator) + file.Name())
+					if err != nil {
+						gaia.Cfg.Logger.Debug("cannot calculate md5 checksum for pipeline", "error", err.Error(), "pipeline", p)
+						continue
+					}
+
+					// Pipeline has been changed?
+					if bytes.Compare(p.Md5Checksum, checksum) != 0 {
+						// Let us try again to start the plugin and receive all implemented jobs
+						setPipelineJobsTicker(p)
+
+						// Replace pipeline
+						GlobalActivePipelines.Replace(*p)
+					}
+				}
+
+				// Its already in the list
 				continue
 			}
 
@@ -73,7 +97,7 @@ func checkActivePipelines() {
 			}
 
 			// Let us try to start the plugin and receive all implemented jobs
-			setPipelineJobs(&p)
+			setPipelineJobsTicker(&p)
 
 			// Append new pipeline
 			GlobalActivePipelines.Append(p)
@@ -104,4 +128,37 @@ func getPipelineType(n string) (gaia.PipelineType, error) {
 // getRealPipelineName removes the suffix from the pipeline name.
 func getRealPipelineName(n string, pType gaia.PipelineType) string {
 	return strings.TrimSuffix(n, typeDelimiter+pType.String())
+}
+
+func setPipelineJobsTicker(p *gaia.Pipeline) {
+	err := setPipelineJobs(p)
+	if err != nil {
+		// We were not able to get jobs from the pipeline.
+		// We set the Md5Checksum for later to try it again.
+		p.Md5Checksum, err = getMd5Checksum(p.ExecPath)
+		if err != nil {
+			gaia.Cfg.Logger.Debug("cannot calculate md5 checksum for pipeline", "error", err.Error(), "pipeline", p)
+		}
+	} else {
+		// Reset md5 checksum in case we already set it
+		p.Md5Checksum = nil
+	}
+}
+
+func getMd5Checksum(file string) ([]byte, error) {
+	// Open file
+	f, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	// Create md5 obj and insert bytes
+	h := md5.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return nil, err
+	}
+
+	// return md5 checksum
+	return h.Sum(nil), nil
 }

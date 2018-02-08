@@ -104,6 +104,40 @@ func (ap *ActivePipelines) Append(p gaia.Pipeline) {
 	ap.Pipelines = append(ap.Pipelines, p)
 }
 
+// Get looks up the pipeline with the given name.
+func (ap *ActivePipelines) Get(n string) *gaia.Pipeline {
+	for pipeline := range ap.Iter() {
+		if pipeline.Name == n {
+			return &pipeline
+		}
+	}
+	return nil
+}
+
+// Replace takes the given pipeline and replaces it in the ActivePipelines
+// slice. Return true when success otherwise false.
+func (ap *ActivePipelines) Replace(p gaia.Pipeline) bool {
+	ap.Lock()
+	defer ap.Unlock()
+
+	// Search for the id
+	var i = -1
+	for id, pipeline := range ap.Pipelines {
+		if pipeline.Name == p.Name {
+			i = id
+		}
+	}
+
+	// We got it?
+	if i != -1 {
+		return false
+	}
+
+	// Yes
+	ap.Pipelines[i] = p
+	return true
+}
+
 // Iter iterates over the pipelines in the concurrent slice.
 func (ap *ActivePipelines) Iter() <-chan gaia.Pipeline {
 	c := make(chan gaia.Pipeline)
