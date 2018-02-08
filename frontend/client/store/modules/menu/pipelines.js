@@ -17,6 +17,14 @@ export default {
       meta: {
         label: 'Create'
       }
+    },
+    {
+      name: 'Pipeline Detail',
+      path: '/pipelines/detail',
+      component: lazyLoading('pipelines/detail'),
+      meta: {
+        label: 'Detail'
+      }
     }
   ]
 }

@@ -21,7 +21,9 @@ function generateRoutesFromMenu (menu = [], routes = []) {
   for (let i = 0, l = menu.length; i < l; i++) {
     let item = menu[i]
     if (item.path && item.subroute) {
-      routes.push(item.subroute[0])
+      for (let x = 0, y = item.subroute.length; x < y; x++) {
+        routes.push(item.subroute[x])
+      }
     } else if (item.path) {
       routes.push(item)
     }

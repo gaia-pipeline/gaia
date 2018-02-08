@@ -2,7 +2,7 @@
   <div class="tile is-ancestor">
     <div class="tile is-vertical">
       <div class="tile">
-        <div class="tile is-vertical is-parent is-5">
+        <div class="tile is-vertical is-parent is-6">
           <article class="tile is-child notification content-article">
             <div class="content">
               <label class="label">Copy the link of your
@@ -83,7 +83,7 @@
         </div>
       </div>
 
-      <div class="tile is-parent is-9">
+      <div class="tile is-parent is-10">
         <article class="tile is-child notification content-article box">
             <vue-good-table
               title="Pipeline history"

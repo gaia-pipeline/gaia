@@ -38,7 +38,7 @@ export default {
 
 .app-main {
   padding-top: 0px;
-  margin-left: 220px;
+  margin-left: 210px;
 
   @include mobile() {
     margin-left: 0;
