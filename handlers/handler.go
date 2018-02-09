@@ -39,6 +39,8 @@ func InitHandlers(i *iris.Application, s *store.Store) error {
 	i.Post(p+"pipelines/create", CreatePipeline)
 	i.Get(p+"pipelines/create", CreatePipelineGetAll)
 	i.Post(p+"pipelines/name", PipelineNameAvailable)
+	i.Get(p+"pipelines", PipelineGetAll)
+	i.Get(p+"pipelines/detail/{id:string}", PipelineGet)
 
 	return nil
 }

@@ -1,101 +1,67 @@
 <template>
-  <div class="tile is-ancestor">
-    <div class="tile is-vertical">
-      <div class="tile">
-        <div class="tile is-parent is-3">
-          <div class="tile notification content-article">
-            <div class="status-display-success"></div>
-            <div class="outer-box">
-              <div class="outer-box-icon-image">
-                <img src="~assets/golang.png" class="outer-box-image">
-              </div>
-              <div class="name-link">
-                <a href="/" class="subtitle">Testpipeline</a>
-              </div>
-              <div>
-                <hr style="color: lightgrey;">
-                this is some text ...
-              </div>
+  <div class="columns is-multiline">
+    <template v-for="(pipeline, index) in pipelines">
+      <div class="column is-one-third" :key="index">
+        <div class="notification content-article">
+          <div class="status-display-success"></div>
+          <div class="outer-box">
+            <div class="outer-box-icon-image">
+              <img :src="getImagePath(pipeline.type)" class="outer-box-image">
             </div>
-          </div>
-        </div>
-
-        <div class="tile is-parent is-3">
-          <div class="tile notification content-article">
-            <div class="status-display-success"></div>
-            <div class="outer-box">
-              <div class="outer-box-icon">
-                <i class="fa fa-2x fa-battery-full"></i>
-              </div>
-              <div>
-                <a href="/" class="subtitle">Testpipeline</a>
-              </div>
-              <div style="padding-top: 10px;">
-                this is some text ...
-              </div>
+            <div>
+              <router-link :to="{ path: '/pipelines/detail', query: { pipelineid: pipeline.id }}" class="subtitle">{{ pipeline.name }}</router-link>
             </div>
-          </div>
-        </div>
-
-        <div class="tile is-parent is-3">
-          <div class="tile notification content-article">
-            <div class="status-display-folder"></div>
-            <div class="outer-box">
-              <div class="outer-box-icon">
-                <i class="fa fa-2x fa-folder"></i>
-              </div>
-              <div>
-                <a href="/" class="subtitle">Testfolder</a>
-              </div>
-              <div style="padding-top: 10px;">
-                this is some text ...
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="tile is-parent is-3">
-          <div class="tile notification content-article">
-            <div class="status-display-folder"></div>
-            <div class="outer-box">
-              <div class="outer-box-icon">
-                <i class="fa fa-2x fa-folder"></i>
-              </div>
-              <div>
-                <a href="/" class="subtitle">Testfolder</a>
-              </div>
-              <div style="padding-top: 10px;">
-                this is some text ...
-              </div>
+            <div>
+              <hr style="color: lightgrey;">
+              this is some text ...
             </div>
           </div>
         </div>
       </div>
-      <div class="tile">
-        <div class="tile is-parent is-3">
-          <div class="tile notification content-article">
-            <div class="status-display-fail"></div>
-            <div class="outer-box">
-              <div class="outer-box-icon">
-                <i class="fa fa-2x fa-battery-full"></i>
-              </div>
-              <div>
-                <a href="/" class="subtitle">Testpipeline</a>
-              </div>
-              <div style="padding-top: 10px;">
-                this is some text ...
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    </template>          
   </div>
 </template>
 
 <script>
 export default {
+  data () {
+    return {
+      pipelines: []
+    }
+  },
 
+  mounted () {
+    // Fetch data from backend
+    this.fetchData()
+
+    // periodically update dashboard
+    setInterval(function () {
+      this.fetchData()
+    }.bind(this), 3000)
+  },
+
+  watch: {
+    '$route': 'fetchData'
+  },
+
+  methods: {
+    fetchData () {
+      this.$http
+        .get('/api/v1/pipelines', { showProgressBar: false })
+        .then(response => {
+          if (response.data) {
+            this.pipelines = response.data
+          }
+        })
+        .catch(error => {
+          console.log(error.response.data)
+        })
+    },
+
+    getImagePath (type) {
+      return require('assets/' + type + '.png')
+    }
+  }
 }
 </script>
 
@@ -149,6 +115,7 @@ export default {
   border-color: whitesmoke;
   border-style: solid;
   margin-right: 10px;
+  margin-top: -5px;
 }
 
 .outer-box-image {
@@ -158,10 +125,6 @@ export default {
   top: 70%;
   left: 50%;
   transform: translate(-50%, -50%);
-}
-
-.name-link {
-  margin-top: 5px;
 }
 
 </style>

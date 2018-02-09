@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import menuModule from '../store/modules/menu'
+import lazyLoading from '../store/modules/menu/lazyLoading'
 Vue.use(Router)
 
 export default new Router({
@@ -12,6 +13,11 @@ export default new Router({
     {
       path: '*',
       redirect: '/overview'
+    },
+    {
+      name: 'Pipeline Detail',
+      path: '/pipelines/detail',
+      component: lazyLoading('pipelines/detail')
     }
   ]
 })

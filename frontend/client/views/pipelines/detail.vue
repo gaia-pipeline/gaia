@@ -17,41 +17,73 @@ import Vis from 'vis'
 
 export default {
 
-  data () {
-    return {
-      nodes: new Vis.DataSet([
-        {id: 1, shape: 'circularImage', image: require('assets/success.png'), label: 'Create User'},
-        {id: 2, shape: 'circularImage', image: require('assets/success.png'), label: 'Insert Dump'},
-        {id: 3, shape: 'circularImage', image: require('assets/fail.png'), label: 'Create Namespace'},
-        {id: 4, shape: 'circularImage', image: require('assets/time.png'), label: 'Create Deployment'},
-        {id: 5, shape: 'circularImage', image: require('assets/time.png'), label: 'Create Service'},
-        {id: 6, shape: 'circularImage', image: require('assets/time.png'), label: 'Create Ingress'},
-        {id: 7, shape: 'circularImage', image: require('assets/time.png'), label: 'Clean up'}
-      ]),
-      edges: new Vis.DataSet([
-        {from: 1, to: 2},
-        {from: 2, to: 3},
-        {from: 3, to: 4},
-        {from: 3, to: 5},
-        {from: 3, to: 6},
-        {from: 4, to: 7},
-        {from: 5, to: 7},
-        {from: 6, to: 7}
-      ])
-    }
-  },
-
   mounted () {
     this.fetchData()
   },
 
   methods: {
     fetchData () {
-      // Find container and set data
+      // look up url parameters
+      var pipelineID = this.$route.query.pipelineid
+      if (!pipelineID) {
+        return
+      }
+
+      // Get all information from this specific pipeline
+      this.$http
+        .get('/api/v1/pipelines/detail/' + pipelineID)
+        .then(response => {
+          this.drawPipelineDetail(response.data)
+        })
+    },
+
+    drawPipelineDetail (pipeline) {
+      // Find container
       var container = document.getElementById('pipeline-detail')
+
+      // prepare data object for vis
       var data = {
-        nodes: this.nodes,
-        edges: this.edges
+        nodes: [],
+        edges: []
+      }
+      console.log(pipeline)
+
+      // Iterate all jobs of the pipeline
+      for (let i = 0, l = pipeline.jobs.length; i < l; i++) {
+        // Create nodes object
+        var node = {
+          id: i,
+          shape: 'circularImage',
+          image: require('assets/success.png'),
+          label: pipeline.jobs[i].title
+        }
+
+        // Add node to nodes list
+        data.nodes.push(node)
+
+        // Iterate all jobs again to find the next highest job priority
+        var highestPrio = 1000000000 // high as possible. First match should overwrite it.
+        for (let x = 0, y = pipeline.jobs.length; x < y; x++) {
+          if (pipeline.jobs[x].priority > pipeline.jobs[i].priority && pipeline.jobs[x].priority < highestPrio) {
+            highestPrio = pipeline.jobs[x].priority
+          }
+        }
+
+        // Iterate again all jobs to set all edges
+        if (highestPrio) {
+          for (let x = 0, y = pipeline.jobs.length; x < y; x++) {
+            if (pipeline.jobs[x].priority === highestPrio) {
+              // create edge
+              var edge = {
+                from: i,
+                to: x
+              }
+
+              // add edge to edges list
+              data.edges.push(edge)
+            }
+          }
+        }
       }
 
       // Define vis options

@@ -12,7 +12,11 @@ import (
 )
 
 var (
+	// errPathLength is a validation error during pipeline name input
 	errPathLength = errors.New("name of pipeline is empty or one of the path elements length exceeds 50 characters")
+
+	// errPipelineNotFound is thrown when a pipeline was not found with the given id
+	errPipelineNotFound = errors.New("pipeline not found with the given id")
 )
 
 const (
@@ -193,4 +197,34 @@ func PipelineNameAvailable(ctx iris.Context) {
 
 		// TODO check if pipeline name is already in use
 	}
+}
+
+// PipelineGetAll returns all registered pipelines.
+func PipelineGetAll(ctx iris.Context) {
+	var pipelines []gaia.Pipeline
+
+	// Get all active pipelines
+	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+		pipelines = append(pipelines, pipeline)
+	}
+
+	// Return as json
+	ctx.JSON(pipelines)
+}
+
+// PipelineGet accepts a pipeline id and returns the pipeline object.
+func PipelineGet(ctx iris.Context) {
+	userID := ctx.Params().Get("id")
+
+	// Look up pipeline for the given id
+	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+		if pipeline.ID == userID {
+			ctx.JSON(pipeline)
+			return
+		}
+	}
+
+	// Pipeline not found
+	ctx.StatusCode(iris.StatusNotFound)
+	ctx.WriteString(errPipelineNotFound.Error())
 }

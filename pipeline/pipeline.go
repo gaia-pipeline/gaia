@@ -104,10 +104,10 @@ func (ap *ActivePipelines) Append(p gaia.Pipeline) {
 	ap.Pipelines = append(ap.Pipelines, p)
 }
 
-// Get looks up the pipeline with the given name.
-func (ap *ActivePipelines) Get(n string) *gaia.Pipeline {
+// Get looks up the pipeline with the given id.
+func (ap *ActivePipelines) Get(id string) *gaia.Pipeline {
 	for pipeline := range ap.Iter() {
-		if pipeline.Name == n {
+		if pipeline.ID == id {
 			return &pipeline
 		}
 	}

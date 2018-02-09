@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
+	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -92,6 +93,7 @@ func checkActivePipelines() {
 
 			// Create pipeline object and fill it with information
 			p := gaia.Pipeline{
+				ID:       uuid.Must(uuid.NewV4()).String(),
 				Name:     pName,
 				Type:     pType,
 				ExecPath: gaia.Cfg.PipelinePath + string(os.PathSeparator) + file.Name(),
