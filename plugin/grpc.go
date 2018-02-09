@@ -11,8 +11,8 @@ import (
 // PluginGRPC is the Gaia plugin interface used for communication
 // with the plugin.
 type PluginGRPC interface {
-	GetJobs() (*proto.Plugin_GetJobsClient, error)
-	ExecuteJob(job *proto.Job) (*proto.Empty, error)
+	GetJobs() (proto.Plugin_GetJobsClient, error)
+	ExecuteJob(job *proto.Job) (*proto.JobResult, error)
 }
 
 // GRPCClient represents gRPC client

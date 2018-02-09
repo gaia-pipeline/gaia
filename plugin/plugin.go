@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	pluginMapKey = "plugin"
+	pluginMapKey = "Plugin"
 )
 
 var handshake = plugin.HandshakeConfig{
@@ -96,7 +96,7 @@ func (p *Plugin) GetJobs() ([]gaia.Job, error) {
 
 	// receive all jobs
 	for {
-		job, err := (*stream).Recv()
+		job, err := stream.Recv()
 
 		// Got all jobs
 		if err == io.EOF {
