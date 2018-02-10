@@ -29,7 +29,7 @@ type User struct {
 
 // Pipeline represents a single pipeline
 type Pipeline struct {
-	ID          string       `json:"id,omitempty"`
+	ID          int          `json:"id,omitempty"`
 	Name        string       `json:"name,omitempty"`
 	Repo        GitRepo      `json:"repo,omitempty"`
 	Type        PipelineType `json:"type,omitempty"`

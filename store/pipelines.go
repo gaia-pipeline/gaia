@@ -53,3 +53,61 @@ func (s *Store) CreatePipelineGet() ([]gaia.CreatePipeline, error) {
 		})
 	})
 }
+
+// PipelinePut puts a pipeline into the store.
+// On persist, the pipeline will get a unique id.
+func (s *Store) PipelinePut(p *gaia.Pipeline) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		// Get pipeline bucket
+		b := tx.Bucket(pipelineBucket)
+
+		// Generate ID for the pipeline.
+		id, err := b.NextSequence()
+		if err != nil {
+			return err
+		}
+		p.ID = int(id)
+
+		// Marshal pipeline data into bytes.
+		buf, err := json.Marshal(p)
+		if err != nil {
+			return err
+		}
+
+		// Persist bytes to pipelines bucket.
+		return b.Put(itob(p.ID), buf)
+	})
+}
+
+// PipelineGetByName looks up a pipeline by the given name.
+// Returns nil if pipeline was not found.
+func (s *Store) PipelineGetByName(n string) (*gaia.Pipeline, error) {
+	var pipeline *gaia.Pipeline
+
+	return pipeline, s.db.View(func(tx *bolt.Tx) error {
+		// Get bucket
+		b := tx.Bucket(pipelineBucket)
+
+		// Iterate all created pipelines.
+		return b.ForEach(func(k, v []byte) error {
+			// create single pipeline object
+			p := &gaia.Pipeline{}
+
+			// Unmarshal
+			err := json.Unmarshal(v, p)
+			if err != nil {
+				return err
+			}
+
+			// Is this pipeline we are looking for?
+			if p.Name == n {
+				pipeline = p
+			}
+
+			return nil
+		})
+	})
+}
+
+// PipelineGetScheduled returns the scheduled pipelines
+//func (s *Store) PipelineGetScheduled() ([]gaia.Pipeline, error) {}

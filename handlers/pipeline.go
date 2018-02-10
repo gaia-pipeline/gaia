@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,6 +18,9 @@ var (
 
 	// errPipelineNotFound is thrown when a pipeline was not found with the given id
 	errPipelineNotFound = errors.New("pipeline not found with the given id")
+
+	// errInvalidPipelineID is thrown when the given pipeline id is not valid
+	errInvalidPipelineID = errors.New("the given pipeline id is not valid")
 )
 
 const (
@@ -214,7 +218,15 @@ func PipelineGetAll(ctx iris.Context) {
 
 // PipelineGet accepts a pipeline id and returns the pipeline object.
 func PipelineGet(ctx iris.Context) {
-	userID := ctx.Params().Get("id")
+	userIDStr := ctx.Params().Get("id")
+
+	// Convert string to int because id is int
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.WriteString(errInvalidPipelineID.Error())
+		return
+	}
 
 	// Look up pipeline for the given id
 	for pipeline := range pipeline.GlobalActivePipelines.Iter() {

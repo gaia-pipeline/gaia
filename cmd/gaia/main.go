@@ -71,22 +71,22 @@ func main() {
 	irisInstance = iris.New()
 
 	// Initialize store
-	s := store.NewStore()
-	err = s.Init()
+	store := store.NewStore()
+	err = store.Init()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize store", "error", err.Error())
 		os.Exit(1)
 	}
 
 	// Initialize handlers
-	err = handlers.InitHandlers(irisInstance, s)
+	err = handlers.InitHandlers(irisInstance, store)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
 		os.Exit(1)
 	}
 
 	// Start ticker. Periodic job to check for new plugins.
-	pipeline.InitTicker()
+	pipeline.InitTicker(store)
 
 	// Start listen
 	irisInstance.Run(iris.Addr(":" + gaia.Cfg.ListenPort))

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gaia-pipeline/gaia/store"
 )
 
 const (
@@ -19,11 +19,18 @@ const (
 	tickerIntervalSeconds = 5
 )
 
+// storeService is an instance of store.
+// Use this to talk to the store.
+var storeService *store.Store
+
 // InitTicker inititates the pipeline ticker.
 // This periodic job will check for new pipelines.
-func InitTicker() {
+func InitTicker(s *store.Store) {
 	// Init global active pipelines slice
 	GlobalActivePipelines = NewActivePipelines()
+
+	// Save store pointer
+	storeService = s
 
 	// Check immediately to make sure we fill the list as fast as possible.
 	checkActivePipelines()
@@ -66,7 +73,7 @@ func checkActivePipelines() {
 			pName := getRealPipelineName(n, pType)
 			if GlobalActivePipelines.Contains(pName) {
 				// If Md5Checksum is set, we should check if pipeline has been changed.
-				p := GlobalActivePipelines.Get(pName)
+				p := GlobalActivePipelines.GetByName(pName)
 				if p != nil && p.Md5Checksum != nil {
 					// Get MD5 Checksum
 					checksum, err := getMd5Checksum(gaia.Cfg.PipelinePath + string(os.PathSeparator) + file.Name())
@@ -78,7 +85,7 @@ func checkActivePipelines() {
 					// Pipeline has been changed?
 					if bytes.Compare(p.Md5Checksum, checksum) != 0 {
 						// Let us try again to start the plugin and receive all implemented jobs
-						setPipelineJobsTicker(p)
+						setPipelineJobs(p)
 
 						// Replace pipeline
 						if ok := GlobalActivePipelines.Replace(*p); !ok {
@@ -91,20 +98,51 @@ func checkActivePipelines() {
 				continue
 			}
 
-			// Create pipeline object and fill it with information
-			p := gaia.Pipeline{
-				ID:       uuid.Must(uuid.NewV4()).String(),
-				Name:     pName,
-				Type:     pType,
-				ExecPath: gaia.Cfg.PipelinePath + string(os.PathSeparator) + file.Name(),
-				Created:  time.Now(),
+			// Get pipeline from store.
+			pipeline, err := storeService.PipelineGetByName(pName)
+			if err != nil {
+				// If we have an error here we are in trouble.
+				gaia.Cfg.Logger.Error("cannot access pipelines bucket. Data corrupted?", "error", err.Error())
+				continue
+			}
+
+			// We couldn't finde the pipeline. Create a new one.
+			var shouldStore = false
+			if pipeline == nil {
+				// Create pipeline object and fill it with information
+				pipeline = &gaia.Pipeline{
+					Name:     pName,
+					Type:     pType,
+					ExecPath: gaia.Cfg.PipelinePath + string(os.PathSeparator) + file.Name(),
+					Created:  time.Now(),
+				}
+
+				// We should store it
+				shouldStore = true
+			}
+
+			// We calculate a MD5 Checksum and store it.
+			// We use this to estimate if a pipeline has been changed.
+			pipeline.Md5Checksum, err = getMd5Checksum(pipeline.ExecPath)
+			if err != nil {
+				gaia.Cfg.Logger.Debug("cannot calculate md5 checksum for pipeline", "error", err.Error(), "pipeline", pipeline)
+				continue
 			}
 
 			// Let us try to start the plugin and receive all implemented jobs
-			setPipelineJobsTicker(&p)
+			setPipelineJobs(pipeline)
+
+			// Put pipeline into store only when it was new created.
+			if shouldStore {
+				storeService.PipelinePut(pipeline)
+			}
+
+			// We do not update the pipeline in store if it already exists there.
+			// We only updated the Md5 Checksum and the jobs but this is not importent
+			// to store and should not have any side effects.
 
 			// Append new pipeline
-			GlobalActivePipelines.Append(p)
+			GlobalActivePipelines.Append(*pipeline)
 		}
 	}
 }
@@ -132,21 +170,6 @@ func getPipelineType(n string) (gaia.PipelineType, error) {
 // getRealPipelineName removes the suffix from the pipeline name.
 func getRealPipelineName(n string, pType gaia.PipelineType) string {
 	return strings.TrimSuffix(n, typeDelimiter+pType.String())
-}
-
-func setPipelineJobsTicker(p *gaia.Pipeline) {
-	err := setPipelineJobs(p)
-	if err != nil {
-		// We were not able to get jobs from the pipeline.
-		// We set the Md5Checksum for later to try it again.
-		p.Md5Checksum, err = getMd5Checksum(p.ExecPath)
-		if err != nil {
-			gaia.Cfg.Logger.Debug("cannot calculate md5 checksum for pipeline", "error", err.Error(), "pipeline", p)
-		}
-	} else {
-		// Reset md5 checksum in case we already set it
-		p.Md5Checksum = nil
-	}
 }
 
 func getMd5Checksum(file string) ([]byte, error) {
