@@ -33,14 +33,19 @@ func InitHandlers(i *iris.Application, s *store.Store) error {
 	// Define prefix
 	p := "/api/" + apiVersion + "/"
 
-	// Register handlers at iris instance
+	// --- Register handlers at iris instance ---
+
+	// Users
 	i.Post(p+"users/login", UserLogin)
+
+	// Pipelines
 	i.Post(p+"pipelines/gitlsremote", PipelineGitLSRemote)
 	i.Post(p+"pipelines/create", CreatePipeline)
 	i.Get(p+"pipelines/create", CreatePipelineGetAll)
 	i.Post(p+"pipelines/name", PipelineNameAvailable)
 	i.Get(p+"pipelines", PipelineGetAll)
 	i.Get(p+"pipelines/detail/{id:string}", PipelineGet)
+	i.Get(p+"pipelines/start/{id:string}", PipelineStart)
 
 	return nil
 }

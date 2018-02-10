@@ -46,7 +46,6 @@ export default {
         nodes: [],
         edges: []
       }
-      console.log(pipeline)
 
       // Iterate all jobs of the pipeline
       for (let i = 0, l = pipeline.jobs.length; i < l; i++) {
@@ -54,7 +53,7 @@ export default {
         var node = {
           id: i,
           shape: 'circularImage',
-          image: require('assets/success.png'),
+          image: require('assets/questionmark.png'),
           label: pipeline.jobs[i].title
         }
 
@@ -62,9 +61,9 @@ export default {
         data.nodes.push(node)
 
         // Iterate all jobs again to find the next highest job priority
-        var highestPrio = 1000000000 // high as possible. First match should overwrite it.
+        var highestPrio = null
         for (let x = 0, y = pipeline.jobs.length; x < y; x++) {
-          if (pipeline.jobs[x].priority > pipeline.jobs[i].priority && pipeline.jobs[x].priority < highestPrio) {
+          if (pipeline.jobs[x].priority > pipeline.jobs[i].priority && (pipeline.jobs[x].priority < highestPrio || !highestPrio)) {
             highestPrio = pipeline.jobs[x].priority
           }
         }

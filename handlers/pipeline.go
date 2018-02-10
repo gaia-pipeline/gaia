@@ -228,3 +228,8 @@ func PipelineGet(ctx iris.Context) {
 	ctx.StatusCode(iris.StatusNotFound)
 	ctx.WriteString(errPipelineNotFound.Error())
 }
+
+// PipelineStart starts a pipeline by the given id.
+func PipelineStart(ctx iris.Context) {
+	// TODO
+}

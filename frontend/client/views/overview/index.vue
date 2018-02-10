@@ -13,7 +13,12 @@
             </div>
             <div>
               <hr style="color: lightgrey;">
-              this is some text ...
+              <a class="button is-primary" @click="startPipeline(pipeline.id)">
+                <span class="icon">
+                  <i class="fa fa-play-circle"></i>
+                </span>
+                <span>Start Pipeline</span>
+              </a>
             </div>
           </div>
         </div>
@@ -52,6 +57,18 @@ export default {
           if (response.data) {
             this.pipelines = response.data
           }
+        })
+        .catch(error => {
+          console.log(error.response.data)
+        })
+    },
+
+    startPipeline (pipelineid) {
+      // Send start request
+      this.$http
+        .get('/api/v1/pipelines/start/' + pipelineid)
+        .then(response => {
+          this.$router.push({path: '/pipelines/detail', params: { pipelineid: pipelineid }})
         })
         .catch(error => {
           console.log(error.response.data)
