@@ -52,10 +52,11 @@ type GitRepo struct {
 
 // Job represents a single job of a pipeline
 type Job struct {
-	UniqueID    string `json:"id,omitempty"`
+	ID          string `json:"id,omitempty"`
 	Title       string `json:"title,omitempty"`
 	Description string `json:"desc,omitempty"`
 	Priority    int32  `json:"priority"`
+	Success     bool   `json:"success"`
 }
 
 // CreatePipeline represents a pipeline which is not yet
@@ -73,6 +74,21 @@ type PrivateKey struct {
 	Key      string `json:"key,omitempty"`
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
+}
+
+// PipelineRunHistory represents the history of pipeline runs
+type PipelineRunHistory struct {
+	ID      int           `json:"id,omitempty"`
+	History []PipelineRun `json:"history,omitempty"`
+}
+
+// PipelineRun represents a single run of a pipeline.
+type PipelineRun struct {
+	ID           int       `json:"id"`
+	RunDate      time.Time `json:"rundate,omitempty"`
+	ScheduleDate time.Time `json:"scheduledate,omitempty"`
+	Success      bool      `json:"success"`
+	Jobs         []Job     `json:"jobs,omitempty"`
 }
 
 // Cfg represents the global config instance

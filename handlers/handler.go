@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/rand"
 
+	scheduler "github.com/gaia-pipeline/gaia/scheduler"
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/kataras/iris"
 )
@@ -15,13 +16,16 @@ const (
 // Use this to talk to the store.
 var storeService *store.Store
 
+var schedulerService *scheduler.Scheduler
+
 // jwtKey is a random generated key for jwt signing
 var jwtKey []byte
 
 // InitHandlers initializes(registers) all handlers
-func InitHandlers(i *iris.Application, s *store.Store) error {
-	// Set store instance
-	storeService = s
+func InitHandlers(i *iris.Application, store *store.Store, scheduler *scheduler.Scheduler) error {
+	// Set instances
+	storeService = store
+	schedulerService = scheduler
 
 	// Generate signing key for jwt
 	jwtKey = make([]byte, 64)

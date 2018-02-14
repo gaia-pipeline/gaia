@@ -8,6 +8,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
 	"github.com/gaia-pipeline/gaia/pipeline"
+	scheduler "github.com/gaia-pipeline/gaia/scheduler"
 	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/kataras/iris"
@@ -85,8 +86,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize scheduler
+	scheduler := scheduler.NewScheduler(store)
+	scheduler.Init()
+
 	// Start ticker. Periodic job to check for new plugins.
-	pipeline.InitTicker(store)
+	pipeline.InitTicker(store, scheduler)
 
 	// Start listen
 	irisInstance.Run(iris.Addr(":" + gaia.Cfg.ListenPort))

@@ -3,7 +3,6 @@ package pipeline
 import (
 	"errors"
 	"fmt"
-	"os/exec"
 	"sync"
 
 	"github.com/gaia-pipeline/gaia"
@@ -69,22 +68,6 @@ func NewBuildPipeline(t gaia.PipelineType) BuildPipeline {
 	}
 
 	return bP
-}
-
-// createPipelineCmd creates the execute command for the plugin system
-// dependent on the plugin type.
-func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
-	c := &exec.Cmd{}
-
-	// Dependent on the pipeline type
-	switch p.Type {
-	case gaia.GOLANG:
-		c.Path = p.ExecPath
-	default:
-		c = nil
-	}
-
-	return c
 }
 
 // NewActivePipelines creates a new instance of ActivePipelines

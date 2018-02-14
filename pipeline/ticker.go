@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
+	scheduler "github.com/gaia-pipeline/gaia/scheduler"
 	"github.com/gaia-pipeline/gaia/store"
 )
 
@@ -23,14 +24,18 @@ const (
 // Use this to talk to the store.
 var storeService *store.Store
 
+// schedulerService is an instance of scheduler.
+var schedulerService *scheduler.Scheduler
+
 // InitTicker inititates the pipeline ticker.
 // This periodic job will check for new pipelines.
-func InitTicker(s *store.Store) {
+func InitTicker(store *store.Store, scheduler *scheduler.Scheduler) {
 	// Init global active pipelines slice
 	GlobalActivePipelines = NewActivePipelines()
 
-	// Save store pointer
-	storeService = s
+	// Save instances
+	storeService = store
+	schedulerService = scheduler
 
 	// Check immediately to make sure we fill the list as fast as possible.
 	checkActivePipelines()
@@ -85,7 +90,7 @@ func checkActivePipelines() {
 					// Pipeline has been changed?
 					if bytes.Compare(p.Md5Checksum, checksum) != 0 {
 						// Let us try again to start the plugin and receive all implemented jobs
-						setPipelineJobs(p)
+						schedulerService.SetPipelineJobs(p)
 
 						// Replace pipeline
 						if ok := GlobalActivePipelines.Replace(*p); !ok {
@@ -130,7 +135,7 @@ func checkActivePipelines() {
 			}
 
 			// Let us try to start the plugin and receive all implemented jobs
-			setPipelineJobs(pipeline)
+			schedulerService.SetPipelineJobs(pipeline)
 
 			// Put pipeline into store only when it was new created.
 			if shouldStore {

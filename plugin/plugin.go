@@ -110,7 +110,7 @@ func (p *Plugin) GetJobs() ([]gaia.Job, error) {
 
 		// Convert proto object to gaia.Job struct
 		j := gaia.Job{
-			UniqueID:    job.UniqueId,
+			ID:          job.UniqueId,
 			Title:       job.Title,
 			Description: job.Description,
 			Priority:    job.Priority,

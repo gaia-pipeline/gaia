@@ -218,10 +218,10 @@ func PipelineGetAll(ctx iris.Context) {
 
 // PipelineGet accepts a pipeline id and returns the pipeline object.
 func PipelineGet(ctx iris.Context) {
-	userIDStr := ctx.Params().Get("id")
+	pipelineIDStr := ctx.Params().Get("id")
 
 	// Convert string to int because id is int
-	userID, err := strconv.Atoi(userIDStr)
+	pipelineID, err := strconv.Atoi(pipelineIDStr)
 	if err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.WriteString(errInvalidPipelineID.Error())
@@ -230,7 +230,7 @@ func PipelineGet(ctx iris.Context) {
 
 	// Look up pipeline for the given id
 	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
-		if pipeline.ID == userID {
+		if pipeline.ID == pipelineID {
 			ctx.JSON(pipeline)
 			return
 		}
@@ -243,5 +243,32 @@ func PipelineGet(ctx iris.Context) {
 
 // PipelineStart starts a pipeline by the given id.
 func PipelineStart(ctx iris.Context) {
-	// TODO
+	pipelineIDStr := ctx.Params().Get("id")
+
+	// Convert string to int because id is int
+	pipelineID, err := strconv.Atoi(pipelineIDStr)
+	if err != nil {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.WriteString(errInvalidPipelineID.Error())
+		return
+	}
+
+	// Look up pipeline for the given id
+	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+		if pipeline.ID == pipelineID {
+			if err = schedulerService.SchedulePipeline(&pipeline); err != nil {
+				ctx.StatusCode(iris.StatusInternalServerError)
+				ctx.WriteString(err.Error())
+				return
+			}
+
+			ctx.StatusCode(iris.StatusCreated)
+			ctx.WriteString("pipeline has been scheduled")
+			return
+		}
+	}
+
+	// Pipeline not found
+	ctx.StatusCode(iris.StatusNotFound)
+	ctx.WriteString(errPipelineNotFound.Error())
 }
