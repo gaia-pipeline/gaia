@@ -20,8 +20,8 @@ var (
 	// which are not yet compiled (create pipeline)
 	createPipelineBucket = []byte("CreatePipelines")
 
-	// Name of the bucket where we store the run history of all pipelines.
-	pipelineRunHistoryBucket = []byte("PipelineRunHistory")
+	// Name of the bucket where we store all pipeline runs.
+	pipelineRunBucket = []byte("PipelineRun")
 
 	// Username and password of the first admin user
 	adminUsername = "admin"
@@ -86,7 +86,7 @@ func setupDatabase(s *Store) error {
 	if err != nil {
 		return err
 	}
-	bucketName = pipelineRunHistoryBucket
+	bucketName = pipelineRunBucket
 	err = s.db.Update(c)
 	if err != nil {
 		return err

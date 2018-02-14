@@ -30,6 +30,7 @@ func init() {
 	flag.StringVar(&gaia.Cfg.ListenPort, "port", "8080", "Listen port for gaia")
 	flag.StringVar(&gaia.Cfg.HomePath, "homepath", "", "Path to the gaia home folder")
 	flag.StringVar(&gaia.Cfg.Bolt.Path, "dbpath", "gaia.db", "Path to gaia bolt db file")
+	flag.IntVar(&gaia.Cfg.Workers, "workers", 2, "Number of workers gaia will use to execute pipelines in parallel")
 
 	// Default values
 	gaia.Cfg.Bolt.Mode = 0600
@@ -79,16 +80,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize scheduler
+	scheduler := scheduler.NewScheduler(store)
+	scheduler.Init()
+
 	// Initialize handlers
-	err = handlers.InitHandlers(irisInstance, store)
+	err = handlers.InitHandlers(irisInstance, store, scheduler)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
 		os.Exit(1)
 	}
-
-	// Initialize scheduler
-	scheduler := scheduler.NewScheduler(store)
-	scheduler.Init()
 
 	// Start ticker. Periodic job to check for new plugins.
 	pipeline.InitTicker(store, scheduler)

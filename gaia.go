@@ -10,12 +10,31 @@ import (
 // PipelineType represents supported plugin types
 type PipelineType string
 
+// PipelineRunStatus represents the different status a run
+// can have.
+type PipelineRunStatus string
+
 const (
 	// UNKNOWN plugin type
 	UNKNOWN PipelineType = "unknown"
 
 	// GOLANG plugin type
 	GOLANG PipelineType = "golang"
+
+	// RunNotScheduled status
+	RunNotScheduled PipelineRunStatus = "not scheduled"
+
+	// RunScheduled status
+	RunScheduled PipelineRunStatus = "scheduled"
+
+	// RunFailed status
+	RunFailed PipelineRunStatus = "failed"
+
+	// RunSuccess status
+	RunSuccess PipelineRunStatus = "success"
+
+	// RunRunning status
+	RunRunning PipelineRunStatus = "running"
 )
 
 // User is the user object
@@ -76,19 +95,15 @@ type PrivateKey struct {
 	Password string `json:"password,omitempty"`
 }
 
-// PipelineRunHistory represents the history of pipeline runs
-type PipelineRunHistory struct {
-	ID      int           `json:"id,omitempty"`
-	History []PipelineRun `json:"history,omitempty"`
-}
-
 // PipelineRun represents a single run of a pipeline.
 type PipelineRun struct {
-	ID           int       `json:"id"`
-	RunDate      time.Time `json:"rundate,omitempty"`
-	ScheduleDate time.Time `json:"scheduledate,omitempty"`
-	Success      bool      `json:"success"`
-	Jobs         []Job     `json:"jobs,omitempty"`
+	UniqueID     string            `json:"uniqueid"`
+	ID           int               `json:"id"`
+	PipelineID   int               `json:"pipelineid"`
+	RunDate      time.Time         `json:"rundate,omitempty"`
+	ScheduleDate time.Time         `json:"scheduledate,omitempty"`
+	Status       PipelineRunStatus `json:"status,omitempty"`
+	Jobs         []Job             `json:"jobs,omitempty"`
 }
 
 // Cfg represents the global config instance
@@ -100,6 +115,7 @@ type Config struct {
 	HomePath     string
 	DataPath     string
 	PipelinePath string
+	Workers      int
 	Logger       hclog.Logger
 
 	Bolt struct {

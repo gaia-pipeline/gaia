@@ -79,6 +79,32 @@ func (s *Store) PipelinePut(p *gaia.Pipeline) error {
 	})
 }
 
+// PipelineGet gets a pipeline by given id.
+func (s *Store) PipelineGet(id int) (*gaia.Pipeline, error) {
+	var pipeline *gaia.Pipeline
+
+	return pipeline, s.db.View(func(tx *bolt.Tx) error {
+		// Get bucket
+		b := tx.Bucket(pipelineBucket)
+
+		// Get pipeline
+		v := b.Get(itob(id))
+
+		// Check if we found the pipeline
+		if v == nil {
+			return nil
+		}
+
+		// Unmarshal pipeline object
+		err := json.Unmarshal(v, pipeline)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
 // PipelineGetByName looks up a pipeline by the given name.
 // Returns nil if pipeline was not found.
 func (s *Store) PipelineGetByName(n string) (*gaia.Pipeline, error) {
@@ -109,39 +135,44 @@ func (s *Store) PipelineGetByName(n string) (*gaia.Pipeline, error) {
 	})
 }
 
-// PipelineGetRunHistory looks up the run history of the given pipeline and
-// returns it. If no history was found, nil will be returned.
-func (s *Store) PipelineGetRunHistory(p *gaia.Pipeline) (*gaia.PipelineRunHistory, error) {
-	var runHistory *gaia.PipelineRunHistory
+// PipelineGetRunHighestID looks for the highest public id for the given pipeline.
+func (s *Store) PipelineGetRunHighestID(p *gaia.Pipeline) (int, error) {
+	var highestID int
 
-	return runHistory, s.db.View(func(tx *bolt.Tx) error {
+	return highestID, s.db.View(func(tx *bolt.Tx) error {
 		// Get Bucket
-		b := tx.Bucket(pipelineRunHistoryBucket)
+		b := tx.Bucket(pipelineRunBucket)
 
-		// Get run history
-		v := b.Get(itob(p.ID))
+		// Iterate all pipeline runs.
+		return b.ForEach(func(k, v []byte) error {
+			// create single run object
+			r := &gaia.PipelineRun{}
 
-		// It might happen that the history does not exist
-		if v == nil {
+			// Unmarshal
+			err := json.Unmarshal(v, r)
+			if err != nil {
+				return err
+			}
+
+			// Is this a run from our pipeline?
+			if r.PipelineID == p.ID {
+				// Check if the id is higher than what we found before?
+				if r.ID > highestID {
+					highestID = r.ID
+				}
+			}
+
 			return nil
-		}
-
-		// Unmarshal
-		runHistory = &gaia.PipelineRunHistory{}
-		err := json.Unmarshal(v, runHistory)
-		if err != nil {
-			return err
-		}
-		return nil
+		})
 	})
 }
 
-// PipelinePutRunHistory takes the given pipeline run history and puts it into the store.
-// If a run history already exists in the store it will be overwritten.
-func (s *Store) PipelinePutRunHistory(r *gaia.PipelineRunHistory) error {
+// PipelinePutRun takes the given pipeline run and puts it into the store.
+// If a pipeline run already exists in the store it will be overwritten.
+func (s *Store) PipelinePutRun(r *gaia.PipelineRun) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		// Get bucket
-		b := tx.Bucket(pipelineRunHistoryBucket)
+		b := tx.Bucket(pipelineRunBucket)
 
 		// Marshal data into bytes.
 		buf, err := json.Marshal(r)
@@ -150,9 +181,40 @@ func (s *Store) PipelinePutRunHistory(r *gaia.PipelineRunHistory) error {
 		}
 
 		// Persist bytes into bucket.
-		return b.Put(itob(r.ID), buf)
+		return b.Put([]byte(r.UniqueID), buf)
 	})
 }
 
-// PipelineGetScheduled returns the scheduled pipelines
-//func (s *Store) PipelineGetScheduled() ([]gaia.Pipeline, error) {}
+// PipelineGetScheduled returns the scheduled pipelines with a return limit.
+func (s *Store) PipelineGetScheduled(limit int) ([]*gaia.PipelineRun, error) {
+	// create returning list
+	var runList []*gaia.PipelineRun
+
+	return runList, s.db.View(func(tx *bolt.Tx) error {
+		// Get bucket
+		b := tx.Bucket(pipelineRunBucket)
+
+		// Iterate all pipelines.
+		return b.ForEach(func(k, v []byte) error {
+			// Check if we already reached the limit
+			if len(runList) >= limit {
+				return nil
+			}
+
+			// Unmarshal
+			r := &gaia.PipelineRun{}
+			err := json.Unmarshal(v, r)
+			if err != nil {
+				return err
+			}
+
+			// Check if the run is still scheduled not executed yet
+			if r.Status == gaia.RunNotScheduled {
+				// Append to our list
+				runList = append(runList, r)
+			}
+
+			return nil
+		})
+	})
+}
