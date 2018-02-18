@@ -79,8 +79,15 @@ func (p *Plugin) Connect() error {
 
 // Execute triggers the execution of one single job
 // for the given plugin.
-func (p *Plugin) Execute(j *proto.Job) error {
-	_, err := p.pluginConn.ExecuteJob(j)
+func (p *Plugin) Execute(j *gaia.Job) error {
+	// Create new proto job object and just set the id.
+	// The rest is currently not important.
+	job := &proto.Job{
+		UniqueId: j.ID,
+	}
+
+	// Execute the job
+	_, err := p.pluginConn.ExecuteJob(job)
 	return err
 }
 
@@ -114,6 +121,7 @@ func (p *Plugin) GetJobs() ([]gaia.Job, error) {
 			Title:       job.Title,
 			Description: job.Description,
 			Priority:    job.Priority,
+			Status:      gaia.JobWaitingExec,
 		}
 		l = append(l, j)
 	}

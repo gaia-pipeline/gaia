@@ -90,9 +90,18 @@ func (s *Scheduler) work() {
 		pipeline, err := s.storeService.PipelineGet(r.PipelineID)
 		if err != nil {
 			gaia.Cfg.Logger.Debug("cannot access pipeline during execution", "error", err.Error())
-			continue
+			r.Status = gaia.RunFailed
 		} else if pipeline == nil {
-			gaia.Cfg.Logger.Debug("wanted to execute pipeline which does not exist", "run", r)
+			gaia.Cfg.Logger.Debug("wanted to execute job for pipeline which does not exist", "run", r)
+			r.Status = gaia.RunFailed
+		}
+
+		if r.Status == gaia.RunFailed {
+			// Update entry in store
+			err = s.storeService.PipelinePutRun(&r)
+			if err != nil {
+				gaia.Cfg.Logger.Debug("could not put pipeline run into store during executing work", "error", err.Error())
+			}
 			continue
 		}
 
@@ -150,6 +159,7 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline) error {
 	run := gaia.PipelineRun{
 		UniqueID:     uuid.Must(uuid.NewV4()).String(),
 		ID:           highestID,
+		PipelineID:   p.ID,
 		ScheduleDate: time.Now(),
 		Status:       gaia.RunNotScheduled,
 	}
@@ -182,20 +192,61 @@ func (s *Scheduler) executePipeline(p *gaia.Pipeline, r *gaia.PipelineRun) {
 
 	// Schedule jobs and execute them.
 	// Also update the run in the store.
-	s.scheduleJobsByPriority(r)
+	s.scheduleJobsByPriority(r, p)
 }
 
-func executeJob(job *gaia.Job, wg *sync.WaitGroup) {
-	// TODO
-	wg.Done()
+// executeJob executes a single job.
+// This method is blocking.
+func executeJob(job *gaia.Job, p *gaia.Pipeline, wg *sync.WaitGroup, results chan gaia.Job) {
+	defer wg.Done()
+	defer func() {
+		results <- *job
+	}()
+
+	// Lets be pessimistic
+	job.Status = gaia.JobFailed
+
+	// Create the start command for the pipeline
+	c := createPipelineCmd(p)
+	if c == nil {
+		gaia.Cfg.Logger.Debug("cannot execute pipeline job", "error", errCreateCMDForPipeline.Error(), "job", job)
+		return
+	}
+
+	// Create new plugin instance
+	pC := plugin.NewPlugin(c)
+
+	// Connect to plugin(pipeline)
+	if err := pC.Connect(); err != nil {
+		gaia.Cfg.Logger.Debug("cannot connect to pipeline", "error", err.Error(), "pipeline", p)
+		return
+	}
+	defer pC.Close()
+
+	// Execute job
+	if err := pC.Execute(job); err != nil {
+		// TODO: Show it to user
+		gaia.Cfg.Logger.Debug("error during job execution", "error", err.Error(), "job", job)
+	}
+
+	// If we are here, the job execution was ok
+	job.Status = gaia.JobSuccess
 }
 
 // scheduleJobsByPriority schedules the given jobs by their respective
 // priority. This method is designed to be recursive and blocking.
 // If jobs have the same priority, they will be executed in parallel.
-func (s *Scheduler) scheduleJobsByPriority(r *gaia.PipelineRun) {
-	// Find the job with the lowest priority
+func (s *Scheduler) scheduleJobsByPriority(r *gaia.PipelineRun, p *gaia.Pipeline) {
+	// Do a prescheduling and set it to the first waiting job
 	var lowestPrio int64
+	for _, job := range r.Jobs {
+		if job.Status == gaia.JobWaitingExec {
+			lowestPrio = job.Priority
+			break
+		}
+	}
+
+	// Find the job with the lowest priority
 	for _, job := range r.Jobs {
 		if job.Priority < lowestPrio && job.Status == gaia.JobWaitingExec {
 			lowestPrio = job.Priority
@@ -205,21 +256,21 @@ func (s *Scheduler) scheduleJobsByPriority(r *gaia.PipelineRun) {
 	// We might have multiple jobs with the same priority.
 	// It means these jobs should be started in parallel.
 	var wg sync.WaitGroup
+	results := make(chan gaia.Job)
 	for _, job := range r.Jobs {
 		if job.Priority == lowestPrio {
 			// Increase wait group by one
 			wg.Add(1)
 
 			// Execute this job in a separate goroutine
-			go executeJob(&job, &wg)
+			go executeJob(&job, p, &wg, results)
 		}
 	}
 
 	// Create channel for storing job run results and spawn results routine
-	results := make(chan gaia.Job)
 	go s.getJobResultsAndStore(results, r)
 
-	// Wait until all jobs has been finished and close results channel
+	// Wait until all jobs have been finished and close results channel
 	wg.Wait()
 	close(results)
 
@@ -235,13 +286,13 @@ func (s *Scheduler) scheduleJobsByPriority(r *gaia.PipelineRun) {
 		}
 	}
 
-	// All jobs has been executed
+	// All jobs have been executed
 	if !notExecJob {
 		return
 	}
 
 	// Run scheduleJobsByPriority again until all jobs have been executed
-	s.scheduleJobsByPriority(r)
+	s.scheduleJobsByPriority(r, p)
 }
 
 // getJobResultsAndStore

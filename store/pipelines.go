@@ -81,7 +81,7 @@ func (s *Store) PipelinePut(p *gaia.Pipeline) error {
 
 // PipelineGet gets a pipeline by given id.
 func (s *Store) PipelineGet(id int) (*gaia.Pipeline, error) {
-	var pipeline *gaia.Pipeline
+	var pipeline = &gaia.Pipeline{}
 
 	return pipeline, s.db.View(func(tx *bolt.Tx) error {
 		// Get bucket
@@ -108,7 +108,7 @@ func (s *Store) PipelineGet(id int) (*gaia.Pipeline, error) {
 // PipelineGetByName looks up a pipeline by the given name.
 // Returns nil if pipeline was not found.
 func (s *Store) PipelineGetByName(n string) (*gaia.Pipeline, error) {
-	var pipeline *gaia.Pipeline
+	var pipeline = &gaia.Pipeline{}
 
 	return pipeline, s.db.View(func(tx *bolt.Tx) error {
 		// Get bucket
