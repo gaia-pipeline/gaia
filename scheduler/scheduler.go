@@ -73,7 +73,7 @@ func (s *Scheduler) Init() {
 func (s *Scheduler) work() {
 	// This worker never stops working.
 	for {
-		// Take one scheduled run
+		// Take one scheduled run, block if there are no scheduled pipelines
 		r := <-s.scheduledRuns
 
 		// Mark the scheduled run as running
@@ -175,6 +175,14 @@ func (s *Scheduler) executePipeline(p *gaia.Pipeline, r *gaia.PipelineRun) {
 		return
 	}
 
+	// Check if this pipeline has jobs declared
+	if len(r.Jobs) == 0 {
+		return
+	}
+
+	// Schedule jobs and execute them.
+	// Also update the run in the store.
+	s.scheduleJobsByPriority(r)
 }
 
 func executeJob(job *gaia.Job, wg *sync.WaitGroup) {
@@ -182,54 +190,66 @@ func executeJob(job *gaia.Job, wg *sync.WaitGroup) {
 	wg.Done()
 }
 
-func executeJobs(jobs []*gaia.Job) {
-	// We finished all jobs, exit recursive execution.
-	if len(jobs) == 0 {
-		return
-	}
-
+// scheduleJobsByPriority schedules the given jobs by their respective
+// priority. This method is designed to be recursive and blocking.
+// If jobs have the same priority, they will be executed in parallel.
+func (s *Scheduler) scheduleJobsByPriority(r *gaia.PipelineRun) {
 	// Find the job with the lowest priority
-	var lowestPrio int32
-	for id, job := range jobs {
-		if job.Priority < lowestPrio || id == 0 {
+	var lowestPrio int64
+	for _, job := range r.Jobs {
+		if job.Priority < lowestPrio && job.Status == gaia.JobWaitingExec {
 			lowestPrio = job.Priority
 		}
 	}
 
-	// We allocate a new slice for jobs with higher priority.
-	// And also a slice for jobs which we execute now.
-	var nextJobs []*gaia.Job
-	var execJobs []*gaia.Job
-
 	// We might have multiple jobs with the same priority.
 	// It means these jobs should be started in parallel.
 	var wg sync.WaitGroup
-	for _, job := range jobs {
+	for _, job := range r.Jobs {
 		if job.Priority == lowestPrio {
 			// Increase wait group by one
 			wg.Add(1)
-			execJobs = append(execJobs, job)
 
 			// Execute this job in a separate goroutine
-			go executeJob(job, &wg)
-		} else {
-			// We add this job to the next list
-			nextJobs = append(nextJobs, job)
+			go executeJob(&job, &wg)
 		}
 	}
 
-	// Wait until all jobs has been finished
+	// Create channel for storing job run results and spawn results routine
+	results := make(chan gaia.Job)
+	go s.getJobResultsAndStore(results, r)
+
+	// Wait until all jobs has been finished and close results channel
 	wg.Wait()
+	close(results)
 
 	// Check if a job has been failed. If so, stop execution.
-	for _, job := range execJobs {
-		if !job.Success {
+	// We also check if all jobs has been executed.
+	var notExecJob bool
+	for _, job := range r.Jobs {
+		switch job.Status {
+		case gaia.JobFailed:
 			return
+		case gaia.JobWaitingExec:
+			notExecJob = true
 		}
 	}
 
-	// Run executeJobs again until all jobs have been executed
-	executeJobs(nextJobs)
+	// All jobs has been executed
+	if !notExecJob {
+		return
+	}
+
+	// Run scheduleJobsByPriority again until all jobs have been executed
+	s.scheduleJobsByPriority(r)
+}
+
+// getJobResultsAndStore
+func (s *Scheduler) getJobResultsAndStore(results chan gaia.Job, r *gaia.PipelineRun) {
+	for _ = range results {
+		// Store update
+		s.storeService.PipelinePutRun(r)
+	}
 }
 
 // getPipelineJobs uses the plugin system to get all jobs from the given pipeline.

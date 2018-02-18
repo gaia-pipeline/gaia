@@ -14,6 +14,9 @@ type PipelineType string
 // can have.
 type PipelineRunStatus string
 
+// JobStatus represents the different status a job can have.
+type JobStatus string
+
 const (
 	// UNKNOWN plugin type
 	UNKNOWN PipelineType = "unknown"
@@ -35,6 +38,15 @@ const (
 
 	// RunRunning status
 	RunRunning PipelineRunStatus = "running"
+
+	// JobWaitingExec status
+	JobWaitingExec JobStatus = "waiting for execution"
+
+	// JobSuccess status
+	JobSuccess JobStatus = "success"
+
+	// JobFailed status
+	JobFailed JobStatus = "failed"
 )
 
 // User is the user object
@@ -71,11 +83,11 @@ type GitRepo struct {
 
 // Job represents a single job of a pipeline
 type Job struct {
-	ID          string `json:"id,omitempty"`
-	Title       string `json:"title,omitempty"`
-	Description string `json:"desc,omitempty"`
-	Priority    int32  `json:"priority"`
-	Success     bool   `json:"success"`
+	ID          string    `json:"id,omitempty"`
+	Title       string    `json:"title,omitempty"`
+	Description string    `json:"desc,omitempty"`
+	Priority    int64     `json:"priority"`
+	Status      JobStatus `json:"status,omitempty"`
 }
 
 // CreatePipeline represents a pipeline which is not yet
