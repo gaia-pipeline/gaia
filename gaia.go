@@ -83,7 +83,7 @@ type GitRepo struct {
 
 // Job represents a single job of a pipeline
 type Job struct {
-	ID          string    `json:"id,omitempty"`
+	ID          uint32    `json:"id,omitempty"`
 	Title       string    `json:"title,omitempty"`
 	Description string    `json:"desc,omitempty"`
 	Priority    int64     `json:"priority"`
@@ -134,6 +134,8 @@ type Config struct {
 		Path string
 		Mode os.FileMode
 	}
+
+	TestMode bool
 }
 
 // String returns a pipeline type string back

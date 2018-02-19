@@ -23,19 +23,20 @@ type GRPCClient struct {
 // PluginGRPCImpl represents the plugin implementation on client side.
 type PluginGRPCImpl struct {
 	Impl PluginGRPC
+
 	plugin.NetRPCUnsupportedPlugin
 }
 
 // GRPCServer is needed here to implement hashicorp
 // plugin.Plugin interface. Real implementation is
 // in the plugin(s).
-func (p *PluginGRPCImpl) GRPCServer(s *grpc.Server) error {
+func (p *PluginGRPCImpl) GRPCServer(b *plugin.GRPCBroker, s *grpc.Server) error {
 	// Real implementation defined in plugin
 	return nil
 }
 
 // GRPCClient is the passing method for the gRPC client.
-func (p *PluginGRPCImpl) GRPCClient(c *grpc.ClientConn) (interface{}, error) {
+func (p *PluginGRPCImpl) GRPCClient(context context.Context, b *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
 	return &GRPCClient{client: proto.NewPluginClient(c)}, nil
 }
 

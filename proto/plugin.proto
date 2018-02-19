@@ -8,7 +8,7 @@ package proto;
 
 // Job represents a single job
 message Job {
-    string   unique_id       = 1;    
+    uint32   unique_id       = 1;    
     string   title           = 2;
     string   description     = 3;
     int64    priority        = 4;
@@ -25,7 +25,7 @@ message Question {
 
 // JobResult represents the result of an executed job
 message JobResult {
-    string unique_id      = 1;
+    uint32 unique_id      = 1;
     bool   failed         = 2;
     bool   exit_pipeline  = 3;
     string message        = 4;
