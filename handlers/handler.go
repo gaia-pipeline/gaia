@@ -50,6 +50,7 @@ func InitHandlers(i *iris.Application, store *store.Store, scheduler *scheduler.
 	i.Get(p+"pipelines", PipelineGetAll)
 	i.Get(p+"pipelines/detail/{id:string}", PipelineGet)
 	i.Get(p+"pipelines/start/{id:string}", PipelineStart)
+	i.Get(p+"pipelines/run/{pipelineid:string}/{runid:string}", PipelineRunGet)
 
 	return nil
 }

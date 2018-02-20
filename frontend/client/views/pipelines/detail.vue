@@ -17,8 +17,19 @@ import Vis from 'vis'
 
 export default {
 
+  data () {
+    return {
+      pipelineView: null
+    }
+  },
+
   mounted () {
     this.fetchData()
+
+    // periodically update view
+    setInterval(function () {
+      this.fetchData()
+    }.bind(this), 3000)
   },
 
   methods: {
@@ -29,17 +40,39 @@ export default {
         return
       }
 
+      // runID is optional
+      var runID = this.$route.query.runid
+
       // Get all information from this specific pipeline
+      var pipeline = null
       this.$http
         .get('/api/v1/pipelines/detail/' + pipelineID)
         .then(response => {
-          this.drawPipelineDetail(response.data)
+          this.pipeline = response.data
         })
+
+      // If runid was set, look up this run
+      var pipelineRun = null
+      if (runID) {
+        this.$http
+          .get('/api/v1/pipelines/detail/' + pipelineID + '/' + runID)
+          .then(response => {
+            this.pipelineRun = response.data
+          })
+      }
+
+      // Draw pipeline view
+      this.drawPipelineDetail(pipeline, pipelineRun)
     },
 
-    drawPipelineDetail (pipeline) {
-      // Find container
-      var container = document.getElementById('pipeline-detail')
+    drawPipelineDetail (pipeline, pipelineRun) {
+      // Check if pipelineRun was set
+      var jobs = null
+      if (pipelineRun) {
+        jobs = pipelineRun.jobs
+      } else {
+        jobs = pipeline.jobs
+      }
 
       // prepare data object for vis
       var data = {
@@ -48,13 +81,24 @@ export default {
       }
 
       // Iterate all jobs of the pipeline
-      for (let i = 0, l = pipeline.jobs.length; i < l; i++) {
+      for (let i = 0, l = jobs.length; i < l; i++) {
+        // Choose the image for this node
+        var nodeImage = require('assets/questionmark.png')
+        if (jobs[i].status) {
+          switch (jobs[i].status) {
+            case 'success': 
+              nodeImage = require('assets/success.png')
+            case 'failed':
+              nodeImage = require('assets/failed.png')
+          }
+        }
+
         // Create nodes object
         var node = {
           id: i,
           shape: 'circularImage',
-          image: require('assets/questionmark.png'),
-          label: pipeline.jobs[i].title
+          image: nodeImage,
+          label: jobs[i].title
         }
 
         // Add node to nodes list
@@ -62,16 +106,16 @@ export default {
 
         // Iterate all jobs again to find the next highest job priority
         var highestPrio = null
-        for (let x = 0, y = pipeline.jobs.length; x < y; x++) {
-          if (pipeline.jobs[x].priority > pipeline.jobs[i].priority && (pipeline.jobs[x].priority < highestPrio || !highestPrio)) {
-            highestPrio = pipeline.jobs[x].priority
+        for (let x = 0, y = jobs.length; x < y; x++) {
+          if (jobs[x].priority > jobs[i].priority && (jobs[x].priority < highestPrio || !highestPrio)) {
+            highestPrio = jobs[x].priority
           }
         }
 
         // Iterate again all jobs to set all edges
         if (highestPrio) {
-          for (let x = 0, y = pipeline.jobs.length; x < y; x++) {
-            if (pipeline.jobs[x].priority === highestPrio) {
+          for (let x = 0, y = jobs.length; x < y; x++) {
+            if (jobs[x].priority === highestPrio) {
               // create edge
               var edge = {
                 from: i,
@@ -118,8 +162,15 @@ export default {
         }
       }
 
-      /* eslint-disable no-unused-vars */
-      var network = new Vis.Network(container, data, options)
+      // If pipelineView already exist, just update it
+      if (this.pipelineView) {
+        // Redraw
+        this.pipelineView.Redraw()
+      } else {
+        // Find container
+        var container = document.getElementById('pipeline-detail')
+        this.pipelineView = new Vis.Network(container, data, options)
+      }
     }
   }
 

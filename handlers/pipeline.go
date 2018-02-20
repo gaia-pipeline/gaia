@@ -21,6 +21,12 @@ var (
 
 	// errInvalidPipelineID is thrown when the given pipeline id is not valid
 	errInvalidPipelineID = errors.New("the given pipeline id is not valid")
+
+	// errInvalidRunID is thrown when the given run id is not valid
+	errInvalidRunID = errors.New("the given run id is not valid")
+
+	// errPipelineRunNotFound is thrown when a pipeline run was not found with the given id
+	errPipelineRunNotFound = errors.New("pipeline run not found with the given id")
 )
 
 const (
@@ -242,6 +248,7 @@ func PipelineGet(ctx iris.Context) {
 }
 
 // PipelineStart starts a pipeline by the given id.
+// Afterwards it returns the created/scheduled pipeline run.
 func PipelineStart(ctx iris.Context) {
 	pipelineIDStr := ctx.Params().Get("id")
 
@@ -256,19 +263,55 @@ func PipelineStart(ctx iris.Context) {
 	// Look up pipeline for the given id
 	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
 		if pipeline.ID == pipelineID {
-			if err = schedulerService.SchedulePipeline(&pipeline); err != nil {
+			pipelineRun, err := schedulerService.SchedulePipeline(&pipeline)
+			if err != nil {
 				ctx.StatusCode(iris.StatusInternalServerError)
 				ctx.WriteString(err.Error())
 				return
+			} else if pipelineRun != nil {
+				ctx.StatusCode(iris.StatusCreated)
+				ctx.JSON(pipelineRun)
+				return
 			}
-
-			ctx.StatusCode(iris.StatusCreated)
-			ctx.WriteString("pipeline has been scheduled")
-			return
 		}
 	}
 
 	// Pipeline not found
 	ctx.StatusCode(iris.StatusNotFound)
 	ctx.WriteString(errPipelineNotFound.Error())
+}
+
+// PipelineRunGet returns details about a specific pipeline run.
+// Required parameters are pipelineid and runid.
+func PipelineRunGet(ctx iris.Context) {
+	// Convert string to int because id is int
+	pipelineID, err := strconv.Atoi(ctx.Params().Get("pipelineid"))
+	if err != nil {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.WriteString(errInvalidPipelineID.Error())
+		return
+	}
+
+	// Convert string to int because id is int
+	runID, err := strconv.Atoi(ctx.Params().Get("runid"))
+	if err != nil {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.WriteString(errInvalidRunID.Error())
+		return
+	}
+
+	// Find pipeline run in store
+	pipelineRun, err := storeService.PipelineGetRunByPipelineIDAndID(pipelineID, runID)
+	if err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.WriteString(err.Error())
+		return
+	} else if pipelineRun == nil {
+		ctx.StatusCode(iris.StatusNotFound)
+		ctx.WriteString(errPipelineRunNotFound.Error())
+		return
+	}
+
+	// Return pipeline run
+	ctx.JSON(pipelineRun)
 }

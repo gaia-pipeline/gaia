@@ -218,3 +218,32 @@ func (s *Store) PipelineGetScheduled(limit int) ([]*gaia.PipelineRun, error) {
 		})
 	})
 }
+
+// PipelineGetRunByPipelineIDAndID looks for pipeline run by given pipeline id and run id.
+func (s *Store) PipelineGetRunByPipelineIDAndID(pipelineid int, runid int) (*gaia.PipelineRun, error) {
+	var pipelineRun *gaia.PipelineRun
+
+	return pipelineRun, s.db.View(func(tx *bolt.Tx) error {
+		// Get Bucket
+		b := tx.Bucket(pipelineRunBucket)
+
+		// Iterate all pipeline runs.
+		return b.ForEach(func(k, v []byte) error {
+			// create single run object
+			r := &gaia.PipelineRun{}
+
+			// Unmarshal
+			err := json.Unmarshal(v, r)
+			if err != nil {
+				return err
+			}
+
+			// Is this a run from our pipeline?
+			if r.PipelineID == pipelineid && r.ID == runid {
+				pipelineRun = r
+			}
+
+			return nil
+		})
+	})
+}

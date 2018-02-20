@@ -144,12 +144,12 @@ func (s *Scheduler) schedule() {
 // SchedulePipeline schedules a pipeline. We create a new schedule object
 // and save it in our store. The scheduler will later pick up this schedule object
 // and will continue the work.
-func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline) error {
+func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline) (*gaia.PipelineRun, error) {
 	// Get highest public id used for this pipeline
 	highestID, err := s.storeService.PipelineGetRunHighestID(p)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot find highest pipeline run id", "error", err.Error())
-		return err
+		return nil, err
 	}
 
 	// increment by one
@@ -165,7 +165,7 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline) error {
 	}
 
 	// Put run into store
-	return s.storeService.PipelinePutRun(&run)
+	return &run, s.storeService.PipelinePutRun(&run)
 }
 
 // executePipeline executes the given pipeline and updates it status periodically.

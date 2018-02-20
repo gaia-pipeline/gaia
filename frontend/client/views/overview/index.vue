@@ -68,7 +68,9 @@ export default {
       this.$http
         .get('/api/v1/pipelines/start/' + pipelineid)
         .then(response => {
-          this.$router.push({path: '/pipelines/detail', query: { pipelineid: pipelineid }})
+          if (response.data) {
+            this.$router.push({path: '/pipelines/detail', query: { pipelineid: pipelineid, runid: response.data.id }})          
+          }
         })
         .catch(error => {
           console.log(error.response.data)
