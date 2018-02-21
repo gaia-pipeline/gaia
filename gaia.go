@@ -47,6 +47,9 @@ const (
 
 	// JobFailed status
 	JobFailed JobStatus = "failed"
+
+	// JobRunning status
+	JobRunning JobStatus = "running"
 )
 
 // User is the user object

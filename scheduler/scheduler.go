@@ -155,12 +155,20 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline) (*gaia.PipelineRun, error
 	// increment by one
 	highestID++
 
+	// Get jobs
+	jobs, err := s.getPipelineJobs(p)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot get pipeline jobs during schedule", "error", err.Error(), "pipeline", p)
+		return nil, err
+	}
+
 	// Create new not scheduled pipeline run
 	run := gaia.PipelineRun{
 		UniqueID:     uuid.Must(uuid.NewV4()).String(),
 		ID:           highestID,
 		PipelineID:   p.ID,
 		ScheduleDate: time.Now(),
+		Jobs:         jobs,
 		Status:       gaia.RunNotScheduled,
 	}
 
@@ -170,8 +178,7 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline) (*gaia.PipelineRun, error
 
 // executePipeline executes the given pipeline and updates it status periodically.
 func (s *Scheduler) executePipeline(p *gaia.Pipeline, r *gaia.PipelineRun) {
-	// Set pessimistic values
-	r.Status = gaia.RunFailed
+	// Set start time
 	r.RunDate = time.Now()
 
 	// Get all jobs
@@ -181,6 +188,7 @@ func (s *Scheduler) executePipeline(p *gaia.Pipeline, r *gaia.PipelineRun) {
 		gaia.Cfg.Logger.Error("cannot get pipeline jobs before execution", "error", err.Error())
 
 		// Update store
+		r.Status = gaia.RunFailed
 		s.storeService.PipelinePutRun(r)
 		return
 	}
@@ -210,13 +218,14 @@ func executeJob(job *gaia.Job, p *gaia.Pipeline, wg *sync.WaitGroup, triggerSave
 		return
 	}
 
-	// Lets be pessimistic
-	job.Status = gaia.JobFailed
+	// Set Job to running
+	job.Status = gaia.JobRunning
 
 	// Create the start command for the pipeline
 	c := createPipelineCmd(p)
 	if c == nil {
 		gaia.Cfg.Logger.Debug("cannot execute pipeline job", "error", errCreateCMDForPipeline.Error(), "job", job)
+		job.Status = gaia.JobFailed
 		return
 	}
 
@@ -226,6 +235,7 @@ func executeJob(job *gaia.Job, p *gaia.Pipeline, wg *sync.WaitGroup, triggerSave
 	// Connect to plugin(pipeline)
 	if err := pC.Connect(); err != nil {
 		gaia.Cfg.Logger.Debug("cannot connect to pipeline", "error", err.Error(), "pipeline", p)
+		job.Status = gaia.JobFailed
 		return
 	}
 	defer pC.Close()
@@ -234,6 +244,7 @@ func executeJob(job *gaia.Job, p *gaia.Pipeline, wg *sync.WaitGroup, triggerSave
 	if err := pC.Execute(job); err != nil {
 		// TODO: Show it to user
 		gaia.Cfg.Logger.Debug("error during job execution", "error", err.Error(), "job", job)
+		job.Status = gaia.JobFailed
 	}
 
 	// If we are here, the job execution was ok
@@ -287,6 +298,8 @@ func (s *Scheduler) scheduleJobsByPriority(r *gaia.PipelineRun, p *gaia.Pipeline
 	for _, job := range r.Jobs {
 		switch job.Status {
 		case gaia.JobFailed:
+			r.Status = gaia.RunFailed
+			s.storeService.PipelinePutRun(r)
 			return
 		case gaia.JobWaitingExec:
 			notExecJob = true
@@ -295,6 +308,8 @@ func (s *Scheduler) scheduleJobsByPriority(r *gaia.PipelineRun, p *gaia.Pipeline
 
 	// All jobs have been executed
 	if !notExecJob {
+		r.Status = gaia.RunSuccess
+		s.storeService.PipelinePutRun(r)
 		return
 	}
 
