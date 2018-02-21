@@ -78,6 +78,7 @@ func (s *Scheduler) work() {
 
 		// Mark the scheduled run as running
 		r.Status = gaia.RunRunning
+		r.RunDate = time.Now()
 
 		// Update entry in store
 		err := s.storeService.PipelinePutRun(&r)
@@ -105,8 +106,25 @@ func (s *Scheduler) work() {
 			continue
 		}
 
-		// Start pipeline run process
-		s.executePipeline(pipeline, &r)
+		// Get all jobs
+		r.Jobs, err = s.getPipelineJobs(pipeline)
+		if err != nil {
+			gaia.Cfg.Logger.Error("cannot get pipeline jobs before execution", "error", err.Error())
+
+			// Update store
+			r.Status = gaia.RunFailed
+			s.storeService.PipelinePutRun(&r)
+			continue
+		}
+
+		// Check if this pipeline has jobs declared
+		if len(r.Jobs) == 0 {
+			continue
+		}
+
+		// Schedule jobs and execute them.
+		// Also update the run in the store.
+		s.scheduleJobsByPriority(&r, pipeline)
 	}
 }
 
@@ -176,33 +194,6 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline) (*gaia.PipelineRun, error
 	return &run, s.storeService.PipelinePutRun(&run)
 }
 
-// executePipeline executes the given pipeline and updates it status periodically.
-func (s *Scheduler) executePipeline(p *gaia.Pipeline, r *gaia.PipelineRun) {
-	// Set start time
-	r.RunDate = time.Now()
-
-	// Get all jobs
-	var err error
-	r.Jobs, err = s.getPipelineJobs(p)
-	if err != nil {
-		gaia.Cfg.Logger.Error("cannot get pipeline jobs before execution", "error", err.Error())
-
-		// Update store
-		r.Status = gaia.RunFailed
-		s.storeService.PipelinePutRun(r)
-		return
-	}
-
-	// Check if this pipeline has jobs declared
-	if len(r.Jobs) == 0 {
-		return
-	}
-
-	// Schedule jobs and execute them.
-	// Also update the run in the store.
-	s.scheduleJobsByPriority(r, p)
-}
-
 // executeJob executes a single job.
 // This method is blocking.
 func executeJob(job *gaia.Job, p *gaia.Pipeline, wg *sync.WaitGroup, triggerSave chan bool) {
@@ -210,13 +201,6 @@ func executeJob(job *gaia.Job, p *gaia.Pipeline, wg *sync.WaitGroup, triggerSave
 	defer func() {
 		triggerSave <- true
 	}()
-
-	// In testmode we do not test this.
-	// TODO: Bad testing. Fix this asap!
-	if gaia.Cfg.TestMode {
-		job.Status = gaia.JobSuccess
-		return
-	}
 
 	// Set Job to running
 	job.Status = gaia.JobRunning
@@ -276,7 +260,7 @@ func (s *Scheduler) scheduleJobsByPriority(r *gaia.PipelineRun, p *gaia.Pipeline
 	var wg sync.WaitGroup
 	triggerSave := make(chan bool)
 	for id, job := range r.Jobs {
-		if job.Priority == lowestPrio {
+		if job.Priority == lowestPrio && job.Status == gaia.JobWaitingExec {
 			// Increase wait group by one
 			wg.Add(1)
 
@@ -320,11 +304,6 @@ func (s *Scheduler) scheduleJobsByPriority(r *gaia.PipelineRun, p *gaia.Pipeline
 // getJobResultsAndStore
 func (s *Scheduler) getJobResultsAndStore(triggerSave chan bool, r *gaia.PipelineRun) {
 	for _ = range triggerSave {
-		// TODO: Bad testing. Fix this asap!
-		if gaia.Cfg.TestMode {
-			continue
-		}
-
 		// Store update
 		s.storeService.PipelinePutRun(r)
 	}

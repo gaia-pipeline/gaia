@@ -9,19 +9,25 @@ import (
 )
 
 var store *Store
-var config *gaia.Config
 
 func TestMain(m *testing.M) {
 	store = NewStore()
-	config = &gaia.Config{}
-	config.DataPath = "data"
-	config.Bolt.Path = "test.db"
-	config.Bolt.Mode = 0600
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.DataPath = "data"
+	gaia.Cfg.Bolt.Path = "test.db"
+	gaia.Cfg.Bolt.Mode = 0600
+
+	// Create test folder
+	err := os.MkdirAll(gaia.Cfg.DataPath, 0700)
+	if err != nil {
+		fmt.Printf("cannot create data folder: %s\n", err.Error())
+		os.Exit(1)
+	}
 
 	r := m.Run()
 
 	// cleanup
-	err := os.Remove("data")
+	err = os.Remove("data")
 	if err != nil {
 		fmt.Printf("cannot remove data folder: %s\n", err.Error())
 		r = 1
@@ -30,7 +36,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestInit(t *testing.T) {
-	err := store.Init(config)
+	err := store.Init()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,7 +49,7 @@ func TestInit(t *testing.T) {
 }
 
 func TestUserGet(t *testing.T) {
-	err := store.Init(config)
+	err := store.Init()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +87,7 @@ func TestUserGet(t *testing.T) {
 }
 
 func TestUserPut(t *testing.T) {
-	err := store.Init(config)
+	err := store.Init()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +109,7 @@ func TestUserPut(t *testing.T) {
 }
 
 func TestUserAuth(t *testing.T) {
-	err := store.Init(config)
+	err := store.Init()
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -54,12 +54,12 @@ func (s *Store) Init() error {
 	s.db = db
 
 	// Setup database
-	return setupDatabase(s)
+	return s.setupDatabase()
 }
 
 // setupDatabase create all buckets in the db.
 // Additionally, it makes sure that the admin user exists.
-func setupDatabase(s *Store) error {
+func (s *Store) setupDatabase() error {
 	// Create bucket if not exists function
 	var bucketName []byte
 	c := func(tx *bolt.Tx) error {
