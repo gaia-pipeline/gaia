@@ -1,7 +1,7 @@
 <template>
   <section class="app-main" :style="[hiddenSidebarStyle]">
     <div class="container is-fluid is-marginless app-content">
-      <levelbar></levelbar>
+      <headerbar></headerbar>
       <transition
         mode="out-in"
         enter-active-class="fadeIn"
@@ -14,7 +14,7 @@
 </template>
 
 <script>
-import Levelbar from './Levelbar'
+import Headerbar from './Headerbar'
 import { mapGetters } from 'vuex'
 
 export default {
@@ -28,7 +28,7 @@ export default {
   },
 
   components: {
-    Levelbar
+    Headerbar
   }
 }
 </script>

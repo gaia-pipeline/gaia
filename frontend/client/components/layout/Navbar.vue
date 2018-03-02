@@ -25,7 +25,7 @@
               <svg class="avatar-img" data-jdenticon-value="session.display_name"></svg>
             </div>
           </a>
-          <a class="navbar-item signed-in-icons-div" v-if="session">
+          <a class="navbar-item signed-in-icons-div" @click="refresh" v-if="session">
             <i class="fa fa-refresh fa-lg signed-in-icons" aria-hidden="true"/>
           </a>
           <a class="navbar-item signed-in-icons-div" @click="logout" v-if="session">
@@ -78,7 +78,12 @@ export default {
       jdenticon()
     },
 
+    refresh () {
+      window.location.reload()
+    },
+
     logout () {
+      this.$router.push('/')
       auth.logout(this)
     },
 

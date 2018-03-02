@@ -2,7 +2,7 @@ package pipeline
 
 import (
 	"bytes"
-	"crypto/md5"
+	"crypto/sha256"
 	"io"
 	"io/ioutil"
 	"os"
@@ -43,6 +43,7 @@ func InitTicker(store *store.Store, scheduler *scheduler.Scheduler) {
 	// Create ticker
 	ticker := time.NewTicker(tickerIntervalSeconds * time.Second)
 	go func() {
+		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
@@ -77,18 +78,18 @@ func checkActivePipelines() {
 			// already contains it.
 			pName := getRealPipelineName(n, pType)
 			if GlobalActivePipelines.Contains(pName) {
-				// If Md5Checksum is set, we should check if pipeline has been changed.
+				// If SHA256Sum is set, we should check if pipeline has been changed.
 				p := GlobalActivePipelines.GetByName(pName)
-				if p != nil && p.Md5Checksum != nil {
-					// Get MD5 Checksum
-					checksum, err := getMd5Checksum(gaia.Cfg.PipelinePath + string(os.PathSeparator) + file.Name())
+				if p != nil && p.SHA256Sum != nil {
+					// Get SHA256 Checksum
+					checksum, err := getSHA256Sum(gaia.Cfg.PipelinePath + string(os.PathSeparator) + file.Name())
 					if err != nil {
-						gaia.Cfg.Logger.Debug("cannot calculate md5 checksum for pipeline", "error", err.Error(), "pipeline", p)
+						gaia.Cfg.Logger.Debug("cannot calculate SHA256 checksum for pipeline", "error", err.Error(), "pipeline", p)
 						continue
 					}
 
 					// Pipeline has been changed?
-					if bytes.Compare(p.Md5Checksum, checksum) != 0 {
+					if bytes.Compare(p.SHA256Sum, checksum) != 0 {
 						// Let us try again to start the plugin and receive all implemented jobs
 						schedulerService.SetPipelineJobs(p)
 
@@ -126,11 +127,11 @@ func checkActivePipelines() {
 				shouldStore = true
 			}
 
-			// We calculate a MD5 Checksum and store it.
+			// We calculate a SHA256 Checksum and store it.
 			// We use this to estimate if a pipeline has been changed.
-			pipeline.Md5Checksum, err = getMd5Checksum(pipeline.ExecPath)
+			pipeline.SHA256Sum, err = getSHA256Sum(pipeline.ExecPath)
 			if err != nil {
-				gaia.Cfg.Logger.Debug("cannot calculate md5 checksum for pipeline", "error", err.Error(), "pipeline", pipeline)
+				gaia.Cfg.Logger.Debug("cannot calculate sha256 checksum for pipeline", "error", err.Error(), "pipeline", pipeline)
 				continue
 			}
 
@@ -143,7 +144,7 @@ func checkActivePipelines() {
 			}
 
 			// We do not update the pipeline in store if it already exists there.
-			// We only updated the Md5 Checksum and the jobs but this is not importent
+			// We only updated the SHA256 Checksum and the jobs but this is not importent
 			// to store and should not have any side effects.
 
 			// Append new pipeline
@@ -177,20 +178,22 @@ func getRealPipelineName(n string, pType gaia.PipelineType) string {
 	return strings.TrimSuffix(n, typeDelimiter+pType.String())
 }
 
-func getMd5Checksum(file string) ([]byte, error) {
+// getSHA256Sum accepts a path to a file.
+// It load's the file and calculates a SHA256 Checksum and returns it.
+func getSHA256Sum(path string) ([]byte, error) {
 	// Open file
-	f, err := os.Open(file)
+	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 
-	// Create md5 obj and insert bytes
-	h := md5.New()
+	// Create sha256 obj and insert bytes
+	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {
 		return nil, err
 	}
 
-	// return md5 checksum
+	// return sha256 checksum
 	return h.Sum(nil), nil
 }

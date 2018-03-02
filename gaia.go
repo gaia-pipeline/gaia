@@ -63,14 +63,14 @@ type User struct {
 
 // Pipeline represents a single pipeline
 type Pipeline struct {
-	ID          int          `json:"id,omitempty"`
-	Name        string       `json:"name,omitempty"`
-	Repo        GitRepo      `json:"repo,omitempty"`
-	Type        PipelineType `json:"type,omitempty"`
-	ExecPath    string       `json:"execpath,omitempty"`
-	Md5Checksum []byte       `json:"md5checksum,omitempty"`
-	Jobs        []Job        `json:"jobs,omitempty"`
-	Created     time.Time    `json:"created,omitempty"`
+	ID        int          `json:"id,omitempty"`
+	Name      string       `json:"name,omitempty"`
+	Repo      GitRepo      `json:"repo,omitempty"`
+	Type      PipelineType `json:"type,omitempty"`
+	ExecPath  string       `json:"execpath,omitempty"`
+	SHA256Sum []byte       `json:"sha256sum,omitempty"`
+	Jobs      []Job        `json:"jobs,omitempty"`
+	Created   time.Time    `json:"created,omitempty"`
 }
 
 // GitRepo represents a single git repository
@@ -115,7 +115,8 @@ type PipelineRun struct {
 	UniqueID     string            `json:"uniqueid"`
 	ID           int               `json:"id"`
 	PipelineID   int               `json:"pipelineid"`
-	RunDate      time.Time         `json:"rundate,omitempty"`
+	StartDate    time.Time         `json:"startdate,omitempty"`
+	FinishDate   time.Time         `json:"finishdate,omitempty"`
 	ScheduleDate time.Time         `json:"scheduledate,omitempty"`
 	Status       PipelineRunStatus `json:"status,omitempty"`
 	Jobs         []Job             `json:"jobs,omitempty"`

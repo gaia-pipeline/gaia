@@ -78,7 +78,7 @@ func (s *Scheduler) work() {
 
 		// Mark the scheduled run as running
 		r.Status = gaia.RunRunning
-		r.RunDate = time.Now()
+		r.StartDate = time.Now()
 
 		// Update entry in store
 		err := s.storeService.PipelinePutRun(&r)
@@ -283,6 +283,7 @@ func (s *Scheduler) scheduleJobsByPriority(r *gaia.PipelineRun, p *gaia.Pipeline
 		switch job.Status {
 		case gaia.JobFailed:
 			r.Status = gaia.RunFailed
+			r.FinishDate = time.Now()
 			s.storeService.PipelinePutRun(r)
 			return
 		case gaia.JobWaitingExec:
@@ -293,6 +294,7 @@ func (s *Scheduler) scheduleJobsByPriority(r *gaia.PipelineRun, p *gaia.Pipeline
 	// All jobs have been executed
 	if !notExecJob {
 		r.Status = gaia.RunSuccess
+		r.FinishDate = time.Now()
 		s.storeService.PipelinePutRun(r)
 		return
 	}

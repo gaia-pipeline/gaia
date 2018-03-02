@@ -315,3 +315,24 @@ func PipelineRunGet(ctx iris.Context) {
 	// Return pipeline run
 	ctx.JSON(pipelineRun)
 }
+
+// PipelineGetAllRuns returns all runs about the given pipeline.
+func PipelineGetAllRuns(ctx iris.Context) {
+	// Convert string to int because id is int
+	pipelineID, err := strconv.Atoi(ctx.Params().Get("pipelineid"))
+	if err != nil {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.WriteString(errInvalidPipelineID.Error())
+		return
+	}
+
+	// Get all runs by the given pipeline id
+	runs, err := storeService.PipelineGetAllRuns(pipelineID)
+	if err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.WriteString(err.Error())
+		return
+	}
+
+	ctx.JSON(runs)
+}
