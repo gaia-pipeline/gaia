@@ -8,121 +8,26 @@
     </div>
     <ul class="menu-list">
       <li v-for="(item, index) in menu" :key="index">
-        <router-link :to="item.path" :exact="true" :aria-expanded="isExpanded(item) ? 'true' : 'false'" v-if="item.path" @click.native="toggle(index, item)">
+        <router-link :to="item.path" :exact="true" v-if="item.path">
           <span class="icon icon-left is-small"><i :class="['fa', item.meta.icon]"></i></span>
           {{ item.meta.label || item.name }}
-          <span class="icon is-small is-angle" v-if="item.subroute && item.subroute.length">
-            <i class="fa fa-angle-down"></i>
-          </span>
         </router-link>
-        <a :aria-expanded="isExpanded(item)" v-else @click.native="toggle(index, item)">
-          <span class="icon icon-left is-small"><i :class="['fa', item.meta.icon]"></i></span>
-          {{ item.meta.label || item.name }}
-          <span class="icon is-small is-angle" v-if="item.subroute && item.subroute.length">
-            <i class="fa fa-angle-down"></i>
-          </span>
-        </a>
-
-        <expanding v-if="item.subroute && item.subroute.length">
-          <ul v-show="isExpanded(item)" class="menu-list-expanded">
-            <li v-for="(subItem, index) in item.subroute" v-if="subItem.path" :key="index">
-              <router-link :to="subItem.path">
-                {{ subItem.meta && subItem.meta.label || subItem.name }}
-              </router-link>
-            </li>
-          </ul>
-        </expanding>
       </li>
     </ul>
   </aside>
 </template>
 
 <script>
-import Expanding from 'vue-bulma-expanding'
-import { mapGetters, mapActions } from 'vuex'
+import { mapGetters } from 'vuex'
 
 export default {
-  components: {
-    Expanding
-  },
-
   props: {
     show: Boolean
   },
 
-  data () {
-    return {
-      isReady: false
-    }
-  },
-
-  mounted () {
-    let route = this.$route
-    if (route.name) {
-      this.isReady = true
-      this.shouldExpandMatchItem(route)
-    }
-  },
-
   computed: mapGetters({
     menu: 'menuitems'
-  }),
-
-  methods: {
-    ...mapActions([
-      'expandMenu'
-    ]),
-
-    isExpanded (item) {
-      return item.meta.expanded
-    },
-
-    toggle (index, item) {
-      this.expandMenu({
-        index: index,
-        expanded: !item.meta.expanded
-      })
-    },
-
-    shouldExpandMatchItem (route) {
-      var parent
-
-      const p = this.findParentFromMenu(route)
-      if (p) {
-        parent = p
-      }
-
-      if (parent && 'expanded' in parent.meta) {
-        this.expandMenu({
-          item: parent,
-          expanded: true
-        })
-      }
-    },
-
-    findParentFromMenu (route) {
-      const menu = this.menu
-      for (let i = 0, l = menu.length; i < l; i++) {
-        const item = menu[i]
-        const k = item.subroute && item.subroute.length
-        if (k) {
-          for (let j = 0; j < k; j++) {
-            if (item.subroute[j].path === route.path) {
-              return item
-            }
-          }
-        }
-      }
-    }
-  },
-
-  watch: {
-    $route (route) {
-      this.isReady = true
-      this.shouldExpandMatchItem(route)
-    }
-  }
-
+  })
 }
 </script>
 
@@ -160,12 +65,6 @@ a.navbar-item:hover {
 
   .icon {
     vertical-align: baseline;
-    &.is-angle {
-      position: absolute;
-      right: 10px;
-      margin-top: 13px;
-      transition: transform .377s ease;
-    }
   }
 
   .brand-top {
@@ -198,7 +97,6 @@ a.navbar-item:hover {
     li a.is-active {
       background-color: rgb(60, 57, 74);
       color: #51a0f6;
-      font-weight: bold;
       border-right: 3px solid #51a0f6;
     }
 
@@ -214,15 +112,9 @@ a.navbar-item:hover {
 
     li a {
       color: #8c91a0;
-      width: 140px;
-      margin-left: 60px;
+      width: 150px;
+      margin-left: 50px;
       line-height: 40px;
-
-      &[aria-expanded="true"] {
-        .is-angle {
-          transform: rotate(180deg);
-        }
-      }
     }
 
     li a + ul {

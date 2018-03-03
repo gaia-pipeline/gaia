@@ -32,7 +32,7 @@ module.exports = merge(baseWebpackConfig, {
     }),
     // https://github.com/ampedandwired/html-webpack-plugin
     new HtmlWebpackPlugin({
-      title: 'Gaia - Build powerful automation pipelines in any programming language.',
+      title: 'Gaia - Build powerful pipelines in any programming language.',
       filename: 'index.html',
       template: 'index.html',
       inject: true,

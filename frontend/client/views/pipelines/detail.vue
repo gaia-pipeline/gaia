@@ -17,13 +17,21 @@
               :rows="runsRows"
               :paginate="true"
               :global-search="true"
-              :defaultSortBy="{field: 'id', type: 'asc'}"
+              :defaultSortBy="{field: 'id', type: 'desc'}"
               globalSearchPlaceholder="Search ..."
               styleClass="table table-own-bordered">
               <template slot="table-row" slot-scope="props">
-                <td>{{ props.row.id }}</td>
-                <td>{{ props.row.status }}</td>
-                <td>{{ props.row.startdate }}</td>
+                <td>
+                  <router-link :to="{ path: '/pipelines/detail', query: { pipelineid: pipelineID, runid: props.row.id }}" class="is-blue">
+                    {{ props.row.id }}
+                  </router-link>
+                </td>
+                <td>
+                  <span v-if="props.row.status === 'success'" style="color: green;">{{ props.row.status }}</span>
+                  <span v-else-if="props.row.status === 'failed'" style="color: red;">{{ props.row.status }}</span>
+                  <span v-else>{{ props.row.status }}</span>
+                </td>
+                <td>{{ calculateDuration(props.row.startdate, props.row.finishdate) }}</td>
               </template>
               <div slot="emptystate" class="empty-table-text">
                 No pipeline runs found in database.
@@ -40,6 +48,7 @@ import Vue from 'vue'
 import Vis from 'vis'
 import VueTippy from 'vue-tippy'
 import VueGoodTable from 'vue-good-table'
+import moment from 'moment'
 
 Vue.use(VueGoodTable)
 Vue.use(VueTippy)
@@ -48,6 +57,7 @@ export default {
 
   data () {
     return {
+      pipelineID: null,
       nodes: null,
       edges: null,
       lastRedraw: false,
@@ -62,8 +72,7 @@ export default {
           field: 'status'
         },
         {
-          label: 'Duration',
-          field: 'startdate'
+          label: 'Duration'
         }
       ],
       runsRows: [],
@@ -110,13 +119,26 @@ export default {
     }.bind(this), 3000)
   },
 
+  watch: {
+    '$route': 'locationReload'
+  },
+
   methods: {
+    locationReload () {
+      // View should be re-rendered
+      this.lastRedraw = false
+
+      // Fetch data
+      this.fetchData()
+    },
+
     fetchData () {
       // look up url parameters
       var pipelineID = this.$route.query.pipelineid
       if (!pipelineID) {
         return
       }
+      this.pipelineID = pipelineID
 
       // runID is optional
       var runID = this.$route.query.runid
@@ -273,6 +295,22 @@ export default {
         // We have to move out the instance out of vue because of https://github.com/almende/vis/issues/2567
         window.pipelineView = new Vis.Network(container, data, this.pipelineViewOptions)
       }
+    },
+
+    calculateDuration (startdate, finishdate) {
+      if (!moment(startdate).millisecond()) {
+        startdate = moment()
+      }
+      if (!moment(finishdate).millisecond()) {
+        finishdate = moment()
+      }
+
+      // Calculate difference
+      var diff = moment(finishdate).diff(moment(startdate), 'seconds')
+      if (diff < 60) {
+        return diff + ' seconds'
+      }
+      return moment.duration(diff, 'seconds').humanize()
     }
   }
 

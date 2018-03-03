@@ -51,7 +51,7 @@ const webpackConfig = merge(baseWebpackConfig, {
     // you can customize output by editing /index.html
     // see https://github.com/ampedandwired/html-webpack-plugin
     new HtmlWebpackPlugin({
-      title: 'Gaia - Build powerful automation pipelines in any programming language.',
+      title: 'Gaia - Build powerful pipelines in any programming language.',
       filename: process.env.NODE_ENV === 'testing'
         ? 'index.html'
         : config.build.index,
