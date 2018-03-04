@@ -2,7 +2,11 @@ package handlers
 
 import (
 	"crypto/rand"
+	"errors"
+	"fmt"
+	"strings"
 
+	jwt "github.com/dgrijalva/jwt-go"
 	scheduler "github.com/gaia-pipeline/gaia/scheduler"
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/kataras/iris"
@@ -10,6 +14,10 @@ import (
 
 const (
 	apiVersion = "v1"
+)
+
+var (
+	errNotAuthorized = errors.New("no or invalid jwt token provided. You are not authorized")
 )
 
 // storeService is an instance of store.
@@ -53,5 +61,54 @@ func InitHandlers(i *iris.Application, store *store.Store, scheduler *scheduler.
 	i.Get(p+"pipelines/start/{id:string}", PipelineStart)
 	i.Get(p+"pipelines/runs/{pipelineid:string}", PipelineGetAllRuns)
 
+	// Authentication Barrier
+	i.UseGlobal(authBarrier)
+
 	return nil
+}
+
+// authBarrier is the middleware which prevents user exploits.
+// It makes sure that the request contains a valid jwt token.
+// TODO: Role based access
+func authBarrier(ctx iris.Context) {
+	// Login resource is open
+	if strings.Contains(ctx.Path(), "users/login") {
+		ctx.Next()
+		return
+	}
+
+	// Get JWT token
+	jwtRaw := ctx.GetHeader("Authorization")
+	split := strings.Split(jwtRaw, " ")
+	if len(split) != 2 {
+		ctx.StatusCode(iris.StatusForbidden)
+		ctx.WriteString(errNotAuthorized.Error())
+		return
+	}
+	jwtString := split[1]
+
+	// Parse token
+	token, err := jwt.Parse(jwtString, func(token *jwt.Token) (interface{}, error) {
+		// Validate signing method
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+
+		// return secret
+		return jwtKey, nil
+	})
+	if err != nil {
+		ctx.StatusCode(iris.StatusForbidden)
+		ctx.WriteString(err.Error())
+		return
+	}
+
+	// Validate token
+	if _, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		// All ok, continue
+		ctx.Next()
+	} else {
+		ctx.StatusCode(iris.StatusForbidden)
+		ctx.WriteString(errNotAuthorized.Error())
+	}
 }

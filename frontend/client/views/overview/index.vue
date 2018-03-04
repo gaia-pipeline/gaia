@@ -31,7 +31,8 @@
 export default {
   data () {
     return {
-      pipelines: []
+      pipelines: [],
+      intervalID: null
     }
   },
 
@@ -40,7 +41,7 @@ export default {
     this.fetchData()
 
     // periodically update dashboard
-    setInterval(function () {
+    this.intervalID = setInterval(function () {
       this.fetchData()
     }.bind(this), 3000)
   },
@@ -58,8 +59,9 @@ export default {
             this.pipelines = response.data
           }
         })
-        .catch(error => {
-          console.log(error.response.data)
+        .catch((error) => {
+          clearInterval(this.intervalID)
+          this.$onError(error)
         })
     },
 
@@ -72,8 +74,9 @@ export default {
             this.$router.push({path: '/pipelines/detail', query: { pipelineid: pipelineid, runid: response.data.id }})
           }
         })
-        .catch(error => {
-          console.log(error.response.data)
+        .catch((error) => {
+          clearInterval(this.intervalID)
+          this.$onError(error)
         })
     },
 

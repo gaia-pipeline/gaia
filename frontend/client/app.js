@@ -7,6 +7,7 @@ import router from './router'
 import store from './store'
 import * as filters from './filters'
 import { TOGGLE_SIDEBAR } from 'vuex-store/mutation-types'
+import Notification from 'vue-bulma-notification-fixed'
 import auth from './auth'
 import lodash from 'lodash'
 import VueLodash from 'vue-lodash'
@@ -39,6 +40,59 @@ Vue.directive('focus', {
     el.focus()
   }
 })
+
+const NotificationComponent = Vue.extend(Notification)
+const openNotification = (propsData = {
+  title: '',
+  message: '',
+  type: '',
+  direction: '',
+  duration: 4500,
+  container: '.notifications'
+}) => {
+  return new NotificationComponent({
+    el: document.createElement('div'),
+    propsData
+  })
+}
+Vue.prototype.$notify = openNotification
+
+function handleError (error) {
+  // if the server gave a response message, print that
+  if (error.response.data.error) {
+    // duration should be proportional to the error message length
+    openNotification({
+      title: 'Error: ' + error.response.status,
+      message: error.response.data.error,
+      type: 'danger',
+      duration: error.response.data.error.length > 60 ? 20000 : 4500
+    })
+    console.log(error.response.data.error)
+  } else {
+    if (error.response.status === 404) {
+      openNotification({
+        title: 'Error: 404',
+        message: 'Not found',
+        type: 'danger'
+      })
+    } else if (error.response.status === 403) {
+    // Access denied
+      openNotification({
+        title: 'Error: 403',
+        message: 'Not authorized. Please login first.',
+        type: 'danger'
+      })
+    } else {
+      openNotification({
+        title: 'Error: ' + error.response.status.toString(),
+        message: '',
+        type: 'danger'
+      })
+    }
+    console.log(error.response.data)
+  }
+}
+Vue.prototype.$onError = handleError
 
 router.beforeEach((route, redirect, next) => {
   if (state.app.device.isMobile && state.app.sidebar.opened) {

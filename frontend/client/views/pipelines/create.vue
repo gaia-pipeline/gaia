@@ -231,7 +231,8 @@ export default {
           field: 'created'
         }
       ],
-      historyRows: []
+      historyRows: [],
+      intervalID: null
     }
   },
 
@@ -247,7 +248,7 @@ export default {
     this.fetchData()
 
     // periodically update history dashboard
-    setInterval(function () {
+    this.intervalID = setInterval(function () {
       this.fetchData()
     }.bind(this), 3000)
   },
@@ -265,8 +266,9 @@ export default {
             this.historyRows = response.data
           }
         })
-        .catch(error => {
-          console.log(error.response.data)
+        .catch((error) => {
+          clearInterval(this.intervalID)
+          this.$onError(error)
         })
     },
 
@@ -350,8 +352,8 @@ export default {
           // Run fetchData to see the pipeline in our history table
           this.fetchData()
         })
-        .catch(error => {
-          console.log(error.response.data)
+        .catch((error) => {
+          this.$onError(error)
         })
     },
 

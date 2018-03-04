@@ -46,12 +46,10 @@
 <script>
 import Vue from 'vue'
 import Vis from 'vis'
-import VueTippy from 'vue-tippy'
 import VueGoodTable from 'vue-good-table'
 import moment from 'moment'
 
 Vue.use(VueGoodTable)
-Vue.use(VueTippy)
 
 export default {
 
@@ -106,15 +104,18 @@ export default {
           },
           arrows: {to: true}
         }
-      }
+      },
+      intervalID: null
     }
   },
 
   mounted () {
-    this.fetchData()
+    // View should be re-rendered
+    this.lastRedraw = false
 
     // periodically update view
-    setInterval(function () {
+    this.fetchData()
+    this.intervalID = setInterval(function () {
       this.fetchData()
     }.bind(this), 3000)
   },
@@ -158,6 +159,10 @@ export default {
             }
             this.runsRows = pipelineRuns.data
           }.bind(this)))
+          .catch((error) => {
+            clearInterval(this.intervalID)
+            this.$onError(error)
+          })
       } else {
         // Do concurrent request
         this.$http.all([this.getPipeline(pipelineID), this.getPipelineRuns(pipelineID)])
@@ -168,6 +173,10 @@ export default {
             }
             this.runsRows = pipelineRuns.data
           }.bind(this)))
+          .catch((error) => {
+            clearInterval(this.intervalID)
+            this.$onError(error)
+          })
       }
     },
 
@@ -271,7 +280,7 @@ export default {
       }
 
       // If pipelineView already exist, just update it
-      if (window.pipelineView) {
+      if (window.pipelineView && this.nodes && this.edges) {
         // Redraw
         this.nodes.clear()
         this.edges.clear()
