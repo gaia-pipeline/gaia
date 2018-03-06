@@ -3,7 +3,7 @@ package store
 import (
 	"encoding/binary"
 	"fmt"
-	"os"
+	"path/filepath"
 
 	bolt "github.com/coreos/bbolt"
 	"github.com/gaia-pipeline/gaia"
@@ -22,10 +22,15 @@ var (
 
 	// Name of the bucket where we store all pipeline runs.
 	pipelineRunBucket = []byte("PipelineRun")
+)
 
+const (
 	// Username and password of the first admin user
 	adminUsername = "admin"
 	adminPassword = "admin"
+
+	// Bolt database file name
+	boltDBFileName = "gaia.db"
 )
 
 // Store represents the access type for store
@@ -46,7 +51,7 @@ func NewStore() *Store {
 // because bolt holds a lock on the database file.
 func (s *Store) Init() error {
 	// Open connection to bolt database
-	path := gaia.Cfg.DataPath + string(os.PathSeparator) + gaia.Cfg.Bolt.Path
+	path := filepath.Join(gaia.Cfg.DataPath, boltDBFileName)
 	db, err := bolt.Open(path, gaia.Cfg.Bolt.Mode, nil)
 	if err != nil {
 		return err

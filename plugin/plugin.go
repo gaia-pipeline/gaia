@@ -1,8 +1,10 @@
 package plugin
 
 import (
+	"bufio"
 	"errors"
 	"io"
+	"os"
 	"os/exec"
 
 	"github.com/gaia-pipeline/gaia"
@@ -33,6 +35,8 @@ type Plugin struct {
 
 	// Interface to the connected plugin.
 	pluginConn PluginGRPC
+
+	writer *bufio.Writer
 }
 
 // NewPlugin creates a new instance of Plugin.
@@ -41,12 +45,25 @@ func NewPlugin(c *exec.Cmd) *Plugin {
 	// Allocate
 	p := &Plugin{}
 
+	// Writer
+	// TODO: This was just for testing
+	file, err := os.OpenFile(
+		"test.txt",
+		os.O_APPEND|os.O_WRONLY,
+		0666,
+	)
+	if err != nil {
+		panic(err)
+	}
+	p.writer = bufio.NewWriter(file)
+
 	// Get new client
 	p.client = plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  handshake,
 		Plugins:          pluginMap,
 		Cmd:              c,
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
+		Stderr:           p.writer,
 	})
 
 	return p
@@ -74,7 +91,7 @@ func (p *Plugin) Connect() error {
 		return nil
 	}
 
-	return errors.New("plugin is not compatible with Gaia plugin interface")
+	return errors.New("plugin is not compatible with plugin interface")
 }
 
 // Execute triggers the execution of one single job
@@ -137,6 +154,7 @@ func (p *Plugin) Close() {
 	// is blocking until the subprocess successfully exits.
 	// The user should not wait for this.
 	go func() {
+		p.writer.Flush()
 		p.client.Kill()
 	}()
 }

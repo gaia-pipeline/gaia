@@ -21,6 +21,7 @@ var (
 const (
 	dataFolder      = "data"
 	pipelinesFolder = "pipelines"
+	workspaceFolder = "workspace"
 )
 
 func init() {
@@ -29,7 +30,6 @@ func init() {
 	// command line arguments
 	flag.StringVar(&gaia.Cfg.ListenPort, "port", "8080", "Listen port for gaia")
 	flag.StringVar(&gaia.Cfg.HomePath, "homepath", "", "Path to the gaia home folder")
-	flag.StringVar(&gaia.Cfg.Bolt.Path, "dbpath", "gaia.db", "Path to gaia bolt db file")
 	flag.IntVar(&gaia.Cfg.Workers, "workers", 2, "Number of workers gaia will use to execute pipelines in parallel")
 
 	// Default values
@@ -59,13 +59,24 @@ func main() {
 		gaia.Cfg.Logger.Debug("executeable path found", "path", execPath)
 	}
 
-	// Set data path and pipeline path relative to home folder and create it
+	// Set data path, workspace path and pipeline path relative to home folder and create it
 	// if not exist.
-	gaia.Cfg.DataPath = gaia.Cfg.HomePath + string(os.PathSeparator) + dataFolder
-	gaia.Cfg.PipelinePath = gaia.Cfg.DataPath + string(os.PathSeparator) + pipelinesFolder
-	err := os.MkdirAll(gaia.Cfg.PipelinePath, 0700)
+	gaia.Cfg.DataPath = filepath.Join(gaia.Cfg.HomePath, dataFolder)
+	err := os.MkdirAll(gaia.Cfg.DataPath, 0700)
 	if err != nil {
-		gaia.Cfg.Logger.Error("cannot create data folder", "error", err.Error(), "path", gaia.Cfg.DataPath)
+		gaia.Cfg.Logger.Error("cannot create folder", "error", err.Error(), "path", gaia.Cfg.DataPath)
+		os.Exit(1)
+	}
+	gaia.Cfg.PipelinePath = filepath.Join(gaia.Cfg.HomePath, pipelinesFolder)
+	err = os.MkdirAll(gaia.Cfg.PipelinePath, 0700)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot create folder", "error", err.Error(), "path", gaia.Cfg.PipelinePath)
+		os.Exit(1)
+	}
+	gaia.Cfg.WorkspacePath = filepath.Join(gaia.Cfg.HomePath, workspaceFolder)
+	err = os.MkdirAll(gaia.Cfg.WorkspacePath, 0700)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot create data folder", "error", err.Error(), "path", gaia.Cfg.WorkspacePath)
 		os.Exit(1)
 	}
 

@@ -15,7 +15,6 @@ func TestScheduleJobsByPriority(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
 	storeInstance := store.NewStore()
 	gaia.Cfg.DataPath = "data"
-	gaia.Cfg.Bolt.Path = "test.db"
 	gaia.Cfg.Bolt.Mode = 0600
 
 	// Create test folder
@@ -42,7 +41,7 @@ func TestScheduleJobsByPriority(t *testing.T) {
 	}
 
 	// cleanup
-	err = os.Remove("data/test.db")
+	err = os.Remove("data/gaia.db")
 	if err != nil {
 		t.Fatal(err)
 	}

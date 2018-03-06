@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
@@ -28,8 +29,8 @@ func (b *BuildPipelineGolang) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	uuid := uuid.Must(uuid.NewV4())
 
 	// Create local temp folder for clone
-	goPath := gaia.Cfg.HomePath + string(os.PathSeparator) + tmpFolder + string(os.PathSeparator) + golangFolder
-	cloneFolder := goPath + string(os.PathSeparator) + srcFolder + string(os.PathSeparator) + uuid.String()
+	goPath := filepath.Join(gaia.Cfg.HomePath, tmpFolder, golangFolder)
+	cloneFolder := filepath.Join(goPath, srcFolder, uuid.String())
 	err := os.MkdirAll(cloneFolder, 0700)
 	if err != nil {
 		return err
@@ -48,7 +49,7 @@ func (b *BuildPipelineGolang) ExecuteBuild(p *gaia.CreatePipeline) error {
 		gaia.Cfg.Logger.Debug("cannot find go executeable", "error", err.Error())
 		return err
 	}
-	goPath := gaia.Cfg.HomePath + string(os.PathSeparator) + tmpFolder + string(os.PathSeparator) + golangFolder
+	goPath := filepath.Join(gaia.Cfg.HomePath, tmpFolder, golangFolder)
 
 	// Set command args for get dependencies
 	args := []string{
@@ -104,8 +105,8 @@ func executeCmd(path string, args []string, env []string, dir string) ([]byte, e
 // destination folder.
 func (b *BuildPipelineGolang) CopyBinary(p *gaia.CreatePipeline) error {
 	// Define src and destination
-	src := p.Pipeline.Repo.LocalDest + string(os.PathSeparator) + appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
-	dest := gaia.Cfg.PipelinePath + string(os.PathSeparator) + appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
+	src := filepath.Join(p.Pipeline.Repo.LocalDest, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
+	dest := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
 
 	// Copy binary
 	if err := copyFileContents(src, dest); err != nil {

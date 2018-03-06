@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -82,7 +83,7 @@ func checkActivePipelines() {
 				p := GlobalActivePipelines.GetByName(pName)
 				if p != nil && p.SHA256Sum != nil {
 					// Get SHA256 Checksum
-					checksum, err := getSHA256Sum(gaia.Cfg.PipelinePath + string(os.PathSeparator) + file.Name())
+					checksum, err := getSHA256Sum(filepath.Join(gaia.Cfg.PipelinePath, file.Name()))
 					if err != nil {
 						gaia.Cfg.Logger.Debug("cannot calculate SHA256 checksum for pipeline", "error", err.Error(), "pipeline", p)
 						continue
@@ -119,7 +120,7 @@ func checkActivePipelines() {
 				pipeline = &gaia.Pipeline{
 					Name:     pName,
 					Type:     pType,
-					ExecPath: gaia.Cfg.PipelinePath + string(os.PathSeparator) + file.Name(),
+					ExecPath: filepath.Join(gaia.Cfg.PipelinePath, file.Name()),
 					Created:  time.Now(),
 				}
 
