@@ -50,6 +50,9 @@ const (
 
 	// JobRunning status
 	JobRunning JobStatus = "running"
+
+	// Name of the logs folder in pipeline run folder
+	LogsFolderName = "logs"
 )
 
 // User is the user object

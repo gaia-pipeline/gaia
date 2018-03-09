@@ -36,37 +36,46 @@ type Plugin struct {
 	// Interface to the connected plugin.
 	pluginConn PluginGRPC
 
+	// Log file where all output is stored.
+	logFile *os.File
+
+	// Writer used to write logs from execution to file
 	writer *bufio.Writer
 }
 
 // NewPlugin creates a new instance of Plugin.
 // One Plugin instance represents one connection to a plugin.
-func NewPlugin(c *exec.Cmd) *Plugin {
+//
+// It expects the start command to start the plugin and the log path (including file)
+// where the output should be logged to.
+func NewPlugin(command *exec.Cmd, logPath string) (p *Plugin, err error) {
 	// Allocate
-	p := &Plugin{}
+	p = &Plugin{}
 
-	// Writer
-	// TODO: This was just for testing
-	file, err := os.OpenFile(
-		"test.txt",
-		os.O_APPEND|os.O_WRONLY,
+	// Create log file and open it.
+	// We will close this file in the close method.
+	p.logFile, err = os.OpenFile(
+		logPath,
+		os.O_CREATE|os.O_WRONLY,
 		0666,
 	)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	p.writer = bufio.NewWriter(file)
+
+	// Create new writer
+	p.writer = bufio.NewWriter(p.logFile)
 
 	// Get new client
 	p.client = plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  handshake,
 		Plugins:          pluginMap,
-		Cmd:              c,
+		Cmd:              command,
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
 		Stderr:           p.writer,
 	})
 
-	return p
+	return p, nil
 }
 
 // Connect starts the plugin, initiates the gRPC connection and looks up the plugin.
@@ -154,7 +163,12 @@ func (p *Plugin) Close() {
 	// is blocking until the subprocess successfully exits.
 	// The user should not wait for this.
 	go func() {
-		p.writer.Flush()
 		p.client.Kill()
+
+		// Flush the writer
+		p.writer.Flush()
+
+		// Close log file
+		p.logFile.Close()
 	}()
 }

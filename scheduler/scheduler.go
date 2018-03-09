@@ -2,7 +2,10 @@ package scheduler
 
 import (
 	"errors"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
 
@@ -119,7 +122,16 @@ func (s *Scheduler) work() {
 
 		// Check if this pipeline has jobs declared
 		if len(r.Jobs) == 0 {
+			// Finish pipeline run
+			s.finishPipelineRun(&r, gaia.RunSuccess)
 			continue
+		}
+
+		// Create logs folder for this run
+		path := filepath.Join(gaia.Cfg.WorkspacePath, strconv.Itoa(r.PipelineID), strconv.Itoa(r.ID), gaia.LogsFolderName)
+		err = os.MkdirAll(path, 0700)
+		if err != nil {
+			gaia.Cfg.Logger.Error("cannot create pipeline run folder", "error", err.Error(), "path", path)
 		}
 
 		// Schedule jobs and execute them.
@@ -196,7 +208,7 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline) (*gaia.PipelineRun, error
 
 // executeJob executes a single job.
 // This method is blocking.
-func executeJob(job *gaia.Job, p *gaia.Pipeline, wg *sync.WaitGroup, triggerSave chan bool) {
+func executeJob(job *gaia.Job, p *gaia.Pipeline, logPath string, wg *sync.WaitGroup, triggerSave chan bool) {
 	defer wg.Done()
 	defer func() {
 		triggerSave <- true
@@ -214,7 +226,11 @@ func executeJob(job *gaia.Job, p *gaia.Pipeline, wg *sync.WaitGroup, triggerSave
 	}
 
 	// Create new plugin instance
-	pC := plugin.NewPlugin(c)
+	pC, err := plugin.NewPlugin(c, logPath)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot initiate plugin before job execution", "error", err.Error())
+		return
+	}
 
 	// Connect to plugin(pipeline)
 	if err := pC.Connect(); err != nil {
@@ -265,7 +281,9 @@ func (s *Scheduler) scheduleJobsByPriority(r *gaia.PipelineRun, p *gaia.Pipeline
 			wg.Add(1)
 
 			// Execute this job in a separate goroutine
-			go executeJob(&r.Jobs[id], p, &wg, triggerSave)
+			path := filepath.Join(gaia.Cfg.WorkspacePath, strconv.Itoa(r.PipelineID), strconv.Itoa(r.ID), gaia.LogsFolderName)
+			path = filepath.Join(path, strconv.Itoa(job.ID))
+			go executeJob(&r.Jobs[id], p, path, &wg, triggerSave)
 		}
 	}
 
@@ -282,9 +300,7 @@ func (s *Scheduler) scheduleJobsByPriority(r *gaia.PipelineRun, p *gaia.Pipeline
 	for _, job := range r.Jobs {
 		switch job.Status {
 		case gaia.JobFailed:
-			r.Status = gaia.RunFailed
-			r.FinishDate = time.Now()
-			s.storeService.PipelinePutRun(r)
+			s.finishPipelineRun(r, gaia.RunFailed)
 			return
 		case gaia.JobWaitingExec:
 			notExecJob = true
@@ -293,9 +309,7 @@ func (s *Scheduler) scheduleJobsByPriority(r *gaia.PipelineRun, p *gaia.Pipeline
 
 	// All jobs have been executed
 	if !notExecJob {
-		r.Status = gaia.RunSuccess
-		r.FinishDate = time.Now()
-		s.storeService.PipelinePutRun(r)
+		s.finishPipelineRun(r, gaia.RunSuccess)
 		return
 	}
 
@@ -320,8 +334,16 @@ func (s *Scheduler) getPipelineJobs(p *gaia.Pipeline) ([]gaia.Job, error) {
 		return nil, errCreateCMDForPipeline
 	}
 
+	// Create log folder (if not exist)
+	path := filepath.Join(gaia.Cfg.WorkspacePath, strconv.Itoa(r.PipelineID), strconv.Itoa(r.ID), gaia.LogsFolderName)
+	err := os.MkdirAll(path, 0700)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot create folder before get pipeline jobs", "error", err.Error(), "path", path)
+		return nil, err
+	}
+
 	// Create new plugin instance
-	pC := plugin.NewPlugin(c)
+	pC, err := plugin.NewPlugin(c)
 
 	// Connect to plugin(pipeline)
 	if err := pC.Connect(); err != nil {
@@ -361,4 +383,19 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 	}
 
 	return c
+}
+
+// finishPipelineRun finishes the pipeline run and stores the results.
+func (s *Scheduler) finishPipelineRun(r *gaia.PipelineRun, status gaia.PipelineRunStatus) {
+	// Mark pipeline run as success
+	r.Status = status
+
+	// Finish date
+	r.FinishDate = time.Now()
+
+	// Store it
+	err := s.storeService.PipelinePutRun(r)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot store finished pipeline", "error", err.Error())
+	}
 }
