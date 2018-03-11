@@ -48,19 +48,21 @@ type Plugin struct {
 //
 // It expects the start command to start the plugin and the log path (including file)
 // where the output should be logged to.
-func NewPlugin(command *exec.Cmd, logPath string) (p *Plugin, err error) {
+func NewPlugin(command *exec.Cmd, logPath *string) (p *Plugin, err error) {
 	// Allocate
 	p = &Plugin{}
 
 	// Create log file and open it.
 	// We will close this file in the close method.
-	p.logFile, err = os.OpenFile(
-		logPath,
-		os.O_CREATE|os.O_WRONLY,
-		0666,
-	)
-	if err != nil {
-		return nil, err
+	if logPath != nil {
+		p.logFile, err = os.OpenFile(
+			*logPath,
+			os.O_CREATE|os.O_WRONLY,
+			0666,
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Create new writer

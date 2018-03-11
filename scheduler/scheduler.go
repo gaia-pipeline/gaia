@@ -226,7 +226,7 @@ func executeJob(job *gaia.Job, p *gaia.Pipeline, logPath string, wg *sync.WaitGr
 	}
 
 	// Create new plugin instance
-	pC, err := plugin.NewPlugin(c, logPath)
+	pC, err := plugin.NewPlugin(c, &logPath)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initiate plugin before job execution", "error", err.Error())
 		return
@@ -282,7 +282,7 @@ func (s *Scheduler) scheduleJobsByPriority(r *gaia.PipelineRun, p *gaia.Pipeline
 
 			// Execute this job in a separate goroutine
 			path := filepath.Join(gaia.Cfg.WorkspacePath, strconv.Itoa(r.PipelineID), strconv.Itoa(r.ID), gaia.LogsFolderName)
-			path = filepath.Join(path, strconv.Itoa(job.ID))
+			path = filepath.Join(path, strconv.FormatUint(uint64(job.ID), 10))
 			go executeJob(&r.Jobs[id], p, path, &wg, triggerSave)
 		}
 	}
@@ -334,16 +334,12 @@ func (s *Scheduler) getPipelineJobs(p *gaia.Pipeline) ([]gaia.Job, error) {
 		return nil, errCreateCMDForPipeline
 	}
 
-	// Create log folder (if not exist)
-	path := filepath.Join(gaia.Cfg.WorkspacePath, strconv.Itoa(r.PipelineID), strconv.Itoa(r.ID), gaia.LogsFolderName)
-	err := os.MkdirAll(path, 0700)
+	// Create new plugin instance
+	pC, err := plugin.NewPlugin(c, nil)
 	if err != nil {
-		gaia.Cfg.Logger.Error("cannot create folder before get pipeline jobs", "error", err.Error(), "path", path)
+		gaia.Cfg.Logger.Error("cannot initiate plugin", "error", err.Error())
 		return nil, err
 	}
-
-	// Create new plugin instance
-	pC, err := plugin.NewPlugin(c)
 
 	// Connect to plugin(pipeline)
 	if err := pC.Connect(); err != nil {
