@@ -18,11 +18,11 @@ type PipelineRunStatus string
 type JobStatus string
 
 const (
-	// UNKNOWN plugin type
-	UNKNOWN PipelineType = "unknown"
+	// PTypeUnknown unknown plugin type
+	PTypeUnknown PipelineType = "unknown"
 
-	// GOLANG plugin type
-	GOLANG PipelineType = "golang"
+	// PTypeGolang golang plugin type
+	PTypeGolang PipelineType = "golang"
 
 	// RunNotScheduled status
 	RunNotScheduled PipelineRunStatus = "not scheduled"

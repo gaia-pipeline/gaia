@@ -161,17 +161,17 @@ func getPipelineType(n string) (gaia.PipelineType, error) {
 
 	// Length must be higher than one
 	if len(s) < 2 {
-		return gaia.UNKNOWN, errMissingType
+		return gaia.PTypeUnknown, errMissingType
 	}
 
 	// Get last element and look for type
 	t := s[len(s)-1]
 	switch t {
-	case gaia.GOLANG.String():
-		return gaia.GOLANG, nil
+	case gaia.PTypeGolang.String():
+		return gaia.PTypeGolang, nil
 	}
 
-	return gaia.UNKNOWN, errMissingType
+	return gaia.PTypeUnknown, errMissingType
 }
 
 // getRealPipelineName removes the suffix from the pipeline name.

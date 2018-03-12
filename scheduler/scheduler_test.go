@@ -80,7 +80,7 @@ func prepareTestData() (pipeline *gaia.Pipeline, pipelineRun *gaia.PipelineRun) 
 	pipeline = &gaia.Pipeline{
 		ID:   1,
 		Name: "Test Pipeline",
-		Type: gaia.GOLANG,
+		Type: gaia.PTypeGolang,
 	}
 	pipelineRun = &gaia.PipelineRun{
 		ID:         1,

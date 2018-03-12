@@ -61,7 +61,7 @@ func NewBuildPipeline(t gaia.PipelineType) BuildPipeline {
 
 	// Create build pipeline for given pipeline type
 	switch t {
-	case gaia.GOLANG:
+	case gaia.PTypeGolang:
 		bP = &BuildPipelineGolang{
 			Type: t,
 		}

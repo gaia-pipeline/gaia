@@ -372,7 +372,7 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 
 	// Dependent on the pipeline type
 	switch p.Type {
-	case gaia.GOLANG:
+	case gaia.PTypeGolang:
 		c.Path = p.ExecPath
 	default:
 		c = nil
