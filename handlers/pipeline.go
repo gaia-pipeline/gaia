@@ -32,15 +32,6 @@ var (
 const (
 	// Split char to separate path from pipeline and name
 	pipelinePathSplitChar = "/"
-
-	// Percent of pipeline creation progress after git clone
-	pipelineCloneStatus = 25
-
-	// Percent of pipeline creation progress after compile process done
-	pipelineCompileStatus = 75
-
-	// Completed percent progress
-	pipelineCompleteStatus = 100
 )
 
 // PipelineGitLSRemote checks for available git remote branches.
@@ -89,81 +80,7 @@ func CreatePipeline(ctx iris.Context) {
 	}
 
 	// Cloning the repo and compiling the pipeline will be done async
-	go createPipelineExecute(p)
-}
-
-// createPipelineExecute clones the given git repo and compiles
-// the pipeline. After every step, the status will be stored.
-// This method is designed to be called async.
-func createPipelineExecute(p *gaia.CreatePipeline) {
-	// Define build process for the given type
-	bP := pipeline.NewBuildPipeline(p.Pipeline.Type)
-	if bP == nil {
-		// Pipeline type is not supported
-		gaia.Cfg.Logger.Debug("create pipeline failed. Pipeline type is not supported", "type", p.Pipeline.Type)
-		return
-	}
-
-	// Setup environment before cloning repo and command
-	err := bP.PrepareEnvironment(p)
-	if err != nil {
-		gaia.Cfg.Logger.Error("cannot prepare build", "error", err.Error())
-		return
-	}
-
-	// Clone git repo
-	err = pipeline.GitCloneRepo(&p.Pipeline.Repo)
-	if err != nil {
-		// Add error message and store
-		p.Output = err.Error()
-		storeService.CreatePipelinePut(p)
-		gaia.Cfg.Logger.Debug("cannot clone repo", "error", err.Error())
-		return
-	}
-
-	// Update status of our pipeline build
-	p.Status = pipelineCloneStatus
-	err = storeService.CreatePipelinePut(p)
-	if err != nil {
-		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
-		return
-	}
-
-	// Run compile process
-	err = bP.ExecuteBuild(p)
-	if err != nil {
-		// Add error message and store
-		p.Output = err.Error()
-		storeService.CreatePipelinePut(p)
-		gaia.Cfg.Logger.Debug("cannot compile pipeline", "error", err.Error())
-		return
-	}
-
-	// Update status of our pipeline build
-	p.Status = pipelineCompileStatus
-	err = storeService.CreatePipelinePut(p)
-	if err != nil {
-		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
-		return
-	}
-
-	// Copy compiled binary to plugins folder
-	err = bP.CopyBinary(p)
-	if err != nil {
-		// Add error message and store
-		p.Output = err.Error()
-		storeService.CreatePipelinePut(p)
-		gaia.Cfg.Logger.Debug("cannot copy compiled binary", "error", err.Error())
-		return
-	}
-
-	// Set create pipeline status to complete
-	p.Status = pipelineCompleteStatus
-	err = storeService.CreatePipelinePut(p)
-	if err != nil {
-		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
-		return
-	}
+	go pipeline.CreatePipeline(p)
 }
 
 // CreatePipelineGetAll returns a json array of

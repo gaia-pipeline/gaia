@@ -10,6 +10,10 @@ import (
 // PipelineType represents supported plugin types
 type PipelineType string
 
+// CreatePipelineType represents the different status types
+// a create pipeline can have.
+type CreatePipelineType string
+
 // PipelineRunStatus represents the different status a run
 // can have.
 type PipelineRunStatus string
@@ -23,6 +27,15 @@ const (
 
 	// PTypeGolang golang plugin type
 	PTypeGolang PipelineType = "golang"
+
+	// CreatePipelineFailed status
+	CreatePipelineFailed CreatePipelineType = "failed"
+
+	// CreatePipelineRunning status
+	CreatePipelineRunning CreatePipelineType = "running"
+
+	// CreatePipelineSuccess status
+	CreatePipelineSuccess CreatePipelineType = "success"
 
 	// RunNotScheduled status
 	RunNotScheduled PipelineRunStatus = "not scheduled"
@@ -51,7 +64,7 @@ const (
 	// JobRunning status
 	JobRunning JobStatus = "running"
 
-	// Name of the logs folder in pipeline run folder
+	// LogsFolderName represents the Name of the logs folder in pipeline run folder
 	LogsFolderName = "logs"
 )
 
@@ -99,11 +112,12 @@ type Job struct {
 // CreatePipeline represents a pipeline which is not yet
 // compiled.
 type CreatePipeline struct {
-	ID       string    `json:"id,omitempty"`
-	Pipeline Pipeline  `json:"pipeline,omitempty"`
-	Status   int       `json:"status,omitempty"`
-	Output   string    `json:"errmsg,omitempty"`
-	Created  time.Time `json:"created,omitempty"`
+	ID         string             `json:"id,omitempty"`
+	Pipeline   Pipeline           `json:"pipeline,omitempty"`
+	Status     int                `json:"status,omitempty"`
+	StatusType CreatePipelineType `json:"statustype,omitempty"`
+	Output     string             `json:"errmsg,omitempty"`
+	Created    time.Time          `json:"created,omitempty"`
 }
 
 // PrivateKey represents a pem encoded private key

@@ -73,9 +73,9 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 	return nil
 }
 
-// GitCloneRepo clones the given repo to a local folder.
+// gitCloneRepo clones the given repo to a local folder.
 // The destination will be attached to the given repo obj.
-func GitCloneRepo(repo *gaia.GitRepo) error {
+func gitCloneRepo(repo *gaia.GitRepo) error {
 	// Check if credentials were provided
 	var auth transport.AuthMethod
 	if repo.Username != "" && repo.Password != "" {

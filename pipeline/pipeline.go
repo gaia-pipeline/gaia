@@ -54,9 +54,9 @@ var (
 	errMissingType = errors.New("couldnt find pipeline type definition")
 )
 
-// NewBuildPipeline creates a new build pipeline for the given
+// newBuildPipeline creates a new build pipeline for the given
 // pipeline type.
-func NewBuildPipeline(t gaia.PipelineType) BuildPipeline {
+func newBuildPipeline(t gaia.PipelineType) BuildPipeline {
 	var bP BuildPipeline
 
 	// Create build pipeline for given pipeline type

@@ -11,7 +11,7 @@ func TestGitCloneRepo(t *testing.T) {
 	repo := &gaia.GitRepo{
 		URL: "https://github.com/gaia-pipeline/gaia",
 	}
-	err := GitCloneRepo(repo)
+	err := gitCloneRepo(repo)
 	if err != nil {
 		t.Fatal(err)
 	}
