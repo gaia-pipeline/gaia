@@ -97,7 +97,7 @@
               <template slot="table-row" slot-scope="props">
                 <td>{{ props.row.pipeline.name }}</td>
                 <td class="progress-bar-height">
-                  <div class="progress-bar-middle" v-bind:class="{ blink: props.row.status < 100 }" v-if="props.row.statustype === 'running'">
+                  <div class="progress-bar-middle blink" v-if="props.row.statustype === 'running'">
                     <progress-bar :type="'info'" :size="'small'" :value="props.row.status" :max="100" :show-label="false"></progress-bar>
                   </div>
                   <div v-else-if="props.row.statustype === 'success'" style="color: green;">{{ props.row.statustype }}</div>
@@ -105,6 +105,9 @@
                 </td>
                 <td>{{ props.row.pipeline.type }}</td>
                 <td :title="props.row.created" v-tippy="{ arrow : true,  animation : 'shift-away'}">{{ convertTime(props.row.created) }}</td>
+                <td>
+                  <span :title="props.row.errmsg" v-tippy="{ arrow : true,  animation : 'shift-away'}" class="is-blue">Output</span>
+                </td>
               </template>
               <div slot="emptystate" class="empty-table-text">
                 No pipelines found in database.
@@ -235,6 +238,10 @@ export default {
         {
           label: 'Creation date',
           field: 'created'
+        },
+        {
+          label: 'Status Output',
+          field: 'errmsg'
         }
       ],
       historyRows: [],
