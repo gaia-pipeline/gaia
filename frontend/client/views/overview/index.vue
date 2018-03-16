@@ -31,8 +31,7 @@
 export default {
   data () {
     return {
-      pipelines: [],
-      intervalID: null
+      pipelines: []
     }
   },
 
@@ -41,9 +40,12 @@ export default {
     this.fetchData()
 
     // periodically update dashboard
-    this.intervalID = setInterval(function () {
+    var intervalID = setInterval(function () {
       this.fetchData()
     }.bind(this), 3000)
+
+    // Append interval id to store
+    this.$store.commit('appendInterval', intervalID)
   },
 
   watch: {
@@ -60,7 +62,7 @@ export default {
           }
         })
         .catch((error) => {
-          clearInterval(this.intervalID)
+          this.$store.commit('clearIntervals')
           this.$onError(error)
         })
     },
@@ -75,7 +77,7 @@ export default {
           }
         })
         .catch((error) => {
-          clearInterval(this.intervalID)
+          this.$store.commit('clearIntervals')
           this.$onError(error)
         })
     },

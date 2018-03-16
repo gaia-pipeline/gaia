@@ -244,8 +244,7 @@ export default {
           field: 'errmsg'
         }
       ],
-      historyRows: [],
-      intervalID: null
+      historyRows: []
     }
   },
 
@@ -261,9 +260,12 @@ export default {
     this.fetchData()
 
     // periodically update history dashboard
-    this.intervalID = setInterval(function () {
+    var intervalID = setInterval(function () {
       this.fetchData()
     }.bind(this), 3000)
+
+    // Append interval id to store
+    this.$store.commit('appendInterval', intervalID)
   },
 
   watch: {
@@ -280,7 +282,7 @@ export default {
           }
         })
         .catch((error) => {
-          clearInterval(this.intervalID)
+          this.$store.commit('clearIntervals')
           this.$onError(error)
         })
     },

@@ -8,6 +8,7 @@ const componententry = state => {
   return state.menu.items.filter(c => c.meta && c.meta.label === 'Components')[0]
 }
 const session = state => state.session
+const intervals = state => state.intervals
 
 export {
   pkg,
@@ -17,5 +18,6 @@ export {
   effect,
   menuitems,
   componententry,
-  session
+  session,
+  intervals
 }

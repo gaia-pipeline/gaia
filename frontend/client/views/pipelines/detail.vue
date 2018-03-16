@@ -104,8 +104,7 @@ export default {
           },
           arrows: {to: true}
         }
-      },
-      intervalID: null
+      }
     }
   },
 
@@ -115,9 +114,12 @@ export default {
 
     // periodically update view
     this.fetchData()
-    this.intervalID = setInterval(function () {
+    var intervalID = setInterval(function () {
       this.fetchData()
     }.bind(this), 3000)
+
+    // Append interval id to store
+    this.$store.commit('appendInterval', intervalID)
   },
 
   watch: {
@@ -160,7 +162,7 @@ export default {
             this.runsRows = pipelineRuns.data
           }.bind(this)))
           .catch((error) => {
-            clearInterval(this.intervalID)
+            this.$store.commit('clearIntervals')
             this.$onError(error)
           })
       } else {
@@ -174,7 +176,7 @@ export default {
             this.runsRows = pipelineRuns.data
           }.bind(this)))
           .catch((error) => {
-            clearInterval(this.intervalID)
+            this.$store.commit('clearIntervals')
             this.$onError(error)
           })
       }

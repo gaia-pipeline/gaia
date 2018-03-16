@@ -84,6 +84,7 @@ export default {
 
     logout () {
       this.$router.push('/')
+      this.$store.commit('clearIntervals')
       auth.logout(this)
     },
 
