@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"strconv"
 	"strings"
 	"time"
@@ -10,23 +9,6 @@ import (
 	"github.com/gaia-pipeline/gaia/pipeline"
 	"github.com/kataras/iris"
 	uuid "github.com/satori/go.uuid"
-)
-
-var (
-	// errPathLength is a validation error during pipeline name input
-	errPathLength = errors.New("name of pipeline is empty or one of the path elements length exceeds 50 characters")
-
-	// errPipelineNotFound is thrown when a pipeline was not found with the given id
-	errPipelineNotFound = errors.New("pipeline not found with the given id")
-
-	// errInvalidPipelineID is thrown when the given pipeline id is not valid
-	errInvalidPipelineID = errors.New("the given pipeline id is not valid")
-
-	// errInvalidRunID is thrown when the given run id is not valid
-	errInvalidRunID = errors.New("the given run id is not valid")
-
-	// errPipelineRunNotFound is thrown when a pipeline run was not found with the given id
-	errPipelineRunNotFound = errors.New("pipeline run not found with the given id")
 )
 
 const (
@@ -213,7 +195,7 @@ func PipelineRunGet(ctx iris.Context) {
 	runID, err := strconv.Atoi(ctx.Params().Get("runid"))
 	if err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString(errInvalidRunID.Error())
+		ctx.WriteString(errPipelineRunNotFound.Error())
 		return
 	}
 

@@ -13,11 +13,28 @@ import (
 )
 
 const (
+	// apiVersion represents the current API version
 	apiVersion = "v1"
 )
 
 var (
+	// errNotAuthorized is thrown when user wants to access resource which is protected
 	errNotAuthorized = errors.New("no or invalid jwt token provided. You are not authorized")
+
+	// errPathLength is a validation error during pipeline name input
+	errPathLength = errors.New("name of pipeline is empty or one of the path elements length exceeds 50 characters")
+
+	// errPipelineNotFound is thrown when a pipeline was not found with the given id
+	errPipelineNotFound = errors.New("pipeline not found with the given id")
+
+	// errInvalidPipelineID is thrown when the given pipeline id is not valid
+	errInvalidPipelineID = errors.New("the given pipeline id is not valid")
+
+	// errPipelineRunNotFound is thrown when a pipeline run was not found with the given id
+	errPipelineRunNotFound = errors.New("pipeline run not found with the given id")
+
+	// errLogNotFound is thrown when a job log file was not found
+	errLogNotFound = errors.New("job log file not found")
 )
 
 // storeService is an instance of store.
@@ -60,6 +77,9 @@ func InitHandlers(i *iris.Application, store *store.Store, scheduler *scheduler.
 	i.Get(p+"pipelines/detail/{pipelineid:string}/{runid:string}", PipelineRunGet)
 	i.Get(p+"pipelines/start/{id:string}", PipelineStart)
 	i.Get(p+"pipelines/runs/{pipelineid:string}", PipelineGetAllRuns)
+
+	// Jobs
+	i.Get(p+"jobs/log{pipelineid:int}{pipelinerunid:int}{jobid:int}{start:int}{maxbufferlen:int}", GetJobLogs)
 
 	// Authentication Barrier
 	i.UseGlobal(authBarrier)
