@@ -13,7 +13,14 @@ const (
 	maxMaxBufferLen = 1024
 )
 
-// GetJobLogs returns logs for the given job with paging option.
+// jobLogs represents the json format which is returned
+// by GetJobLogs.
+type jobLogs struct {
+	Log      string `json:"log"`
+	StartPos int    `json:"start"`
+}
+
+// GetJobLogs returns logs and new start position for the given job.
 //
 // Required parameters:
 // pipelineid - Related pipeline id
@@ -26,7 +33,7 @@ func GetJobLogs(ctx iris.Context) {
 	pipelineID := ctx.Params().Get("pipelineid")
 	pipelineRunID := ctx.Params().Get("pipelinerunid")
 	jobID := ctx.Params().Get("jobid")
-	startPos, err := ctx.Params().GetInt64("start")
+	startPos, err := ctx.Params().GetInt("start")
 	if err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.WriteString("invalid start position given")
@@ -58,13 +65,19 @@ func GetJobLogs(ctx iris.Context) {
 
 	// Read file
 	buf := make([]byte, maxBufferLen)
-	_, err = file.ReadAt(buf, startPos)
+	bytesRead, err := file.ReadAt(buf, int64(startPos))
 	if err != io.EOF && err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.WriteString(err.Error())
 		return
 	}
 
+	// Create return struct
+	j := jobLogs{
+		Log:      string(buf[:]),
+		StartPos: startPos + bytesRead,
+	}
+
 	// Return logs
-	ctx.WriteString(string(buf[:]))
+	ctx.JSON(j)
 }

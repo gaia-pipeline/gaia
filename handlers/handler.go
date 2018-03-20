@@ -79,7 +79,7 @@ func InitHandlers(i *iris.Application, store *store.Store, scheduler *scheduler.
 	i.Get(p+"pipelines/runs/{pipelineid:string}", PipelineGetAllRuns)
 
 	// Jobs
-	i.Get(p+"jobs/log{pipelineid:int}{pipelinerunid:int}{jobid:int}{start:int}{maxbufferlen:int}", GetJobLogs)
+	i.Get(p+"jobs/log{pipelineid}{pipelinerunid}{jobid}{start:int}{maxbufferlen:int}", GetJobLogs)
 
 	// Authentication Barrier
 	i.UseGlobal(authBarrier)

@@ -1,6 +1,6 @@
 <template>
   <div class="job-log-view">
-    <message :direction="'down'" :message="'This is a cool test and test and test and test and test and test'" :duration="0"></message>
+    <message :direction="'down'" :message="logText" :duration="0"></message>
     <div class="job-loading" v-if="jobRunning"></div>
   </div>
 </template>
@@ -11,14 +11,19 @@ import Message from 'vue-bulma-message'
 export default {
   data () {
     return {
-      job: null,
+      logText: '',
       jobRunning: true,
       runID: null,
-      pipelineID: null
+      pipelineID: null,
+      jobID: null,
+      startPos: 0
     }
   },
 
   mounted () {
+    // Reset log text
+    this.logText = ''
+
     // Fetch data from backend
     this.fetchData()
 
@@ -38,18 +43,37 @@ export default {
 
   methods: {
     fetchData () {
-      // look up url parameters
+      // look up required url parameters
       this.pipelineID = this.$route.query.pipelineid
       this.runID = this.$route.query.runid
       if (!this.runID || !this.pipelineID) {
         return
       }
 
+      // job id is optional. If ommitted, all logs from all jobs
+      // are displayed.
+      this.jobID = this.$route.query.jobID
+
+      // Maximum received bytes
+      const bufferSize = 1024
       this.$http
-        .get('/api/v1/pipelines', { showProgressBar: false })
+        .get('/api/v1/jobs/log', {
+          showProgressBar: false,
+          params: {
+            pipelineid: this.pipelineid,
+            runid: this.runID,
+            jobid: this.jobid,
+            start: this.startPos,
+            maxbufferlen: bufferSize
+          }
+        })
         .then(response => {
           if (response.data) {
-            this.pipelines = response.data
+            // We add the received log
+            this.logText += response.data.log
+
+            // Set the new start position defined by return value
+            this.startPos = response.data.start
           }
         })
         .catch((error) => {

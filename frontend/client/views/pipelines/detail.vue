@@ -4,6 +4,11 @@
       <div class="tile">
         <div class="tile is-vertical is-parent is-12">
           <article class="tile is-child notification content-article">
+            <div v-if="job">
+              <p>
+                Job: {{ job }}
+              </p>
+            </div>
             <div id="pipeline-detail"></div>
           </article>
         </div>
@@ -74,6 +79,7 @@ export default {
         }
       ],
       runsRows: [],
+      job: null,
       pipelineViewOptions: {
         physics: { stabilization: true },
         layout: {
@@ -305,6 +311,11 @@ export default {
         // Create vis network
         // We have to move out the instance out of vue because of https://github.com/almende/vis/issues/2567
         window.pipelineView = new Vis.Network(container, data, this.pipelineViewOptions)
+
+        // Create an selectNode event
+        window.pipelineView.on('selectNode', function (params) {
+          this.job = this.nodes.get(params.nodes[0])
+        }.bind(this))
       }
     },
 
