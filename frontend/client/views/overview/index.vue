@@ -9,7 +9,7 @@
               <img :src="getImagePath(pipeline.type)" class="outer-box-image">
             </div>
             <div>
-              <router-link :to="{ path: '/pipelines/detail', query: { pipelineid: pipeline.id }}" class="subtitle">{{ pipeline.name }}</router-link>
+              <router-link :to="{ path: '/pipeline/detail', query: { pipelineid: pipeline.id }}" class="subtitle">{{ pipeline.name }}</router-link>
             </div>
             <div>
               <hr style="color: lightgrey;">
@@ -55,7 +55,7 @@ export default {
   methods: {
     fetchData () {
       this.$http
-        .get('/api/v1/pipelines', { showProgressBar: false })
+        .get('/api/v1/pipeline', { showProgressBar: false })
         .then(response => {
           if (response.data) {
             this.pipelines = response.data
@@ -70,10 +70,10 @@ export default {
     startPipeline (pipelineid) {
       // Send start request
       this.$http
-        .get('/api/v1/pipelines/start/' + pipelineid)
+        .post('/api/v1/pipeline/' + pipelineid + '/start')
         .then(response => {
           if (response.data) {
-            this.$router.push({path: '/pipelines/detail', query: { pipelineid: pipelineid, runid: response.data.id }})
+            this.$router.push({path: '/pipeline/detail', query: { pipelineid: pipelineid, runid: response.data.id }})
           }
         })
         .catch((error) => {

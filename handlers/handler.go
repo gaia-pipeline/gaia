@@ -4,12 +4,14 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	scheduler "github.com/gaia-pipeline/gaia/scheduler"
 	"github.com/gaia-pipeline/gaia/store"
-	"github.com/kataras/iris"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 const (
@@ -47,7 +49,7 @@ var schedulerService *scheduler.Scheduler
 var jwtKey []byte
 
 // InitHandlers initializes(registers) all handlers
-func InitHandlers(i *iris.Application, store *store.Store, scheduler *scheduler.Scheduler) error {
+func InitHandlers(e *echo.Echo, store *store.Store, scheduler *scheduler.Scheduler) error {
 	// Set instances
 	storeService = store
 	schedulerService = scheduler
@@ -65,24 +67,30 @@ func InitHandlers(i *iris.Application, store *store.Store, scheduler *scheduler.
 	// --- Register handlers at iris instance ---
 
 	// Users
-	i.Post(p+"users/login", UserLogin)
+	e.POST(p+"login", UserLogin)
 
 	// Pipelines
-	i.Post(p+"pipelines/gitlsremote", PipelineGitLSRemote)
-	i.Post(p+"pipelines/create", CreatePipeline)
-	i.Get(p+"pipelines/create", CreatePipelineGetAll)
-	i.Post(p+"pipelines/name", PipelineNameAvailable)
-	i.Get(p+"pipelines", PipelineGetAll)
-	i.Get(p+"pipelines/detail/{id:string}", PipelineGet)
-	i.Get(p+"pipelines/detail/{pipelineid:string}/{runid:string}", PipelineRunGet)
-	i.Get(p+"pipelines/start/{id:string}", PipelineStart)
-	i.Get(p+"pipelines/runs/{pipelineid:string}", PipelineGetAllRuns)
+	e.POST(p+"pipeline", CreatePipeline)
+	e.POST(p+"pipeline/gitlsremote", PipelineGitLSRemote)
+	e.GET(p+"pipeline/created", CreatePipelineGetAll)
+	e.GET(p+"pipeline/name", PipelineNameAvailable)
+	e.GET(p+"pipeline", PipelineGetAll)
+	e.GET(p+"pipeline/:pipelineid", PipelineGet)
+	e.POST(p+"pipeline/:pipelineid/start", PipelineStart)
 
-	// Jobs
-	i.Get(p+"jobs/log{pipelineid}{pipelinerunid}{jobid}{start:int}{maxbufferlen:int}", GetJobLogs)
+	// PipelineRun
+	e.GET(p+"pipelinerun/:pipelineid/:runid", PipelineRunGet)
+	e.GET(p+"pipelinerun/:pipelineid", PipelineGetAllRuns)
+	e.GET(p+"pipelinerun/:pipelineid/:runid/log", GetJobLogs)
 
-	// Authentication Barrier
-	i.UseGlobal(authBarrier)
+	// Middleware
+	e.Use(middleware.Recover())
+	e.Use(middleware.Logger())
+	e.Use(middleware.BodyLimit("32M"))
+	e.Use(authBarrier)
+
+	// Extra options
+	e.HideBanner = true
 
 	return nil
 }
@@ -90,45 +98,40 @@ func InitHandlers(i *iris.Application, store *store.Store, scheduler *scheduler.
 // authBarrier is the middleware which prevents user exploits.
 // It makes sure that the request contains a valid jwt token.
 // TODO: Role based access
-func authBarrier(ctx iris.Context) {
-	// Login resource is open
-	if strings.Contains(ctx.Path(), "users/login") {
-		ctx.Next()
-		return
-	}
-
-	// Get JWT token
-	jwtRaw := ctx.GetHeader("Authorization")
-	split := strings.Split(jwtRaw, " ")
-	if len(split) != 2 {
-		ctx.StatusCode(iris.StatusForbidden)
-		ctx.WriteString(errNotAuthorized.Error())
-		return
-	}
-	jwtString := split[1]
-
-	// Parse token
-	token, err := jwt.Parse(jwtString, func(token *jwt.Token) (interface{}, error) {
-		// Validate signing method
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+func authBarrier(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// Login resource is open
+		if strings.Contains(c.Path(), "login") {
+			return next(c)
 		}
 
-		// return secret
-		return jwtKey, nil
-	})
-	if err != nil {
-		ctx.StatusCode(iris.StatusForbidden)
-		ctx.WriteString(err.Error())
-		return
-	}
+		// Get JWT token
+		jwtRaw := c.Request().Header.Get("Authorization")
+		split := strings.Split(jwtRaw, " ")
+		if len(split) != 2 {
+			return c.String(http.StatusForbidden, errNotAuthorized.Error())
+		}
+		jwtString := split[1]
 
-	// Validate token
-	if _, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		// All ok, continue
-		ctx.Next()
-	} else {
-		ctx.StatusCode(iris.StatusForbidden)
-		ctx.WriteString(errNotAuthorized.Error())
+		// Parse token
+		token, err := jwt.Parse(jwtString, func(token *jwt.Token) (interface{}, error) {
+			// Validate signing method
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+
+			// return secret
+			return jwtKey, nil
+		})
+		if err != nil {
+			return c.String(http.StatusForbidden, err.Error())
+		}
+
+		// Validate token
+		if _, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			// All ok, continue
+			return next(c)
+		}
+		return c.String(http.StatusForbidden, errNotAuthorized.Error())
 	}
 }

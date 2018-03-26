@@ -16,13 +16,13 @@ export default new Router({
     },
     {
       name: 'Pipeline Detail',
-      path: '/pipelines/detail',
-      component: lazyLoading('pipelines/detail')
+      path: '/pipeline/detail',
+      component: lazyLoading('pipeline/detail')
     },
     {
       name: 'Pipeline Logs',
-      path: '/jobs/log',
-      component: lazyLoading('jobs/log')
+      path: '/pipeline/log',
+      component: lazyLoading('pipeline/log')
     }
   ]
 })

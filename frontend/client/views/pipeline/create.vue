@@ -275,7 +275,7 @@ export default {
   methods: {
     fetchData () {
       this.$http
-        .get('/api/v1/pipelines/create', { showProgressBar: false })
+        .get('/api/v1/pipeline/created', { showProgressBar: false })
         .then(response => {
           if (response.data) {
             this.historyRows = response.data
@@ -305,7 +305,7 @@ export default {
       this.gitSuccess = false
 
       this.$http
-        .post('/api/v1/pipelines/gitlsremote', this.createPipeline.pipeline.repo)
+        .post('/api/v1/pipeline/gitlsremote', this.createPipeline.pipeline.repo)
         .then(response => {
           // Reset error message before
           this.gitErrorMsg = ''
@@ -343,7 +343,7 @@ export default {
 
       // Request for availability
       this.$http
-        .post('/api/v1/pipelines/name', this.createPipeline)
+        .get('/api/v1/pipeline/name', { params: { name: this.pipelinename } })
         .then(response => {
           // pipeline name valid and available
           this.pipelineErrorMsg = ''
@@ -362,7 +362,7 @@ export default {
 
       // Start the create pipeline process in the backend
       this.$http
-        .post('/api/v1/pipelines/create', this.createPipeline)
+        .post('/api/v1/pipeline', this.createPipeline)
         .then(response => {
           // Run fetchData to see the pipeline in our history table
           this.fetchData()

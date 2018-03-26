@@ -33,7 +33,7 @@
               styleClass="table table-own-bordered">
               <template slot="table-row" slot-scope="props">
                 <td>
-                  <router-link :to="{ path: '/pipelines/detail', query: { pipelineid: pipelineID, runid: props.row.id }}" class="is-blue">
+                  <router-link :to="{ path: '/pipeline/detail', query: { pipelineid: pipelineID, runid: props.row.id }}" class="is-blue">
                     {{ props.row.id }}
                   </router-link>
                 </td>
@@ -199,15 +199,15 @@ export default {
     },
 
     getPipeline (pipelineID) {
-      return this.$http.get('/api/v1/pipelines/detail/' + pipelineID, { showProgressBar: false })
+      return this.$http.get('/api/v1/pipeline/' + pipelineID, { showProgressBar: false })
     },
 
     getPipelineRun (pipelineID, runID) {
-      return this.$http.get('/api/v1/pipelines/detail/' + pipelineID + '/' + runID, { showProgressBar: false })
+      return this.$http.get('/api/v1/pipelinerun/' + pipelineID + '/' + runID, { showProgressBar: false })
     },
 
     getPipelineRuns (pipelineID) {
-      return this.$http.get('/api/v1/pipelines/runs/' + pipelineID, { showProgressBar: false })
+      return this.$http.get('/api/v1/pipelinerun/' + pipelineID, { showProgressBar: false })
     },
 
     drawPipelineDetail (pipeline, pipelineRun) {
@@ -346,7 +346,7 @@ export default {
     },
 
     jobLog () {
-      this.$router.push({path: '/jobs/log', query: { pipelineid: this.pipelineID, runid: this.runID, jobid: this.job.internalID }})
+      this.$router.push({path: '/pipeline/log', query: { pipelineid: this.pipelineID, runid: this.runID, jobid: this.job.internalID }})
     }
   }
 

@@ -17,11 +17,11 @@ const state = {
     },
     {
       name: 'Create Pipeline',
-      path: '/pipelines/create',
+      path: '/pipeline/create',
       meta: {
         icon: 'fa-plus'
       },
-      component: lazyLoading('pipelines/create')
+      component: lazyLoading('pipeline/create')
     }
   ]
 }

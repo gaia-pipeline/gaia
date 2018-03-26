@@ -57,12 +57,10 @@ export default {
       // Maximum received bytes
       const bufferSize = 1024
       this.$http
-        .get('/api/v1/jobs/log', {
+        .get('/api/v1/pipelinerun/' + this.pipelineID + '/' + this.runID + '/log', {
           showProgressBar: false,
           params: {
-            pipelineid: this.pipelineid,
-            pipelinerunid: this.runID,
-            jobid: this.jobid,
+            jobid: this.jobID,
             start: this.startPos,
             maxbufferlen: bufferSize
           }

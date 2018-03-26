@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"net/http"
 	"time"
+
+	"github.com/labstack/echo"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
-	"github.com/kataras/iris"
 )
 
 // jwtExpiry defines how long the produced jwt tokens
@@ -19,26 +21,21 @@ type jwtCustomClaims struct {
 
 // UserLogin authenticates the user with
 // the given credentials.
-func UserLogin(ctx iris.Context) {
+func UserLogin(c echo.Context) error {
 	u := &gaia.User{}
-	if err := ctx.ReadJSON(u); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString(err.Error())
+	if err := c.Bind(u); err != nil {
 		gaia.Cfg.Logger.Debug("error reading json during UserLogin", "error", err.Error())
-		return
+		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	// Authenticate user
 	user, err := storeService.UserAuth(u)
 	if err != nil {
 		gaia.Cfg.Logger.Error("error during UserAuth", "error", err.Error())
-		ctx.StatusCode(iris.StatusInternalServerError)
-		return
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
 	if user == nil {
-		ctx.StatusCode(iris.StatusForbidden)
-		ctx.WriteString("invalid username and/or password")
-		return
+		return c.String(http.StatusForbidden, "invalid username and/or password")
 	}
 
 	// Setup custom claims
@@ -57,13 +54,12 @@ func UserLogin(ctx iris.Context) {
 	// Sign and get encoded token
 	tokenstring, err := token.SignedString(jwtKey)
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
 		gaia.Cfg.Logger.Error("error signing jwt token", "error", err.Error())
-		return
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
 	user.JwtExpiry = claims.ExpiresAt
 	user.Tokenstring = tokenstring
 
 	// Return JWT token and display name
-	ctx.JSON(user)
+	return c.JSON(http.StatusOK, user)
 }

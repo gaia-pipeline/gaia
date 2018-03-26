@@ -11,11 +11,11 @@ import (
 	scheduler "github.com/gaia-pipeline/gaia/scheduler"
 	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
-	"github.com/kataras/iris"
+	"github.com/labstack/echo"
 )
 
 var (
-	irisInstance *iris.Application
+	echoInstance *echo.Echo
 )
 
 const (
@@ -80,8 +80,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Initialize IRIS
-	irisInstance = iris.New()
+	// Initialize echo instance
+	echoInstance = echo.New()
 
 	// Initialize store
 	store := store.NewStore()
@@ -96,7 +96,7 @@ func main() {
 	scheduler.Init()
 
 	// Initialize handlers
-	err = handlers.InitHandlers(irisInstance, store, scheduler)
+	err = handlers.InitHandlers(echoInstance, store, scheduler)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
 		os.Exit(1)
@@ -106,7 +106,7 @@ func main() {
 	pipeline.InitTicker(store, scheduler)
 
 	// Start listen
-	irisInstance.Run(iris.Addr(":" + gaia.Cfg.ListenPort))
+	echoInstance.Logger.Fatal(echoInstance.Start(":" + gaia.Cfg.ListenPort))
 }
 
 // findExecuteablePath returns the absolute path for the current

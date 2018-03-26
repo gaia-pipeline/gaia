@@ -89,7 +89,7 @@ export default {
     },
 
     createPipeline () {
-      this.$router.push('/pipelines/create')
+      this.$router.push('/pipeline/create')
     },
 
     ...mapActions([

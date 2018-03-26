@@ -1,7 +1,7 @@
 export default {
 
   login (context, creds) {
-    return context.$http.post('/api/v1/users/login', creds)
+    return context.$http.post('/api/v1/login', creds)
       .then((response) => {
         var newSession = {
           'token': response.data.tokenstring,
