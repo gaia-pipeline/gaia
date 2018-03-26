@@ -48,8 +48,9 @@ func GetJobLogs(ctx iris.Context) {
 
 	// Lookup log file
 	logFilePath := filepath.Join(gaia.Cfg.WorkspacePath, pipelineID, pipelineRunID, gaia.LogsFolderName, jobID)
+	gaia.Cfg.Logger.Debug("logfilepath", "Path", logFilePath)
 	if _, err := os.Stat(logFilePath); os.IsNotExist(err) {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusNotFound)
 		ctx.WriteString(errLogNotFound.Error())
 		return
 	}

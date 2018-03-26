@@ -5,6 +5,12 @@
         <div class="tile is-vertical is-parent is-12">
           <article class="tile is-child notification content-article">
             <div v-if="job">
+              <a class="button is-primary" @click="jobLog">
+                <span class="icon">
+                  <i class="fa fa-terminal"></i>
+                </span>
+                <span>Show Job log</span>
+              </a>
               <p>
                 Job: {{ job }}
               </p>
@@ -61,6 +67,7 @@ export default {
   data () {
     return {
       pipelineID: null,
+      runID: null,
       nodes: null,
       edges: null,
       lastRedraw: false,
@@ -154,6 +161,9 @@ export default {
 
       // If runid was set, look up this run
       if (runID) {
+        // set run id
+        this.runID = runID
+
         // Run ID specified. Do concurrent request
         this.$http.all([this.getPipeline(pipelineID), this.getPipelineRun(pipelineID, runID), this.getPipelineRuns(pipelineID)])
           .then(this.$http.spread(function (pipeline, pipelineRun, pipelineRuns) {
@@ -333,6 +343,10 @@ export default {
         return diff + ' seconds'
       }
       return moment.duration(diff, 'seconds').humanize()
+    },
+
+    jobLog () {
+      this.$router.push({path: '/jobs/log', query: { pipelineid: this.pipelineID, runid: this.runID, jobid: this.job.internalID }})
     }
   }
 

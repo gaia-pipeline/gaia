@@ -20,7 +20,7 @@ export default new Router({
       component: lazyLoading('pipelines/detail')
     },
     {
-      name: 'Logs',
+      name: 'Pipeline Logs',
       path: '/jobs/log',
       component: lazyLoading('jobs/log')
     }

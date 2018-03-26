@@ -61,7 +61,7 @@ export default {
           showProgressBar: false,
           params: {
             pipelineid: this.pipelineid,
-            runid: this.runID,
+            pipelinerunid: this.runID,
             jobid: this.jobid,
             start: this.startPos,
             maxbufferlen: bufferSize
