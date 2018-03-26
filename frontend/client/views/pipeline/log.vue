@@ -6,7 +6,7 @@
 </template>
 
 <script>
-import Message from 'vue-bulma-message'
+import Message from 'vue-bulma-message-html'
 
 export default {
   data () {
@@ -52,7 +52,7 @@ export default {
 
       // job id is optional. If ommitted, all logs from all jobs
       // are displayed.
-      this.jobID = this.$route.query.jobID
+      this.jobID = this.$route.query.jobid
 
       // Maximum received bytes
       const bufferSize = 1024
@@ -69,6 +69,9 @@ export default {
           if (response.data) {
             // We add the received log
             this.logText += response.data.log
+
+            // LF does not work for HTML. Replace with <br />
+            this.logText = this.logText.replace(/\n/g, '<br />')
 
             // Set the new start position defined by return value
             this.startPos = response.data.start
