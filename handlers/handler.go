@@ -85,7 +85,7 @@ func InitHandlers(e *echo.Echo, store *store.Store, scheduler *scheduler.Schedul
 
 	// Middleware
 	e.Use(middleware.Recover())
-	e.Use(middleware.Logger())
+	//e.Use(middleware.Logger())
 	e.Use(middleware.BodyLimit("32M"))
 	e.Use(authBarrier)
 

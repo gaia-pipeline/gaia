@@ -1,6 +1,21 @@
 <template>
   <div class="tile is-ancestor">
     <div class="tile is-vertical">
+      <div class="tile is-parent">
+        <a class="button is-primary" @click="jobLog" style="margin-right: 10px;">
+          <span class="icon">
+            <i class="fa fa-play-circle"></i>
+          </span>
+          <span>Start Pipeline</span>
+        </a>
+        <a class="button is-green-button" @click="jobLog">
+          <span class="icon">
+            <i class="fa fa-terminal"></i>
+          </span>
+          <span>Show Logs</span>
+        </a>
+      </div>
+
       <div class="tile">
         <div class="tile is-vertical is-parent is-12">
           <article class="tile is-child notification content-article">

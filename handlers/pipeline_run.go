@@ -97,7 +97,6 @@ func GetJobLogs(c echo.Context) error {
 
 	// Lookup log file
 	logFilePath := filepath.Join(gaia.Cfg.WorkspacePath, pipelineID, pipelineRunID, gaia.LogsFolderName, jobID)
-	gaia.Cfg.Logger.Debug("logfilepath", "Path", logFilePath)
 	if _, err := os.Stat(logFilePath); os.IsNotExist(err) {
 		return c.String(http.StatusNotFound, errLogNotFound.Error())
 	}

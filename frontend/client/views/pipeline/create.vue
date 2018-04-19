@@ -47,7 +47,7 @@
               </p>
               <span style="color: red" v-if="pipelineErrorMsg">Pipeline Name incorrect: {{ pipelineErrorMsg }}</span>
               <hr class="dotted-line">
-              <a class="button is-primary" v-on:click="startCreatePipeline" v-bind:class="{ 'is-disabled': !gitSuccess || !pipelineNameSuccess }">
+              <a class="button is-green-button" v-on:click="startCreatePipeline" v-bind:class="{ 'is-disabled': !gitSuccess || !pipelineNameSuccess }">
                 <span class="icon">
                   <i class="fa fa-plus"></i>
                 </span>

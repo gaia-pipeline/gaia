@@ -142,6 +142,18 @@ html {
   border-color: transparent;
 }
 
+.is-green-button {
+  background-color: #4CAF50 !important;
+  font-weight: bold;
+  border-color: transparent;
+  color: whitesmoke;
+}
+
+.is-green-button:hover, .button:active, .button:focus {
+  color: whitesmoke;
+  border-color: transparent;
+}
+
 .is-disabled {
   opacity: .5;
   pointer-events: none;
