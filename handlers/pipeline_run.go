@@ -126,6 +126,11 @@ func GetJobLogs(c echo.Context) error {
 					return c.String(http.StatusBadRequest, err.Error())
 				}
 
+				// Check if job is finished
+				if job.Status == gaia.JobSuccess || job.Status == gaia.JobFailed {
+					jL.Finished = true
+				}
+
 				return c.JSON(http.StatusOK, *jL)
 			}
 		}
@@ -146,6 +151,11 @@ func GetJobLogs(c echo.Context) error {
 		jL, err := getLogs(pipelineID, pipelineRunID, strconv.FormatUint(uint64(job.ID), 10), startPos, maxBufferLen)
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		// Check if job is finished
+		if job.Status == gaia.JobSuccess || job.Status == gaia.JobFailed {
+			jL.Finished = true
 		}
 
 		jobs = append(jobs, *jL)

@@ -350,7 +350,13 @@ export default {
     },
 
     jobLog () {
-      this.$router.push({path: '/pipeline/log', query: { pipelineid: this.pipelineID, runid: this.runID, jobid: this.job.internalID }})
+      var jobid = null
+      if (this.job) {
+        jobid = this.job.intervalID
+      }
+
+      // Route
+      this.$router.push({path: '/pipeline/log', query: { pipelineid: this.pipelineID, runid: this.runID, jobid: jobid }})
     },
 
     startPipeline (pipelineid) {

@@ -67,14 +67,29 @@ export default {
         })
         .then(response => {
           if (response.data) {
-            // We add the received log
-            this.logText += response.data.log
+            // Check if we got multiple objects
+            var finished = true
+            for (let i = 0, l = response.data.length; i < l; i++) {
+              // We add the received log
+              this.logText += response.data[i].log
 
-            // LF does not work for HTML. Replace with <br />
-            this.logText = this.logText.replace(/\n/g, '<br />')
+              // LF does not work for HTML. Replace with <br />
+              this.logText = this.logText.replace(/\n/g, '<br />')
 
-            // Set the new start position defined by return value
-            this.startPos = response.data.start
+              // Set the new start position defined by return value
+              this.startPos = response.data[i].start
+
+              // Job not finished?
+              if (!response.data[i].finished) {
+                finished = false
+              }
+            }
+
+            // All jobs finished. Stop interval.
+            if (finished) {
+              this.jobRunning = false
+              clearInterval(this.intervalID)
+            }
           }
         })
         .catch((error) => {
