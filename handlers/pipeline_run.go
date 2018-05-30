@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 
 	"github.com/gaia-pipeline/gaia"
@@ -21,6 +22,7 @@ const (
 type jobLogs struct {
 	Log      string `json:"log"`
 	StartPos int    `json:"start"`
+	Finished bool   `json:"finished"`
 }
 
 // PipelineRunGet returns details about a specific pipeline run.
@@ -68,6 +70,7 @@ func PipelineGetAllRuns(c echo.Context) error {
 }
 
 // GetJobLogs returns logs and new start position for the given job.
+// If no jobID is given, a collection of all jobs logs will be returned.
 //
 // Required parameters:
 // pipelineid - Related pipeline id
@@ -95,16 +98,74 @@ func GetJobLogs(c echo.Context) error {
 		return c.String(http.StatusBadRequest, fmt.Sprintf("invalid maxbufferlen provided. Max number is %d", maxMaxBufferLen))
 	}
 
+	// Transform pipelineid to int
+	p, err := strconv.Atoi(pipelineID)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "invalid pipeline id given")
+	}
+
+	// Transform pipelinerunid to int
+	r, err := strconv.Atoi(pipelineRunID)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "invalid pipeline run id given")
+	}
+
+	// Get pipeline run from store
+	run, err := storeService.PipelineGetRunByPipelineIDAndID(p, r)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "cannot find pipeline run with given pipeline id and pipeline run id")
+	}
+
+	// jobID is not empty, just return the logs from this job
+	if jobID != "" {
+		for _, job := range run.Jobs {
+			if strconv.FormatUint(uint64(job.ID), 10) == jobID {
+				// Get logs
+				jL, err := getLogs(pipelineID, pipelineRunID, jobID, startPos, maxBufferLen)
+				if err != nil {
+					return c.String(http.StatusBadRequest, err.Error())
+				}
+
+				return c.JSON(http.StatusOK, *jL)
+			}
+		}
+
+		// Logs for given job id not found
+		return c.String(http.StatusBadRequest, "cannot find job with given job id")
+	}
+
+	// Sort the slice. This is important for the order of the returned logs.
+	sort.Slice(run.Jobs, func(i, j int) bool {
+		return run.Jobs[i].Priority < run.Jobs[j].Priority
+	})
+
+	// Return a collection of all logs
+	jobs := []jobLogs{}
+	for _, job := range run.Jobs {
+		// Get logs
+		jL, err := getLogs(pipelineID, pipelineRunID, strconv.FormatUint(uint64(job.ID), 10), startPos, maxBufferLen)
+		if err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		jobs = append(jobs, *jL)
+	}
+
+	// Return logs
+	return c.JSON(http.StatusOK, jobs)
+}
+
+func getLogs(pipelineID, pipelineRunID, jobID string, startPos, maxBufferLen int) (*jobLogs, error) {
 	// Lookup log file
 	logFilePath := filepath.Join(gaia.Cfg.WorkspacePath, pipelineID, pipelineRunID, gaia.LogsFolderName, jobID)
 	if _, err := os.Stat(logFilePath); os.IsNotExist(err) {
-		return c.String(http.StatusNotFound, errLogNotFound.Error())
+		return nil, err
 	}
 
 	// Open file
 	file, err := os.Open(logFilePath)
 	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+		return nil, err
 	}
 	defer file.Close()
 
@@ -112,15 +173,12 @@ func GetJobLogs(c echo.Context) error {
 	buf := make([]byte, maxBufferLen)
 	bytesRead, err := file.ReadAt(buf, int64(startPos))
 	if err != io.EOF && err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+		return nil, err
 	}
 
 	// Create return struct
-	j := jobLogs{
+	return &jobLogs{
 		Log:      string(buf[:]),
 		StartPos: startPos + bytesRead,
-	}
-
-	// Return logs
-	return c.JSON(http.StatusOK, j)
+	}, nil
 }

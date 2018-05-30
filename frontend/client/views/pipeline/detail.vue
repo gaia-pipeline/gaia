@@ -2,13 +2,13 @@
   <div class="tile is-ancestor">
     <div class="tile is-vertical">
       <div class="tile is-parent">
-        <a class="button is-primary" @click="jobLog" style="margin-right: 10px;">
+        <a class="button is-primary" @click="startPipeline(pipelineID)" style="margin-right: 10px;">
           <span class="icon">
             <i class="fa fa-play-circle"></i>
           </span>
           <span>Start Pipeline</span>
         </a>
-        <a class="button is-green-button" @click="jobLog">
+        <a class="button is-green-button" @click="jobLog" v-if="runID">
           <span class="icon">
             <i class="fa fa-terminal"></i>
           </span>
@@ -19,17 +19,6 @@
       <div class="tile">
         <div class="tile is-vertical is-parent is-12">
           <article class="tile is-child notification content-article">
-            <div v-if="job">
-              <a class="button is-primary" @click="jobLog">
-                <span class="icon">
-                  <i class="fa fa-terminal"></i>
-                </span>
-                <span>Show Job log</span>
-              </a>
-              <p>
-                Job: {{ job }}
-              </p>
-            </div>
             <div id="pipeline-detail"></div>
           </article>
         </div>
@@ -362,6 +351,21 @@ export default {
 
     jobLog () {
       this.$router.push({path: '/pipeline/log', query: { pipelineid: this.pipelineID, runid: this.runID, jobid: this.job.internalID }})
+    },
+
+    startPipeline (pipelineid) {
+      // Send start request
+      this.$http
+        .post('/api/v1/pipeline/' + pipelineid + '/start')
+        .then(response => {
+          if (response.data) {
+            this.$router.push({path: '/pipeline/detail', query: { pipelineid: pipelineid, runid: response.data.id }})
+          }
+        })
+        .catch((error) => {
+          this.$store.commit('clearIntervals')
+          this.$onError(error)
+        })
     }
   }
 
