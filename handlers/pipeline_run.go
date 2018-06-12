@@ -69,6 +69,23 @@ func PipelineGetAllRuns(c echo.Context) error {
 	return c.JSON(http.StatusOK, runs)
 }
 
+// PipelineGetLatestRun returns the latest run of a pipeline, given by id.
+func PipelineGetLatestRun(c echo.Context) error {
+	// Convert string to int because id is int
+	pipelineID, err := strconv.Atoi(c.Param("pipelineid"))
+	if err != nil {
+		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
+	}
+
+	// Get the latest run by the given pipeline id
+	run, err := storeService.PipelineGetLatestRun(pipelineID)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, run)
+}
+
 // GetJobLogs returns logs and new start position for the given job.
 // If no jobID is given, a collection of all jobs logs will be returned.
 //

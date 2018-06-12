@@ -77,10 +77,12 @@ func InitHandlers(e *echo.Echo, store *store.Store, scheduler *scheduler.Schedul
 	e.GET(p+"pipeline", PipelineGetAll)
 	e.GET(p+"pipeline/:pipelineid", PipelineGet)
 	e.POST(p+"pipeline/:pipelineid/start", PipelineStart)
+	e.GET(p+"pipeline/latest", PipelineGetAllWithLatestRun)
 
 	// PipelineRun
 	e.GET(p+"pipelinerun/:pipelineid/:runid", PipelineRunGet)
 	e.GET(p+"pipelinerun/:pipelineid", PipelineGetAllRuns)
+	e.GET(p+"pipelinerun/:pipelineid/latest", PipelineGetLatestRun)
 	e.GET(p+"pipelinerun/:pipelineid/:runid/log", GetJobLogs)
 
 	// Middleware

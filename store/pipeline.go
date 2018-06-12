@@ -277,3 +277,36 @@ func (s *Store) PipelineGetAllRuns(pipelineID int) ([]gaia.PipelineRun, error) {
 		})
 	})
 }
+
+// PipelineGetLatestRun returns the latest run by the given pipeline id.
+func (s *Store) PipelineGetLatestRun(pipelineID int) (*gaia.PipelineRun, error) {
+	var run *gaia.PipelineRun
+
+	return run, s.db.View(func(tx *bolt.Tx) error {
+		// Get Bucket
+		b := tx.Bucket(pipelineRunBucket)
+
+		// Iterate all pipeline runs.
+		return b.ForEach(func(k, v []byte) error {
+			// create single run object
+			r := &gaia.PipelineRun{}
+
+			// Unmarshal
+			err := json.Unmarshal(v, r)
+			if err != nil {
+				return err
+			}
+
+			// Is this a run from our pipeline?
+			if r.PipelineID == pipelineID {
+				// Check if this is the latest run
+				if run == nil || run.StartDate.Before(r.StartDate) {
+					// set it
+					run = r
+				}
+			}
+
+			return nil
+		})
+	})
+}

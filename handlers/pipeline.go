@@ -156,3 +156,39 @@ func PipelineStart(c echo.Context) error {
 	// Pipeline not found
 	return c.String(http.StatusNotFound, errPipelineNotFound.Error())
 }
+
+type getAllWithLatestRun struct {
+	Pipeline    gaia.Pipeline    `json:"p"`
+	PipelineRun gaia.PipelineRun `json:"r"`
+}
+
+// PipelineGetAllWithLatestRun returns the latest of all registered pipelines
+// included with the latest run.
+func PipelineGetAllWithLatestRun(c echo.Context) error {
+	// Get all active pipelines
+	var pipelines []gaia.Pipeline
+	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+		pipelines = append(pipelines, pipeline)
+	}
+
+	// Iterate all pipelines
+	var pipelinesWithLatestRun []getAllWithLatestRun
+	for _, pipeline := range pipelines {
+		// Get the latest run by the given pipeline id
+		run, err := storeService.PipelineGetLatestRun(pipeline.ID)
+		if err != nil {
+			return c.String(http.StatusInternalServerError, err.Error())
+		}
+
+		// Create new return obj
+		g := getAllWithLatestRun{
+			Pipeline:    pipeline,
+			PipelineRun: *run,
+		}
+
+		// Append
+		pipelinesWithLatestRun = append(pipelinesWithLatestRun, g)
+	}
+
+	return c.JSON(http.StatusOK, pipelinesWithLatestRun)
+}
