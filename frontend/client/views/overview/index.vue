@@ -15,8 +15,20 @@
             </router-link>            
             <hr class="pipeline-hr">
             <div class="pipeline-info">
-              <span>Duration: {{ pipeline.r.startdate }}</span><br />
-              <span>Started: {{ pipeline.r.finishdate }}</span><br />
+              <i class="fa fa-hourglass"></i>
+              <span style="color: #b1adad;"> 
+                Duration: 
+              </span>
+              <span> 
+                {{ calculateDuration(pipeline.r.startdate, pipeline.r.finishdate) }}
+              </span><br />
+              <i class="fa fa-calendar"></i>
+              <span style="color: #b1adad;"> 
+                Started: 
+              </span>
+              <span> 
+                {{ humanizedDate(pipeline.r.finishdate) }}
+              </span><br />
               <div class="pipelinegrid-footer">
                 <a class="button is-primary" @click="startPipeline(pipeline.p.id)" style="width: 250px;">
                   <span class="icon">
@@ -34,6 +46,8 @@
 </template>
 
 <script>
+import moment from 'moment'
+
 export default {
   data () {
     return {
@@ -90,6 +104,26 @@ export default {
 
     getImagePath (type) {
       return require('assets/' + type + '.png')
+    },
+
+    calculateDuration (startdate, finishdate) {
+      if (!moment(startdate).millisecond()) {
+        startdate = moment()
+      }
+      if (!moment(finishdate).millisecond()) {
+        finishdate = moment()
+      }
+
+      // Calculate difference
+      var diff = moment(finishdate).diff(moment(startdate), 'seconds')
+      if (diff < 60) {
+        return diff + ' seconds'
+      }
+      return moment.duration(diff, 'seconds').humanize()
+    },
+
+    humanizedDate (date) {
+      return moment(date).format('LLL')
     }
   }
 }
