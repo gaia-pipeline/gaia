@@ -148,7 +148,11 @@ func GetJobLogs(c echo.Context) error {
 					jL.Finished = true
 				}
 
-				return c.JSON(http.StatusOK, *jL)
+				// We always return an array.
+				// It makes a bit easier in the frontend.
+				jobLogsList := []jobLogs{}
+				jobLogsList = append(jobLogsList, *jL)
+				return c.JSON(http.StatusOK, jobLogsList)
 			}
 		}
 

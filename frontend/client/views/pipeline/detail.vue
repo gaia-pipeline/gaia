@@ -352,7 +352,7 @@ export default {
     jobLog () {
       var jobid = null
       if (this.job) {
-        jobid = this.job.intervalID
+        jobid = this.job.internalID
       }
 
       // Route
