@@ -1,7 +1,15 @@
 <template>
-  <div class="job-log-view">
-    <message :direction="'down'" :message="logText" :duration="0"></message>
-    <div class="job-loading" v-if="jobRunning"></div>
+  <div>
+    <a class="button is-green-button" @click="backToDetail" style="margin-bottom: 15px;">
+      <span class="icon">
+        <i class="fa fa-arrow-circle-left"></i>
+      </span>
+      <span>Go Back</span>
+    </a>
+    <div class="job-log-view">
+      <message :direction="'down'" :message="logText" :duration="0"></message>
+      <div class="job-loading" v-if="jobRunning"></div>
+    </div>
   </div>
 </template>
 
@@ -96,6 +104,11 @@ export default {
           clearInterval(this.intervalID)
           this.$onError(error)
         })
+    },
+
+    backToDetail () {
+      // Route
+      this.$router.push({path: '/pipeline/detail', query: { pipelineid: this.pipelineID, runid: this.runID }})
     }
   }
 }
