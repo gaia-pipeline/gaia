@@ -63,3 +63,14 @@ func UserLogin(c echo.Context) error {
 	// Return JWT token and display name
 	return c.JSON(http.StatusOK, user)
 }
+
+// UserGetAll returns all users stored in store.
+func UserGetAll(c echo.Context) error {
+	// Get all users
+	users, err := storeService.UserGetAll()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, users)
+}

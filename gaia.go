@@ -70,11 +70,12 @@ const (
 
 // User is the user object
 type User struct {
-	Username    string `json:"username,omitempty"`
-	Password    string `json:"password,omitempty"`
-	DisplayName string `json:"display_name,omitempty"`
-	Tokenstring string `json:"tokenstring,omitempty"`
-	JwtExpiry   int64  `json:"jwtexpiry,omitempty"`
+	Username    string    `json:"username,omitempty"`
+	Password    string    `json:"password,omitempty"`
+	DisplayName string    `json:"display_name,omitempty"`
+	Tokenstring string    `json:"tokenstring,omitempty"`
+	JwtExpiry   int64     `json:"jwtexpiry,omitempty"`
+	LastLogin   time.Time `json:"lastlogin,omitempty"`
 }
 
 // Pipeline represents a single pipeline

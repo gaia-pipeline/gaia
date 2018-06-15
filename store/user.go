@@ -2,6 +2,7 @@ package store
 
 import (
 	"encoding/json"
+	"time"
 
 	bolt "github.com/coreos/bbolt"
 	"github.com/gaia-pipeline/gaia"
@@ -53,7 +54,14 @@ func (s *Store) UserAuth(u *gaia.User) (*gaia.User, error) {
 
 	// Check if password is valid
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(u.Password)); err != nil {
-		return nil, nil
+		return nil, err
+	}
+
+	// Update last login field
+	user.LastLogin = time.Now()
+	err = s.UserPut(user)
+	if err != nil {
+		return nil, err
 	}
 
 	// We will use the user object later.
@@ -87,4 +95,32 @@ func (s *Store) UserGet(username string) (*gaia.User, error) {
 	})
 
 	return user, err
+}
+
+// UserGetAll returns all stored users.
+func (s *Store) UserGetAll() ([]gaia.User, error) {
+	var users []gaia.User
+
+	return users, s.db.View(func(tx *bolt.Tx) error {
+		// Get bucket
+		b := tx.Bucket(userBucket)
+
+		// Iterate all users and add them to slice
+		return b.ForEach(func(k, v []byte) error {
+			// create single user object
+			u := &gaia.User{}
+
+			// Unmarshal
+			err := json.Unmarshal(v, u)
+			if err != nil {
+				return err
+			}
+
+			// Remove password for security reasons
+			u.Password = ""
+
+			users = append(users, *u)
+			return nil
+		})
+	})
 }

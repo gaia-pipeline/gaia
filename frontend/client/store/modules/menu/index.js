@@ -10,8 +10,7 @@ const state = {
       name: 'Overview',
       path: '/overview',
       meta: {
-        icon: 'fa-th',
-        link: 'overview.vue'
+        icon: 'fa-th'
       },
       component: lazyLoading('overview', true)
     },
@@ -22,6 +21,14 @@ const state = {
         icon: 'fa-plus'
       },
       component: lazyLoading('pipeline/create')
+    },
+    {
+      name: 'Settings',
+      path: '/settings',
+      meta: {
+        icon: 'fa-cogs'
+      },
+      component: lazyLoading('settings', true)
     }
   ]
 }
