@@ -13,13 +13,15 @@ import (
 // to the bolt database. User will be overwritten
 // if it already exists.
 // It also clears the password field afterwards.
-func (s *Store) UserPut(u *gaia.User) error {
+func (s *Store) UserPut(u *gaia.User, encryptPassword bool) error {
 	// Encrypt password before we save it
-	hash, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.MinCost)
-	if err != nil {
-		return err
+	if encryptPassword {
+		hash, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.MinCost)
+		if err != nil {
+			return err
+		}
+		u.Password = string(hash)
 	}
-	u.Password = string(hash)
 
 	return s.db.Update(func(tx *bolt.Tx) error {
 		// Get bucket
@@ -43,7 +45,7 @@ func (s *Store) UserPut(u *gaia.User) error {
 // Then it compares passwords and returns user obj if
 // given password is valid. Returns nil if password was
 // wrong or user not found.
-func (s *Store) UserAuth(u *gaia.User) (*gaia.User, error) {
+func (s *Store) UserAuth(u *gaia.User, updateLastLogin bool) (*gaia.User, error) {
 	// Look up user
 	user, err := s.UserGet(u.Username)
 
@@ -58,10 +60,12 @@ func (s *Store) UserAuth(u *gaia.User) (*gaia.User, error) {
 	}
 
 	// Update last login field
-	user.LastLogin = time.Now()
-	err = s.UserPut(user)
-	if err != nil {
-		return nil, err
+	if updateLastLogin {
+		user.LastLogin = time.Now()
+		err = s.UserPut(user, false)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// We will use the user object later.

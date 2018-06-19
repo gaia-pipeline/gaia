@@ -85,7 +85,7 @@ function handleError (error) {
     } else {
       openNotification({
         title: 'Error: ' + error.response.status.toString(),
-        message: '',
+        message: error.response.data,
         type: 'danger'
       })
     }

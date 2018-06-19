@@ -87,6 +87,22 @@ import { Collapse, Item as CollapseItem } from 'vue-bulma-collapse'
 import VueGoodTable from 'vue-good-table'
 import VueTippy from 'vue-tippy'
 import moment from 'moment'
+import Notification from 'vue-bulma-notification-fixed'
+
+const NotificationComponent = Vue.extend(Notification)
+const openNotification = (propsData = {
+  title: '',
+  message: '',
+  type: '',
+  direction: '',
+  duration: 4500,
+  container: '.notifications'
+}) => {
+  return new NotificationComponent({
+    el: document.createElement('div'),
+    propsData
+  })
+}
 
 Vue.use(VueGoodTable)
 Vue.use(VueTippy)
@@ -171,14 +187,30 @@ export default {
     },
 
     changePassword () {
+      // pre-validate
+      if (this.editUser.newpassword === '' || this.editUser.newpasswordconf === '') {
+        openNotification({
+          title: 'Empty password',
+          message: 'Empty password is not allowed.',
+          type: 'danger'
+        })
+        this.close()
+        return
+      }
+
       this.$http
         .post('/api/v1/user/password', this.editUser)
         .then(response => {
-          console.log('Password changed!')
+          openNotification({
+            title: 'Password changed!',
+            message: 'Password has been successful changed.',
+            type: 'success'
+          })
         })
         .catch((error) => {
           this.$onError(error)
         })
+      this.close()
     }
   }
 }

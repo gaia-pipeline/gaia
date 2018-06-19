@@ -180,10 +180,11 @@ func PipelineGetAllWithLatestRun(c echo.Context) error {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
 
-		// Create new return obj
-		g := getAllWithLatestRun{
-			Pipeline:    pipeline,
-			PipelineRun: *run,
+		// Append run if one exists
+		g := getAllWithLatestRun{}
+		g.Pipeline = pipeline
+		if run != nil {
+			g.PipelineRun = *run
 		}
 
 		// Append

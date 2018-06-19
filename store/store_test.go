@@ -57,7 +57,7 @@ func TestUserGet(t *testing.T) {
 	u.Username = "testuser"
 	u.Password = "12345!#+21+"
 	u.DisplayName = "Test"
-	err = store.UserPut(u)
+	err = store.UserPut(u, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +95,7 @@ func TestUserPut(t *testing.T) {
 	u.Username = "testuser"
 	u.Password = "12345!#+21+"
 	u.DisplayName = "Test"
-	err = store.UserPut(u)
+	err = store.UserPut(u, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +117,7 @@ func TestUserAuth(t *testing.T) {
 	u.Username = "testuser"
 	u.Password = "12345!#+21+"
 	u.DisplayName = "Test"
-	err = store.UserPut(u)
+	err = store.UserPut(u, true)
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -125,7 +125,7 @@ func TestUserAuth(t *testing.T) {
 
 	// Password field has been cleared after last UserPut
 	u.Password = "12345!#+21+"
-	r, err := store.UserAuth(u)
+	r, err := store.UserAuth(u, true)
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -137,7 +137,7 @@ func TestUserAuth(t *testing.T) {
 	u = &gaia.User{}
 	u.Username = "userdoesnotexist"
 	u.Password = "wrongpassword"
-	r, err = store.UserAuth(u)
+	r, err = store.UserAuth(u, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,7 +148,7 @@ func TestUserAuth(t *testing.T) {
 	u = &gaia.User{}
 	u.Username = "testuser"
 	u.Password = "wrongpassword"
-	r, err = store.UserAuth(u)
+	r, err = store.UserAuth(u, true)
 	if err != nil {
 		t.Fatal(err)
 	}

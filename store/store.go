@@ -109,7 +109,7 @@ func (s *Store) setupDatabase() error {
 			DisplayName: adminUsername,
 			Username:    adminUsername,
 			Password:    adminPassword,
-		})
+		}, true)
 
 		if err != nil {
 			return err

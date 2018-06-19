@@ -69,6 +69,7 @@ func InitHandlers(e *echo.Echo, store *store.Store, scheduler *scheduler.Schedul
 	// Users
 	e.POST(p+"login", UserLogin)
 	e.GET(p+"users", UserGetAll)
+	e.POST(p+"user/password", UserChangePassword)
 
 	// Pipelines
 	e.POST(p+"pipeline", CreatePipeline)
