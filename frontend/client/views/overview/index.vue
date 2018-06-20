@@ -3,7 +3,9 @@
     <template v-for="(pipeline, index) in pipelines">
       <div class="column is-one-third" :key="index">
         <div class="notification content-article">
-          <div class="status-display-success"></div>
+          <div class="status-display-success" v-if="pipeline.r.status === 'success'"></div>
+          <div class="status-display-fail" v-else-if="pipeline.r.status === 'failed'"></div>
+          <div class="status-display-unknown" v-else></div>
           <div class="outer-box">
             <router-link :to="{ path: '/pipeline/detail', query: { pipelineid: pipeline.p.id }}" class="hoveraction">
               <div class="outer-box-icon-image">
@@ -79,6 +81,7 @@ export default {
         .then(response => {
           if (response.data) {
             this.pipelines = response.data
+            console.log(this.pipelines)
           }
         })
         .catch((error) => {
@@ -156,6 +159,11 @@ export default {
 .status-display-fail {
   @include status-display();
   background-color: #ca280b;
+}
+
+.status-display-unknown {
+  @include status-display();
+  background-color: grey;
 }
 
 .outer-box {

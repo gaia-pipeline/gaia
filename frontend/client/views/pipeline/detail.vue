@@ -193,7 +193,11 @@ export default {
               this.drawPipelineDetail(pipeline.data, null)
               this.lastRedraw = true
             }
-            this.runsRows = pipelineRuns.data
+
+            // Are runs available?
+            if (pipelineRuns.data) {
+              this.runsRows = pipelineRuns.data
+            }
           }.bind(this)))
           .catch((error) => {
             this.$store.commit('clearIntervals')
