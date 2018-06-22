@@ -128,3 +128,14 @@ func (s *Store) UserGetAll() ([]gaia.User, error) {
 		})
 	})
 }
+
+// UserDelete deletes the given user.
+func (s *Store) UserDelete(u *gaia.User) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		// Get bucket
+		b := tx.Bucket(userBucket)
+
+		// Delete user
+		return b.Delete([]byte(u.Username))
+	})
+}

@@ -118,3 +118,20 @@ func UserChangePassword(c echo.Context) error {
 
 	return c.String(http.StatusOK, "Password has been changed")
 }
+
+// UserDelete deletes the given user
+func UserDelete(c echo.Context) error {
+	// Get user which we should delete
+	u := &gaia.User{}
+	if err := c.Bind(u); err != nil {
+		return c.String(http.StatusBadRequest, "Invalid parameters given for delete user request")
+	}
+
+	// Delete user
+	err := storeService.UserDelete(u)
+	if err != nil {
+		c.String(http.StatusNotFound, "Cannot delete user with the given username")
+	}
+
+	return c.String(http.StatusOK, "user has been deleted")
+}

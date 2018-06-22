@@ -22,7 +22,7 @@
                   </td>
                   <td>
                     <a v-on:click="editUserModal(props.row)"><i class="fa fa-edit" style="color: whitesmoke;"></i></a>
-                    <a v-on:click="deleteUser(props.row)"><i class="fa fa-trash" style="color: whitesmoke;"></i></a>
+                    <a v-on:click="deleteUserModal(props.row)"><i class="fa fa-trash" style="color: whitesmoke;"></i></a>
                   </td>
                 </template>
                 <div slot="emptystate" class="empty-table-text">
@@ -38,26 +38,26 @@
 
     <!-- edit user modal -->
     <modal :visible="showEditUserModal" class="modal-z-index" @close="close">
-      <div class="box edit-user-modal">
+      <div class="box user-modal">
         <div class="block edit-user-modal-content">
           <collapse accordion is-fullwidth>
             <collapse-item title="Change Password" selected>
               <div class="edit-user-modal-content">
-                <label class="label" style="text-align: left;">Change password for user {{ editUser.display_name }}:</label>
+                <label class="label" style="text-align: left;">Change password for user {{ selectUser.display_name }}:</label>
                 <p class="control has-icons-left" style="padding-bottom: 5px;">
-                  <input class="input is-medium input-bar" v-focus type="password" v-model="editUser.oldpassword" placeholder="Old Password">
+                  <input class="input is-medium input-bar" v-focus type="password" v-model="selectUser.oldpassword" placeholder="Old Password">
                   <span class="icon is-small is-left">
                     <i class="fa fa-lock"></i>
                   </span>
                 </p>
                 <p class="control has-icons-left">
-                  <input class="input is-medium input-bar" type="password" v-model="editUser.newpassword" placeholder="New Password">
+                  <input class="input is-medium input-bar" type="password" v-model="selectUser.newpassword" placeholder="New Password">
                   <span class="icon is-small is-left">
                     <i class="fa fa-lock"></i>
                   </span>
                 </p>
                 <p class="control has-icons-left">
-                  <input class="input is-medium input-bar" type="password" v-model="editUser.newpasswordconf" placeholder="New Password confirmation">
+                  <input class="input is-medium input-bar" type="password" v-model="selectUser.newpasswordconf" placeholder="New Password confirmation">
                   <span class="icon is-small is-left">
                     <i class="fa fa-lock"></i>
                   </span>
@@ -74,6 +74,29 @@
             </div>
           </div>
         </div>
+      </div>
+    </modal>
+
+    <!-- delete user modal -->
+    <modal :visible="showDeleteUserModal" class="modal-z-index" @close="close">
+      <div class="box user-modal">
+        <article class="media">
+          <div class="media-content">
+            <div class="content">
+              <p>
+                <span style="color: whitesmoke;">Do you really want to delete the user {{ selectUser.display_name }}?</span>
+              </p>
+            </div>
+            <div class="modal-footer">
+              <div style="float: left;">
+                <button class="button is-primary" v-on:click="deleteUser" style="width:150px;">Yes</button>
+              </div>
+              <div style="float: right;">
+                <button class="button is-danger" v-on:click="cancel" style="width:130px;">No</button>
+              </div>
+            </div>
+          </div>
+        </article>
       </div>
     </modal>
   </div>
@@ -132,8 +155,9 @@ export default {
         }
       ],
       userRows: [],
-      editUser: [],
-      showEditUserModal: false
+      selectUser: [],
+      showEditUserModal: false,
+      showDeleteUserModal: false
     }
   },
 
@@ -164,31 +188,33 @@ export default {
     },
 
     editUserModal (user) {
-      this.editUser = user
+      this.selectUser = user
       this.showEditUserModal = true
     },
 
-    deleteUser (user) {
-      console.log('TODO')
+    deleteUserModal (user) {
+      this.selectUser = user
+      this.showDeleteUserModal = true
     },
 
     close () {
       this.showEditUserModal = false
+      this.showDeleteUserModal = false
       this.$emit('close')
     },
 
     cancel () {
       // cancel means reset all stuff
-      this.editUser.oldpassword = ''
-      this.editUser.newpassword = ''
-      this.editUser.newpasswordconf = ''
+      this.selectUser.oldpassword = ''
+      this.selectUser.newpassword = ''
+      this.selectUser.newpasswordconf = ''
 
       this.close()
     },
 
     changePassword () {
       // pre-validate
-      if (this.editUser.newpassword === '' || this.editUser.newpasswordconf === '') {
+      if (this.selectUser.newpassword === '' || this.selectUser.newpasswordconf === '') {
         openNotification({
           title: 'Empty password',
           message: 'Empty password is not allowed.',
@@ -199,7 +225,7 @@ export default {
       }
 
       this.$http
-        .post('/api/v1/user/password', this.editUser)
+        .post('/api/v1/user/password', this.selectUser)
         .then(response => {
           openNotification({
             title: 'Password changed!',
@@ -212,6 +238,22 @@ export default {
         })
       this.close()
     }
+  },
+
+  deleteUser () {
+    this.$http
+      .delete('/api/v1/user', this.selectUser)
+      .then(response => {
+        openNotification({
+          title: 'User deleted!',
+          message: 'User ' + this.selectUser.display_name + ' has been successfully deleted.',
+          type: 'success'
+        })
+      })
+      .catch((error) => {
+        this.$onError(error)
+      })
+    this.close()
   }
 }
 </script>
@@ -232,7 +274,7 @@ export default {
   border-bottom-color: #4da2fc !important;
 }
 
-.edit-user-modal {
+.user-modal {
   text-align: center;
   background-color: #2a2735;
 }
@@ -243,7 +285,7 @@ export default {
 }
 
 .modal-footer {
-  height: 35px;
+  height: 45px;
   padding-top: 15px;
 }
 
