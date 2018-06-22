@@ -113,7 +113,7 @@ func UserChangePassword(c echo.Context) error {
 	u.Password = r.NewPassword
 	err = storeService.UserPut(u, true)
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "cannot update user in store")
+		return c.String(http.StatusInternalServerError, "Cannot update user in store")
 	}
 
 	return c.String(http.StatusOK, "Password has been changed")
@@ -122,16 +122,34 @@ func UserChangePassword(c echo.Context) error {
 // UserDelete deletes the given user
 func UserDelete(c echo.Context) error {
 	// Get user which we should delete
-	u := &gaia.User{}
-	if err := c.Bind(u); err != nil {
-		return c.String(http.StatusBadRequest, "Invalid parameters given for delete user request")
+	u := c.Param("username")
+	if u == "" {
+		return c.String(http.StatusBadRequest, "Invalid username given")
 	}
 
 	// Delete user
 	err := storeService.UserDelete(u)
 	if err != nil {
-		c.String(http.StatusNotFound, "Cannot delete user with the given username")
+		return c.String(http.StatusNotFound, err.Error())
 	}
 
-	return c.String(http.StatusOK, "user has been deleted")
+	return c.String(http.StatusOK, "User has been deleted")
+}
+
+// UserAdd adds a new user to the store.
+func UserAdd(c echo.Context) error {
+	// Get user information required for add
+	u := &gaia.User{}
+	if err := c.Bind(u); err != nil {
+		return c.String(http.StatusBadRequest, "Invalid parameters given for add user request")
+	}
+
+	// Add user
+	u.LastLogin = time.Now()
+	err := storeService.UserPut(u, true)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.String(http.StatusCreated, "User has been added")
 }

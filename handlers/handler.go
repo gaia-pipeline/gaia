@@ -70,7 +70,8 @@ func InitHandlers(e *echo.Echo, store *store.Store, scheduler *scheduler.Schedul
 	e.POST(p+"login", UserLogin)
 	e.GET(p+"users", UserGetAll)
 	e.POST(p+"user/password", UserChangePassword)
-	e.DELETE(p+"user", UserDelete)
+	e.DELETE(p+"user/:username", UserDelete)
+	e.POST(p+"user", UserAdd)
 
 	// Pipelines
 	e.POST(p+"pipeline", CreatePipeline)

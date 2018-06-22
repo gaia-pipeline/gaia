@@ -121,7 +121,8 @@ export default {
           },
           arrows: {to: true}
         }
-      }
+      },
+      currentPath: ''
     }
   },
 
@@ -134,6 +135,7 @@ export default {
     var intervalID = setInterval(function () {
       this.fetchData()
     }.bind(this), 3000)
+    this.currentPath = this.$route.path
 
     // Append interval id to store
     this.$store.commit('appendInterval', intervalID)
@@ -147,6 +149,10 @@ export default {
     locationReload () {
       // View should be re-rendered
       this.lastRedraw = false
+
+      if (this.$route.path !== this.currentPath) {
+        this.$store.commit('clearIntervals')
+      }
 
       // Fetch data
       this.fetchData()

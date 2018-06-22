@@ -244,7 +244,8 @@ export default {
           field: 'errmsg'
         }
       ],
-      historyRows: []
+      historyRows: [],
+      currentPath: ''
     }
   },
 
@@ -263,6 +264,7 @@ export default {
     var intervalID = setInterval(function () {
       this.fetchData()
     }.bind(this), 3000)
+    this.currentPath = this.$route.path
 
     // Append interval id to store
     this.$store.commit('appendInterval', intervalID)
@@ -274,6 +276,10 @@ export default {
 
   methods: {
     fetchData () {
+      if (this.$route.path !== this.currentPath) {
+        this.$store.commit('clearIntervals')
+      }
+
       this.$http
         .get('/api/v1/pipeline/created', { showProgressBar: false })
         .then(response => {

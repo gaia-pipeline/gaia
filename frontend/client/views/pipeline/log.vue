@@ -24,7 +24,8 @@ export default {
       runID: null,
       pipelineID: null,
       jobID: null,
-      startPos: 0
+      startPos: 0,
+      currentPath: ''
     }
   },
 
@@ -39,6 +40,7 @@ export default {
     this.intervalID = setInterval(function () {
       this.fetchData()
     }.bind(this), 3000)
+    this.currentPath = this.$route.path
   },
 
   watch: {
@@ -51,6 +53,10 @@ export default {
 
   methods: {
     fetchData () {
+      if (this.$route.path !== this.currentPath) {
+        this.$store.commit('clearIntervals')
+      }
+
       // look up required url parameters
       this.pipelineID = this.$route.query.pipelineid
       this.runID = this.$route.query.runid

@@ -6,6 +6,7 @@ export default {
         var newSession = {
           'token': response.data.tokenstring,
           'display_name': response.data.display_name,
+          'username': response.data.username,
           'jwtexpiry': response.data.jwtexpiry
         }
         window.localStorage.setItem('session', JSON.stringify(newSession))
