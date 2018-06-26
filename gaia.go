@@ -156,8 +156,6 @@ type Config struct {
 	Bolt struct {
 		Mode os.FileMode
 	}
-
-	TestMode bool
 }
 
 // String returns a pipeline type string back
