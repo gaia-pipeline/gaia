@@ -7,19 +7,21 @@
             <i class="fa fa-search fa-lg" aria-hidden="true"/>
           </div>
           <div>
-            <input class="borderless-search" type="text" placeholder="Find pipeline ..." v-model="search" @input="onChange">
-            <ul id="autocomplete-results" v-show="resultsOpen" class="autocomplete-results">
-              <li class="autocomplete-result" v-for="(result, i) in results" :key="i">
+            <input class="borderless-search" type="text" placeholder="Find pipeline ..." v-model="search" @input="onChange"
+                   @keydown.down="onArrowDown" @keydown.up="onArrowUp" @keydown.enter="onEnter" v-on:keydown.up.prevent>
+            <ul id="autocomplete-results" v-show="resultsOpen" class="autocomplete-results" :style="{ height: (results.length * 88.5) + 'px' }">
+              <li class="autocomplete-result" v-for="(result, i) in results" :key="i" @click="routeDetailView(result.p)"
+                  :class="{ 'is-active': i === arrowCounter }">
                 <div class="results-bg">
                 <div class="box box-bg">
                   <article class="media">
                     <div class="media-left">
                       <div class="avatar">
-                        <img src="~assets/golang.png">
+                        <img :src="getImagePath(result.p.type)">
                       </div>
                     </div>
                     <div class="media-content" style="margin-top: 7px;">
-                      {{ result.name }}
+                      {{ result.p.name }}
                     </div>
                   </article>
                 </div>
@@ -66,7 +68,8 @@ export default {
     return {
       search: '',
       resultsOpen: false,
-      results: {}
+      results: [],
+      arrowCounter: 0
     }
   },
 
@@ -108,26 +111,49 @@ export default {
     },
 
     onChange () {
-      this.$emit('input', this.search)
+      // reset our arrow counter
+      this.arrowCounter = 0
 
-      // Fake search
-      this.results = [
-        {
-          name: 'Test 1',
-          id: 1
-        },
-        {
-          name: 'Test 2',
-          id: 2
-        }
-      ]
-      this.resultsOpen = true
+      // Skip empty searches
+      if (!this.search) {
+        this.resultsOpen = false
+        return
+      }
+
+      // Get pipelines and search
+      this.$http
+        .get('/api/v1/pipeline/latest', { showProgressBar: false })
+        .then(response => {
+          if (response.data) {
+            var pipelines = response.data
+
+            // Search
+            this.results = pipelines.filter(item => {
+              return item.p.name.toLowerCase().indexOf(this.search.toLowerCase()) > -1
+            })
+
+            // Open results view
+            if (this.results.length > 0) {
+              this.resultsOpen = true
+            } else {
+              this.resultsOpen = false
+            }
+          }
+        })
+        .catch((error) => {
+          this.$onError(error)
+        })
     },
 
     handleClickOutside (evt) {
       if (!this.$el.contains(evt.target)) {
         this.resultsOpen = false
+        this.arrowCounter = 0
       }
+    },
+
+    getImagePath (type) {
+      return require('assets/' + type + '.png')
     },
 
     logout () {
@@ -138,6 +164,34 @@ export default {
 
     createPipeline () {
       this.$router.push('/pipeline/create')
+    },
+
+    routeDetailView (pipeline) {
+      // Empty search and close results view
+      this.resultsOpen = false
+      this.search = ''
+      this.arrowCounter = 0
+
+      this.$router.push({path: '/pipeline/detail', query: { pipelineid: pipeline.id }})
+    },
+
+    onArrowDown () {
+      if (this.arrowCounter < (this.results.length - 1)) {
+        this.arrowCounter = this.arrowCounter + 1
+      }
+    },
+
+    onArrowUp () {
+      if (this.arrowCounter > 0) {
+        this.arrowCounter = this.arrowCounter - 1
+      }
+    },
+
+    onEnter () {
+      // Redirect to view
+      this.routeDetailView(this.results[this.arrowCounter].p)
+
+      this.arrowCounter = -1
     },
 
     ...mapActions([
