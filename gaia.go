@@ -145,6 +145,8 @@ var Cfg *Config
 
 // Config holds all config options
 type Config struct {
+	DevMode       bool
+	VersionSwitch bool
 	ListenPort    string
 	HomePath      string
 	DataPath      string

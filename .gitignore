@@ -4,6 +4,8 @@
 *.so
 *.dylib
 *.db
+rice-box.go
+gaia-linux-amd64
 
 # Test binary, build with `go test -c`
 *.test

@@ -7,7 +7,10 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/GeertJohan/go.rice"
+
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/gaia-pipeline/gaia"
 	scheduler "github.com/gaia-pipeline/gaia/scheduler"
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/labstack/echo"
@@ -64,7 +67,7 @@ func InitHandlers(e *echo.Echo, store *store.Store, scheduler *scheduler.Schedul
 	// Define prefix
 	p := "/api/" + apiVersion + "/"
 
-	// --- Register handlers at iris instance ---
+	// --- Register handlers at echo instance ---
 
 	// Users
 	e.POST(p+"login", UserLogin)
@@ -98,6 +101,24 @@ func InitHandlers(e *echo.Echo, store *store.Store, scheduler *scheduler.Schedul
 	// Extra options
 	e.HideBanner = true
 
+	// Are we in production mode?
+	if !gaia.Cfg.DevMode {
+		staticAssets, err := rice.FindBox("../frontend/dist")
+		if err != nil {
+			gaia.Cfg.Logger.Error("Cannot find assets in production mode.")
+			return err
+		}
+
+		// Register handler for static assets
+		assetHandler := http.FileServer(staticAssets.HTTPBox())
+		e.GET("/", echo.WrapHandler(assetHandler))
+		e.GET("/favicon.ico", echo.WrapHandler(assetHandler))
+		e.GET("/assets/css/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
+		e.GET("/assets/js/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
+		e.GET("/assets/fonts/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
+		e.GET("/assets/img/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
+	}
+
 	return nil
 }
 
@@ -106,8 +127,8 @@ func InitHandlers(e *echo.Echo, store *store.Store, scheduler *scheduler.Schedul
 // TODO: Role based access
 func authBarrier(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// Login resource is open
-		if strings.Contains(c.Path(), "login") {
+		// Login and static resources are open
+		if strings.Contains(c.Path(), "/login") || c.Path() == "/" || strings.Contains(c.Path(), "/assets/") || c.Path() == "/favicon.ico" {
 			return next(c)
 		}
 
