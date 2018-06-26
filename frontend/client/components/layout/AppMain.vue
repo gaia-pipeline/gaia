@@ -48,5 +48,7 @@ export default {
 
 .app-content {
   padding: 20px;
+  z-index: 0;
+  padding-top: 90px;
 }
 </style>

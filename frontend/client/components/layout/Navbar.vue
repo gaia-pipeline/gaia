@@ -7,7 +7,25 @@
             <i class="fa fa-search fa-lg" aria-hidden="true"/>
           </div>
           <div>
-            <input class="borderless-search" type="text" placeholder="Find pipeline ..." v-model="search">
+            <input class="borderless-search" type="text" placeholder="Find pipeline ..." v-model="search" @input="onChange">
+            <ul id="autocomplete-results" v-show="resultsOpen" class="autocomplete-results">
+              <li class="autocomplete-result" v-for="(result, i) in results" :key="i">
+                <div class="results-bg">
+                <div class="box box-bg">
+                  <article class="media">
+                    <div class="media-left">
+                      <div class="avatar">
+                        <img src="~assets/golang.png">
+                      </div>
+                    </div>
+                    <div class="media-content" style="margin-top: 7px;">
+                      {{ result.name }}
+                    </div>
+                  </article>
+                </div>
+                </div>
+              </li>
+            </ul>
           </div>
           <div class="navbar-button">
             <a class="button is-primary" @click="createPipeline">
@@ -46,7 +64,9 @@ export default {
 
   data () {
     return {
-      search: ''
+      search: '',
+      resultsOpen: false,
+      results: {}
     }
   },
 
@@ -66,6 +86,11 @@ export default {
 
   mounted () {
     this.reload()
+    document.addEventListener('click', this.handleClickOutside)
+  },
+
+  destroyed () {
+    document.removeEventListener('click', this.handleClickOutside)
   },
 
   watch: {
@@ -80,6 +105,29 @@ export default {
 
     refresh () {
       window.location.reload()
+    },
+
+    onChange () {
+      this.$emit('input', this.search)
+
+      // Fake search
+      this.results = [
+        {
+          name: 'Test 1',
+          id: 1
+        },
+        {
+          name: 'Test 2',
+          id: 2
+        }
+      ]
+      this.resultsOpen = true
+    },
+
+    handleClickOutside (evt) {
+      if (!this.$el.contains(evt.target)) {
+        this.resultsOpen = false
+      }
     },
 
     logout () {
@@ -181,7 +229,7 @@ export default {
 }
 
 .app-navbar {
-  position: static;
+  position: fixed;
   min-width: 100%;
   height: 70px;
   z-index: 1024 - 1;
@@ -205,5 +253,39 @@ export default {
   color: #4da2fc;
   padding-right: 15px;
   padding-top: 7px;
+}
+
+.autocomplete-results {
+  position: absolute;
+  z-index: 2500;
+  padding: 0;
+  margin: 0;
+  left: 210px;
+  max-width: 350px;
+  box-shadow: 20px 0 30px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(255, 255, 255, 0.19);
+  height: 177px;
+  overflow: auto;
+  width: 350px;
+  background-color: #2a2735 !important;
+
+}
+
+.autocomplete-result {
+  list-style: none;
+  text-align: left;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.autocomplete-result.is-active,
+.autocomplete-result:hover {
+  background-color: #51a0f6;
+  color: black;
+}
+
+.box-bg {
+  background-color: #3f3d49;
+  color: whitesmoke;
+  text-align: center;
 }
 </style>

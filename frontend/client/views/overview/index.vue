@@ -2,7 +2,7 @@
   <div class="columns is-multiline">
     <template v-for="(pipeline, index) in pipelines">
       <div class="column is-one-third" :key="index">
-        <div class="notification content-article">
+        <div class="pipeline-box notification content-article">
           <div class="status-display-success" v-if="pipeline.r.status === 'success'"></div>
           <div class="status-display-fail" v-else-if="pipeline.r.status === 'failed'"></div>
           <div class="status-display-unknown" v-else></div>
@@ -53,8 +53,7 @@ import moment from 'moment'
 export default {
   data () {
     return {
-      pipelines: [],
-      currentPath: ''
+      pipelines: []
     }
   },
 
@@ -66,10 +65,13 @@ export default {
     var intervalID = setInterval(function () {
       this.fetchData()
     }.bind(this), 3000)
-    this.currentPath = this.$route.path
 
     // Append interval id to store
     this.$store.commit('appendInterval', intervalID)
+  },
+
+  destroyed () {
+    this.$store.commit('clearIntervals')
   },
 
   watch: {
@@ -79,7 +81,7 @@ export default {
   methods: {
     fetchData () {
       if (this.$route.path !== this.currentPath) {
-        this.$store.commit('clearIntervals')
+        // this.$store.commit('clearIntervals')
       }
 
       this.$http
@@ -169,6 +171,10 @@ export default {
 .status-display-unknown {
   @include status-display();
   background-color: grey;
+}
+
+.pipeline-box {
+  width: 377px;
 }
 
 .outer-box {
