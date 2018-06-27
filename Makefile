@@ -19,5 +19,5 @@ static_assets:
 release: compile_frontend static_assets
 	env GOOS=linux GOARCH=amd64 go build -o gaia-linux-amd64 ./cmd/gaia/main.go
 
-compile_backend: static_assets
+compile_backend:
 	env GOOS=linux GOARCH=amd64 go build -o gaia-linux-amd64 ./cmd/gaia/main.go
