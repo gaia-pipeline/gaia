@@ -45,7 +45,7 @@ func CreatePipeline(c echo.Context) error {
 
 	// Set the creation date and unique id
 	p.Created = time.Now()
-	p.ID = uuid.Must(uuid.NewV4()).String()
+	p.ID = uuid.Must(uuid.NewV4(), nil).String()
 
 	// Save this pipeline to our store
 	err := storeService.CreatePipelinePut(p)

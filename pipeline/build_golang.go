@@ -26,7 +26,7 @@ type BuildPipelineGolang struct {
 // PrepareEnvironment prepares the environment before we start the build process.
 func (b *BuildPipelineGolang) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	// create uuid for destination folder
-	uuid := uuid.Must(uuid.NewV4())
+	uuid := uuid.Must(uuid.NewV4(), nil)
 
 	// Create local temp folder for clone
 	goPath := filepath.Join(gaia.Cfg.HomePath, tmpFolder, golangFolder)

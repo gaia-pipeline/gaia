@@ -194,7 +194,7 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline) (*gaia.PipelineRun, error
 
 	// Create new not scheduled pipeline run
 	run := gaia.PipelineRun{
-		UniqueID:     uuid.Must(uuid.NewV4()).String(),
+		UniqueID:     uuid.Must(uuid.NewV4(), nil).String(),
 		ID:           highestID,
 		PipelineID:   p.ID,
 		ScheduleDate: time.Now(),

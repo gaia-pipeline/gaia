@@ -86,7 +86,7 @@ func prepareTestData() (pipeline *gaia.Pipeline, pipelineRun *gaia.PipelineRun) 
 		ID:         1,
 		PipelineID: 1,
 		Status:     gaia.RunNotScheduled,
-		UniqueID:   uuid.Must(uuid.NewV4()).String(),
+		UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
 		Jobs: []gaia.Job{
 			job1,
 			job2,
