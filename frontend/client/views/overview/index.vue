@@ -43,7 +43,10 @@
           </div>
         </div>
       </div>
-    </template>          
+    </template>
+    <div v-if="pipelines.length == 0" class="no-pipelines-div">
+      <span class="no-pipelines-text">No pipelines are available. Please create a pipeline first.</span>
+    </div>         
   </div>
 </template>
 
@@ -140,6 +143,17 @@ export default {
 </script>
 
 <style lang="scss">
+
+.no-pipelines-div {
+  width: 100%;
+  text-align: center;
+  margin-top: 50px;
+}
+
+.no-pipelines-text {
+  color: whitesmoke;
+  font-size: 2rem;
+}
 
 @mixin status-display {
   position: fixed;
