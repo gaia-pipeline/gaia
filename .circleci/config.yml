@@ -13,8 +13,7 @@ jobs:
       - run:
           name: Build binary without frontend
           command: |
-            go build -v -a github.com/caiyeon/goldfish
-            ./goldfish --version
+            make compile_backend
   compile:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
