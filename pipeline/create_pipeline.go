@@ -64,7 +64,6 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	err = bP.ExecuteBuild(p)
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
-		p.Output = fmt.Sprintf("cannot compile pipeline: %s", err.Error())
 		storeService.CreatePipelinePut(p)
 		return
 	}

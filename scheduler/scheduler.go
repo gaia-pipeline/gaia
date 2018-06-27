@@ -52,9 +52,15 @@ func NewScheduler(store *store.Store) *Scheduler {
 }
 
 // Init initializes the scheduler.
-func (s *Scheduler) Init() {
-	// Setup workers
-	for i := 0; i < gaia.Cfg.Workers; i++ {
+func (s *Scheduler) Init() error {
+	// Get number of worker
+	w, err := strconv.Atoi(gaia.Cfg.Worker)
+	if err != nil {
+		return err
+	}
+
+	// Setup worker
+	for i := 0; i < w; i++ {
 		go s.work()
 	}
 
@@ -69,6 +75,8 @@ func (s *Scheduler) Init() {
 			}
 		}
 	}()
+
+	return nil
 }
 
 // work takes work from the scheduled run buffer channel
@@ -319,7 +327,7 @@ func (s *Scheduler) scheduleJobsByPriority(r *gaia.PipelineRun, p *gaia.Pipeline
 
 // getJobResultsAndStore
 func (s *Scheduler) getJobResultsAndStore(triggerSave chan bool, r *gaia.PipelineRun) {
-	for _ = range triggerSave {
+	for range triggerSave {
 		// Store update
 		s.storeService.PipelinePutRun(r)
 	}

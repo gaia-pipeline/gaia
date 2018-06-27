@@ -152,7 +152,7 @@ type Config struct {
 	DataPath      string
 	PipelinePath  string
 	WorkspacePath string
-	Workers       int
+	Worker        string
 	Logger        hclog.Logger
 
 	Bolt struct {

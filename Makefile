@@ -16,8 +16,7 @@ static_assets:
 	rm -f rice-box.go && \
 	rice embed-go
 
-release: compile_frontend static_assets
-	env GOOS=linux GOARCH=amd64 go build -o gaia-linux-amd64 ./cmd/gaia/main.go
-
 compile_backend:
 	env GOOS=linux GOARCH=amd64 go build -o gaia-linux-amd64 ./cmd/gaia/main.go
+
+release: compile_frontend static_assets compile_backend

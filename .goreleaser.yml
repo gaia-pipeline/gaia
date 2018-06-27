@@ -1,0 +1,29 @@
+before:
+  hooks:
+    - make compile_frontend static_assets
+builds:
+  - main: ./cmd/gaia/main.go
+    binary: gaia-linux-amd64
+    goos:
+      - linux
+    goarch:
+      - amd64
+checksum:
+  name_template: 'checksums.txt'
+release:
+  prerelease: true
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+dockers:
+  - image: gaia-pipeline/gaia
+    skip_push: true
+    dockerfile: docker/Dockerfile
+    extra_files:
+    - docker/docker-entrypoint.sh
+    tag_templates:
+    - "{{ .Tag }}-go"
+    - latest

@@ -34,8 +34,7 @@
                 </a>
               </p>
               <hr class="dotted-line">
-              <label class="label">Type the name of your pipeline. You can put your pipelines into folders by defining a path. For example
-                <strong>MyFolder/MyAwesomePipeline</strong>.</label>
+              <label class="label">Type the name of your pipeline here.</label>
               <p class="control has-icons-left" v-bind:class="{ 'has-icons-right': pipelineNameSuccess }">
                 <input class="input is-medium input-bar" v-model="pipelinename" v-on:input="checkPipelineNameAvailableDebounce" type="text" placeholder="Pipeline name ...">
                 <span class="icon is-small is-left">
@@ -105,8 +104,8 @@
                 </td>
                 <td>{{ props.row.pipeline.type }}</td>
                 <td :title="props.row.created" v-tippy="{ arrow : true,  animation : 'shift-away'}">{{ convertTime(props.row.created) }}</td>
-                <td>
-                  <span :title="props.row.errmsg" v-tippy="{ arrow : true,  animation : 'shift-away'}" class="is-blue">Output</span>
+                <td :title="props.row.errmsg" v-tippy="{ arrow : true,  animation : 'shift-away'}">
+                  <span class="is-blue">Output</span>
                 </td>
               </template>
               <div slot="emptystate" class="empty-table-text">
