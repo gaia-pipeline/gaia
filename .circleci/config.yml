@@ -14,6 +14,7 @@ jobs:
           name: Build binary without frontend
           command: |
             make compile_backend
+            ./gaia-linux-amd64 --version
   compile:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
