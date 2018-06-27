@@ -1,0 +1,47 @@
+version: 2
+
+jobs:
+  integration_tests:
+    working_directory: /go/src/github.com/gaia-pipeline/gaia
+    docker:
+      - image: circleci/golang:1.10.2-browsers
+    steps:
+      - checkout
+      #- run:
+      #    name: Run integration tests
+      #    command: go test -race -p 1 ./...
+      - run:
+          name: Build binary without frontend
+          command: |
+            go build -v -a github.com/caiyeon/goldfish
+            ./goldfish --version
+  compile:
+    working_directory: /go/src/github.com/gaia-pipeline/gaia
+    docker:
+      - image: circleci/golang:1.10.2-browsers
+    steps:
+      - checkout
+      - run:
+          name: Install nvm, node, and npm
+          command: |
+            wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash
+            echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV
+            touch $HOME/.nvmrc
+            echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV
+      - run:
+          name: Compile frontend and final binary
+          command: |
+            cd frontend
+            nvm install v8.7.0
+            npm cache clean --force
+            cd ..
+            make release
+      - store_artifacts:
+          path: gaia-linux-amd64
+
+workflows:
+  version: 2
+  test_and_compile:
+    jobs:
+      - integration_tests
+      - compile
