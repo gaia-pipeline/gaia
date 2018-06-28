@@ -165,7 +165,7 @@ var (
 	IgnoreWidth Option = ignoreWidth
 	ignoreWidth        = Option{2, ignoreWidthF}
 
-	// Loose sets the collator to ignore diacritics, case and weight.
+	// Loose sets the collator to ignore diacritics, case and width.
 	Loose Option = loose
 	loose        = Option{4, looseF}
 

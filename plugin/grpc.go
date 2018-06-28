@@ -3,7 +3,7 @@ package plugin
 import (
 	"context"
 
-	"github.com/gaia-pipeline/gaia/proto"
+	"github.com/gaia-pipeline/protobuf"
 	plugin "github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 )

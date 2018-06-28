@@ -8,7 +8,7 @@ import (
 	"os/exec"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/proto"
+	"github.com/gaia-pipeline/protobuf"
 	plugin "github.com/hashicorp/go-plugin"
 )
 
