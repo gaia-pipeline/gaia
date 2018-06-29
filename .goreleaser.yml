@@ -19,8 +19,8 @@ changelog:
     - '^docs:'
     - '^test:'
 dockers:
-  - image: gaia-pipeline/gaia
-    skip_push: true
+  - image: gaiapipeline/gaia
+    skip_push: false
     dockerfile: docker/Dockerfile
     extra_files:
     - docker/docker-entrypoint.sh

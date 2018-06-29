@@ -4,7 +4,7 @@ jobs:
   integration_tests:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
-      - image: circleci/golang:1.10.2-browsers
+      - image: circleci/golang:1.10.3-browsers
     steps:
       - checkout
       #- run:
@@ -18,7 +18,7 @@ jobs:
   compile:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
-      - image: circleci/golang:1.10.2-browsers
+      - image: circleci/golang:1.10.3-browsers
     steps:
       - checkout
       - run:
@@ -38,6 +38,39 @@ jobs:
             make release
       - store_artifacts:
           path: gaia-linux-amd64
+  build_and_release:
+    working_directory: /go/src/github.com/gaia-pipeline/gaia
+    docker:
+      - image: circleci/golang:1.10.3-browsers
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+        name: install nvm, node, and npm
+          command: |
+            wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash
+            echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV
+            touch $HOME/.nvmrc
+            echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV
+      - run:
+        name: install goreleaser
+          command: |
+            wget https://github.com/goreleaser/goreleaser/releases/download/v0.79.0/goreleaser_Linux_x86_64.tar.gz
+            tar -zxvf goreleaser_Linux_x86_64.tar.gz goreleaser -C /usr/bin/
+      - run:
+        name: install docker client and login
+          command: |
+            set -x
+            VER="17.12.1-ce"
+            curl -L -o /tmp/docker-$VER.tgz https://download.docker.com/linux/static/stable/x86_64/docker-$VER.tgz
+            tar -xz -C /tmp -f /tmp/docker-$VER.tgz
+            mv /tmp/docker/* /usr/bin
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - run:
+        name: build and release
+          command: |
+            goreleaser
 
 workflows:
   version: 2
@@ -45,3 +78,11 @@ workflows:
     jobs:
       - integration_tests
       - compile
+  build_and_release:
+    jobs:
+      - build_and_release
+        filters:
+          tags:
+            only: /^v.*/
+          branches:
+            only: master
