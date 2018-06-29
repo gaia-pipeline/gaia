@@ -38,7 +38,7 @@ jobs:
             make release
       - store_artifacts:
           path: gaia-linux-amd64
-  build_and_release:
+  build_and_release_job:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
       - image: circleci/golang:1.10.3-browsers
@@ -80,9 +80,9 @@ workflows:
       - compile
   build_and_release:
     jobs:
-      - build_and_release
-        filters:
-          tags:
-            only: /^v.*/
-          branches:
-            only: master
+      - build_and_release_job:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              only: master
