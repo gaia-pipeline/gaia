@@ -104,8 +104,13 @@
                 </td>
                 <td>{{ props.row.pipeline.type }}</td>
                 <td :title="props.row.created" v-tippy="{ arrow : true,  animation : 'shift-away'}">{{ convertTime(props.row.created) }}</td>
-                <td :title="props.row.errmsg" v-tippy="{ arrow : true,  animation : 'shift-away'}">
-                  <span class="is-blue">Output</span>
+                <td>
+                  <a class="button is-green-button is-small" @click="showStatusOutputModal(props.row.errmsg)">
+                    <span class="icon">
+                      <i class="fa fa-align-justify"></i>
+                    </span>
+                    <span>Show Output</span>
+                  </a>
                 </td>
               </template>
               <div slot="emptystate" class="empty-table-text">
@@ -173,6 +178,20 @@
         </div>
       </div>
     </modal>
+
+    <!-- status output modal -->
+    <modal :visible="statusOutputModal" class="modal-z-index" @close="closeStatusModal">
+      <div class="box statusModal">
+        <div>
+          <message :direction="'down'" :message="statusOutputMsg" :duration="0"></message>
+        </div>
+        <div class="modal-footer">
+          <div style="float: right;">
+            <button class="button is-danger" @click="closeStatusModal">Close</button>
+          </div>
+        </div>
+      </div>
+    </modal>
   </div>
 </template>
 
@@ -184,6 +203,7 @@ import ProgressBar from 'vue-bulma-progress-bar'
 import VueTippy from 'vue-tippy'
 import VueGoodTable from 'vue-good-table'
 import moment from 'moment'
+import Message from 'vue-bulma-message-html'
 
 Vue.use(VueGoodTable)
 Vue.use(VueTippy)
@@ -243,7 +263,9 @@ export default {
           field: 'errmsg'
         }
       ],
-      historyRows: []
+      historyRows: [],
+      statusOutputModal: false,
+      statusOutputMsg: ''
     }
   },
 
@@ -251,7 +273,8 @@ export default {
     Modal,
     Collapse,
     CollapseItem,
-    ProgressBar
+    ProgressBar,
+    Message
   },
 
   mounted () {
@@ -398,6 +421,21 @@ export default {
 
     showCredentialsModal () {
       this.gitCredentialsModal = true
+    },
+
+    showStatusOutputModal (msg) {
+      if (!msg) {
+        msg = 'No output found.'
+      }
+
+      this.statusOutputMsg = msg
+      this.statusOutputModal = true
+    },
+
+    closeStatusModal () {
+      this.statusOutputModal = false
+      this.statusOutputMsg = ''
+      this.$emit('close')
     }
   }
 }
@@ -487,5 +525,20 @@ export default {
   to {
     opacity: 0.2;
   }
+}
+
+.message-header {
+  background-color: #4da2fc;
+}
+
+.message-body {
+  background-color: black;
+  border: none;
+  color: whitesmoke;
+}
+
+.statusModal {
+  width: 100%;
+  background-color: rgb(42, 38, 53);
 }
 </style>

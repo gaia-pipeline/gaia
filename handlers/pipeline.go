@@ -43,8 +43,9 @@ func CreatePipeline(c echo.Context) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	// Set the creation date and unique id
+	// Set initial value
 	p.Created = time.Now()
+	p.StatusType = gaia.CreatePipelineRunning
 	p.ID = uuid.Must(uuid.NewV4(), nil).String()
 
 	// Save this pipeline to our store

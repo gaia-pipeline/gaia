@@ -21,15 +21,21 @@
               <span style="color: #b1adad;"> 
                 Duration: 
               </span>
-              <span> 
+              <span v-if="pipeline.r.status === 'success' || pipeline.r.status === 'failed'"> 
                 {{ calculateDuration(pipeline.r.startdate, pipeline.r.finishdate) }}
+              </span>
+              <span v-else>
+                unknown
               </span><br />
               <i class="fa fa-calendar"></i>
               <span style="color: #b1adad;"> 
                 Started: 
               </span>
-              <span> 
+              <span v-if="pipeline.r.status === 'success' || pipeline.r.status === 'failed'"> 
                 {{ humanizedDate(pipeline.r.finishdate) }}
+              </span>
+              <span v-else>
+                unknown
               </span><br />
               <div class="pipelinegrid-footer">
                 <a class="button is-primary" @click="startPipeline(pipeline.p.id)" style="width: 250px;">
