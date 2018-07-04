@@ -41,6 +41,11 @@ Screenshots
 
 .. begin-screenshots
 
+|sh-login|
+|sh-overview|
+|sh-create-pipeline|
+|sh-create-pipeline-history|
+|sh-settings|
 
 Getting Started
 ===============
@@ -192,3 +197,23 @@ If you have any questions feel free to contact us on `gitter`_.
 .. |chat| image:: https://img.shields.io/gitter/room/nwjs/nw.js.svg   
     :alt: Gitter
     :target: https://gitter.im/gaia-pipeline
+
+.. |sh-login| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/142a2969c4d27d4135ef8f96213bb166009fda1e/login.png
+    :alt: gaia login screenshot
+    :width: 650px
+
+.. |sh-overview| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/142a2969c4d27d4135ef8f96213bb166009fda1e/overview.png
+    :alt: gaia overview screenshot
+    :width: 650px
+
+.. |sh-create-pipeline| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/ea6d76ad0cd9b30820149fb2e0fbdcdb101e1484/create_pipeline.png
+    :alt: gaia create pipeline screenshot
+    :width: 650px
+
+.. |sh-create-pipeline-history| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/142a2969c4d27d4135ef8f96213bb166009fda1e/create_pipeline_history.png
+    :alt: gaia create pipeline history screenshot
+    :width: 650px
+
+.. |sh-settings| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/142a2969c4d27d4135ef8f96213bb166009fda1e/settings.png
+    :alt: gaia settings screenshot
+    :width: 650px
