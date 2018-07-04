@@ -1,4 +1,6 @@
-|logo|
+.. raw:: html
+    
+    <img src="https://cdn.rawgit.com/michelvocks/ef3894f63c3bb004bca1a2fd5f7eb644/raw/c36d614db8afe229b466b38de1636a82ad809f64/gaia-logo-text.png" width="650px">
 
 |build-status| |go-report| |go-doc| |apache2| |chat|
 
@@ -88,35 +90,35 @@ Here is an example:
     package main
 
     import (
-	    "log"
+        "log"
 
-	    sdk "github.com/gaia-pipeline/gosdk"
+	sdk "github.com/gaia-pipeline/gosdk"
     )
 
     // This is one job. Add more if you want.
     func DoSomethingAwesome() error {
-	    log.Println("This output will be streamed back to gaia and will be displayed in the pipeline logs.")
+        log.Println("This output will be streamed back to gaia and will be displayed in the pipeline logs.")
 
-	    // An error occured? Return it back so gaia knows that this job failed.
-	    return nil
+	// An error occured? Return it back so gaia knows that this job failed.
+	return nil
     }
 
     func main() {
-	    jobs := sdk.Jobs{
-		    sdk.Job{
-			    Handler:     DoSomethingAwesome,
-			    Title:       "DoSomethingAwesome",
-			    Description: "This job does something awesome.",
+        jobs := sdk.Jobs{
+            sdk.Job{
+                Handler:     DoSomethingAwesome,
+	        Title:       "DoSomethingAwesome", 
+		Description: "This job does something awesome.",
 
-			    // Increase the priority if this job should be executed later than other jobs.
-			    Priority: 0,
-		    },
-	    }
+                // Increase the priority if this job should be executed later than other jobs.
+		Priority: 0,
+	    },
+	}
 
-	    // Serve
-	    if err := sdk.Serve(jobs); err != nil {
-		    panic(err)
-	    }
+	// Serve
+	if err := sdk.Serve(jobs); err != nil {
+	    panic(err)
+	}
     }
 
 Like you can see, pipelines are defined by jobs. Usually, a function represents a job. You can define as many jobs in your pipeline as you want.
@@ -172,10 +174,6 @@ If you have any questions feel free to contact us on `gitter`_.
 .. _`nodeJS`: https://nodejs.org/
 .. _`go-example repo`: https://github.com/gaia-pipeline/go-example
 .. _`gitter`: https://gitter.im/gaia-pipeline
-
-.. |logo| image:: https://cdn.rawgit.com/michelvocks/ef3894f63c3bb004bca1a2fd5f7eb644/raw/c36d614db8afe229b466b38de1636a82ad809f64/gaia-logo-text.png
-    :alt: gaia Logo
-    :width: 650px
 
 .. |build-status| image:: https://img.shields.io/circleci/project/github/gaia-pipeline/gaia/master.svg?label=circle&maxAge=43200
     :alt: Build Status
