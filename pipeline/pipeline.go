@@ -114,6 +114,7 @@ func (ap *ActivePipelines) Replace(p gaia.Pipeline) bool {
 	for id, pipeline := range ap.Pipelines {
 		if pipeline.Name == p.Name {
 			i = id
+			break
 		}
 	}
 

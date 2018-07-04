@@ -105,7 +105,7 @@
                 <td>{{ props.row.pipeline.type }}</td>
                 <td :title="props.row.created" v-tippy="{ arrow : true,  animation : 'shift-away'}">{{ convertTime(props.row.created) }}</td>
                 <td>
-                  <a class="button is-green-button is-small" @click="showStatusOutputModal(props.row.errmsg)">
+                  <a class="button is-green-button is-small" @click="showStatusOutputModal(props.row.output)">
                     <span class="icon">
                       <i class="fa fa-align-justify"></i>
                     </span>
@@ -260,7 +260,7 @@ export default {
         },
         {
           label: 'Status Output',
-          field: 'errmsg'
+          field: 'output'
         }
       ],
       historyRows: [],
@@ -305,6 +305,26 @@ export default {
         .then(response => {
           if (response.data) {
             this.historyRows = response.data
+
+            // Add extra output messages if the pipeline is in creation status.
+            for (var i = 0; i < this.historyRows.length; i++) {
+              if (this.historyRows[i].statustype === 'running' || this.historyRows[i].statustype === 'success') {
+                if (this.historyRows[i].status >= 25) {
+                  this.historyRows[i].output = 'Git repository has been cloned.\n'
+                  this.historyRows[i].output += 'Starting build process. This may take some time...\n'
+                }
+
+                if (this.historyRows[i].status >= 75) {
+                  this.historyRows[i].output += 'Pipeline has been successfully compiled.\n'
+                  this.historyRows[i].output += 'Copy binary to pipelines folder...\n'
+                }
+
+                if (this.historyRows[i].status === 100) {
+                  this.historyRows[i].output += 'Copy was successful.\n'
+                  this.historyRows[i].output += 'Finished.\n'
+                }
+              }
+            }
           }
         })
         .catch((error) => {
@@ -427,6 +447,9 @@ export default {
       if (!msg) {
         msg = 'No output found.'
       }
+
+      // LF does not work for HTML. Replace with <br />
+      msg = msg.replace(/\n/g, '<br />')
 
       this.statusOutputMsg = msg
       this.statusOutputModal = true

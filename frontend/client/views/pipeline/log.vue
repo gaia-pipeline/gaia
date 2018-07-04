@@ -24,7 +24,6 @@ export default {
       runID: null,
       pipelineID: null,
       jobID: null,
-      startPos: 0,
       currentPath: ''
     }
   },
@@ -68,30 +67,24 @@ export default {
       // are displayed.
       this.jobID = this.$route.query.jobid
 
-      // Maximum received bytes
-      const bufferSize = 1024
       this.$http
         .get('/api/v1/pipelinerun/' + this.pipelineID + '/' + this.runID + '/log', {
           showProgressBar: false,
           params: {
-            jobid: this.jobID,
-            start: this.startPos,
-            maxbufferlen: bufferSize
+            jobid: this.jobID
           }
         })
         .then(response => {
           if (response.data) {
             // Check if we got multiple objects
             var finished = true
+            this.logText = ''
             for (let i = 0, l = response.data.length; i < l; i++) {
               // We add the received log
               this.logText += response.data[i].log
 
               // LF does not work for HTML. Replace with <br />
               this.logText = this.logText.replace(/\n/g, '<br />')
-
-              // Set the new start position defined by return value
-              this.startPos = response.data[i].start
 
               // Job not finished?
               if (!response.data[i].finished) {
@@ -100,7 +93,7 @@ export default {
             }
 
             // All jobs finished. Stop interval.
-            if (finished) {
+            if (finished && response.data.length > 0) {
               this.jobRunning = false
               clearInterval(this.intervalID)
             }

@@ -1,8 +1,7 @@
 package handlers
 
 import (
-	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -21,7 +20,6 @@ const (
 // by GetJobLogs.
 type jobLogs struct {
 	Log      string `json:"log"`
-	StartPos int    `json:"start"`
 	Finished bool   `json:"finished"`
 }
 
@@ -86,34 +84,20 @@ func PipelineGetLatestRun(c echo.Context) error {
 	return c.JSON(http.StatusOK, run)
 }
 
-// GetJobLogs returns logs and new start position for the given job.
+// GetJobLogs returns jobs for a given job.
 // If no jobID is given, a collection of all jobs logs will be returned.
 //
 // Required parameters:
 // pipelineid - Related pipeline id
 // pipelinerunid - Related pipeline run id
+//
+// Optional parameters:
 // jobid - Job id
-// start - Start position to read from. If zero starts from the beginning
-// maxbufferlen - Maximal returned characters
 func GetJobLogs(c echo.Context) error {
 	// Get parameters and validate
 	pipelineID := c.Param("pipelineid")
 	pipelineRunID := c.Param("runid")
 	jobID := c.QueryParam("jobid")
-	startPosStr := c.QueryParam("start")
-	maxBufferLenStr := c.QueryParam("maxbufferlen")
-
-	// Transform start pos to int
-	startPos, err := strconv.Atoi(startPosStr)
-	if err != nil {
-		return c.String(http.StatusBadRequest, "invalid start position given")
-	}
-
-	// Transform max buffer len
-	maxBufferLen, err := strconv.Atoi(maxBufferLenStr)
-	if err != nil || maxBufferLen > maxMaxBufferLen || maxBufferLen < 0 {
-		return c.String(http.StatusBadRequest, fmt.Sprintf("invalid maxbufferlen provided. Max number is %d", maxMaxBufferLen))
-	}
 
 	// Transform pipelineid to int
 	p, err := strconv.Atoi(pipelineID)
@@ -138,7 +122,7 @@ func GetJobLogs(c echo.Context) error {
 		for _, job := range run.Jobs {
 			if strconv.FormatUint(uint64(job.ID), 10) == jobID {
 				// Get logs
-				jL, err := getLogs(pipelineID, pipelineRunID, jobID, startPos, maxBufferLen)
+				jL, err := getLogs(pipelineID, pipelineRunID, jobID, false)
 				if err != nil {
 					return c.String(http.StatusBadRequest, err.Error())
 				}
@@ -169,9 +153,15 @@ func GetJobLogs(c echo.Context) error {
 	jobs := []jobLogs{}
 	for _, job := range run.Jobs {
 		// Get logs
-		jL, err := getLogs(pipelineID, pipelineRunID, strconv.FormatUint(uint64(job.ID), 10), startPos, maxBufferLen)
+		jL, err := getLogs(pipelineID, pipelineRunID, strconv.FormatUint(uint64(job.ID), 10), true)
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		// No error but also no job logs. Job must be in the queue.
+		// We skip it so no error will break things.
+		if jL == nil {
+			continue
 		}
 
 		// Check if job is finished
@@ -186,30 +176,27 @@ func GetJobLogs(c echo.Context) error {
 	return c.JSON(http.StatusOK, jobs)
 }
 
-func getLogs(pipelineID, pipelineRunID, jobID string, startPos, maxBufferLen int) (*jobLogs, error) {
+func getLogs(pipelineID, pipelineRunID, jobID string, getAllJobLogs bool) (*jobLogs, error) {
 	// Lookup log file
 	logFilePath := filepath.Join(gaia.Cfg.WorkspacePath, pipelineID, pipelineRunID, gaia.LogsFolderName, jobID)
-	if _, err := os.Stat(logFilePath); os.IsNotExist(err) {
-		return nil, err
-	}
 
-	// Open file
-	file, err := os.Open(logFilePath)
-	if err != nil {
-		return nil, err
+	// We only check if logs exist when a specific job log was requested.
+	// If we don't do this, get all job logs will fail during a pipeline run.
+	if _, err := os.Stat(logFilePath); os.IsNotExist(err) {
+		if !getAllJobLogs {
+			return nil, err
+		}
+		return nil, nil
 	}
-	defer file.Close()
 
 	// Read file
-	buf := make([]byte, maxBufferLen)
-	bytesRead, err := file.ReadAt(buf, int64(startPos))
-	if err != io.EOF && err != nil {
+	content, err := ioutil.ReadFile(logFilePath)
+	if err != nil {
 		return nil, err
 	}
 
 	// Create return struct
 	return &jobLogs{
-		Log:      string(buf[:]),
-		StartPos: startPos + bytesRead,
+		Log: string(content),
 	}, nil
 }

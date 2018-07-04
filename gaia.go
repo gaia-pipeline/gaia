@@ -117,7 +117,7 @@ type CreatePipeline struct {
 	Pipeline   Pipeline           `json:"pipeline,omitempty"`
 	Status     int                `json:"status,omitempty"`
 	StatusType CreatePipelineType `json:"statustype,omitempty"`
-	Output     string             `json:"errmsg,omitempty"`
+	Output     string             `json:"output,omitempty"`
 	Created    time.Time          `json:"created,omitempty"`
 }
 
