@@ -89,12 +89,18 @@ func (ap *ActivePipelines) Append(p gaia.Pipeline) {
 
 // GetByName looks up the pipeline by the given name.
 func (ap *ActivePipelines) GetByName(n string) *gaia.Pipeline {
+	var foundPipeline gaia.Pipeline
 	for pipeline := range ap.Iter() {
 		if pipeline.Name == n {
-			return &pipeline
+			foundPipeline = pipeline
 		}
 	}
-	return nil
+
+	if foundPipeline.Name == "" {
+		return nil
+	}
+
+	return &foundPipeline
 }
 
 // Replace takes the given pipeline and replaces it in the ActivePipelines
@@ -112,7 +118,7 @@ func (ap *ActivePipelines) Replace(p gaia.Pipeline) bool {
 	}
 
 	// We got it?
-	if i != -1 {
+	if i == -1 {
 		return false
 	}
 
@@ -140,13 +146,14 @@ func (ap *ActivePipelines) Iter() <-chan gaia.Pipeline {
 // Contains checks if the given pipeline name has been already appended
 // to the given ActivePipelines instance.
 func (ap *ActivePipelines) Contains(n string) bool {
+	var foundPipeline bool
 	for pipeline := range ap.Iter() {
 		if pipeline.Name == n {
-			return true
+			foundPipeline = true
 		}
 	}
 
-	return false
+	return foundPipeline
 }
 
 // appendTypeToName appends the type to the output binary name.
