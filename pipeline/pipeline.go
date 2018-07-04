@@ -126,8 +126,8 @@ func (ap *ActivePipelines) Iter() <-chan gaia.Pipeline {
 	c := make(chan gaia.Pipeline)
 
 	go func() {
-		ap.Lock()
-		defer ap.Unlock()
+		ap.RLock()
+		defer ap.RUnlock()
 		for _, pipeline := range ap.Pipelines {
 			c <- pipeline
 		}

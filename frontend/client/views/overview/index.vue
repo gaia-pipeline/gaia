@@ -89,10 +89,6 @@ export default {
 
   methods: {
     fetchData () {
-      if (this.$route.path !== this.currentPath) {
-        // this.$store.commit('clearIntervals')
-      }
-
       this.$http
         .get('/api/v1/pipeline/latest', { showProgressBar: false })
         .then(response => {

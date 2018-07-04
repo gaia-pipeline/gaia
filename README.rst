@@ -28,7 +28,7 @@ How does it work?
 
 .. begin-architecture
 
-Gaia is based on `HashiCorp's go-plugin`_. It's a plugin system that uses `gRPC`_ to communicate over HTTP2. HashiCorp developed this tool initially for `Packer`_ but it's now also heavily used by `Terraform`_, `Nomad`_, and `Vault`_.
+Gaia is based on `HashiCorp's go-plugin`_. It's a plugin system that uses `gRPC`_ to communicate over HTTP2. HashiCorp developed this tool initially for `Packer`_ but it's now heavily used by `Terraform`_, `Nomad`_, and `Vault`_ too.
 
 Pipelines can be written in any programming language (gRPC support is a prerequisite) and can be compiled locally or simply over the build system. Gaia clones the git repository and automatically builds the included pipeline. 
 
@@ -120,7 +120,36 @@ At the end, we define a jobs array that populates all jobs to gaia. We also add 
 
 The priority is really important and should always be used. If, for example, job A has a higher priority (decimal number) as job B, job A will be executed **after** job B. Priority defines therefore the order of execution. If two or more jobs have the same priority, those will be executed simultanously. You can compare it with the `Unix nice level`_.
 
+That's it! Put this code into a git repository and create a new pipeline via the gaia UI.
+Gaia will compile it and add it to it's store for later execution.
 
+Please find a bit more sophisticated example in our `go-example repo`_. 
+
+Roadmap
+=======
+
+Gaia is currently in alpha version available. We extremely recommend to not use gaia for mission critical jobs and for production usage. Things will change in the future and essential features may break.
+
+One of the main issues currently is the lack of unit- and integration tests. This is on our to-do list and we are working on this topic with high priority.
+
+It is planned that other programming languages should be supported in the next few month. It is up to the community which languages will be supported next. 
+
+Contributing
+============
+
+Gaia can only evolve and become a great product with the help of contributors. If you like to contribute, please have a look at our `issues section`_. We do our best to mark issues for new contributors with the label *good first issue*. 
+
+If you think you found a good first issue, please consider this list as a short guide:
+
+* If the issue is clear and you have no questions, please leave a short comment that you start working on this. The issue will be usually blocked for two weeks to solve it.
+* If something is not clear or you are unsure what to do, please leave a comment so we can add further discription.
+* Make sure that your development environment is configured and setup. You need `Go installed`_ on your machine and also `nodeJS`_ for the frontend. Clone this repository and run the **make** command inside the cloned folder. This will start the backend. To start the frontend you have to open a new terminal window and go into the frontend folder. There you run **npm install** and then **npm run dev**. This should automatically open a new browser window.
+* Before you start your work, you should fork this repository and push changes to your fork. Afterwards, send a merge request back to upstream.
+
+Contact
+=======
+
+If you have any questions feel free to contact us on `gitter`_.
 
 .. _`HashiCorp's go-plugin`: https://github.com/hashicorp/go-plugin
 .. _`gRPC`: https://grpc.io/
@@ -133,6 +162,11 @@ The priority is really important and should always be used. If, for example, job
 .. _`Vault`: https://www.vaultproject.io/
 .. _`boltDB`: https://github.com/coreos/bbolt
 .. _`Unix nice level`: https://en.wikipedia.org/wiki/Nice_(Unix)
+.. _`issues section`: https://github.com/gaia-pipeline/gaia/issues
+.. _`Go installed`: https://golang.org/doc/install
+.. _`nodeJS`: https://nodejs.org/
+.. _`go-example repo`: https://github.com/gaia-pipeline/go-example
+.. _`gitter`: https://gitter.im/gaia-pipeline
 
 .. |logo| image:: https://cdn.rawgit.com/michelvocks/ef3894f63c3bb004bca1a2fd5f7eb644/raw/c36d614db8afe229b466b38de1636a82ad809f64/gaia-logo-text.png
     :alt: gaia Logo
