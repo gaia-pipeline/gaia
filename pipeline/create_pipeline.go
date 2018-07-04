@@ -21,9 +21,6 @@ const (
 // of a plugin.
 // After each step, the status is written to store and can be retrieved via API.
 func CreatePipeline(p *gaia.CreatePipeline) {
-	// Set running status
-	p.StatusType = gaia.CreatePipelineSuccess
-
 	// Define build process for the given type
 	bP := newBuildPipeline(p.Pipeline.Type)
 	if bP == nil {
@@ -87,6 +84,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 
 	// Set create pipeline status to complete
 	p.Status = pipelineCompleteStatus
+	p.StatusType = gaia.CreatePipelineSuccess
 	err = storeService.CreatePipelinePut(p)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())

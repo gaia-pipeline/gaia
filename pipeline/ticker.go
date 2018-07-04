@@ -64,7 +64,7 @@ func checkActivePipelines() {
 	} else {
 		// Iterate all found pipelines
 		for _, file := range files {
-			n := strings.TrimSpace(strings.ToLower(file.Name()))
+			n := strings.TrimSpace(file.Name())
 
 			// Get pipeline type
 			pType, err := getPipelineType(n)
