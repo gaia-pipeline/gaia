@@ -47,6 +47,8 @@ Screenshots
 |sh-overview|
 |sh-create-pipeline|
 |sh-create-pipeline-history|
+|sh-pipeline-detailed|
+|sh-pipeline-logs|
 |sh-settings|
 
 Getting Started
@@ -210,6 +212,14 @@ If you have any questions feel free to contact us on `gitter`_.
 
 .. |sh-create-pipeline-history| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/142a2969c4d27d4135ef8f96213bb166009fda1e/create_pipeline_history.png
     :alt: gaia create pipeline history screenshot
+    :width: 650px
+    
+.. |sh-pipeline-detailed| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/51b4d6cbc3d86b1fe9531250db5456595423d9ec/pipeline_detailed.png
+    :alt: gaia pipeline detailed screenshot
+    :width: 650px
+    
+.. |sh-pipeline-logs| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/51b4d6cbc3d86b1fe9531250db5456595423d9ec/pipeline_logs.png
+    :alt: gaia pipeline logs screenshot
     :width: 650px
 
 .. |sh-settings| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/142a2969c4d27d4135ef8f96213bb166009fda1e/settings.png
