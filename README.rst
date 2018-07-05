@@ -175,7 +175,7 @@ If you have any questions feel free to contact us on `gitter`_.
 .. _`go-example repo`: https://github.com/gaia-pipeline/go-example
 .. _`gitter`: https://gitter.im/gaia-pipeline
 
-.. |build-status| image:: https://img.shields.io/circleci/project/github/gaia-pipeline/gaia/master.svg?label=circle&maxAge=43200
+.. |build-status| image:: https://circleci.com/gh/gaia-pipeline/gaia/tree/master.svg?style=svg&circle-token=c0e15edfb08f8076076cbbb55558af6cfecb89b8
     :alt: Build Status
     :scale: 100%
     :target: https://circleci.com/gh/gaia-pipeline/gaia/tree/master
