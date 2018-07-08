@@ -25,4 +25,7 @@ compile_backend:
 test:
 	go test -v ./...
 
+test-cover:
+	go test -v ./... --coverprofile=cover.out
+
 release: compile_frontend static_assets compile_backend
