@@ -39,12 +39,7 @@ func TestInit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	// cleanup
-	err = os.Remove("data/gaia.db")
-	if err != nil {
-		t.Fatal(err)
-	}
+	defer os.Remove("data/gaia.db")
 }
 
 func TestUserGet(t *testing.T) {
@@ -52,6 +47,7 @@ func TestUserGet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer os.Remove("data/gaia.db")
 
 	u := &gaia.User{}
 	u.Username = "testuser"
@@ -77,12 +73,6 @@ func TestUserGet(t *testing.T) {
 	if user == nil {
 		t.Fatalf("Expected user %v. Got nil.", u.Username)
 	}
-
-	// cleanup
-	err = os.Remove("data/gaia.db")
-	if err != nil {
-		t.Fatal(err)
-	}
 }
 
 func TestUserPut(t *testing.T) {
@@ -90,18 +80,13 @@ func TestUserPut(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer os.Remove("data/gaia.db")
 
 	u := &gaia.User{}
 	u.Username = "testuser"
 	u.Password = "12345!#+21+"
 	u.DisplayName = "Test"
 	err = store.UserPut(u, true)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// cleanup
-	err = os.Remove("data/gaia.db")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,6 +97,7 @@ func TestUserAuth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer os.Remove("data/gaia.db")
 
 	u := &gaia.User{}
 	u.Username = "testuser"
@@ -149,16 +135,10 @@ func TestUserAuth(t *testing.T) {
 	u.Username = "testuser"
 	u.Password = "wrongpassword"
 	r, err = store.UserAuth(u, true)
-	if err != nil {
+	if err == nil {
 		t.Fatal(err)
 	}
 	if r != nil {
 		t.Fatalf("Expected nil object here. User shouldnt be valid")
-	}
-
-	// cleanup
-	err = os.Remove("data/gaia.db")
-	if err != nil {
-		t.Fatal(err)
 	}
 }
