@@ -18,6 +18,8 @@ const (
 	srcFolder        = "src"
 )
 
+var execCommandContext = exec.CommandContext
+
 // BuildPipelineGolang is the real implementation of BuildPipeline for golang
 type BuildPipelineGolang struct {
 	Type gaia.PipelineType
@@ -93,7 +95,7 @@ func executeCmd(path string, args []string, env []string, dir string) ([]byte, e
 	defer cancel()
 
 	// Create command
-	cmd := exec.CommandContext(ctx, path, args...)
+	cmd := execCommandContext(ctx, path, args...)
 	cmd.Env = env
 	cmd.Dir = dir
 
