@@ -109,6 +109,7 @@ func TestExecuteBuildContextTimeout(t *testing.T) {
 	mockedOutput = "mocked output\n"
 	killContext = true
 	defer func() { execCommandContext = exec.CommandContext }()
+	defer func() { killContext = false }()
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
