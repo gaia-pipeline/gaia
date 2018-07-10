@@ -59,8 +59,8 @@ func (b *BuildPipelineGolang) ExecuteBuild(p *gaia.CreatePipeline) error {
 		"-d",
 		"./...",
 	}
-	env := os.Environ()
-	env = append(env, "GOPATH="+goPath)
+
+	env := append(os.Environ(), "GOPATH="+goPath)
 
 	// Execute and wait until finish or timeout
 	output, err := executeCmd(path, args, env, p.Pipeline.Repo.LocalDest)

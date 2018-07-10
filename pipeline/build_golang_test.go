@@ -17,8 +17,7 @@ import (
 )
 
 var killContext = false
-var mockedOutput string
-var mockedStatus = 0
+var killOnBuild = false
 
 func fakeExecCommandContext(ctx context.Context, name string, args ...string) *exec.Cmd {
 	if killContext {
@@ -37,8 +36,6 @@ func fakeExecCommandContext(ctx context.Context, name string, args ...string) *e
 		envArgs = arg
 	}
 	os.Setenv("CMD_ARGS", envArgs)
-	es := strconv.Itoa(mockedStatus)
-	cmd.Env = []string{"GO_WANT_HELPER_PROCESS=1", "EXIT_STATUS=" + es}
 	return cmd
 }
 
@@ -46,7 +43,7 @@ func TestExecCommandContextHelper(t *testing.T) {
 	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
 		return
 	}
-	fmt.Fprintln(os.Stdout, mockedOutput)
+	fmt.Fprintf(os.Stdout, os.Getenv("STDOUT"))
 	i, _ := strconv.Atoi(os.Getenv("EXIT_STATUS"))
 	os.Exit(i)
 }
@@ -80,7 +77,9 @@ func TestPrepareEnvironmentInvalidPathForMkdir(t *testing.T) {
 
 func TestExecuteBuild(t *testing.T) {
 	execCommandContext = fakeExecCommandContext
-	defer func() { execCommandContext = exec.CommandContext }()
+	defer func() {
+		execCommandContext = exec.CommandContext
+	}()
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
@@ -100,7 +99,9 @@ func TestExecuteBuild(t *testing.T) {
 func TestExecuteBuildContextTimeout(t *testing.T) {
 	execCommandContext = fakeExecCommandContext
 	killContext = true
-	defer func() { execCommandContext = exec.CommandContext }()
+	defer func() {
+		execCommandContext = exec.CommandContext
+	}()
 	defer func() { killContext = false }()
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
@@ -119,6 +120,30 @@ func TestExecuteBuildContextTimeout(t *testing.T) {
 	}
 	if err.Error() != "context deadline exceeded" {
 		t.Fatal("context deadline should have been exceeded. was instead: ", err)
+	}
+}
+
+func TestExecuteBuildBinaryNotFoundError(t *testing.T) {
+	tmp := os.TempDir()
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.HomePath = tmp
+	// Initialize shared logger
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: hclog.DefaultOutput,
+		Name:   "Gaia",
+	})
+	currentPath := os.Getenv("PATH")
+	defer func() { os.Setenv("PATH", currentPath) }()
+	os.Setenv("PATH", "")
+	b := new(BuildPipelineGolang)
+	p := new(gaia.CreatePipeline)
+	err := b.ExecuteBuild(p)
+	if err == nil {
+		t.Fatal("no error found while expecting error.")
+	}
+	if err.Error() != "exec: \"go\": executable file not found in $PATH" {
+		t.Fatal("the error wasn't what we expected. instead it was: ", err)
 	}
 }
 
