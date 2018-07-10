@@ -7,9 +7,9 @@ jobs:
       - image: circleci/golang:1.10.3-browsers
     steps:
       - checkout
-      #- run:
-      #    name: Run integration tests
-      #    command: go test -race -p 1 ./...
+      - run:
+          name: Run integration tests
+          command: go test -v -race -p 1 ./...
       - run:
           name: Build binary without frontend
           command: |
