@@ -36,7 +36,7 @@ Pipelines can be written in any programming language (gRPC support is a prerequi
 
 After a pipeline has been started, all log output from the included jobs are returned back to gaia and displayed in a detailed overview with their final result status.
 
-Gaia uses for storage `boltDB`_. This makes the installation step super easy. No external database is currently required.
+Gaia uses `boltDB` for storage. This makes the installation step super easy. No external database is currently required.
 
 Screenshots
 ===========
