@@ -2,7 +2,7 @@
     
     <img src="https://cdn.rawgit.com/michelvocks/ef3894f63c3bb004bca1a2fd5f7eb644/raw/c36d614db8afe229b466b38de1636a82ad809f64/gaia-logo-text.png" width="650px">
 
-|build-status| |go-report| |go-doc| |apache2| |chat|
+|build-status| |go-report| |go-doc| |apache2| |chat| |codecov|
 
 gaia is an open source automation platform which makes it easy and fun
 to build powerful pipelines in any programming language. Based on 
@@ -225,3 +225,6 @@ If you have any questions feel free to contact us on `gitter`_.
 .. |sh-settings| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/142a2969c4d27d4135ef8f96213bb166009fda1e/settings.png
     :alt: gaia settings screenshot
     :width: 650px
+
+.. |codecov| image:: https://codecov.io/gh/gaia-pipeline/gaia/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/gaia-pipeline/gaia
