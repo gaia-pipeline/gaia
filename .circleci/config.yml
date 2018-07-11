@@ -9,7 +9,20 @@ jobs:
       - checkout
       - run:
           name: Run integration tests
-          command: go test -v -race -p 1 ./...
+          command: |
+            set -e
+            echo "" > coverage.txt
+
+            for d in $(go list ./... | grep -v vendor); do
+              go test -v -race -coverprofile=profile.out -covermode=atomic $d
+              if [ -f profile.out ]; then
+                cat profile.out >> coverage.txt
+                rm profile.out
+              fi
+            done
+      - run:
+          name: Upload test report to codecov.io
+          command: bash <(curl -s https://codecov.io/bash)
       - run:
           name: Build binary without frontend
           command: |
