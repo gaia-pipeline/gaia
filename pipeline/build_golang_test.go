@@ -89,10 +89,11 @@ func TestExecuteBuild(t *testing.T) {
 	if err != nil {
 		t.Fatal("error while running executebuild. none was expected")
 	}
-	expectedArgs := "-test.run=TestExecCommandContextHelper,--,/usr/local/bin/go,get,-d,./...:-test.run=TestExecCommandContextHelper,--,/usr/local/bin/go,build,-o,_"
+	expectedDepArgs := "get,-d,./..."
+	expectedBuildArgs := "build,-o,_"
 	actualArgs := os.Getenv("CMD_ARGS")
-	if expectedArgs != actualArgs {
-		t.Fatalf("expected args '%s' actual args '%s'", expectedArgs, actualArgs)
+	if !strings.Contains(actualArgs, expectedBuildArgs) && !strings.Contains(actualArgs, expectedDepArgs) {
+		t.Fatalf("expected args '%s, %s' actual args '%s'", expectedDepArgs, expectedBuildArgs, actualArgs)
 	}
 }
 
@@ -122,10 +123,8 @@ func TestExecuteBuildFailPipelineBuild(t *testing.T) {
 	if err == nil {
 		t.Fatal("error while running executebuild. none was expected")
 	}
-	expected := `# _/Users/gbrautigam/gohome/src/github.com/gaia-pipeline/gaia/pipeline/tmp
-./main.go:4:13: syntax error: unexpected newline, expecting comma or )
-`
-	if p.Output != expected {
+	expected := "syntax error: unexpected newline, expecting comma or )"
+	if !strings.Contains(p.Output, expected) {
 		t.Fatal("got a different output than expected: ", p.Output)
 	}
 }
