@@ -177,7 +177,7 @@ If you have any questions feel free to contact us on `gitter`_.
 .. _`go-example repo`: https://github.com/gaia-pipeline/go-example
 .. _`gitter`: https://gitter.im/gaia-pipeline
 
-.. |build-status| image:: https://circleci.com/gh/gaia-pipeline/gaia/tree/master.svg?style=svg&circle-token=c0e15edfb08f8076076cbbb55558af6cfecb89b8
+.. |build-status| image:: https://circleci.com/gh/gaia-pipeline/gaia/tree/master.svg?style=shield&circle-token=c0e15edfb08f8076076cbbb55558af6cfecb89b8
     :alt: Build Status
     :scale: 100%
     :target: https://circleci.com/gh/gaia-pipeline/gaia/tree/master
@@ -194,9 +194,12 @@ If you have any questions feel free to contact us on `gitter`_.
     :alt: Apache licensed
     :target: https://github.com/gaia-pipeline/gaia/blob/master/LICENSE
 
-.. |chat| image:: https://img.shields.io/gitter/room/nwjs/nw.js.svg   
+.. |chat| image:: https://badges.gitter.im/Join%20Chat.svg   
     :alt: Gitter
     :target: https://gitter.im/gaia-pipeline
+
+.. |codecov| image:: https://codecov.io/gh/gaia-pipeline/gaia/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/gaia-pipeline/gaia
 
 .. |sh-login| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/142a2969c4d27d4135ef8f96213bb166009fda1e/login.png
     :alt: gaia login screenshot
@@ -225,6 +228,3 @@ If you have any questions feel free to contact us on `gitter`_.
 .. |sh-settings| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/142a2969c4d27d4135ef8f96213bb166009fda1e/settings.png
     :alt: gaia settings screenshot
     :width: 650px
-
-.. |codecov| image:: https://codecov.io/gh/gaia-pipeline/gaia/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/gaia-pipeline/gaia
