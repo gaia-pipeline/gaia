@@ -9,7 +9,7 @@ import (
 
 func TestGitCloneRepo(t *testing.T) {
 	repo := &gaia.GitRepo{
-		URL:       "https://github.com/gaia-pipeline/gaia",
+		URL:       "https://github.com/gaia-pipeline/go-test-example",
 		LocalDest: "tmp",
 	}
 	// always ensure that tmp folder is cleaned up
