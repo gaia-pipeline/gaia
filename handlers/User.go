@@ -6,7 +6,9 @@ import (
 
 	"github.com/labstack/echo"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"crypto/rsa"
+
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
 )
 
@@ -45,11 +47,20 @@ func UserLogin(c echo.Context) error {
 		},
 	}
 
+	var token *jwt.Token
 	// Generate JWT token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	switch t := gaia.Cfg.JWTKey.(type) {
+	case []byte:
+		token = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	case *rsa.PrivateKey:
+		token = jwt.NewWithClaims(jwt.SigningMethodRS512, claims)
+	default:
+		gaia.Cfg.Logger.Error("invalid jwt key type", "type", t)
+		return c.String(http.StatusInternalServerError, "error creating jwt token: invalid jwt key type")
+	}
 
 	// Sign and get encoded token
-	tokenstring, err := token.SignedString(jwtKey)
+	tokenstring, err := token.SignedString(gaia.Cfg.JWTKey)
 	if err != nil {
 		gaia.Cfg.Logger.Error("error signing jwt token", "error", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())

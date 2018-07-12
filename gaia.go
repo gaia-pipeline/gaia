@@ -153,6 +153,7 @@ type Config struct {
 	PipelinePath  string
 	WorkspacePath string
 	Worker        string
+	JWTKey        interface{}
 	Logger        hclog.Logger
 
 	Bolt struct {
