@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"strings"
+	"sync"
 
 	"gopkg.in/src-d/go-git.v4/plumbing"
 
@@ -109,32 +110,50 @@ func gitCloneRepo(repo *gaia.GitRepo) error {
 
 func updateAllCurrentPipelines() {
 	gaia.Cfg.Logger.Debug("starting updating of pipelines...")
-	// Get all active pipelines
-	for pipeline := range GlobalActivePipelines.Iter() {
-		r, err := git.PlainOpen(pipeline.Repo.LocalDest)
-		if err != nil {
-			// ignore for now
-			return
-		}
+	var allPipelines []gaia.Pipeline
+	var wg sync.WaitGroup
+	sem := make(chan int, 4)
 
-		beforPull, _ := r.Head()
-		tree, _ := r.Worktree()
-		tree.Pull(&git.PullOptions{
-			RemoteName: "origin",
-		})
-		afterPull, _ := r.Head()
-		gaia.Cfg.Logger.Debug("no need to update pipeline: ", pipeline.Name)
-		// if there are no changes...
-		if beforPull.Hash() == afterPull.Hash() {
-			continue
-		}
-		gaia.Cfg.Logger.Debug("updating pipeline: ", pipeline.Name)
-		// otherwise build the pipeline
-		b := newBuildPipeline(pipeline.Type)
-		createPipeline := &gaia.CreatePipeline{}
-		createPipeline.Pipeline = pipeline
-		b.ExecuteBuild(createPipeline)
-		b.CopyBinary(createPipeline)
-		gaia.Cfg.Logger.Debug("successfully updated: ", pipeline.Name)
+	for pipeline := range GlobalActivePipelines.Iter() {
+		allPipelines = append(allPipelines, pipeline)
 	}
+
+	for _, p := range allPipelines {
+		wg.Add(1)
+		go func(pipe gaia.Pipeline) {
+			defer wg.Done()
+			sem <- 1
+			r, err := git.PlainOpen(pipe.Repo.LocalDest)
+			if err != nil {
+				// ignore for now
+				return
+			}
+			beforPull, _ := r.Head()
+			tree, _ := r.Worktree()
+			err = tree.Pull(&git.PullOptions{
+				RemoteName: "origin",
+			})
+			if err != nil {
+				gaia.Cfg.Logger.Error("error2 : ", err.Error())
+				err = nil
+			}
+			afterPull, _ := r.Head()
+			gaia.Cfg.Logger.Debug("no need to update pipeline: ", pipe.Name)
+			// if there are no changes...
+			if beforPull.Hash() == afterPull.Hash() {
+				<-sem
+				return
+			}
+			gaia.Cfg.Logger.Debug("updating pipeline: ", pipe.Name)
+			// otherwise build the pipeline
+			b := newBuildPipeline(pipe.Type)
+			createPipeline := &gaia.CreatePipeline{}
+			createPipeline.Pipeline = pipe
+			b.ExecuteBuild(createPipeline)
+			b.CopyBinary(createPipeline)
+			gaia.Cfg.Logger.Debug("successfully updated: ", pipe.Name)
+			<-sem
+		}(p)
+	}
+	wg.Wait()
 }
