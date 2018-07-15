@@ -20,8 +20,7 @@ import (
 )
 
 var (
-	echoInstance      *echo.Echo
-	jwtPrivateKeyPath string
+	echoInstance *echo.Echo
 )
 
 const (
@@ -40,7 +39,7 @@ func init() {
 	flag.StringVar(&gaia.Cfg.ListenPort, "port", "8080", "Listen port for gaia")
 	flag.StringVar(&gaia.Cfg.HomePath, "homepath", "", "Path to the gaia home folder")
 	flag.StringVar(&gaia.Cfg.Worker, "worker", "2", "Number of worker gaia will use to execute pipelines in parallel")
-	flag.StringVar(&jwtPrivateKeyPath, "jwtPrivateKeyPath", "", "A RSA private key used to sign JWT tokens")
+	flag.StringVar(&gaia.Cfg.JwtPrivateKeyPath, "jwtPrivateKeyPath", "", "A RSA private key used to sign JWT tokens")
 	flag.BoolVar(&gaia.Cfg.DevMode, "dev", false, "If true, gaia will be started in development mode. Don't use this in production!")
 	flag.BoolVar(&gaia.Cfg.VersionSwitch, "version", false, "If true, will print the version and immediately exit")
 
@@ -67,7 +66,7 @@ func main() {
 
 	var jwtKey interface{}
 	// Check JWT key is set
-	if jwtPrivateKeyPath == "" {
+	if gaia.Cfg.JwtPrivateKeyPath == "" {
 		gaia.Cfg.Logger.Warn("using auto-generated key to sign jwt tokens, do not use in production")
 		jwtKey = make([]byte, 64)
 		_, err := rand.Read(jwtKey.([]byte))
@@ -76,7 +75,7 @@ func main() {
 			os.Exit(1)
 		}
 	} else {
-		keyData, err := ioutil.ReadFile(jwtPrivateKeyPath)
+		keyData, err := ioutil.ReadFile(gaia.Cfg.JwtPrivateKeyPath)
 		if err != nil {
 			gaia.Cfg.Logger.Error("could not read jwt key file", "error", err.Error())
 			os.Exit(1)
