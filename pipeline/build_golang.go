@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
@@ -116,14 +117,19 @@ func (b *BuildPipelineGolang) CopyBinary(p *gaia.CreatePipeline) error {
 		return err
 	}
 
-	p.Pipeline.ExecPath = dest
-	// Our pipeline is finished constructing. Save it.
-	if err := storeService.PipelinePut(&p.Pipeline); err != nil {
-		return err
-	}
-
 	// Set +x (execution right) for pipeline
 	return os.Chmod(dest, 0766)
+}
+
+// SavePipeline saves the current pipeline configuration.
+func (b *BuildPipelineGolang) SavePipeline(p *gaia.Pipeline) error {
+	dest := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
+	p.ExecPath = dest
+	p.Type = gaia.PTypeGolang
+	p.Name = strings.TrimSuffix(filepath.Base(dest), typeDelimiter+gaia.PTypeGolang.String())
+	p.Created = time.Now()
+	// Our pipeline is finished constructing. Save it.
+	return storeService.PipelinePut(p)
 }
 
 // copyFileContents copies the content from source to destination.

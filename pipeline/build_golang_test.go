@@ -12,8 +12,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gaia-pipeline/gaia/store"
-
 	"github.com/gaia-pipeline/gaia"
 	hclog "github.com/hashicorp/go-hclog"
 )
@@ -183,10 +181,6 @@ func TestExecuteBuildBinaryNotFoundError(t *testing.T) {
 }
 
 func TestCopyBinary(t *testing.T) {
-	s := store.NewStore()
-	s.Init()
-	storeService = s
-	defer os.Remove("gaia.db")
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp

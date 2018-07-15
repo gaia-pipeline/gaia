@@ -82,6 +82,15 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 		return
 	}
 
+	// Save the generated pipeline data
+	err = bP.SavePipeline(&p.Pipeline)
+	if err != nil {
+		p.StatusType = gaia.CreatePipelineFailed
+		p.Output = fmt.Sprintf("failed to save the created pipeline: %s", err.Error())
+		storeService.CreatePipelinePut(p)
+		return
+	}
+
 	// Set create pipeline status to complete
 	p.Status = pipelineCompleteStatus
 	p.StatusType = gaia.CreatePipelineSuccess

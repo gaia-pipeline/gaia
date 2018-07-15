@@ -123,24 +123,18 @@ func updateAllCurrentPipelines() {
 			sem <- 1
 			r, err := git.PlainOpen(pipe.Repo.LocalDest)
 			if err != nil {
-				// It's also an error if the repo is already up to date so we just move on.
 				gaia.Cfg.Logger.Debug("error while opening repo: ", pipe.Repo.LocalDest, err.Error())
 				return
 			}
-			beforPull, _ := r.Head()
+			gaia.Cfg.Logger.Debug("checking pipeline: ", pipe.Name)
 			gaia.Cfg.Logger.Debug("selected branch : ", pipe.Repo.SelectedBranch)
 			tree, _ := r.Worktree()
 			err = tree.Pull(&git.PullOptions{
 				RemoteName: "origin",
 			})
 			if err != nil {
+				// It's also an error if the repo is already up to date so we just move on.
 				gaia.Cfg.Logger.Error("error while doing a pull request : ", err.Error())
-				<-sem
-				return
-			}
-			afterPull, _ := r.Head()
-			gaia.Cfg.Logger.Debug("no need to update pipeline: ", pipe.Name)
-			if beforPull.Hash() == afterPull.Hash() {
 				<-sem
 				return
 			}

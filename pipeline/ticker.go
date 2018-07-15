@@ -131,21 +131,6 @@ func checkActivePipelines() {
 				continue
 			}
 
-			// We couldn't finde the pipeline. Create a new one.
-			var shouldStore = false
-			if pipeline == nil {
-				// Create pipeline object and fill it with information
-				pipeline = &gaia.Pipeline{
-					Name:     pName,
-					Type:     pType,
-					ExecPath: filepath.Join(gaia.Cfg.PipelinePath, file.Name()),
-					Created:  time.Now(),
-				}
-
-				// We should store it
-				shouldStore = true
-			}
-
 			// We calculate a SHA256 Checksum and store it.
 			// We use this to estimate if a pipeline has been changed.
 			pipeline.SHA256Sum, err = getSHA256Sum(pipeline.ExecPath)
@@ -156,11 +141,6 @@ func checkActivePipelines() {
 
 			// Let us try to start the plugin and receive all implemented jobs
 			schedulerService.SetPipelineJobs(pipeline)
-
-			// Put pipeline into store only when it was new created.
-			if shouldStore {
-				storeService.PipelinePut(pipeline)
-			}
 
 			// We do not update the pipeline in store if it already exists there.
 			// We only updated the SHA256 Checksum and the jobs but this is not importent

@@ -22,6 +22,9 @@ type BuildPipeline interface {
 	// CopyBinary copies the result from the compile process
 	// to the plugins folder.
 	CopyBinary(*gaia.CreatePipeline) error
+
+	// SavePipeline the pipeline in its current format
+	SavePipeline(*gaia.Pipeline) error
 }
 
 // ActivePipelines holds all active pipelines.
