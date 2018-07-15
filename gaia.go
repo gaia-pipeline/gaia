@@ -146,17 +146,18 @@ var Cfg *Config
 
 // Config holds all config options
 type Config struct {
-	DevMode       bool
-	VersionSwitch bool
-	Poll          bool
-	ListenPort    string
-	HomePath      string
-	DataPath      string
-	PipelinePath  string
-	WorkspacePath string
-	Worker        string
-	JWTKey        interface{}
-	Logger        hclog.Logger
+	DevMode           bool
+	VersionSwitch     bool
+	Poll              bool
+	ListenPort        string
+	HomePath          string
+	DataPath          string
+	PipelinePath      string
+	WorkspacePath     string
+	Worker            string
+	JwtPrivateKeyPath string
+	JWTKey            interface{}
+	Logger            hclog.Logger
 
 	Bolt struct {
 		Mode os.FileMode
