@@ -148,6 +148,7 @@ var Cfg *Config
 type Config struct {
 	DevMode       bool
 	VersionSwitch bool
+	Poll          bool
 	ListenPort    string
 	HomePath      string
 	DataPath      string

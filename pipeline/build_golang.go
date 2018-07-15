@@ -41,7 +41,7 @@ func (b *BuildPipelineGolang) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	// Set new generated path in pipeline obj for later usage
 	p.Pipeline.Repo.LocalDest = cloneFolder
 	p.Pipeline.UUID = uuid.String()
-	return nil
+	return err
 }
 
 // ExecuteBuild executes the golang build process
@@ -113,6 +113,12 @@ func (b *BuildPipelineGolang) CopyBinary(p *gaia.CreatePipeline) error {
 
 	// Copy binary
 	if err := copyFileContents(src, dest); err != nil {
+		return err
+	}
+
+	p.Pipeline.ExecPath = dest
+	// Our pipeline is finished constructing. Save it.
+	if err := storeService.PipelinePut(&p.Pipeline); err != nil {
 		return err
 	}
 

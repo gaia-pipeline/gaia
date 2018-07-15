@@ -1,7 +1,6 @@
 package pipeline
 
 import (
-	"path/filepath"
 	"strings"
 	"sync"
 
@@ -117,16 +116,15 @@ func updateAllCurrentPipelines() {
 	for pipeline := range GlobalActivePipelines.Iter() {
 		allPipelines = append(allPipelines, pipeline)
 	}
-	goPath := filepath.Join(gaia.Cfg.HomePath, tmpFolder, golangFolder)
 	for _, p := range allPipelines {
 		wg.Add(1)
 		go func(pipe gaia.Pipeline) {
 			defer wg.Done()
 			sem <- 1
-			cloneFolder := filepath.Join(goPath, srcFolder, pipe.UUID)
-			r, err := git.PlainOpen(cloneFolder)
+			r, err := git.PlainOpen(pipe.Repo.LocalDest)
 			if err != nil {
-				// ignore for now
+				// It's also an error if the repo is already up to date so we just move on.
+				gaia.Cfg.Logger.Debug("error while opening repo: ", pipe.Repo.LocalDest, err.Error())
 				return
 			}
 			beforPull, _ := r.Head()

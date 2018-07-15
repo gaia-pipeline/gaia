@@ -54,16 +54,22 @@ func InitTicker(store *store.Store, scheduler *scheduler.Scheduler) {
 		}
 	}()
 
-	pollTicket := time.NewTicker(pollTicketIntervalMinutes * time.Minute)
-	go func() {
-		defer pollTicket.Stop()
-		for {
-			select {
-			case <-pollTicket.C:
-				updateAllCurrentPipelines()
+	if gaia.Cfg.Poll {
+		pollTicket := time.NewTicker(pollTicketIntervalMinutes * time.Minute)
+		go func() {
+			defer pollTicket.Stop()
+			for {
+				select {
+				case <-pollTicket.C:
+					updateAllCurrentPipelines()
+				}
 			}
-		}
-	}()
+		}()
+	} else {
+		gaia.Cfg.Logger.Debug("webhooks enabled")
+		// WebHook needs to be an option on the UI for
+		// a registered repository. If polling is on, that checkbox needs to be disabled.
+	}
 }
 
 // checkActivePipelines looks up all files in the pipeline folder.
