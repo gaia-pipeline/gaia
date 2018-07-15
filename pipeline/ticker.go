@@ -18,7 +18,8 @@ import (
 const (
 	// tickerIntervalSeconds defines how often the ticker will tick.
 	// Definition in seconds.
-	tickerIntervalSeconds = 5
+	tickerIntervalSeconds     = 5
+	pollTicketIntervalMinutes = 1
 )
 
 // storeService is an instance of store.
@@ -49,6 +50,17 @@ func InitTicker(store *store.Store, scheduler *scheduler.Scheduler) {
 			select {
 			case <-ticker.C:
 				checkActivePipelines()
+			}
+		}
+	}()
+
+	pollTicket := time.NewTicker(pollTicketIntervalMinutes * time.Minute)
+	go func() {
+		defer pollTicket.Stop()
+		for {
+			select {
+			case <-pollTicket.C:
+				updateAllCurrentPipelines()
 			}
 		}
 	}()

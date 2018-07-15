@@ -106,3 +106,33 @@ func gitCloneRepo(repo *gaia.GitRepo) error {
 
 	return nil
 }
+
+func updateAllCurrentPipelines() {
+	// Get all active pipelines
+	for pipeline := range GlobalActivePipelines.Iter() {
+		r, err := git.PlainOpen(pipeline.Repo.LocalDest)
+		if err != nil {
+			// ignore for now
+			return
+		}
+
+		beforPull, _ := r.Head()
+		tree, _ := r.Worktree()
+		tree.Pull(&git.PullOptions{
+			RemoteName: "origin",
+		})
+		afterPull, _ := r.Head()
+
+		// if there are no changes...
+		if beforPull.Hash() == afterPull.Hash() {
+			continue
+		}
+
+		// otherwise build the pipeline
+		b := newBuildPipeline(pipeline.Type)
+		createPipeline := &gaia.CreatePipeline{}
+		createPipeline.Pipeline = pipeline
+		b.ExecuteBuild(createPipeline)
+	}
+
+}
