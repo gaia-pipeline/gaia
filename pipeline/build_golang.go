@@ -40,6 +40,7 @@ func (b *BuildPipelineGolang) PrepareEnvironment(p *gaia.CreatePipeline) error {
 
 	// Set new generated path in pipeline obj for later usage
 	p.Pipeline.Repo.LocalDest = cloneFolder
+	p.Pipeline.UUID = uuid.String()
 	return nil
 }
 

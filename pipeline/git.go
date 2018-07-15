@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -113,39 +114,40 @@ func updateAllCurrentPipelines() {
 	var allPipelines []gaia.Pipeline
 	var wg sync.WaitGroup
 	sem := make(chan int, 4)
-
 	for pipeline := range GlobalActivePipelines.Iter() {
 		allPipelines = append(allPipelines, pipeline)
 	}
-
+	goPath := filepath.Join(gaia.Cfg.HomePath, tmpFolder, golangFolder)
 	for _, p := range allPipelines {
 		wg.Add(1)
 		go func(pipe gaia.Pipeline) {
 			defer wg.Done()
 			sem <- 1
-			r, err := git.PlainOpen(pipe.Repo.LocalDest)
+			cloneFolder := filepath.Join(goPath, srcFolder, pipe.UUID)
+			r, err := git.PlainOpen(cloneFolder)
 			if err != nil {
 				// ignore for now
 				return
 			}
 			beforPull, _ := r.Head()
+			gaia.Cfg.Logger.Debug("selected branch : ", pipe.Repo.SelectedBranch)
 			tree, _ := r.Worktree()
 			err = tree.Pull(&git.PullOptions{
 				RemoteName: "origin",
 			})
 			if err != nil {
-				gaia.Cfg.Logger.Error("error2 : ", err.Error())
-				err = nil
+				gaia.Cfg.Logger.Error("error while doing a pull request : ", err.Error())
+				<-sem
+				return
 			}
 			afterPull, _ := r.Head()
 			gaia.Cfg.Logger.Debug("no need to update pipeline: ", pipe.Name)
-			// if there are no changes...
 			if beforPull.Hash() == afterPull.Hash() {
 				<-sem
 				return
 			}
+
 			gaia.Cfg.Logger.Debug("updating pipeline: ", pipe.Name)
-			// otherwise build the pipeline
 			b := newBuildPipeline(pipe.Type)
 			createPipeline := &gaia.CreatePipeline{}
 			createPipeline.Pipeline = pipe
