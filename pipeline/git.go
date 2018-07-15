@@ -134,6 +134,7 @@ func updateAllCurrentPipelines() {
 		createPipeline := &gaia.CreatePipeline{}
 		createPipeline.Pipeline = pipeline
 		b.ExecuteBuild(createPipeline)
+		b.CopyBinary(createPipeline)
 		gaia.Cfg.Logger.Debug("successfully updated: ", pipeline.Name)
 	}
 }
