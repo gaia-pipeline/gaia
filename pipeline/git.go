@@ -108,6 +108,7 @@ func gitCloneRepo(repo *gaia.GitRepo) error {
 }
 
 func updateAllCurrentPipelines() {
+	gaia.Cfg.Logger.Debug("starting updating of pipelines...")
 	// Get all active pipelines
 	for pipeline := range GlobalActivePipelines.Iter() {
 		r, err := git.PlainOpen(pipeline.Repo.LocalDest)
@@ -122,17 +123,17 @@ func updateAllCurrentPipelines() {
 			RemoteName: "origin",
 		})
 		afterPull, _ := r.Head()
-
+		gaia.Cfg.Logger.Debug("no need to update pipeline: ", pipeline.Name)
 		// if there are no changes...
 		if beforPull.Hash() == afterPull.Hash() {
 			continue
 		}
-
+		gaia.Cfg.Logger.Debug("updating pipeline: ", pipeline.Name)
 		// otherwise build the pipeline
 		b := newBuildPipeline(pipeline.Type)
 		createPipeline := &gaia.CreatePipeline{}
 		createPipeline.Pipeline = pipeline
 		b.ExecuteBuild(createPipeline)
+		gaia.Cfg.Logger.Debug("successfully updated: ", pipeline.Name)
 	}
-
 }
