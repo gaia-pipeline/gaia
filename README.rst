@@ -132,7 +132,12 @@ The priority is really important and should always be used. If, for example, job
 That's it! Put this code into a git repository and create a new pipeline via the gaia UI.
 Gaia will compile it and add it to it's store for later execution.
 
-Please find a bit more sophisticated example in our `go-example repo`_. 
+Please find a bit more sophisticated example in our `go-example repo`_.
+
+Documentation
+=============
+
+Please find the docs at https://docs.gaia-pipeline.io. We also have a interesting tutorials section over there. For example, `Kubernetes deployment with vault integration`_.   
 
 Roadmap
 =======
@@ -176,6 +181,7 @@ If you have any questions feel free to contact us on `gitter`_.
 .. _`nodeJS`: https://nodejs.org/
 .. _`go-example repo`: https://github.com/gaia-pipeline/go-example
 .. _`gitter`: https://gitter.im/gaia-pipeline
+.. _`Kubernetes deployment with vault integration`: https://docs.gaia-pipeline.io/tutorials/kube-vault-deploy/
 
 .. |build-status| image:: https://circleci.com/gh/gaia-pipeline/gaia/tree/master.svg?style=shield&circle-token=c0e15edfb08f8076076cbbb55558af6cfecb89b8
     :alt: Build Status

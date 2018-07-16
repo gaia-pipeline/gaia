@@ -1,13 +1,14 @@
 package handlers
 
 import (
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/GeertJohan/go.rice"
+
+	"crypto/rsa"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
@@ -48,21 +49,11 @@ var storeService *store.Store
 
 var schedulerService *scheduler.Scheduler
 
-// jwtKey is a random generated key for jwt signing
-var jwtKey []byte
-
 // InitHandlers initializes(registers) all handlers
 func InitHandlers(e *echo.Echo, store *store.Store, scheduler *scheduler.Scheduler) error {
 	// Set instances
 	storeService = store
 	schedulerService = scheduler
-
-	// Generate signing key for jwt
-	jwtKey = make([]byte, 64)
-	_, err := rand.Read(jwtKey)
-	if err != nil {
-		return err
-	}
 
 	// Define prefix
 	p := "/api/" + apiVersion + "/"
@@ -142,13 +133,21 @@ func authBarrier(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// Parse token
 		token, err := jwt.Parse(jwtString, func(token *jwt.Token) (interface{}, error) {
-			// Validate signing method
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			signingMethodError := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			switch token.Method.(type) {
+			case *jwt.SigningMethodHMAC:
+				if _, ok := gaia.Cfg.JWTKey.([]byte); !ok {
+					return nil, signingMethodError
+				}
+				return gaia.Cfg.JWTKey, nil
+			case *jwt.SigningMethodRSA:
+				if _, ok := gaia.Cfg.JWTKey.(*rsa.PrivateKey); !ok {
+					return nil, signingMethodError
+				}
+				return gaia.Cfg.JWTKey.(*rsa.PrivateKey).Public(), nil
+			default:
+				return nil, signingMethodError
 			}
-
-			// return secret
-			return jwtKey, nil
 		})
 		if err != nil {
 			return c.String(http.StatusForbidden, err.Error())
