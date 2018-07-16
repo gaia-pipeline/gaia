@@ -168,7 +168,8 @@ func (ap *ActivePipelines) Contains(n string) bool {
 // RemoveDeletedPipelines removes the pipelines whose names are NOT
 // present in `existingPipelineNames` from the given ActivePipelines instance.
 func (ap *ActivePipelines) RemoveDeletedPipelines(existingPipelineNames []string) {
-	for i, pipeline := range ap.Pipelines {
+	var index int
+	for pipeline := range ap.Iter() {
 		found := false
 		for _, name := range existingPipelineNames {
 			if pipeline.Name == name {
@@ -177,8 +178,9 @@ func (ap *ActivePipelines) RemoveDeletedPipelines(existingPipelineNames []string
 			}
 		}
 		if !found {
-			ap.Remove(i)
+			ap.Remove(index)
 		}
+		index++
 	}
 }
 
