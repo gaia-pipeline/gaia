@@ -13,6 +13,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
 	"github.com/gaia-pipeline/gaia/pipeline"
+	"github.com/gaia-pipeline/gaia/plugin"
 	scheduler "github.com/gaia-pipeline/gaia/scheduler"
 	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
@@ -132,8 +133,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Create new plugin system
+	pS := &plugin.Plugin{}
+
 	// Initialize scheduler
-	scheduler := scheduler.NewScheduler(store)
+	scheduler := scheduler.NewScheduler(store, pS)
 	err = scheduler.Init()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize scheduler:", "error", err.Error())

@@ -90,7 +90,6 @@ export default {
         }
       ],
       runsRows: [],
-      job: null,
       pipelineViewOptions: {
         physics: { stabilization: true },
         layout: {
@@ -333,11 +332,6 @@ export default {
         // Create vis network
         // We have to move out the instance out of vue because of https://github.com/almende/vis/issues/2567
         window.pipelineView = new Vis.Network(container, data, this.pipelineViewOptions)
-
-        // Create an selectNode event
-        window.pipelineView.on('selectNode', function (params) {
-          this.job = this.nodes.get(params.nodes[0])
-        }.bind(this))
       }
     },
 
@@ -358,13 +352,8 @@ export default {
     },
 
     jobLog () {
-      var jobid = null
-      if (this.job) {
-        jobid = this.job.internalID
-      }
-
       // Route
-      this.$router.push({path: '/pipeline/log', query: { pipelineid: this.pipelineID, runid: this.runID, jobid: jobid }})
+      this.$router.push({path: '/pipeline/log', query: { pipelineid: this.pipelineID, runid: this.runID }})
     },
 
     startPipeline (pipelineid) {
