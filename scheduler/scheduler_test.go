@@ -14,19 +14,12 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-type PluginFake struct {
-	// Fake struct
-	jobs []gaia.Job
-}
+type PluginFake struct{}
 
-var pluginFake *PluginFake
-
-func (p *PluginFake) NewPlugin() Plugin {
-	return &PluginFake{}
-}
+func (p *PluginFake) NewPlugin() Plugin                            { return &PluginFake{} }
 func (p *PluginFake) Connect(cmd *exec.Cmd, logPath *string) error { return nil }
 func (p *PluginFake) Execute(j *gaia.Job) error                    { return nil }
-func (p *PluginFake) GetJobs() ([]gaia.Job, error)                 { return pluginFake.jobs, nil }
+func (p *PluginFake) GetJobs() ([]gaia.Job, error)                 { return prepareJobs(), nil }
 func (p *PluginFake) Close()                                       {}
 
 func TestInit(t *testing.T) {
@@ -44,8 +37,7 @@ func TestInit(t *testing.T) {
 	if err := storeInstance.Init(); err != nil {
 		t.Fatal(err)
 	}
-	pluginFake = &PluginFake{}
-	s := NewScheduler(storeInstance, pluginFake)
+	s := NewScheduler(storeInstance, &PluginFake{})
 	err := s.Init()
 	if err != nil {
 		t.Fatal(err)
@@ -72,10 +64,8 @@ func TestPrepareAndExec(t *testing.T) {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
-	storeInstance.PipelinePut(p)
-	pluginFake = &PluginFake{}
-	pluginFake.jobs = p.Jobs
-	s := NewScheduler(storeInstance, pluginFake)
+	storeInstance.PipelinePut(&p)
+	s := NewScheduler(storeInstance, &PluginFake{})
 	s.prepareAndExec(r)
 
 	// Iterate jobs
@@ -108,15 +98,13 @@ func TestSchedulePipeline(t *testing.T) {
 		t.Fatal(err)
 	}
 	p, _ := prepareTestData()
-	storeInstance.PipelinePut(p)
-	pluginFake = &PluginFake{}
-	pluginFake.jobs = p.Jobs
-	s := NewScheduler(storeInstance, pluginFake)
+	storeInstance.PipelinePut(&p)
+	s := NewScheduler(storeInstance, &PluginFake{})
 	err := s.Init()
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.SchedulePipeline(p)
+	_, err = s.SchedulePipeline(&p)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,15 +131,13 @@ func TestSchedule(t *testing.T) {
 		t.Fatal(err)
 	}
 	p, _ := prepareTestData()
-	storeInstance.PipelinePut(p)
-	pluginFake = &PluginFake{}
-	pluginFake.jobs = p.Jobs
-	s := NewScheduler(storeInstance, pluginFake)
+	storeInstance.PipelinePut(&p)
+	s := NewScheduler(storeInstance, &PluginFake{})
 	err := s.Init()
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.SchedulePipeline(p)
+	_, err = s.SchedulePipeline(&p)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,11 +174,9 @@ func TestSetPipelineJobs(t *testing.T) {
 		t.Fatal(err)
 	}
 	p, _ := prepareTestData()
-	pluginFake = &PluginFake{}
-	pluginFake.jobs = p.Jobs
 	p.Jobs = nil
-	s := NewScheduler(storeInstance, pluginFake)
-	err := s.SetPipelineJobs(p)
+	s := NewScheduler(storeInstance, &PluginFake{})
+	err := s.SetPipelineJobs(&p)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -205,7 +189,7 @@ func TestSetPipelineJobs(t *testing.T) {
 	}
 }
 
-func prepareTestData() (pipeline *gaia.Pipeline, pipelineRun *gaia.PipelineRun) {
+func prepareJobs() []gaia.Job {
 	job1 := gaia.Job{
 		ID:       hash("Job1"),
 		Title:    "Job1",
@@ -231,18 +215,22 @@ func prepareTestData() (pipeline *gaia.Pipeline, pipelineRun *gaia.PipelineRun) 
 		Status:   gaia.JobWaitingExec,
 	}
 
-	pipeline = &gaia.Pipeline{
+	return []gaia.Job{
+		job1,
+		job2,
+		job3,
+		job4,
+	}
+}
+
+func prepareTestData() (pipeline gaia.Pipeline, pipelineRun gaia.PipelineRun) {
+	pipeline = gaia.Pipeline{
 		ID:   1,
 		Name: "Test Pipeline",
 		Type: gaia.PTypeGolang,
-		Jobs: []gaia.Job{
-			job1,
-			job2,
-			job3,
-			job4,
-		},
+		Jobs: prepareJobs(),
 	}
-	pipelineRun = &gaia.PipelineRun{
+	pipelineRun = gaia.PipelineRun{
 		ID:         1,
 		PipelineID: 1,
 		Status:     gaia.RunNotScheduled,
