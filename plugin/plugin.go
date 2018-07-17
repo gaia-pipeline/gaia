@@ -8,6 +8,7 @@ import (
 	"os/exec"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/scheduler"
 	"github.com/gaia-pipeline/protobuf"
 	plugin "github.com/hashicorp/go-plugin"
 )
@@ -45,23 +46,29 @@ type Plugin struct {
 
 // NewPlugin creates a new instance of Plugin.
 // One Plugin instance represents one connection to a plugin.
-//
-// It expects the start command to start the plugin and the log path (including file)
-// where the output should be logged to.
-func NewPlugin(command *exec.Cmd, logPath *string) (p *Plugin, err error) {
-	// Allocate
-	p = &Plugin{}
+func (p *Plugin) NewPlugin() scheduler.Plugin {
+	return &Plugin{}
+}
 
+// Connect prepares the log path, starts the plugin, initiates the
+// gRPC connection and looks up the plugin.
+// It's up to the caller to call plugin.Close to shutdown the plugin
+// and close the gRPC connection.
+//
+// It expects the start command for the plugin and the path where
+// the log file should be stored.
+func (p *Plugin) Connect(command *exec.Cmd, logPath *string) error {
 	// Create log file and open it.
 	// We will close this file in the close method.
 	if logPath != nil {
+		var err error
 		p.logFile, err = os.OpenFile(
 			*logPath,
 			os.O_CREATE|os.O_WRONLY,
 			0666,
 		)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
@@ -77,13 +84,6 @@ func NewPlugin(command *exec.Cmd, logPath *string) (p *Plugin, err error) {
 		Stderr:           p.writer,
 	})
 
-	return p, nil
-}
-
-// Connect starts the plugin, initiates the gRPC connection and looks up the plugin.
-// It's up to the caller to call plugin.Close to shutdown the plugin
-// and close the gRPC connection.
-func (p *Plugin) Connect() error {
 	// Connect via gRPC
 	gRPCClient, err := p.client.Client()
 	if err != nil {
@@ -116,6 +116,10 @@ func (p *Plugin) Execute(j *gaia.Job) error {
 
 	// Execute the job
 	_, err := p.pluginConn.ExecuteJob(job)
+
+	// Flush logs
+	p.writer.Flush()
+
 	return err
 }
 

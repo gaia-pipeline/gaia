@@ -66,6 +66,9 @@ const (
 
 	// LogsFolderName represents the Name of the logs folder in pipeline run folder
 	LogsFolderName = "logs"
+
+	// LogsFileName represents the file name of the logs output
+	LogsFileName = "output.log"
 )
 
 // User is the user object
