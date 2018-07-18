@@ -13,7 +13,6 @@ import (
 	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestPipelineGitLSRemote(t *testing.T) {
@@ -33,7 +32,10 @@ func TestPipelineGitLSRemote(t *testing.T) {
 	}
 
 	dataStore := store.NewStore()
-	assert.NoError(t, dataStore.Init())
+	err = dataStore.Init()
+	if err != nil {
+		t.Fatalf("cannot initialize store: %v", err.Error())
+	}
 
 	e := echo.New()
 	InitHandlers(e, dataStore, nil)
@@ -44,8 +46,11 @@ func TestPipelineGitLSRemote(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		assert.NoError(t, PipelineGitLSRemote(c))
-		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		PipelineGitLSRemote(c)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
+		}
 	})
 
 	t.Run("fails with invalid access", func(t *testing.T) {
@@ -61,8 +66,11 @@ func TestPipelineGitLSRemote(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		assert.NoError(t, PipelineGitLSRemote(c))
-		assert.Equal(t, http.StatusForbidden, rec.Code)
+		PipelineGitLSRemote(c)
+
+		if rec.Code != http.StatusForbidden {
+			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
+		}
 	})
 
 	t.Run("otherwise succeed", func(t *testing.T) {
@@ -78,7 +86,10 @@ func TestPipelineGitLSRemote(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		assert.NoError(t, PipelineGitLSRemote(c))
-		assert.Equal(t, http.StatusOK, rec.Code)
+		PipelineGitLSRemote(c)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
+		}
 	})
 }
