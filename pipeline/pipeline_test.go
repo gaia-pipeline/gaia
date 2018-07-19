@@ -147,6 +147,22 @@ func TestIter(t *testing.T) {
 	}
 }
 
+func TestContains(t *testing.T) {
+	ap := NewActivePipelines()
+
+	p1 := gaia.Pipeline{
+		Name:    "Pipeline A",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+	ap.Append(p1)
+
+	ret := ap.Contains("Pipeline A")
+	if !ret {
+		t.Fatalf("Expected Pipeline A to be present in active pipelines.")
+	}
+}
+
 func TestRemoveDeletedPipelines(t *testing.T) {
 	ap := NewActivePipelines()
 
