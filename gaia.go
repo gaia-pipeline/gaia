@@ -152,6 +152,7 @@ type Config struct {
 	DevMode           bool
 	VersionSwitch     bool
 	Poll              bool
+	PVal              int
 	ListenPort        string
 	HomePath          string
 	DataPath          string

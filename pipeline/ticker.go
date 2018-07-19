@@ -3,6 +3,7 @@ package pipeline
 import (
 	"bytes"
 	"crypto/sha256"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -18,8 +19,7 @@ import (
 const (
 	// tickerIntervalSeconds defines how often the ticker will tick.
 	// Definition in seconds.
-	tickerIntervalSeconds     = 5
-	pollTicketIntervalMinutes = 1
+	tickerIntervalSeconds = 5
 )
 
 // storeService is an instance of store.
@@ -55,7 +55,12 @@ func InitTicker(store *store.Store, scheduler *scheduler.Scheduler) {
 	}()
 
 	if gaia.Cfg.Poll {
-		pollTicket := time.NewTicker(pollTicketIntervalMinutes * time.Minute)
+		if gaia.Cfg.PVal < 1 || gaia.Cfg.PVal > 99 {
+			errorMessage := fmt.Sprintf("Invalid value defined for poll interval. Will be using default of 1. Value was: %d, should be between 1-99.", gaia.Cfg.PVal)
+			gaia.Cfg.Logger.Info(errorMessage)
+			gaia.Cfg.PVal = 1
+		}
+		pollTicket := time.NewTicker(time.Duration(gaia.Cfg.PVal) * time.Minute)
 		go func() {
 			defer pollTicket.Stop()
 			for {

@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
 )
 
@@ -235,5 +236,30 @@ func TestCopyBinarySrcDoesNotExist(t *testing.T) {
 	}
 	if err.Error() != "open /noneexistent/main_go: no such file or directory" {
 		t.Fatal("a different error occurred then expected: ", err)
+	}
+}
+
+func TestSavePipeline(t *testing.T) {
+	s := store.NewStore()
+	s.Init()
+	storeService = s
+	defer os.Remove("gaia.db")
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.HomePath = "/tmp"
+	gaia.Cfg.PipelinePath = "/tmp/pipelines/"
+	// Initialize shared logger
+	p := new(gaia.Pipeline)
+	p.Name = "main"
+	p.Type = gaia.PTypeGolang
+	b := new(BuildPipelineGolang)
+	err := b.SavePipeline(p)
+	if err != nil {
+		t.Fatal("something went wrong. wasn't supposed to get error: ", err)
+	}
+	if p.Name != "main" {
+		t.Fatal("name of pipeline didn't equal expected 'main'. was instead: ", p.Name)
+	}
+	if p.Type != gaia.PTypeGolang {
+		t.Fatal("type of pipeline was not go. instead was: ", p.Type)
 	}
 }
