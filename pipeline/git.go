@@ -123,7 +123,10 @@ func updateAllCurrentPipelines() {
 			sem <- 1
 			r, err := git.PlainOpen(pipe.Repo.LocalDest)
 			if err != nil {
-				gaia.Cfg.Logger.Debug("error while opening repo: ", pipe.Repo.LocalDest, err.Error())
+				// We don't stop gaia working because of an automated update failed.
+				// So we just move on.
+				gaia.Cfg.Logger.Error("error while opening repo: ", pipe.Repo.LocalDest, err.Error())
+				<-sem
 				return
 			}
 			gaia.Cfg.Logger.Debug("checking pipeline: ", pipe.Name)
