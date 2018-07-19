@@ -22,9 +22,7 @@ export default {
       logText: '',
       jobRunning: true,
       runID: null,
-      pipelineID: null,
-      jobID: null,
-      currentPath: ''
+      pipelineID: null
     }
   },
 
@@ -36,14 +34,20 @@ export default {
     this.fetchData()
 
     // periodically update dashboard
-    this.intervalID = setInterval(function () {
+    var intervalID = setInterval(function () {
       this.fetchData()
     }.bind(this), 3000)
-    this.currentPath = this.$route.path
+
+    // Append interval id to store
+    this.$store.commit('appendInterval', intervalID)
   },
 
   watch: {
     '$route': 'fetchData'
+  },
+
+  destroyed () {
+    this.$store.commit('clearIntervals')
   },
 
   components: {
@@ -52,10 +56,6 @@ export default {
 
   methods: {
     fetchData () {
-      if (this.$route.path !== this.currentPath) {
-        this.$store.commit('clearIntervals')
-      }
-
       // look up required url parameters
       this.pipelineID = this.$route.query.pipelineid
       this.runID = this.$route.query.runid
@@ -63,37 +63,18 @@ export default {
         return
       }
 
-      // job id is optional. If ommitted, all logs from all jobs
-      // are displayed.
-      this.jobID = this.$route.query.jobid
-
       this.$http
-        .get('/api/v1/pipelinerun/' + this.pipelineID + '/' + this.runID + '/log', {
-          showProgressBar: false,
-          params: {
-            jobid: this.jobID
-          }
-        })
+        .get('/api/v1/pipelinerun/' + this.pipelineID + '/' + this.runID + '/log', { showProgressBar: false })
         .then(response => {
           if (response.data) {
-            // Check if we got multiple objects
-            var finished = true
-            this.logText = ''
-            for (let i = 0, l = response.data.length; i < l; i++) {
-              // We add the received log
-              this.logText += response.data[i].log
+            // We add the received log
+            this.logText = response.data.log
 
-              // LF does not work for HTML. Replace with <br />
-              this.logText = this.logText.replace(/\n/g, '<br />')
-
-              // Job not finished?
-              if (!response.data[i].finished) {
-                finished = false
-              }
-            }
+            // LF does not work for HTML. Replace with <br />
+            this.logText = this.logText.replace(/\n/g, '<br />')
 
             // All jobs finished. Stop interval.
-            if (finished && response.data.length > 0) {
+            if (response.data.finished) {
               this.jobRunning = false
               clearInterval(this.intervalID)
             }

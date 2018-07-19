@@ -76,6 +76,7 @@ func InitTicker(store *store.Store, scheduler *scheduler.Scheduler) {
 // Every file will be handled as an active pipeline and therefore
 // saved in the global active pipelines slice.
 func checkActivePipelines() {
+	var existingPipelineNames []string
 	files, err := ioutil.ReadDir(gaia.Cfg.PipelinePath)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot read pipelines folder", "error", err.Error(), "path", gaia.Cfg.PipelinePath)
@@ -96,6 +97,8 @@ func checkActivePipelines() {
 			// Get real pipeline name and check if the global active pipelines slice
 			// already contains it.
 			pName := getRealPipelineName(n, pType)
+			// Add the real pipeline name to the slice of existing pipeline names.
+			existingPipelineNames = append(existingPipelineNames, pName)
 			if GlobalActivePipelines.Contains(pName) {
 				// If SHA256Sum is set, we should check if pipeline has been changed.
 				p := GlobalActivePipelines.GetByName(pName)
@@ -150,6 +153,7 @@ func checkActivePipelines() {
 			GlobalActivePipelines.Append(*pipeline)
 		}
 	}
+	GlobalActivePipelines.RemoveDeletedPipelines(existingPipelineNames)
 }
 
 // getPipelineType looks up for specific suffix on the given file name.

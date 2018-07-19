@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 
 	"github.com/gaia-pipeline/gaia"
@@ -84,20 +83,15 @@ func PipelineGetLatestRun(c echo.Context) error {
 	return c.JSON(http.StatusOK, run)
 }
 
-// GetJobLogs returns jobs for a given job.
-// If no jobID is given, a collection of all jobs logs will be returned.
+// GetJobLogs returns logs from a pipeline run.
 //
 // Required parameters:
 // pipelineid - Related pipeline id
 // pipelinerunid - Related pipeline run id
-//
-// Optional parameters:
-// jobid - Job id
 func GetJobLogs(c echo.Context) error {
 	// Get parameters and validate
 	pipelineID := c.Param("pipelineid")
 	pipelineRunID := c.Param("runid")
-	jobID := c.QueryParam("jobid")
 
 	// Transform pipelineid to int
 	p, err := strconv.Atoi(pipelineID)
@@ -111,92 +105,31 @@ func GetJobLogs(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "invalid pipeline run id given")
 	}
 
-	// Get pipeline run from store
 	run, err := storeService.PipelineGetRunByPipelineIDAndID(p, r)
 	if err != nil {
 		return c.String(http.StatusBadRequest, "cannot find pipeline run with given pipeline id and pipeline run id")
 	}
 
-	// jobID is not empty, just return the logs from this job
-	if jobID != "" {
-		for _, job := range run.Jobs {
-			if strconv.FormatUint(uint64(job.ID), 10) == jobID {
-				// Get logs
-				jL, err := getLogs(pipelineID, pipelineRunID, jobID, false)
-				if err != nil {
-					return c.String(http.StatusBadRequest, err.Error())
-				}
+	// Create return object
+	jL := jobLogs{}
 
-				// Check if job is finished
-				if job.Status == gaia.JobSuccess || job.Status == gaia.JobFailed {
-					jL.Finished = true
-				}
-
-				// We always return an array.
-				// It makes a bit easier in the frontend.
-				jobLogsList := []jobLogs{}
-				jobLogsList = append(jobLogsList, *jL)
-				return c.JSON(http.StatusOK, jobLogsList)
-			}
-		}
-
-		// Logs for given job id not found
-		return c.String(http.StatusBadRequest, "cannot find job with given job id")
+	// Determine if job has been finished
+	if run.Status == gaia.RunFailed || run.Status == gaia.RunSuccess {
+		jL.Finished = true
 	}
 
-	// Sort the slice. This is important for the order of the returned logs.
-	sort.Slice(run.Jobs, func(i, j int) bool {
-		return run.Jobs[i].Priority < run.Jobs[j].Priority
-	})
-
-	// Return a collection of all logs
-	jobs := []jobLogs{}
-	for _, job := range run.Jobs {
-		// Get logs
-		jL, err := getLogs(pipelineID, pipelineRunID, strconv.FormatUint(uint64(job.ID), 10), true)
+	// Check if log file exists
+	logFilePath := filepath.Join(gaia.Cfg.WorkspacePath, pipelineID, pipelineRunID, gaia.LogsFolderName, gaia.LogsFileName)
+	if _, err := os.Stat(logFilePath); err == nil {
+		content, err := ioutil.ReadFile(logFilePath)
 		if err != nil {
-			return c.String(http.StatusBadRequest, err.Error())
+			return c.String(http.StatusInternalServerError, "cannot read pipeline run log file")
 		}
 
-		// No error but also no job logs. Job must be in the queue.
-		// We skip it so no error will break things.
-		if jL == nil {
-			continue
-		}
-
-		// Check if job is finished
-		if job.Status == gaia.JobSuccess || job.Status == gaia.JobFailed {
-			jL.Finished = true
-		}
-
-		jobs = append(jobs, *jL)
+		// Convert logs
+		jL.Log = string(content)
 	}
 
 	// Return logs
-	return c.JSON(http.StatusOK, jobs)
-}
-
-func getLogs(pipelineID, pipelineRunID, jobID string, getAllJobLogs bool) (*jobLogs, error) {
-	// Lookup log file
-	logFilePath := filepath.Join(gaia.Cfg.WorkspacePath, pipelineID, pipelineRunID, gaia.LogsFolderName, jobID)
-
-	// We only check if logs exist when a specific job log was requested.
-	// If we don't do this, get all job logs will fail during a pipeline run.
-	if _, err := os.Stat(logFilePath); os.IsNotExist(err) {
-		if !getAllJobLogs {
-			return nil, err
-		}
-		return nil, nil
-	}
-
-	// Read file
-	content, err := ioutil.ReadFile(logFilePath)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create return struct
-	return &jobLogs{
-		Log: string(content),
-	}, nil
+	return c.JSON(http.StatusOK, jL)
 }

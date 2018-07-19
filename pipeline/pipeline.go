@@ -90,6 +90,14 @@ func (ap *ActivePipelines) Append(p gaia.Pipeline) {
 	ap.Pipelines = append(ap.Pipelines, p)
 }
 
+// Remove removes a pipeline at the given index from ActivePipelines.
+func (ap *ActivePipelines) Remove(index int) {
+	ap.Lock()
+	defer ap.Unlock()
+
+	ap.Pipelines = append(ap.Pipelines[:index], ap.Pipelines[index+1:]...)
+}
+
 // GetByName looks up the pipeline by the given name.
 func (ap *ActivePipelines) GetByName(n string) *gaia.Pipeline {
 	var foundPipeline gaia.Pipeline
@@ -158,6 +166,29 @@ func (ap *ActivePipelines) Contains(n string) bool {
 	}
 
 	return foundPipeline
+}
+
+// RemoveDeletedPipelines removes the pipelines whose names are NOT
+// present in `existingPipelineNames` from the given ActivePipelines instance.
+func (ap *ActivePipelines) RemoveDeletedPipelines(existingPipelineNames []string) {
+	var deletedPipelineIndices []int
+	var index int
+	for pipeline := range ap.Iter() {
+		found := false
+		for _, name := range existingPipelineNames {
+			if pipeline.Name == name {
+				found = true
+				break
+			}
+		}
+		if !found {
+			deletedPipelineIndices = append(deletedPipelineIndices, index)
+		}
+		index++
+	}
+	for _, idx := range deletedPipelineIndices {
+		ap.Remove(idx)
+	}
 }
 
 // appendTypeToName appends the type to the output binary name.
