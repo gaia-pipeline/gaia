@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -109,6 +110,45 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 	GlobalActivePipelines = NewActivePipelines()
 	GlobalActivePipelines.Append(*p1)
 	GlobalActivePipelines.Append(*p2)
+	updateAllCurrentPipelines()
+	if !strings.Contains(b.String(), "already up-to-date") {
+		t.Fatal("log output did not contain error message that the repo is up-to-date.: ", b.String())
+	}
+}
+
+func TestUpdateAllPipelinesTenPipelines(t *testing.T) {
+	if _, ok := os.LookupEnv("GAIA_RUN_TEN_PIPELINE_TEST"); !ok {
+		t.Skip()
+	}
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.HomePath = "tmp"
+	// Initialize shared logger
+	var b strings.Builder
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: &b,
+		Name:   "Gaia",
+	})
+	repo := &gaia.GitRepo{
+		URL:       "https://github.com/gaia-pipeline/go-test-example",
+		LocalDest: "tmp",
+	}
+	// always ensure that tmp folder is cleaned up
+	defer os.RemoveAll("tmp")
+	err := gitCloneRepo(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	GlobalActivePipelines = NewActivePipelines()
+	for i := 1; i < 10; i++ {
+		p := new(gaia.Pipeline)
+		name := strconv.Itoa(i)
+		p.Name = "main" + name
+		p.Repo.SelectedBranch = "master"
+		p.Repo.LocalDest = "tmp"
+		GlobalActivePipelines.Append(*p)
+	}
 	updateAllCurrentPipelines()
 	if !strings.Contains(b.String(), "already up-to-date") {
 		t.Fatal("log output did not contain error message that the repo is up-to-date.: ", b.String())

@@ -121,12 +121,12 @@ func updateAllCurrentPipelines() {
 		go func(pipe gaia.Pipeline) {
 			defer wg.Done()
 			sem <- 1
+			defer func() { <-sem }()
 			r, err := git.PlainOpen(pipe.Repo.LocalDest)
 			if err != nil {
 				// We don't stop gaia working because of an automated update failed.
 				// So we just move on.
 				gaia.Cfg.Logger.Error("error while opening repo: ", pipe.Repo.LocalDest, err.Error())
-				<-sem
 				return
 			}
 			gaia.Cfg.Logger.Debug("checking pipeline: ", pipe.Name)
@@ -138,7 +138,6 @@ func updateAllCurrentPipelines() {
 			if err != nil {
 				// It's also an error if the repo is already up to date so we just move on.
 				gaia.Cfg.Logger.Error("error while doing a pull request : ", err.Error())
-				<-sem
 				return
 			}
 
@@ -149,7 +148,6 @@ func updateAllCurrentPipelines() {
 			b.ExecuteBuild(createPipeline)
 			b.CopyBinary(createPipeline)
 			gaia.Cfg.Logger.Debug("successfully updated: ", pipe.Name)
-			<-sem
 		}(p)
 	}
 	wg.Wait()
