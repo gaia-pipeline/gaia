@@ -117,7 +117,7 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 }
 
 func TestUpdateAllPipelinesTenPipelines(t *testing.T) {
-	if _, ok := os.LookupEnv("GAIA_RUN_TEN_PIPELINE_TEST"); !ok {
+	if _, ok := os.LookupEnv("GAIA_RUN_HUNDRED_PIPELINE_TEST"); !ok {
 		t.Skip()
 	}
 	gaia.Cfg = new(gaia.Config)
@@ -141,7 +141,7 @@ func TestUpdateAllPipelinesTenPipelines(t *testing.T) {
 	}
 
 	GlobalActivePipelines = NewActivePipelines()
-	for i := 1; i < 10; i++ {
+	for i := 1; i < 100; i++ {
 		p := new(gaia.Pipeline)
 		name := strconv.Itoa(i)
 		p.Name = "main" + name
