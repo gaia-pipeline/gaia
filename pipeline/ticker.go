@@ -135,6 +135,18 @@ func checkActivePipelines() {
 				continue
 			}
 
+			// Pipeline is a drop-in build. Set up a template for it.
+			shouldStore := false
+			if pipeline == nil {
+				pipeline = &gaia.Pipeline{
+					Name:     pName,
+					Type:     pType,
+					ExecPath: filepath.Join(gaia.Cfg.PipelinePath, file.Name()),
+					Created:  time.Now(),
+				}
+				shouldStore = true
+			}
+
 			// We calculate a SHA256 Checksum and store it.
 			// We use this to estimate if a pipeline has been changed.
 			pipeline.SHA256Sum, err = getSHA256Sum(pipeline.ExecPath)
@@ -145,6 +157,11 @@ func checkActivePipelines() {
 
 			// Let us try to start the plugin and receive all implemented jobs
 			schedulerService.SetPipelineJobs(pipeline)
+
+			// We encountered a drop-in pipeline previously. Now is the time to save it.
+			if shouldStore {
+				storeService.PipelinePut(pipeline)
+			}
 
 			// We do not update the pipeline in store if it already exists there.
 			// We only updated the SHA256 Checksum and the jobs but this is not importent

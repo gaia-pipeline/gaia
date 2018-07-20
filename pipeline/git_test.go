@@ -116,7 +116,7 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 	}
 }
 
-func TestUpdateAllPipelinesTenPipelines(t *testing.T) {
+func TestUpdateAllPipelinesHundredPipelines(t *testing.T) {
 	if _, ok := os.LookupEnv("GAIA_RUN_HUNDRED_PIPELINE_TEST"); !ok {
 		t.Skip()
 	}
