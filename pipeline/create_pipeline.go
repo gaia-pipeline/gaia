@@ -99,4 +99,9 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
 		return
 	}
+
+	if !gaia.Cfg.Poll {
+		// TODO: Add repo VCS type information?
+		subscribeRepoWebhook(&p.Pipeline.Repo)
+	}
 }

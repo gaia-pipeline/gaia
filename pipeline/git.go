@@ -1,12 +1,14 @@
 package pipeline
 
 import (
+	"context"
 	"strings"
 	"sync"
 
 	"gopkg.in/src-d/go-git.v4/plumbing"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/google/go-github/github"
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/client"
@@ -151,4 +153,22 @@ func updateAllCurrentPipelines() {
 		}(p)
 	}
 	wg.Wait()
+}
+
+func subscribeRepoWebhook(repo *gaia.GitRepo) error {
+	// {
+	// 	"name": "web",
+	// 	"active": true,
+	// 	"events": [
+	// 	  "push",
+	// 	  "pull_request"
+	// 	],
+	// 	"config": {
+	// 	  "url": "http://example.com/webhook",
+	// 	  "content_type": "json"
+	// 	}
+	//   }
+	client := github.NewClient(nil)
+	client.Repositories.CreateHook(context.Background(), "test", "test", &github.Hook{Events: []string{"push"}})
+	return nil
 }
