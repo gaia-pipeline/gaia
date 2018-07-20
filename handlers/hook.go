@@ -89,5 +89,6 @@ func GitWebHook(c echo.Context) error {
 	}
 
 	gaia.Cfg.Logger.Info("received: ", h.Event)
+	// TODO: trigger a build process for a specific pipeline.
 	return c.JSON(http.StatusOK, struct{}{})
 }
