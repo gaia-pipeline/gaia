@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -112,10 +113,10 @@ func TestExecuteBuildFailPipelineBuild(t *testing.T) {
 	}()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
-	var logOutput strings.Builder
+	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &logOutput,
+		Output: buf,
 		Name:   "Gaia",
 	})
 	b := new(BuildPipelineGolang)
@@ -142,10 +143,10 @@ func TestExecuteBuildContextTimeout(t *testing.T) {
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
-	var logOutput strings.Builder
+	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &logOutput,
+		Output: buf,
 		Name:   "Gaia",
 	})
 	b := new(BuildPipelineGolang)
@@ -164,10 +165,10 @@ func TestExecuteBuildBinaryNotFoundError(t *testing.T) {
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
-	var logOutput strings.Builder
+	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &logOutput,
+		Output: buf,
 		Name:   "Gaia",
 	})
 	currentPath := os.Getenv("PATH")
@@ -189,10 +190,10 @@ func TestCopyBinary(t *testing.T) {
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
-	var logOutput strings.Builder
+	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &logOutput,
+		Output: buf,
 		Name:   "Gaia",
 	})
 	b := new(BuildPipelineGolang)
@@ -224,10 +225,10 @@ func TestCopyBinarySrcDoesNotExist(t *testing.T) {
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
-	var logOutput strings.Builder
+	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &logOutput,
+		Output: buf,
 		Name:   "Gaia",
 	})
 	b := new(BuildPipelineGolang)
