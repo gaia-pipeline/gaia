@@ -3,6 +3,7 @@ package pipeline
 import (
 	"bytes"
 	"crypto/sha256"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -52,6 +53,24 @@ func InitTicker(store *store.Store, scheduler *scheduler.Scheduler) {
 			}
 		}
 	}()
+
+	if gaia.Cfg.Poll {
+		if gaia.Cfg.PVal < 1 || gaia.Cfg.PVal > 99 {
+			errorMessage := fmt.Sprintf("Invalid value defined for poll interval. Will be using default of 1. Value was: %d, should be between 1-99.", gaia.Cfg.PVal)
+			gaia.Cfg.Logger.Info(errorMessage)
+			gaia.Cfg.PVal = 1
+		}
+		pollTicket := time.NewTicker(time.Duration(gaia.Cfg.PVal) * time.Minute)
+		go func() {
+			defer pollTicket.Stop()
+			for {
+				select {
+				case <-pollTicket.C:
+					updateAllCurrentPipelines()
+				}
+			}
+		}()
+	}
 }
 
 // checkActivePipelines looks up all files in the pipeline folder.
@@ -116,18 +135,15 @@ func checkActivePipelines() {
 				continue
 			}
 
-			// We couldn't find the pipeline. Create a new one.
-			var shouldStore = false
+			// Pipeline is a drop-in build. Set up a template for it.
+			shouldStore := false
 			if pipeline == nil {
-				// Create pipeline object and fill it with information
 				pipeline = &gaia.Pipeline{
 					Name:     pName,
 					Type:     pType,
 					ExecPath: filepath.Join(gaia.Cfg.PipelinePath, file.Name()),
 					Created:  time.Now(),
 				}
-
-				// We should store it
 				shouldStore = true
 			}
 
@@ -142,7 +158,7 @@ func checkActivePipelines() {
 			// Let us try to start the plugin and receive all implemented jobs
 			schedulerService.SetPipelineJobs(pipeline)
 
-			// Put pipeline into store only when it was new created.
+			// We encountered a drop-in pipeline previously. Now is the time to save it.
 			if shouldStore {
 				storeService.PipelinePut(pipeline)
 			}

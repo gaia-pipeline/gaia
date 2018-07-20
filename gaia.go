@@ -91,6 +91,7 @@ type Pipeline struct {
 	SHA256Sum []byte       `json:"sha256sum,omitempty"`
 	Jobs      []Job        `json:"jobs,omitempty"`
 	Created   time.Time    `json:"created,omitempty"`
+	UUID      string       `json:"uuid,omitempty"`
 }
 
 // GitRepo represents a single git repository
@@ -150,6 +151,8 @@ var Cfg *Config
 type Config struct {
 	DevMode           bool
 	VersionSwitch     bool
+	Poll              bool
+	PVal              int
 	ListenPort        string
 	HomePath          string
 	DataPath          string

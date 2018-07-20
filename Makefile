@@ -4,7 +4,7 @@ GO_LDFLAGS_STATIC=-ldflags "-s -w -extldflags -static"
 default: dev
 
 dev:
-	go run ./cmd/gaia/main.go -homepath=${PWD}/tmp -dev true
+	go run ./cmd/gaia/main.go -homepath=${PWD}/tmp -dev=true -poll=true
 
 compile_frontend:
 	cd ./frontend && \

@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"strings"
+	"sync"
 
 	"gopkg.in/src-d/go-git.v4/plumbing"
 
@@ -105,4 +106,49 @@ func gitCloneRepo(repo *gaia.GitRepo) error {
 	}
 
 	return nil
+}
+
+func updateAllCurrentPipelines() {
+	gaia.Cfg.Logger.Debug("starting updating of pipelines...")
+	var allPipelines []gaia.Pipeline
+	var wg sync.WaitGroup
+	sem := make(chan int, 4)
+	for pipeline := range GlobalActivePipelines.Iter() {
+		allPipelines = append(allPipelines, pipeline)
+	}
+	for _, p := range allPipelines {
+		wg.Add(1)
+		go func(pipe gaia.Pipeline) {
+			defer wg.Done()
+			sem <- 1
+			defer func() { <-sem }()
+			r, err := git.PlainOpen(pipe.Repo.LocalDest)
+			if err != nil {
+				// We don't stop gaia working because of an automated update failed.
+				// So we just move on.
+				gaia.Cfg.Logger.Error("error while opening repo: ", pipe.Repo.LocalDest, err.Error())
+				return
+			}
+			gaia.Cfg.Logger.Debug("checking pipeline: ", pipe.Name)
+			gaia.Cfg.Logger.Debug("selected branch : ", pipe.Repo.SelectedBranch)
+			tree, _ := r.Worktree()
+			err = tree.Pull(&git.PullOptions{
+				RemoteName: "origin",
+			})
+			if err != nil {
+				// It's also an error if the repo is already up to date so we just move on.
+				gaia.Cfg.Logger.Error("error while doing a pull request : ", err.Error())
+				return
+			}
+
+			gaia.Cfg.Logger.Debug("updating pipeline: ", pipe.Name)
+			b := newBuildPipeline(pipe.Type)
+			createPipeline := &gaia.CreatePipeline{}
+			createPipeline.Pipeline = pipe
+			b.ExecuteBuild(createPipeline)
+			b.CopyBinary(createPipeline)
+			gaia.Cfg.Logger.Debug("successfully updated: ", pipe.Name)
+		}(p)
+	}
+	wg.Wait()
 }
