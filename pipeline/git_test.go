@@ -108,6 +108,7 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 	p2.Repo.SelectedBranch = "master"
 	p2.Repo.LocalDest = "tmp"
 	GlobalActivePipelines = NewActivePipelines()
+	defer func() { GlobalActivePipelines = nil }()
 	GlobalActivePipelines.Append(*p1)
 	GlobalActivePipelines.Append(*p2)
 	updateAllCurrentPipelines()
