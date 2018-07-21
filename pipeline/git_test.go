@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"bytes"
 	"os"
 	"strconv"
 	"strings"
@@ -28,10 +29,10 @@ func TestUpdateAllPipelinesRepositoryNotFound(t *testing.T) {
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
-	var b strings.Builder
+	b := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &b,
+		Output: b,
 		Name:   "Gaia",
 	})
 
@@ -49,10 +50,10 @@ func TestUpdateAllPipelinesAlreadyUpToDate(t *testing.T) {
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = "tmp"
 	// Initialize shared logger
-	var b strings.Builder
+	b := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &b,
+		Output: b,
 		Name:   "Gaia",
 	})
 	repo := &gaia.GitRepo{
@@ -82,10 +83,10 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = "tmp"
 	// Initialize shared logger
-	var b strings.Builder
+	b := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &b,
+		Output: b,
 		Name:   "Gaia",
 	})
 	repo := &gaia.GitRepo{
@@ -124,10 +125,10 @@ func TestUpdateAllPipelinesHundredPipelines(t *testing.T) {
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = "tmp"
 	// Initialize shared logger
-	var b strings.Builder
+	b := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &b,
+		Output: b,
 		Name:   "Gaia",
 	})
 	repo := &gaia.GitRepo{
