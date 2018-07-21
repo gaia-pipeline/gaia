@@ -2,9 +2,12 @@ package pipeline
 
 import (
 	"context"
+	"log"
+	"os"
 	"strings"
 	"sync"
 
+	"golang.org/x/oauth2"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 
 	"github.com/gaia-pipeline/gaia"
@@ -156,19 +159,30 @@ func updateAllCurrentPipelines() {
 }
 
 func subscribeRepoWebhook(repo *gaia.GitRepo) error {
-	// {
-	// 	"name": "web",
-	// 	"active": true,
-	// 	"events": [
-	// 	  "push",
-	// 	  "pull_request"
-	// 	],
-	// 	"config": {
-	// 	  "url": "http://example.com/webhook",
-	// 	  "content_type": "json"
-	// 	}
-	//   }
-	client := github.NewClient(nil)
-	client.Repositories.CreateHook(context.Background(), "test", "test", &github.Hook{Events: []string{"push"}})
+	token := os.Getenv("GAIA_GIT_TOKEN")
+	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: token},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+	config := make(map[string]interface{})
+	config["url"] = "https://example.com/callback"
+	config["secret"] = "superawesomesecretgithubpassword"
+	config["content_type"] = "json"
+
+	client := github.NewClient(tc)
+	// client.Repositories.CreateHook(context.Background(), repo.Username, repo.URL, &github.Hook{Events: []string{"push"}})
+	hook, resp, err := client.Repositories.CreateHook(context.Background(), "Skarlso", "go-example", &github.Hook{
+		Events: []string{"push"},
+		Name:   github.String("web"),
+		Active: github.Bool(true),
+		Config: config,
+	})
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	log.Println("hook created: ", github.Stringify(hook.Name), resp.Status)
+	log.Println("hook url: ", hook.GetURL())
 	return nil
 }
