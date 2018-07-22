@@ -3,7 +3,8 @@ package pipeline
 import (
 	"context"
 	"log"
-	"os"
+	"path"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -158,21 +159,29 @@ func updateAllCurrentPipelines() {
 	wg.Wait()
 }
 
-func subscribeRepoWebhook(repo *gaia.GitRepo) error {
-	token := os.Getenv("GAIA_GIT_TOKEN")
+func rebuildPipeline(name string) {
+
+}
+
+func createGithubWebhook(token string, repo *gaia.GitRepo) error {
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	)
 	tc := oauth2.NewClient(ctx, ts)
 	config := make(map[string]interface{})
-	config["url"] = "https://example.com/callback"
+	config["url"] = gaia.Cfg.Hostname + "/pipeline/github/build-hook"
 	config["secret"] = "superawesomesecretgithubpassword"
 	config["content_type"] = "json"
 
 	client := github.NewClient(tc)
-	// client.Repositories.CreateHook(context.Background(), repo.Username, repo.URL, &github.Hook{Events: []string{"push"}})
-	hook, resp, err := client.Repositories.CreateHook(context.Background(), "Skarlso", "go-example", &github.Hook{
+	repoName := path.Base(repo.URL)
+	repoName = strings.TrimSuffix(repoName, ".git")
+	// var repoLocation string
+	re := regexp.MustCompile("^(https|git)(:\\/\\/|@)([^\\/:]+)[\\/:]([^\\/:]+)\\/(.+)$")
+	m := re.FindAllStringSubmatch(repo.URL, -1)
+	repoUser := m[0][4]
+	hook, resp, err := client.Repositories.CreateHook(context.Background(), repoUser, repoName, &github.Hook{
 		Events: []string{"push"},
 		Name:   github.String("web"),
 		Active: github.Bool(true),

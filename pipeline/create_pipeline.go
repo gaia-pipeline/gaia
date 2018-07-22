@@ -100,14 +100,15 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 		return
 	}
 
-	if !gaia.Cfg.Poll {
-		// TODO: Add repo VCS type information?
-		// TODO: Q: Also, save the webhook so we can later find the pipeline associated with it?
-		// A: Don't think so, because the hook will contain the name of the repository.
-		err = subscribeRepoWebhook(&p.Pipeline.Repo)
+	if !gaia.Cfg.Poll && len(p.GitHubToken) > 0 {
+		// if there is a githubtoken provided, that means that a webhook was requested to be added.
+		err = createGithubWebhook(p.GitHubToken, &p.Pipeline.Repo)
 		if err != nil {
 			gaia.Cfg.Logger.Error("error while creating webhook for repository", "error", err.Error())
 			return
 		}
+		// after the webhook has been successfully created, we delete the token.
+		p.GitHubToken = ""
+		storeService.CreatePipelinePut(p)
 	}
 }

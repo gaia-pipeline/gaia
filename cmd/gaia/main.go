@@ -39,6 +39,7 @@ func init() {
 	// command line arguments
 	flag.StringVar(&gaia.Cfg.ListenPort, "port", "8080", "Listen port for gaia")
 	flag.StringVar(&gaia.Cfg.HomePath, "homepath", "", "Path to the gaia home folder")
+	flag.StringVar(&gaia.Cfg.Hostname, "hostname", "https://localhost", "The host's name under which gaia is deployed at exp: https://gaia-pipeline.com")
 	flag.StringVar(&gaia.Cfg.Worker, "worker", "2", "Number of worker gaia will use to execute pipelines in parallel")
 	flag.StringVar(&gaia.Cfg.JwtPrivateKeyPath, "jwtPrivateKeyPath", "", "A RSA private key used to sign JWT tokens")
 	flag.BoolVar(&gaia.Cfg.DevMode, "dev", false, "If true, gaia will be started in development mode. Don't use this in production!")

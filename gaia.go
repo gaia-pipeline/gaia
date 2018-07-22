@@ -117,12 +117,13 @@ type Job struct {
 // CreatePipeline represents a pipeline which is not yet
 // compiled.
 type CreatePipeline struct {
-	ID         string             `json:"id,omitempty"`
-	Pipeline   Pipeline           `json:"pipeline,omitempty"`
-	Status     int                `json:"status,omitempty"`
-	StatusType CreatePipelineType `json:"statustype,omitempty"`
-	Output     string             `json:"output,omitempty"`
-	Created    time.Time          `json:"created,omitempty"`
+	ID          string             `json:"id,omitempty"`
+	Pipeline    Pipeline           `json:"pipeline,omitempty"`
+	Status      int                `json:"status,omitempty"`
+	StatusType  CreatePipelineType `json:"statustype,omitempty"`
+	Output      string             `json:"output,omitempty"`
+	Created     time.Time          `json:"created,omitempty"`
+	GitHubToken string             `json:"githubtoken,omitempty"`
 }
 
 // PrivateKey represents a pem encoded private key
@@ -155,6 +156,7 @@ type Config struct {
 	PVal              int
 	ListenPort        string
 	HomePath          string
+	Hostname          string
 	DataPath          string
 	PipelinePath      string
 	WorkspacePath     string
