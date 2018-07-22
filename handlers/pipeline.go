@@ -147,23 +147,23 @@ func PipelineDelete(c echo.Context) error {
 	}
 
 	// Look up pipeline for the given id
-	var foundPipeline gaia.Pipeline
+	var foundPipeline *gaia.Pipeline
 	var index int
 	var deletedPipelineIndex int
 	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
 		if pipeline.ID == pipelineID {
-			foundPipeline = pipeline
+			foundPipeline = &pipeline
 			deletedPipelineIndex = index
 		}
 		index++
 	}
 
-	if foundPipeline.Name == "" {
+	if foundPipeline == nil {
 		return c.String(http.StatusNotFound, err.Error())
 	}
 
 	// Delete pipeline binary
-	err = pipeline.DeleteBinary(foundPipeline)
+	err = pipeline.DeleteBinary(*foundPipeline)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
