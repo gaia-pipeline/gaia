@@ -365,7 +365,9 @@ export default {
         .get('/api/v1/pipeline', { showProgressBar: false })
         .then(response => {
           if (response.data) {
-            this.pipelineRows = response.data
+            this.pipelineRows = response.data;
+          } else {
+            this.pipelineRows = [];
           }
         }).catch((error) => {
           this.$onError(error)
@@ -522,8 +524,20 @@ export default {
     },
 
     deletePipeline () {
-      console.log('Delete pipeline')
-      this.close()
+      this.$http
+        .delete('/api/v1/pipeline/' + this.selectPipeline.id)
+        .then(response => {
+          openNotification({
+            title: 'Pipeline deleted!',
+            message: 'Pipeline ' + this.selectPipeline.name + ' has been successfully deleted.',
+            type: 'success'
+          })
+          this.fetchData()
+          this.close()
+        })
+        .catch((error) => {
+          this.$onError(error)
+        })
     }
   }
 }

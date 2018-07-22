@@ -74,6 +74,7 @@ func InitHandlers(e *echo.Echo, store *store.Store, scheduler *scheduler.Schedul
 	e.GET(p+"pipeline/name", PipelineNameAvailable)
 	e.GET(p+"pipeline", PipelineGetAll)
 	e.GET(p+"pipeline/:pipelineid", PipelineGet)
+	e.DELETE(p+"pipeline/:pipelineid", PipelineDelete)
 	e.POST(p+"pipeline/:pipelineid/start", PipelineStart)
 	e.GET(p+"pipeline/latest", PipelineGetAllWithLatestRun)
 

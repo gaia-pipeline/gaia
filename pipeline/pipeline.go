@@ -3,6 +3,8 @@ package pipeline
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/gaia-pipeline/gaia"
@@ -189,6 +191,12 @@ func (ap *ActivePipelines) RemoveDeletedPipelines(existingPipelineNames []string
 	for _, idx := range deletedPipelineIndices {
 		ap.Remove(idx)
 	}
+}
+
+// DeleteBinary deletes the binary for the given pipeline.
+func DeleteBinary(p gaia.Pipeline) error {
+	binaryFile := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
+	return os.Remove(binaryFile)
 }
 
 // appendTypeToName appends the type to the output binary name.

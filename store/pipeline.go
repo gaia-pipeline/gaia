@@ -310,3 +310,14 @@ func (s *Store) PipelineGetLatestRun(pipelineID int) (*gaia.PipelineRun, error) 
 		})
 	})
 }
+
+// PipelineDelete deletes the pipeline with the given id.
+func (s *Store) PipelineDelete(id int) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		// Get bucket
+		b := tx.Bucket(pipelineBucket)
+
+		// Delete pipeline
+		return b.Delete(itob(id))
+	})
+}

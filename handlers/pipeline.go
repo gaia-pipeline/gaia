@@ -136,6 +136,50 @@ func PipelineGet(c echo.Context) error {
 	return c.String(http.StatusNotFound, errPipelineNotFound.Error())
 }
 
+// PipelineDelete accepts a pipeline id and deletes it from the
+// store. It also removes the binary inside the pipeline folder.
+func PipelineDelete(c echo.Context) error {
+	pipelineIDStr := c.Param("pipelineid")
+
+	pipelineID, err := strconv.Atoi(pipelineIDStr)
+	if err != nil {
+		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
+	}
+
+	// Look up pipeline for the given id
+	var foundPipeline gaia.Pipeline
+	var index int
+	var deletedPipelineIndex int
+	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+		if pipeline.ID == pipelineID {
+			foundPipeline = pipeline
+			deletedPipelineIndex = index
+		}
+		index++
+	}
+
+	if foundPipeline.Name == "" {
+		return c.String(http.StatusNotFound, err.Error())
+	}
+
+	// Delete pipeline binary
+	err = pipeline.DeleteBinary(foundPipeline)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	// Delete pipeline from store
+	err = storeService.PipelineDelete(pipelineID)
+	if err != nil {
+		return c.String(http.StatusNotFound, err.Error())
+	}
+
+	// Remove from active pipelines
+	pipeline.GlobalActivePipelines.Remove(deletedPipelineIndex)
+
+	return c.String(http.StatusOK, "Pipeline has been deleted")
+}
+
 // PipelineStart starts a pipeline by the given id.
 // Afterwards it returns the created/scheduled pipeline run.
 func PipelineStart(c echo.Context) error {
