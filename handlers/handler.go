@@ -41,6 +41,12 @@ var (
 
 	// errLogNotFound is thrown when a job log file was not found
 	errLogNotFound = errors.New("job log file not found")
+
+	// errPipelineDelete is thrown when a pipeline binary could not be deleted
+	errPipelineDelete = errors.New("pipeline could not be deleted. Perhaps you don't have the right permissions")
+
+	// errPipelineRename is thrown when a pipeline binary could not be renamed
+	errPipelineRename = errors.New("pipeline could not be renamed")
 )
 
 // storeService is an instance of store.
@@ -74,6 +80,7 @@ func InitHandlers(e *echo.Echo, store *store.Store, scheduler *scheduler.Schedul
 	e.GET(p+"pipeline/name", PipelineNameAvailable)
 	e.GET(p+"pipeline", PipelineGetAll)
 	e.GET(p+"pipeline/:pipelineid", PipelineGet)
+	e.PUT(p+"pipeline/:pipelineid", PipelineUpdate)
 	e.DELETE(p+"pipeline/:pipelineid", PipelineDelete)
 	e.POST(p+"pipeline/:pipelineid/start", PipelineStart)
 	e.GET(p+"pipeline/latest", PipelineGetAllWithLatestRun)

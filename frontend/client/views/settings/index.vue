@@ -519,7 +519,20 @@ export default {
     },
 
     changePipelineName () {
-      console.log('Change pipeline name')
+      this.$http
+        .put('/api/v1/pipeline/' + this.selectPipeline.id, this.selectPipeline)
+        .then(response => {
+          openNotification({
+            title: 'Pipeline updated!',
+            message: 'Pipeline ' + this.selectPipeline.name + ' has been successfully updated.',
+            type: 'success'
+          })
+          this.fetchData()
+          this.close()
+        })
+        .catch((error) => {
+          this.$onError(error)
+        })
       this.close()
     },
 

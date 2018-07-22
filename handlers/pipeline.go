@@ -136,6 +136,36 @@ func PipelineGet(c echo.Context) error {
 	return c.String(http.StatusNotFound, errPipelineNotFound.Error())
 }
 
+// PipelineUpdate updates the given pipeline.
+func PipelineUpdate(c echo.Context) error {
+	p := &gaia.Pipeline{}
+	if err := c.Bind(p); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	// Look up pipeline for the given id
+	var foundPipeline *gaia.Pipeline
+	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+		if pipeline.ID == p.ID {
+			foundPipeline = &pipeline
+		}
+	}
+
+	if foundPipeline == nil {
+		return c.String(http.StatusNotFound, errPipelineNotFound.Error())
+	}
+
+	if foundPipeline.Name != p.Name {
+		// Pipeline name has been changed.
+		err := pipeline.RenameBinary(*foundPipeline, p.Name)
+		if err != nil {
+			return c.String(http.StatusInternalServerError, errPipelineRename.Error())
+		}
+	}
+
+	return c.String(http.StatusOK, "Pipeline has been updated")
+}
+
 // PipelineDelete accepts a pipeline id and deletes it from the
 // store. It also removes the binary inside the pipeline folder.
 func PipelineDelete(c echo.Context) error {
@@ -159,19 +189,19 @@ func PipelineDelete(c echo.Context) error {
 	}
 
 	if foundPipeline == nil {
-		return c.String(http.StatusNotFound, err.Error())
+		return c.String(http.StatusNotFound, errPipelineNotFound.Error())
 	}
 
 	// Delete pipeline binary
 	err = pipeline.DeleteBinary(*foundPipeline)
 	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+		return c.String(http.StatusInternalServerError, errPipelineDelete.Error())
 	}
 
 	// Delete pipeline from store
 	err = storeService.PipelineDelete(pipelineID)
 	if err != nil {
-		return c.String(http.StatusNotFound, err.Error())
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
 	// Remove from active pipelines

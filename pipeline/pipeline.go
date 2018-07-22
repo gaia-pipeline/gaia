@@ -193,6 +193,13 @@ func (ap *ActivePipelines) RemoveDeletedPipelines(existingPipelineNames []string
 	}
 }
 
+// RenameBinary renames the binary file for the given pipeline.
+func RenameBinary(p gaia.Pipeline, newName string) error {
+	currentBinaryName := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
+	newBinaryName := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(newName, p.Type))
+	return os.Rename(currentBinaryName, newBinaryName)
+}
+
 // DeleteBinary deletes the binary for the given pipeline.
 func DeleteBinary(p gaia.Pipeline) error {
 	binaryFile := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
