@@ -4,13 +4,9 @@
 
 |build-status| |go-report| |go-doc| |apache2| |chat| |codecov|
 
-gaia is an open source automation platform which makes it easy and fun
-to build powerful pipelines in any programming language. Based on 
-`HashiCorp's go-plugin`_ and `gRPC`_, gaia is efficient, fast, lightweight
-and developer friendly. Gaia is currently alpha! `Do not use it for mission 
-critical jobs yet!`_
+Gaia is an open source automation platform which makes it easy and fun to build powerful pipelines in any programming language. Based on `HashiCorp's go-plugin`_ and `gRPC`_, gaia is efficient, fast, lightweight and developer friendly. Gaia is currently alpha! `Do not use it for mission critical jobs yet!`_
 
-Develop pipelines with the help of SDKs (currently only Go) and simply check-in your code into a git repository. Gaia automatically clones your code repository, compiles your code to a binary and executes it on-demand. All results are streamed back and formatted to a user-friendly graphical output.
+Develop powerful `pipelines <What is a pipeline?_>`_ with the help of `SDKs <Why do I need an SDK?_>`_ (currently only Go) and simply check-in your code into a git repository. Gaia automatically clones your code repository, compiles your code to a binary and executes it on-demand. All results are streamed back and formatted to a user-friendly graphical output.
 
 Motivation
 ==========
@@ -23,18 +19,20 @@ The majority of tech people are not motivated to take up this work and they are 
 
 One of the main reasons for this is the abstraction and poor execution of many automation tools. They come with their own configuration (`YAML`_ syntax) specification or limit the user to one specific programming language. Testing is nearly impossible because most automation tools lack the ability to mock services and subsystems. Even tiny things, for example parsing a JSON file, are sometimes really painful because external, outdated libraries were used and not included in the standard framework.
 
-We believe it's time to remove all these abstractions and come back to our roots. Are you tired of writing endless lines of YAML-code? Are you sick of spending days forced to write in a language that does not suit you and is not fun at all? Do you enjoy programming in a language you like? Then gaia is for you.
+We believe it's time to remove all these abstractions and come back to our roots. Are you tired of writing endless lines of YAML-code? Are you sick of spending days forced to write in a language that does not suit you and is not fun at all? Do you enjoy programming in a language you like? Then Gaia is for you.
 
 How does it work?
 =================
 
 .. begin-architecture
 
-Gaia is based on `HashiCorp's go-plugin`_. It's a plugin system that uses `gRPC`_ to communicate over HTTP2. HashiCorp developed this tool initially for `Packer`_ but it's now heavily used by `Terraform`_, `Nomad`_, and `Vault`_ too.
+Gaia is based on `HashiCorp's go-plugin`_. It's a plugin system that uses `gRPC`_ to communicate over `HTTP/2`_. HashiCorp developed this tool initially for `Packer`_ but it's now heavily used by `Terraform`_, `Nomad`_, and `Vault`_ too. 
 
-Pipelines can be written in any programming language (gRPC support is a prerequisite) and can be compiled locally or simply over the build system. Gaia clones the git repository and automatically builds the included pipeline. 
+Plugins, which we named pipelines, are applications which can be written in any programming language as long as `gRPC`_ is supported. All functions, which we call Jobs, are exposed to Gaia and can form up a dependency graph which describes the order of execution.
 
-After a pipeline has been started, all log output from the included jobs are returned back to gaia and displayed in a detailed overview with their final result status.
+Pipelines can be compiled locally or simply over the build system. Gaia clones the git repository and automatically builds the included pipeline. If a change (`git push`_) happened, Gaia will automatically rebuild the pipeline for you.  
+
+After a pipeline has been started, all log output are returned back to Gaia and displayed in a detailed overview with their final result status.
 
 Gaia uses `boltDB` for storage. This makes the installation step super easy. No external database is currently required.
 
@@ -134,10 +132,35 @@ Gaia will compile it and add it to it's store for later execution.
 
 Please find a bit more sophisticated example in our `go-example repo`_.
 
-Documentation
-=============
+Documentation and more
+======================
 
-Please find the docs at https://docs.gaia-pipeline.io. We also have a interesting tutorials section over there. For example, `Kubernetes deployment with vault integration`_.   
+Please find the docs at https://docs.gaia-pipeline.io. We also have a tutorials section over there with examples and real use-case scenarios. For example, `Kubernetes deployment with vault integration`_.
+
+Questions and Answers (Q&A)
+---------------------------
+
+What problem solves **Gaia**?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Literally every tool which were designed for automation, continuous integration (CI), and continuous deployment (CD) like Spinnaker, Jenkins, Gitlab CI/CD, TravisCI, CircleCI, Codeship, Bamboo and many more, introduced their own configuration format. Some of them don't even support *configuration/automation as code*. This works well for simple tasks like running a ``go install`` or ``mvn clean install`` but in the real world there is more to do.
+
+Gaia is the first platform which does not limit the user and provides full support for almost all common programming languages without losing the features offered by todays CI/CD tools.    
+
+What is a **pipeline**?
+~~~~~~~~~~~~~~~~~~~~~~~
+A pipeline is a real application with at least one function (we call it Job). Every programming language can be used as long as gRPC is supported. We offer SDKs (currently only Go but others are already in development) to support the development. 
+
+What is a **job**?
+~~~~~~~~~~~~~~~~~~
+A job is a function, usually globally exposed to Gaia. Dependent on the dependency graph, Gaia will execute this function in a specific order.
+
+Why do I need an **SDK**?
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+The SDK implements the Gaia plugin gRPC interface and offers helper functions like serving the gRPC-Server. This helps you to focus on the real problem instead of doing the boring stuff.
+
+When do you support programming language **XYZ**?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We are working hard to support as much programming languages as possible but our resources are limited and we are also mostly no experts in all programming languages. If you are willing to contribute, feel free to open an issue and start working.
 
 Roadmap
 =======
@@ -182,6 +205,8 @@ If you have any questions feel free to contact us on `gitter`_.
 .. _`go-example repo`: https://github.com/gaia-pipeline/go-example
 .. _`gitter`: https://gitter.im/gaia-pipeline
 .. _`Kubernetes deployment with vault integration`: https://docs.gaia-pipeline.io/tutorials/kube-vault-deploy/
+.. _`git push`: https://git-scm.com/docs/git-push
+.. _`HTTP/2`: https://http2.github.io/
 
 .. |build-status| image:: https://circleci.com/gh/gaia-pipeline/gaia/tree/master.svg?style=shield&circle-token=c0e15edfb08f8076076cbbb55558af6cfecb89b8
     :alt: Build Status
