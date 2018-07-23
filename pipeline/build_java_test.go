@@ -15,26 +15,26 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 )
 
-func TestPrepareEnvironmentGo(t *testing.T) {
+func TestPrepareEnvironmentJava(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
-	b := new(BuildPipelineGolang)
+	b := new(BuildPipelineJava)
 	p := new(gaia.CreatePipeline)
 	err := b.PrepareEnvironment(p)
 	if err != nil {
 		t.Fatal("error was not expected when preparing environment: ", err)
 	}
-	var expectedDest = regexp.MustCompile(`^/.*/tmp/golang/src/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
+	var expectedDest = regexp.MustCompile(`^/.*/tmp/java/src/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 	if !expectedDest.MatchString(p.Pipeline.Repo.LocalDest) {
 		t.Fatalf("expected destination is '%s', but was '%s'", expectedDest, p.Pipeline.Repo.LocalDest)
 	}
 }
 
-func TestPrepareEnvironmentInvalidPathForMkdirGo(t *testing.T) {
+func TestPrepareEnvironmentInvalidPathForMkdirJava(t *testing.T) {
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = "/notexists"
-	b := new(BuildPipelineGolang)
+	b := new(BuildPipelineJava)
 	p := new(gaia.CreatePipeline)
 	err := b.PrepareEnvironment(p)
 	if err == nil {
@@ -42,7 +42,7 @@ func TestPrepareEnvironmentInvalidPathForMkdirGo(t *testing.T) {
 	}
 }
 
-func TestExecuteBuildGo(t *testing.T) {
+func TestExecuteBuildJava(t *testing.T) {
 	execCommandContext = fakeExecCommandContext
 	defer func() {
 		execCommandContext = exec.CommandContext
@@ -50,54 +50,22 @@ func TestExecuteBuildGo(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
-	b := new(BuildPipelineGolang)
+	b := new(BuildPipelineJava)
 	p := new(gaia.CreatePipeline)
+	// go must be existent, mvn maybe not.
+	mavenBinaryName = "go"
 	err := b.ExecuteBuild(p)
 	if err != nil {
 		t.Fatal("error while running executebuild. none was expected")
 	}
-	expectedDepArgs := "get,-d,./..."
-	expectedBuildArgs := "build,-o,_"
+	expectedBuildArgs := "clean,compile,assembly:single"
 	actualArgs := os.Getenv("CMD_ARGS")
-	if !strings.Contains(actualArgs, expectedBuildArgs) && !strings.Contains(actualArgs, expectedDepArgs) {
-		t.Fatalf("expected args '%s, %s' actual args '%s'", expectedDepArgs, expectedBuildArgs, actualArgs)
+	if !strings.Contains(actualArgs, expectedBuildArgs) {
+		t.Fatalf("expected args '%s' actual args '%s'", expectedBuildArgs, actualArgs)
 	}
 }
 
-func TestExecuteBuildFailPipelineBuildGo(t *testing.T) {
-	os.Mkdir("tmp", 0744)
-	ioutil.WriteFile(filepath.Join("tmp", "main.go"), []byte(`package main
-		import "os"
-		func main() {
-			os.Exit(1
-		}`), 0766)
-	wd, _ := os.Getwd()
-	tmp := filepath.Join(wd, "tmp")
-	defer func() {
-		os.RemoveAll(tmp)
-	}()
-	gaia.Cfg = new(gaia.Config)
-	gaia.Cfg.HomePath = tmp
-	buf := new(bytes.Buffer)
-	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
-		Level:  hclog.Trace,
-		Output: buf,
-		Name:   "Gaia",
-	})
-	b := new(BuildPipelineGolang)
-	p := new(gaia.CreatePipeline)
-	p.Pipeline.Repo.LocalDest = tmp
-	err := b.ExecuteBuild(p)
-	if err == nil {
-		t.Fatal("error while running executebuild. none was expected")
-	}
-	expected := "syntax error: unexpected newline, expecting comma or )"
-	if !strings.Contains(p.Output, expected) {
-		t.Fatal("got a different output than expected: ", p.Output)
-	}
-}
-
-func TestExecuteBuildContextTimeoutGo(t *testing.T) {
+func TestExecuteBuildContextTimeoutJava(t *testing.T) {
 	execCommandContext = fakeExecCommandContext
 	killContext = true
 	defer func() {
@@ -114,8 +82,10 @@ func TestExecuteBuildContextTimeoutGo(t *testing.T) {
 		Output: buf,
 		Name:   "Gaia",
 	})
-	b := new(BuildPipelineGolang)
+	b := new(BuildPipelineJava)
 	p := new(gaia.CreatePipeline)
+	// go must be existent, mvn maybe not.
+	mavenBinaryName = "go"
 	err := b.ExecuteBuild(p)
 	if err == nil {
 		t.Fatal("no error found while expecting error.")
@@ -125,7 +95,7 @@ func TestExecuteBuildContextTimeoutGo(t *testing.T) {
 	}
 }
 
-func TestExecuteBuildBinaryNotFoundErrorGo(t *testing.T) {
+func TestCopyBinaryJava(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
@@ -136,39 +106,16 @@ func TestExecuteBuildBinaryNotFoundErrorGo(t *testing.T) {
 		Output: buf,
 		Name:   "Gaia",
 	})
-	currentPath := os.Getenv("PATH")
-	defer func() { os.Setenv("PATH", currentPath) }()
-	os.Setenv("PATH", "")
-	b := new(BuildPipelineGolang)
-	p := new(gaia.CreatePipeline)
-	err := b.ExecuteBuild(p)
-	if err == nil {
-		t.Fatal("no error found while expecting error.")
-	}
-	if err.Error() != "exec: \"go\": executable file not found in $PATH" {
-		t.Fatal("the error wasn't what we expected. instead it was: ", err)
-	}
-}
-
-func TestCopyBinaryGo(t *testing.T) {
-	tmp := os.TempDir()
-	gaia.Cfg = new(gaia.Config)
-	gaia.Cfg.HomePath = tmp
-	// Initialize shared logger
-	buf := new(bytes.Buffer)
-	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
-		Level:  hclog.Trace,
-		Output: buf,
-		Name:   "Gaia",
-	})
-	b := new(BuildPipelineGolang)
+	b := new(BuildPipelineJava)
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
-	p.Pipeline.Type = "go"
+	p.Pipeline.Type = gaia.PTypeJava
 	p.Pipeline.Repo.LocalDest = tmp
-	src := filepath.Join(tmp, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
+	os.Mkdir(filepath.Join(tmp, mavenTargetFolder), 0744)
+	src := filepath.Join(tmp, mavenTargetFolder, javaFinalJarName)
 	dst := appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
 	f, _ := os.Create(src)
+	defer os.Remove(filepath.Join(tmp, mavenTargetFolder))
 	defer f.Close()
 	defer os.Remove(dst)
 	ioutil.WriteFile(src, []byte("testcontent"), 0666)
@@ -185,7 +132,7 @@ func TestCopyBinaryGo(t *testing.T) {
 	}
 }
 
-func TestCopyBinarySrcDoesNotExistGo(t *testing.T) {
+func TestCopyBinarySrcDoesNotExistJava(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
@@ -196,21 +143,21 @@ func TestCopyBinarySrcDoesNotExistGo(t *testing.T) {
 		Output: buf,
 		Name:   "Gaia",
 	})
-	b := new(BuildPipelineGolang)
+	b := new(BuildPipelineJava)
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
-	p.Pipeline.Type = "go"
+	p.Pipeline.Type = gaia.PTypeJava
 	p.Pipeline.Repo.LocalDest = "/noneexistent"
 	err := b.CopyBinary(p)
 	if err == nil {
 		t.Fatal("error was expected when copying binary but none occurred ")
 	}
-	if err.Error() != "open /noneexistent/main_go: no such file or directory" {
+	if err.Error() != "open /noneexistent/target/plugin-jar-with-dependencies.jar: no such file or directory" {
 		t.Fatal("a different error occurred then expected: ", err)
 	}
 }
 
-func TestSavePipelineGo(t *testing.T) {
+func TestSavePipelineJava(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
@@ -219,14 +166,12 @@ func TestSavePipelineGo(t *testing.T) {
 	s.Init()
 	storeService = s
 	defer os.Remove("gaia.db")
-	gaia.Cfg = new(gaia.Config)
-	gaia.Cfg.HomePath = "/tmp"
-	gaia.Cfg.PipelinePath = "/tmp/pipelines/"
-	// Initialize shared logger
+	gaia.Cfg.PipelinePath = tmp + "/pipelines/"
+	defer os.Remove(gaia.Cfg.PipelinePath)
 	p := new(gaia.Pipeline)
 	p.Name = "main"
-	p.Type = gaia.PTypeGolang
-	b := new(BuildPipelineGolang)
+	p.Type = gaia.PTypeJava
+	b := new(BuildPipelineJava)
 	err := b.SavePipeline(p)
 	if err != nil {
 		t.Fatal("something went wrong. wasn't supposed to get error: ", err)
@@ -234,7 +179,7 @@ func TestSavePipelineGo(t *testing.T) {
 	if p.Name != "main" {
 		t.Fatal("name of pipeline didn't equal expected 'main'. was instead: ", p.Name)
 	}
-	if p.Type != gaia.PTypeGolang {
-		t.Fatal("type of pipeline was not go. instead was: ", p.Type)
+	if p.Type != gaia.PTypeJava {
+		t.Fatal("type of pipeline was not java. instead was: ", p.Type)
 	}
 }
