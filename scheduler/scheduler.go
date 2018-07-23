@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
 	uuid "github.com/satori/go.uuid"
 )
@@ -33,7 +34,7 @@ var (
 // during scheduling and execution.
 type Plugin interface {
 	// NewPlugin creates a new instance of plugin
-	NewPlugin() Plugin
+	NewPlugin(ca security.CAAPI) Plugin
 
 	// Connect initializes the connection with the execution command
 	// and the log path wbere the logs should be stored.
@@ -60,15 +61,19 @@ type Scheduler struct {
 
 	// pluginSystem is the used plugin system.
 	pluginSystem Plugin
+
+	// ca is the instance of the CA used to handle certs.
+	ca security.CAAPI
 }
 
 // NewScheduler creates a new instance of Scheduler.
-func NewScheduler(store *store.Store, pS Plugin) *Scheduler {
+func NewScheduler(store *store.Store, pS Plugin, ca security.CAAPI) *Scheduler {
 	// Create new scheduler
 	s := &Scheduler{
 		scheduledRuns: make(chan gaia.PipelineRun, schedulerBufferLimit),
 		storeService:  store,
 		pluginSystem:  pS,
+		ca:            ca,
 	}
 
 	return s
@@ -165,7 +170,7 @@ func (s *Scheduler) prepareAndExec(r gaia.PipelineRun) {
 	}
 
 	// Create new plugin instance
-	pS := s.pluginSystem.NewPlugin()
+	pS := s.pluginSystem.NewPlugin(s.ca)
 
 	// Connect to plugin(pipeline)
 	path = filepath.Join(path, gaia.LogsFileName)
@@ -368,7 +373,7 @@ func (s *Scheduler) getPipelineJobs(p *gaia.Pipeline) ([]gaia.Job, error) {
 	}
 
 	// Create new Plugin instance
-	pS := s.pluginSystem.NewPlugin()
+	pS := s.pluginSystem.NewPlugin(s.ca)
 
 	// Connect to plugin(pipeline)
 	if err := pS.Connect(c, nil); err != nil {
