@@ -92,6 +92,14 @@ func (ap *ActivePipelines) Append(p gaia.Pipeline) {
 	ap.Pipelines = append(ap.Pipelines, p)
 }
 
+// Update updates a pipeline at the given index with the given pipeline.
+func (ap *ActivePipelines) Update(index int, p gaia.Pipeline) {
+	ap.Lock()
+	defer ap.Unlock()
+
+	ap.Pipelines[index] = p
+}
+
 // Remove removes a pipeline at the given index from ActivePipelines.
 func (ap *ActivePipelines) Remove(index int) {
 	ap.Lock()
@@ -139,6 +147,29 @@ func (ap *ActivePipelines) Replace(p gaia.Pipeline) bool {
 	// Yes
 	ap.Pipelines[i] = p
 	return true
+}
+
+// ReplaceByName replaces the pipeline that has the given name with the given pipeline.
+func (ap *ActivePipelines) ReplaceByName(n string, p gaia.Pipeline) bool {
+
+	var index int
+	var pipelineIndex int
+	var found bool
+
+	for pipeline := range ap.Iter() {
+		if pipeline.Name == n {
+			found = true
+			pipelineIndex = index
+		}
+		index++
+	}
+
+	if found {
+		ap.Update(pipelineIndex, p)
+	}
+
+	return found
+
 }
 
 // Iter iterates over the pipelines in the concurrent slice.
@@ -204,6 +235,11 @@ func RenameBinary(p gaia.Pipeline, newName string) error {
 func DeleteBinary(p gaia.Pipeline) error {
 	binaryFile := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
 	return os.Remove(binaryFile)
+}
+
+// GetExecPath returns the path to the executable for the given pipeline.
+func GetExecPath(p gaia.Pipeline) string {
+	return filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
 }
 
 // appendTypeToName appends the type to the output binary name.

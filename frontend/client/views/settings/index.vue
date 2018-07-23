@@ -524,7 +524,7 @@ export default {
         .then(response => {
           openNotification({
             title: 'Pipeline updated!',
-            message: 'Pipeline ' + this.selectPipeline.name + ' has been successfully updated.',
+            message: 'Pipeline has been successfully updated.',
             type: 'success'
           })
           this.fetchData()

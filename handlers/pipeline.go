@@ -138,29 +138,45 @@ func PipelineGet(c echo.Context) error {
 
 // PipelineUpdate updates the given pipeline.
 func PipelineUpdate(c echo.Context) error {
-	p := &gaia.Pipeline{}
-	if err := c.Bind(p); err != nil {
+	p := gaia.Pipeline{}
+	if err := c.Bind(&p); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	// Look up pipeline for the given id
-	var foundPipeline *gaia.Pipeline
+	var foundPipeline gaia.Pipeline
 	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
 		if pipeline.ID == p.ID {
-			foundPipeline = &pipeline
+			foundPipeline = pipeline
 		}
 	}
 
-	if foundPipeline == nil {
+	if foundPipeline.Name == "" {
 		return c.String(http.StatusNotFound, errPipelineNotFound.Error())
 	}
 
+	// We're only handling pipeline name updates for now.
 	if foundPipeline.Name != p.Name {
 		// Pipeline name has been changed.
-		err := pipeline.RenameBinary(*foundPipeline, p.Name)
+
+		// Update exec path
+		p.ExecPath = pipeline.GetExecPath(p)
+
+		// Rename binary
+		err := pipeline.RenameBinary(foundPipeline, p.Name)
 		if err != nil {
 			return c.String(http.StatusInternalServerError, errPipelineRename.Error())
 		}
+
+		// Update pipeline in store
+		err = storeService.PipelinePut(&p)
+		if err != nil {
+			return c.String(http.StatusInternalServerError, err.Error())
+		}
+
+		// Update active pipelines
+		pipeline.GlobalActivePipelines.ReplaceByName(foundPipeline.Name, p)
+
 	}
 
 	return c.String(http.StatusOK, "Pipeline has been updated")
@@ -177,23 +193,23 @@ func PipelineDelete(c echo.Context) error {
 	}
 
 	// Look up pipeline for the given id
-	var foundPipeline *gaia.Pipeline
+	var foundPipeline gaia.Pipeline
 	var index int
 	var deletedPipelineIndex int
 	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
 		if pipeline.ID == pipelineID {
-			foundPipeline = &pipeline
+			foundPipeline = pipeline
 			deletedPipelineIndex = index
 		}
 		index++
 	}
 
-	if foundPipeline == nil {
+	if foundPipeline.Name == "" {
 		return c.String(http.StatusNotFound, errPipelineNotFound.Error())
 	}
 
 	// Delete pipeline binary
-	err = pipeline.DeleteBinary(*foundPipeline)
+	err = pipeline.DeleteBinary(foundPipeline)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, errPipelineDelete.Error())
 	}

@@ -61,12 +61,14 @@ func (s *Store) PipelinePut(p *gaia.Pipeline) error {
 		// Get pipeline bucket
 		b := tx.Bucket(pipelineBucket)
 
-		// Generate ID for the pipeline.
-		id, err := b.NextSequence()
-		if err != nil {
-			return err
+		// Generate ID for the pipeline if its new.
+		if p.ID == 0 {
+			id, err := b.NextSequence()
+			if err != nil {
+				return err
+			}
+			p.ID = int(id)
 		}
-		p.ID = int(id)
 
 		// Marshal pipeline data into bytes.
 		buf, err := json.Marshal(p)
