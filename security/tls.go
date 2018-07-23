@@ -37,12 +37,6 @@ func GenerateCA() error {
 	caKeyPath := filepath.Join(gaia.Cfg.DataPath, keyName)
 	cleanupCerts(caCertPath, caKeyPath)
 
-	// Generate the key
-	key, err := rsa.GenerateKey(rand.Reader, rsaBits)
-	if err != nil {
-		return err
-	}
-
 	// Set time range for cert validation
 	notBefore := time.Now()
 	notAfter := notBefore.Add(time.Hour * maxValidCA)
@@ -55,7 +49,7 @@ func GenerateCA() error {
 	}
 
 	// Generate CA template
-	template := x509.Certificate{
+	template := &x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			Organization: []string{orgName},
@@ -65,13 +59,19 @@ func GenerateCA() error {
 
 		IsCA:                  true,
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
 		DNSNames:              []string{orgDNS},
 	}
 
+	// Generate the key
+	key, err := rsa.GenerateKey(rand.Reader, rsaBits)
+	if err != nil {
+		return err
+	}
+
 	// Create certificate authority
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, key.PublicKey, key)
+	derBytes, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
 	if err != nil {
 		return err
 	}
@@ -134,6 +134,7 @@ func createSignedCert() (string, string, error) {
 		SubjectKeyId: []byte{1, 2, 3, 4, 6},
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		KeyUsage:     x509.KeyUsageDigitalSignature,
+		DNSNames:     []string{orgDNS},
 	}
 	priv, _ := rsa.GenerateKey(rand.Reader, rsaBits)
 	pub := &priv.PublicKey
