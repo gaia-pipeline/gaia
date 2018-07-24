@@ -37,11 +37,21 @@ func NewVault() (*Vault, error) {
 
 // OpenVault decrypts the contents of the vault and fills up a map of data to work with.
 func (v *Vault) OpenVault(password string) error {
+	// Open f
+	// defer f.Close()
+	// Read from f
+	// decrypt
+	// Set data = data
 	return nil
 }
 
-// CloseVault encrypts data passed to the vault in a k/v format.
+// CloseVault encrypts data passed to the vault in a k/v format and saves it to the vault file.
 func (v *Vault) CloseVault() error {
+	// open f
+	// defer f.Close()
+	// format data to k=v
+	// encrypt
+	// write to f
 	return nil
 }
 
