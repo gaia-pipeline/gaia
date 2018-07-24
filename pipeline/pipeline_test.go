@@ -1,6 +1,10 @@
 package pipeline
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -21,6 +25,32 @@ func TestAppend(t *testing.T) {
 
 	if p1.Name != ret.Name || p1.Type != ret.Type {
 		t.Fatalf("Appended pipeline is not present in active pipelines.")
+	}
+
+}
+
+func TestUpdate(t *testing.T) {
+	ap := NewActivePipelines()
+
+	p1 := gaia.Pipeline{
+		Name:    "Pipeline A",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+	ap.Append(p1)
+
+	p2 := gaia.Pipeline{
+		Name:    "Pipeline B",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+
+	ap.Update(0, p2)
+
+	ret := ap.GetByName("Pipeline B")
+
+	if p2.Name != ret.Name {
+		t.Fatalf("Pipeline should have been updated.")
 	}
 
 }
@@ -115,6 +145,31 @@ func TestReplace(t *testing.T) {
 	}
 }
 
+func TestReplaceByName(t *testing.T) {
+	ap := NewActivePipelines()
+
+	p1 := gaia.Pipeline{
+		Name:    "Pipeline A",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+	ap.Append(p1)
+
+	p2 := gaia.Pipeline{
+		Name:    "Pipeline B",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+
+	ap.ReplaceByName("Pipeline A", p2)
+
+	ret := ap.GetByName("Pipeline B")
+
+	if p2.Name != ret.Name {
+		t.Fatalf("Pipeline should have been updated.")
+	}
+}
+
 func TestIter(t *testing.T) {
 	ap := NewActivePipelines()
 
@@ -198,4 +253,89 @@ func TestRemoveDeletedPipelines(t *testing.T) {
 		}
 	}
 
+}
+
+func TestRenameBinary(t *testing.T) {
+	tmp := os.TempDir()
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.PipelinePath = tmp
+
+	p := gaia.Pipeline{
+		Name:    "Pipeline A",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+
+	newName := "Pipeline B"
+
+	src := filepath.Join(tmp, appendTypeToName(p.Name, p.Type))
+	dst := filepath.Join(tmp, appendTypeToName(newName, p.Type))
+	f, _ := os.Create(src)
+	defer f.Close()
+	defer os.Remove(src)
+	defer os.Remove(dst)
+
+	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+
+	err := RenameBinary(p, newName)
+	if err != nil {
+		t.Fatal("an error occured while renaming the binary: ", err)
+	}
+
+	content, err := ioutil.ReadFile(dst)
+	if err != nil {
+		t.Fatal("an error occured while reading destination file: ", err)
+	}
+	if string(content) != "testcontent" {
+		t.Fatal("file content does not equal src content. was: ", string(content))
+	}
+
+}
+
+func TestDeleteBinary(t *testing.T) {
+	tmp := os.TempDir()
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.PipelinePath = tmp
+
+	p := gaia.Pipeline{
+		Name:    "Pipeline A",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+
+	src := filepath.Join(tmp, appendTypeToName(p.Name, p.Type))
+	f, _ := os.Create(src)
+	defer f.Close()
+	defer os.Remove(src)
+
+	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+
+	err := DeleteBinary(p)
+	if err != nil {
+		t.Fatal("an error occured while deleting the binary: ", err)
+	}
+
+	_, err = os.Stat(src)
+	if !os.IsNotExist(err) {
+		t.Fatal("the binary file still exists. It should have been deleted")
+	}
+}
+
+func TestGetExecPath(t *testing.T) {
+	tmp := os.TempDir()
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.PipelinePath = tmp
+
+	p := gaia.Pipeline{
+		Name:    "Pipeline A",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+
+	expectedPath := fmt.Sprintf("%s%s_%s", tmp, p.Name, p.Type)
+	execPath := GetExecPath(p)
+
+	if execPath != expectedPath {
+		t.Fatalf("expected execpath to be %s. got %s", expectedPath, execPath)
+	}
 }
