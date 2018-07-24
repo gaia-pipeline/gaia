@@ -14,7 +14,15 @@ func OpenVault(password string) map[string]interface{} {
 	return vault
 }
 
-// SaveVault encrypts data passed to the vault in a k/v format.
-func SaveVault(data map[string]interface{}, password string) {
+// CloseVault encrypts data passed to the vault in a k/v format.
+func CloseVault(data map[string]interface{}, password string) error {
+	return nil
+}
 
+func encrypt(data []byte, password string) ([]byte, error) {
+	return []byte{}, nil
+}
+
+func decrypt(data []byte, password string) ([]byte, error) {
+	return []byte{}, nil
 }
