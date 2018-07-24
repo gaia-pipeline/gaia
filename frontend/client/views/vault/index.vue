@@ -119,19 +119,19 @@
             <collapse-item title="Add Secret" selected>
               <div class="secret-modal-content">
                 <p class="control has-icons-left" style="padding-bottom: 5px;">
-                  <input class="input is-medium input-bar" v-focus type="text" v-model="selectSecret.key" placeholder="value">
+                  <input class="input is-medium input-bar" v-focus type="text" v-model="selectSecret.key" placeholder="Key">
                   <span class="icon is-small is-left">
                     <i class="fa fa-user"></i>
                   </span>
                 </p>
                 <p class="control has-icons-left">
-                  <input class="input is-medium input-bar" type="value" v-model="selectSecret.value" placeholder="Value">
+                  <input class="input is-medium input-bar" type="value" v-model="selectSecret.value" placeholder="Secret">
                   <span class="icon is-small is-left">
                     <i class="fa fa-lock"></i>
                   </span>
                 </p>
                 <p class="control has-icons-left">
-                  <input class="input is-medium input-bar" type="value" v-model="selectSecret.valueconf" placeholder="Value confirmation">
+                  <input class="input is-medium input-bar" type="value" v-model="selectSecret.valueconf" placeholder="Secret confirmation">
                   <span class="icon is-small is-left">
                     <i class="fa fa-lock"></i>
                   </span>
@@ -298,10 +298,10 @@ export default {
 
     addSecret () {
       // pre-validate
-      if (!this.selectSecret.secret || !this.selectSecret.secretconf) {
+      if (!this.selectSecret.value || !this.selectSecret.valueconf) {
         openNotification({
-          title: 'Empty secret',
-          message: 'Empty secret is not allowed.',
+          title: 'Empty value',
+          message: 'Empty value is not allowed.',
           type: 'danger'
         })
         this.close()
@@ -309,10 +309,10 @@ export default {
       }
 
       // pre-validate
-      if (!this.selectSecret.value || this.selectSecret.value.trim() === '') {
+      if (!this.selectSecret.key || this.selectSecret.key.trim() === '') {
         openNotification({
-          title: 'Empty value',
-          message: 'Empty value is not allowed.',
+          title: 'Empty secret',
+          message: 'Empty secret is not allowed.',
           type: 'danger'
         })
         this.close()
