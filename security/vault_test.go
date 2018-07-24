@@ -131,7 +131,6 @@ func TestAnExistingVaultFileIsNotOverwritten(t *testing.T) {
 	}
 	defer os.Remove(vaultName)
 	v.Cert = []byte("test")
-	v.OpenVault()
 	v.Add("test", []byte("value"))
 	v.CloseVault()
 	v2, _ := NewVault()
