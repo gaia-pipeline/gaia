@@ -1,0 +1,403 @@
+<template>
+  <div class="tile is-ancestor">
+    <div class="tile is-vertical">
+      <tabs type="boxed" :is-fullwidth="true" alignment="centered" size="large">
+        <tab-pane label="Manage Secrets" icon="fa fa-user-circle">
+          <div class="tile is-ancestor">
+            <div class="tile is-vertical">
+              <div class="tile is-parent">
+                <a class="button is-primary" v-on:click="addSecretModal" style="margin-bottom: -10px;">
+                  <span class="icon">
+                    <i class="fa fa-user-plus"></i>
+                  </span>
+                  <span>Add Secrets</span>
+                </a>
+              </div>
+              <div class="tile is-parent">
+                <article class="tile is-child notification content-article box">
+                  <vue-good-table
+                    :columns="keyColumns"
+                    :rows="keyRows"
+                    :paginate="true"
+                    :global-search="true"
+                    :defaultSortBy="{field: 'key', type: 'desc'}"
+                    globalSearchPlaceholder="Search ..."
+                    styleClass="table table-own-bordered">
+                    <template slot="table-row" slot-scope="props">
+                      <td>
+                        <span>{{ props.row.key }}</span>
+                      </td>
+                      <td :title="props.row.value" v-tippy="{ arrow : true,  animation : 'shift-away'}">
+                        <span>{{ props.row.value }}</span>
+                      </td>
+                      <td>
+                        <a v-on:click="editSecret(props.row)"><i class="fa fa-edit" style="color: whitesmoke;"></i></a>
+                        <a v-on:click="deleteSecret(props.row)"><i class="fa fa-trash" style="color: whitesmoke;"></i></a>
+                      </td>
+                    </template>
+                    <div slot="emptystate" class="empty-table-text">
+                      No secrets found.
+                    </div>
+                  </vue-good-table>
+                </article>
+              </div>
+            </div>
+          </div>
+        </tab-pane>
+        <!--<tab-pane label="Manage Pipelines" icon="fa fa-wrench"></tab-pane>-->
+      </tabs>
+    </div>
+
+    <!-- edit secret modal -->
+    <modal :visible="showEditSecretModal" class="modal-z-index" @close="close">
+      <div class="box secret-modal">
+        <div class="block secret-modal-content">
+          <collapse accordion is-fullwidth>
+            <collapse-item title="Change secret" selected>
+              <div class="secret-modal-content">
+                <label class="label" style="text-align: left;">Change secret value for key {{ selectKey.key }}:</label>
+                <p class="control has-icons-left" style="padding-bottom: 5px;">
+                  <input class="input is-medium input-bar" v-focus type="value" v-model="selectKey.value" placeholder="Old Value">
+                  <span class="icon is-small is-left">
+                    <i class="fa fa-lock"></i>
+                  </span>
+                </p>
+                <p class="control has-icons-left">
+                  <input class="input is-medium input-bar" type="value" v-model="selectKey.newvalue" placeholder="New Value">
+                  <span class="icon is-small is-left">
+                    <i class="fa fa-lock"></i>
+                  </span>
+                </p>
+                <p class="control has-icons-left">
+                  <input class="input is-medium input-bar" type="value" v-model="selectKey.newvalueconf" placeholder="New Value confirmation">
+                  <span class="icon is-small is-left">
+                    <i class="fa fa-lock"></i>
+                  </span>
+                </p>
+              </div>
+            </collapse-item>
+          </collapse>
+          <div class="modal-footer">
+            <div style="float: left;">
+              <button class="button is-primary" v-on:click="changeSecret">Change Secret Value</button>
+            </div>
+            <div style="float: right;">
+              <button class="button is-danger" v-on:click="close">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </modal>
+
+    <!-- delete secret modal -->
+    <modal :visible="showDeleteSecretModal" class="modal-z-index" @close="close">
+      <div class="box secret-modal">
+        <article class="media">
+          <div class="media-content">
+            <div class="content">
+              <p>
+                <span style="color: whitesmoke;">Do you really want to delete the secret {{ selectSecret.key }}?</span>
+              </p>
+            </div>
+            <div class="modal-footer">
+              <div style="float: left;">
+                <button class="button is-primary" v-on:click="deleteUser" style="width:150px;">Yes</button>
+              </div>
+              <div style="float: right;">
+                <button class="button is-danger" v-on:click="close" style="width:130px;">No</button>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </modal>
+
+    <!-- add secret modal -->
+    <modal :visible="showAddSecretModal" class="modal-z-index" @close="close">
+      <div class="box secret-modal">
+        <div class="block secret-modal-content">
+          <collapse accordion is-fullwidth>
+            <collapse-item title="Add Secret" selected>
+              <div class="secret-modal-content">
+                <p class="control has-icons-left" style="padding-bottom: 5px;">
+                  <input class="input is-medium input-bar" v-focus type="text" v-model="selectSecret.key" placeholder="value">
+                  <span class="icon is-small is-left">
+                    <i class="fa fa-user"></i>
+                  </span>
+                </p>
+                <p class="control has-icons-left">
+                  <input class="input is-medium input-bar" type="value" v-model="selectSecret.value" placeholder="Value">
+                  <span class="icon is-small is-left">
+                    <i class="fa fa-lock"></i>
+                  </span>
+                </p>
+                <p class="control has-icons-left">
+                  <input class="input is-medium input-bar" type="value" v-model="selectSecret.valueconf" placeholder="Value confirmation">
+                  <span class="icon is-small is-left">
+                    <i class="fa fa-lock"></i>
+                  </span>
+                </p>
+              </div>
+            </collapse-item>
+          </collapse>
+          <div class="modal-footer">
+            <div style="float: left;">
+              <button class="button is-primary" v-on:click="addSecret">Add Secret</button>
+            </div>
+            <div style="float: right;">
+              <button class="button is-danger" v-on:click="close">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </modal>
+  </div>
+</template>
+
+<script>
+import Vue from "vue";
+import { Tabs, TabPane } from "vue-bulma-tabs";
+import { Modal } from "vue-bulma-modal";
+import { Collapse, Item as CollapseItem } from "vue-bulma-collapse";
+import VueGoodTable from "vue-good-table";
+import VueTippy from "vue-tippy";
+import moment from "moment";
+import Notification from "vue-bulma-notification-fixed";
+import { mapGetters } from "vuex";
+
+const NotificationComponent = Vue.extend(Notification);
+const openNotification = (
+  propsData = {
+    title: "",
+    message: "",
+    type: "",
+    direction: "",
+    duration: 4500,
+    container: ".notifications"
+  }
+) => {
+  return new NotificationComponent({
+    el: document.createElement("div"),
+    propsData
+  });
+};
+
+Vue.use(VueGoodTable);
+Vue.use(VueTippy);
+
+export default {
+  components: {
+    Tabs,
+    TabPane,
+    Modal,
+    Collapse,
+    CollapseItem
+  },
+
+  data() {
+    return {
+      secretColumns: [
+        {
+          label: "Name",
+          field: "key"
+        },
+        {
+          label: "Value",
+          field: "secret_value"
+        },
+        {
+          label: ""
+        }
+      ],
+      secretRows: [],
+      selectSecret: {},
+      showEditSecretModal: false,
+      showDeleteSecretModal: false,
+      showAddSecretModal: false
+    };
+  },
+
+  mounted() {
+    this.fetchData();
+  },
+
+  watch: {
+    $route: "fetchData"
+  },
+
+  computed: mapGetters({
+    session: "session"
+  }),
+
+  methods: {
+    fetchData() {
+      this.$http
+        .get("/api/v1/secrets", { showProgressBar: false })
+        .then(response => {
+          if (response.data) {
+            this.secretRows = response.data;
+          }
+        })
+        .catch(error => {
+          this.$onError(error);
+        });
+    },
+
+    convertTime(time) {
+      return moment(time).fromNow();
+    },
+
+    editUserModal(user) {
+      this.selectSecret = user;
+      this.showEditSecretModal = true;
+    },
+
+    deleteUserModal(user) {
+      this.selectSecret = user;
+      this.showDeleteSecretModal = true;
+    },
+
+    addSecretModal() {
+      this.selectSecret = {};
+      this.showAddSecretModal = true;
+    },
+
+    close() {
+      this.showEditSecretModal = false;
+      this.showDeleteSecretModal = false;
+      this.showAddSecretModal = false;
+      this.selectSecret = {};
+      this.$emit("close");
+    },
+
+    changeSecret() {
+      // pre-validate
+      if (!this.selectSecret.newvalue || !this.selectSecret.newvalueconf) {
+        openNotification({
+          title: "Empty value",
+          message: "Empty value is not allowed.",
+          type: "danger"
+        });
+        this.close();
+        return;
+      }
+
+      this.$http
+        .post("/api/v1/secret/update", this.selectSecret)
+        .then(response => {
+          openNotification({
+            title: "Secret changed!",
+            message: "Secret has been successful changed.",
+            type: "success"
+          });
+        })
+        .catch(error => {
+          this.$onError(error);
+        });
+      this.close();
+    },
+
+    addSecret() {
+      // pre-validate
+      if (!this.selectSecret.secret || !this.selectSecret.secretconf) {
+        openNotification({
+          title: "Empty secret",
+          message: "Empty secret is not allowed.",
+          type: "danger"
+        });
+        this.close();
+        return;
+      }
+
+      // pre-validate
+      if (!this.selectSecret.value || this.selectSecret.value.trim() === "") {
+        openNotification({
+          title: "Empty value",
+          message: "Empty value is not allowed.",
+          type: "danger"
+        });
+        this.close();
+        return;
+      }
+
+      // pre-validate
+      if (this.selectSecret.value !== this.selectSecret.valueconf) {
+        openNotification({
+          title: "value not identical",
+          message: "value and confirmation are not identical!",
+          type: "danger"
+        });
+        this.close();
+        return;
+      }
+      this.selectSecret.valueconf = null;
+
+      this.$http
+        .post("/api/v1/secret", this.selectSecret)
+        .then(response => {
+          openNotification({
+            title: "Secret added!",
+            message: "Secret has been successfully added.",
+            type: "success"
+          });
+          this.fetchData();
+        })
+        .catch(error => {
+          this.$onError(error);
+        });
+      this.close();
+    },
+
+    deleteUser() {
+      this.$http
+        .delete("/api/v1/secret/" + this.selectSecret.value)
+        .then(response => {
+          openNotification({
+            title: "Secret deleted!",
+            message:
+              "Secret " +
+              this.selectSecret.key +
+              " has been successfully deleted.",
+            type: "success"
+          });
+          this.fetchData();
+          this.close();
+        })
+        .catch(error => {
+          this.$onError(error);
+        });
+    }
+  }
+};
+</script>
+
+<style lang="scss">
+.tabs {
+  margin: 10px;
+
+  .tab-content {
+    min-height: 50px;
+  }
+}
+
+.tabs.is-boxed li.is-active a {
+  background-color: transparent;
+  border-color: transparent;
+  border-bottom-color: #4da2fc !important;
+}
+
+.secret-modal {
+  text-align: center;
+  background-color: #2a2735;
+}
+
+.secret-modal-content {
+  margin: auto;
+  padding: 10px;
+}
+
+.modal-footer {
+  height: 45px;
+  padding-top: 15px;
+}
+</style>

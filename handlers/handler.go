@@ -83,6 +83,11 @@ func InitHandlers(e *echo.Echo, store *store.Store, scheduler *scheduler.Schedul
 	e.GET(p+"pipelinerun/:pipelineid/latest", PipelineGetLatestRun)
 	e.GET(p+"pipelinerun/:pipelineid/:runid/log", GetJobLogs)
 
+	// Secrets
+	e.GET(p+"secrets", ListSecrets)
+	e.DELETE(p+"secret", RemoveSecret)
+	e.POST(p+"secret", AddSecret)
+
 	// Middleware
 	e.Use(middleware.Recover())
 	//e.Use(middleware.Logger())
