@@ -1,7 +1,6 @@
 package pipeline
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -332,7 +331,7 @@ func TestGetExecPath(t *testing.T) {
 		Created: time.Now(),
 	}
 
-	expectedPath := fmt.Sprintf("%s%s_%s", tmp, p.Name, p.Type)
+	expectedPath := filepath.Join(tmp, appendTypeToName(p.Name, p.Type))
 	execPath := GetExecPath(p)
 
 	if execPath != expectedPath {
