@@ -157,10 +157,9 @@ func PipelineUpdate(c echo.Context) error {
 
 	// We're only handling pipeline name updates for now.
 	if foundPipeline.Name != p.Name {
-		// Pipeline name has been changed.
+		// Pipeline name has been changed
 
-		// Update exec path
-		p.ExecPath = pipeline.GetExecPath(p)
+		currentName := foundPipeline.Name
 
 		// Rename binary
 		err := pipeline.RenameBinary(foundPipeline, p.Name)
@@ -168,14 +167,18 @@ func PipelineUpdate(c echo.Context) error {
 			return c.String(http.StatusInternalServerError, errPipelineRename.Error())
 		}
 
+		// Update name and exec path
+		foundPipeline.Name = p.Name
+		foundPipeline.ExecPath = pipeline.GetExecPath(p)
+
 		// Update pipeline in store
-		err = storeService.PipelinePut(&p)
+		err = storeService.PipelinePut(&foundPipeline)
 		if err != nil {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
 
 		// Update active pipelines
-		pipeline.GlobalActivePipelines.ReplaceByName(foundPipeline.Name, p)
+		pipeline.GlobalActivePipelines.ReplaceByName(currentName, foundPipeline)
 
 	}
 
