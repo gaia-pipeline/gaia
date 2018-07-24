@@ -29,6 +29,14 @@ const state = {
         icon: 'fa-cogs'
       },
       component: lazyLoading('settings', true)
+    },
+    {
+      name: 'Vault',
+      path: '/vault',
+      meta: {
+        icon: 'fa-lock'
+      },
+      component: lazyLoading('vault', true)
     }
   ]
 }

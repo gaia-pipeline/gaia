@@ -155,35 +155,35 @@
 </template>
 
 <script>
-import Vue from "vue";
-import { Tabs, TabPane } from "vue-bulma-tabs";
-import { Modal } from "vue-bulma-modal";
-import { Collapse, Item as CollapseItem } from "vue-bulma-collapse";
-import VueGoodTable from "vue-good-table";
-import VueTippy from "vue-tippy";
-import moment from "moment";
-import Notification from "vue-bulma-notification-fixed";
-import { mapGetters } from "vuex";
+import Vue from 'vue'
+import { Tabs, TabPane } from 'vue-bulma-tabs'
+import { Modal } from 'vue-bulma-modal'
+import { Collapse, Item as CollapseItem } from 'vue-bulma-collapse'
+import VueGoodTable from 'vue-good-table'
+import VueTippy from 'vue-tippy'
+import moment from 'moment'
+import Notification from 'vue-bulma-notification-fixed'
+import { mapGetters } from 'vuex'
 
-const NotificationComponent = Vue.extend(Notification);
+const NotificationComponent = Vue.extend(Notification)
 const openNotification = (
   propsData = {
-    title: "",
-    message: "",
-    type: "",
-    direction: "",
+    title: '',
+    message: '',
+    type: '',
+    direction: '',
     duration: 4500,
-    container: ".notifications"
+    container: '.notifications'
   }
 ) => {
   return new NotificationComponent({
-    el: document.createElement("div"),
+    el: document.createElement('div'),
     propsData
-  });
-};
+  })
+}
 
-Vue.use(VueGoodTable);
-Vue.use(VueTippy);
+Vue.use(VueGoodTable)
+Vue.use(VueTippy)
 
 export default {
   components: {
@@ -194,19 +194,19 @@ export default {
     CollapseItem
   },
 
-  data() {
+  data () {
     return {
       secretColumns: [
         {
-          label: "Name",
-          field: "key"
+          label: 'Name',
+          field: 'key'
         },
         {
-          label: "Value",
-          field: "secret_value"
+          label: 'Value',
+          field: 'secret_value'
         },
         {
-          label: ""
+          label: ''
         }
       ],
       secretRows: [],
@@ -214,190 +214,190 @@ export default {
       showEditSecretModal: false,
       showDeleteSecretModal: false,
       showAddSecretModal: false
-    };
+    }
   },
 
-  mounted() {
-    this.fetchData();
+  mounted () {
+    this.fetchData()
   },
 
   watch: {
-    $route: "fetchData"
+    $route: 'fetchData'
   },
 
   computed: mapGetters({
-    session: "session"
+    session: 'session'
   }),
 
   methods: {
-    fetchData() {
+    fetchData () {
       this.$http
-        .get("/api/v1/secrets", { showProgressBar: false })
+        .get('/api/v1/secrets', { showProgressBar: false })
         .then(response => {
           if (response.data) {
-            this.secretRows = response.data;
+            this.secretRows = response.data
           }
         })
         .catch(error => {
-          this.$onError(error);
-        });
+          this.$onError(error)
+        })
     },
 
-    convertTime(time) {
-      return moment(time).fromNow();
+    convertTime (time) {
+      return moment(time).fromNow()
     },
 
-    editUserModal(user) {
-      this.selectSecret = user;
-      this.showEditSecretModal = true;
+    editSecretModal (user) {
+      this.selectSecret = user
+      this.showEditSecretModal = true
     },
 
-    deleteUserModal(user) {
-      this.selectSecret = user;
-      this.showDeleteSecretModal = true;
+    deleteSecretModal (user) {
+      this.selectSecret = user
+      this.showDeleteSecretModal = true
     },
 
-    addSecretModal() {
-      this.selectSecret = {};
-      this.showAddSecretModal = true;
+    addSecretModal () {
+      this.selectSecret = {}
+      this.showAddSecretModal = true
     },
 
-    close() {
-      this.showEditSecretModal = false;
-      this.showDeleteSecretModal = false;
-      this.showAddSecretModal = false;
-      this.selectSecret = {};
-      this.$emit("close");
+    close () {
+      this.showEditSecretModal = false
+      this.showDeleteSecretModal = false
+      this.showAddSecretModal = false
+      this.selectSecret = {}
+      this.$emit('close')
     },
 
-    changeSecret() {
+    changeSecret () {
       // pre-validate
       if (!this.selectSecret.newvalue || !this.selectSecret.newvalueconf) {
         openNotification({
-          title: "Empty value",
-          message: "Empty value is not allowed.",
-          type: "danger"
-        });
-        this.close();
-        return;
+          title: 'Empty value',
+          message: 'Empty value is not allowed.',
+          type: 'danger'
+        })
+        this.close()
+        return
       }
 
       this.$http
-        .post("/api/v1/secret/update", this.selectSecret)
+        .post('/api/v1/secret/update', this.selectSecret)
         .then(response => {
           openNotification({
-            title: "Secret changed!",
-            message: "Secret has been successful changed.",
-            type: "success"
-          });
+            title: 'Secret changed!',
+            message: 'Secret has been successful changed.',
+            type: 'success'
+          })
         })
         .catch(error => {
-          this.$onError(error);
-        });
-      this.close();
+          this.$onError(error)
+        })
+      this.close()
     },
 
-    addSecret() {
+    addSecret () {
       // pre-validate
       if (!this.selectSecret.secret || !this.selectSecret.secretconf) {
         openNotification({
-          title: "Empty secret",
-          message: "Empty secret is not allowed.",
-          type: "danger"
-        });
-        this.close();
-        return;
+          title: 'Empty secret',
+          message: 'Empty secret is not allowed.',
+          type: 'danger'
+        })
+        this.close()
+        return
       }
 
       // pre-validate
-      if (!this.selectSecret.value || this.selectSecret.value.trim() === "") {
+      if (!this.selectSecret.value || this.selectSecret.value.trim() === '') {
         openNotification({
-          title: "Empty value",
-          message: "Empty value is not allowed.",
-          type: "danger"
-        });
-        this.close();
-        return;
+          title: 'Empty value',
+          message: 'Empty value is not allowed.',
+          type: 'danger'
+        })
+        this.close()
+        return
       }
 
       // pre-validate
       if (this.selectSecret.value !== this.selectSecret.valueconf) {
         openNotification({
-          title: "value not identical",
-          message: "value and confirmation are not identical!",
-          type: "danger"
-        });
-        this.close();
-        return;
+          title: 'value not identical',
+          message: 'value and confirmation are not identical!',
+          type: 'danger'
+        })
+        this.close()
+        return
       }
-      this.selectSecret.valueconf = null;
+      this.selectSecret.valueconf = null
 
       this.$http
-        .post("/api/v1/secret", this.selectSecret)
+        .post('/api/v1/secret', this.selectSecret)
         .then(response => {
           openNotification({
-            title: "Secret added!",
-            message: "Secret has been successfully added.",
-            type: "success"
-          });
-          this.fetchData();
+            title: 'Secret added!',
+            message: 'Secret has been successfully added.',
+            type: 'success'
+          })
+          this.fetchData()
         })
         .catch(error => {
-          this.$onError(error);
-        });
-      this.close();
+          this.$onError(error)
+        })
+      this.close()
     },
 
-    deleteUser() {
+    deleteUser () {
       this.$http
-        .delete("/api/v1/secret/" + this.selectSecret.value)
+        .delete('/api/v1/secret/' + this.selectSecret.value)
         .then(response => {
           openNotification({
-            title: "Secret deleted!",
+            title: 'Secret deleted!',
             message:
-              "Secret " +
+              'Secret ' +
               this.selectSecret.key +
-              " has been successfully deleted.",
-            type: "success"
-          });
-          this.fetchData();
-          this.close();
+              ' has been successfully deleted.',
+            type: 'success'
+          })
+          this.fetchData()
+          this.close()
         })
         .catch(error => {
-          this.$onError(error);
-        });
+          this.$onError(error)
+        })
     }
   }
-};
+}
 </script>
 
 <style lang="scss">
-.tabs {
-  margin: 10px;
+  .tabs {
+    margin: 10px;
 
-  .tab-content {
-    min-height: 50px;
+    .tab-content {
+      min-height: 50px;
+    }
   }
-}
 
-.tabs.is-boxed li.is-active a {
-  background-color: transparent;
-  border-color: transparent;
-  border-bottom-color: #4da2fc !important;
-}
+  .tabs.is-boxed li.is-active a {
+    background-color: transparent;
+    border-color: transparent;
+    border-bottom-color: #4da2fc !important;
+  }
 
-.secret-modal {
-  text-align: center;
-  background-color: #2a2735;
-}
+  .secret-modal {
+    text-align: center;
+    background-color: #2a2735;
+  }
 
-.secret-modal-content {
-  margin: auto;
-  padding: 10px;
-}
+  .secret-modal-content {
+    margin: auto;
+    padding: 10px;
+  }
 
-.modal-footer {
-  height: 45px;
-  padding-top: 15px;
-}
+  .modal-footer {
+    height: 45px;
+    padding-top: 15px;
+  }
 </style>
