@@ -14,6 +14,12 @@ func TestNewVault(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.HomePath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
 	v, err := NewVault()
 	if err != nil {
 		t.Fatal(err)
@@ -27,6 +33,12 @@ func TestAddAndGet(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.HomePath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
 	v, err := NewVault()
 	if err != nil {
 		t.Fatal(err)
@@ -42,6 +54,12 @@ func TestCloseOpenVault(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.HomePath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
 	v, err := NewVault()
 	if err != nil {
 		t.Fatal(err)
@@ -68,6 +86,12 @@ func TestCloseOpenVaultWithInvalidPassword(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.HomePath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
 	v, err := NewVault()
 	if err != nil {
 		t.Fatal(err)
