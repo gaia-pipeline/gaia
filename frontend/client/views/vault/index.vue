@@ -27,12 +27,12 @@
                       <td>
                         <span>{{ props.row.key }}</span>
                       </td>
-                      <td :title="props.row.value" v-tippy="{ arrow : true,  animation : 'shift-away'}">
+                      <td v-tippy="{ arrow : true,  animation : 'shift-away'}">
                         <span>{{ props.row.value }}</span>
                       </td>
                       <td>
-                        <a v-on:click="editSecret(props.row)"><i class="fa fa-edit" style="color: whitesmoke;"></i></a>
-                        <a v-on:click="deleteSecret(props.row)"><i class="fa fa-trash" style="color: whitesmoke;"></i></a>
+                        <a v-on:click="editSecretModal(props.row)"><i class="fa fa-edit" style="color: whitesmoke;"></i></a>
+                        <a v-on:click="deleteSecretModal(props.row)"><i class="fa fa-trash" style="color: whitesmoke;"></i></a>
                       </td>
                     </template>
                     <div slot="emptystate" class="empty-table-text">
@@ -44,7 +44,6 @@
             </div>
           </div>
         </tab-pane>
-        <!--<tab-pane label="Manage Pipelines" icon="fa fa-wrench"></tab-pane>-->
       </tabs>
     </div>
 
@@ -53,23 +52,23 @@
       <div class="box secret-modal">
         <div class="block secret-modal-content">
           <collapse accordion is-fullwidth>
-            <collapse-item title="Change secret" selected>
+            <collapse-item title="Change Secret" selected>
               <div class="secret-modal-content">
-                <label class="label" style="text-align: left;">Change secret value for key {{ selectKey.key }}:</label>
+                <label class="label" style="text-align: left;">Change secret value for key {{ selectSecret.key }}:</label>
                 <p class="control has-icons-left" style="padding-bottom: 5px;">
-                  <input class="input is-medium input-bar" v-focus type="value" v-model="selectKey.value" placeholder="Old Value">
+                  <input class="input is-medium input-bar" v-focus type="value" v-model="selectSecret.value" placeholder="Old Value">
                   <span class="icon is-small is-left">
                     <i class="fa fa-lock"></i>
                   </span>
                 </p>
                 <p class="control has-icons-left">
-                  <input class="input is-medium input-bar" type="value" v-model="selectKey.newvalue" placeholder="New Value">
+                  <input class="input is-medium input-bar" type="value" v-model="selectSecret.newvalue" placeholder="New Value">
                   <span class="icon is-small is-left">
                     <i class="fa fa-lock"></i>
                   </span>
                 </p>
                 <p class="control has-icons-left">
-                  <input class="input is-medium input-bar" type="value" v-model="selectKey.newvalueconf" placeholder="New Value confirmation">
+                  <input class="input is-medium input-bar" type="value" v-model="selectSecret.newvalueconf" placeholder="New Value confirmation">
                   <span class="icon is-small is-left">
                     <i class="fa fa-lock"></i>
                   </span>
@@ -196,7 +195,7 @@ export default {
 
   data () {
     return {
-      secretColumns: [
+      keyColumns: [
         {
           label: 'Name',
           field: 'key'
@@ -209,7 +208,7 @@ export default {
           label: ''
         }
       ],
-      secretRows: [],
+      keyRows: [],
       selectSecret: {},
       showEditSecretModal: false,
       showDeleteSecretModal: false,
@@ -222,7 +221,7 @@ export default {
   },
 
   watch: {
-    $route: 'fetchData'
+    '$route': 'fetchData'
   },
 
   computed: mapGetters({
@@ -235,10 +234,10 @@ export default {
         .get('/api/v1/secrets', { showProgressBar: false })
         .then(response => {
           if (response.data) {
-            this.secretRows = response.data
+            this.keyRows = response.data
           }
         })
-        .catch(error => {
+        .catch((error) => {
           this.$onError(error)
         })
     },
@@ -247,13 +246,13 @@ export default {
       return moment(time).fromNow()
     },
 
-    editSecretModal (user) {
-      this.selectSecret = user
+    editSecretModal (secret) {
+      this.selectSecret = secret
       this.showEditSecretModal = true
     },
 
-    deleteSecretModal (user) {
-      this.selectSecret = user
+    deleteSecretModal (secret) {
+      this.selectSecret = secret
       this.showDeleteSecretModal = true
     },
 
