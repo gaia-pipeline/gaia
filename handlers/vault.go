@@ -28,6 +28,11 @@ func AddSecret(c echo.Context) error {
 		gaia.Cfg.Logger.Error("error initializing vault", "error", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
+	err = v.OpenVault()
+	if err != nil {
+		gaia.Cfg.Logger.Error("error opening vault", "error", err.Error())
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
 	v.Add(s.Key, []byte(s.Value))
 	err = v.CloseVault()
 	if err != nil {
