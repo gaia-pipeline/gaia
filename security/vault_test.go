@@ -51,7 +51,7 @@ func TestAddAndGet(t *testing.T) {
 	}
 }
 
-func TestCloseOpenVault(t *testing.T) {
+func TestCloseLoadSecrets(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
@@ -67,12 +67,12 @@ func TestCloseOpenVault(t *testing.T) {
 	}
 	v.Add("key1", []byte("value1"))
 	v.Add("key2", []byte("value2"))
-	err = v.CloseVault()
+	err = v.SaveSecrets()
 	if err != nil {
 		t.Fatal(err)
 	}
 	v.data = make(map[string][]byte, 0)
-	err = v.OpenVault()
+	err = v.LoadSecrets()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +82,7 @@ func TestCloseOpenVault(t *testing.T) {
 	}
 }
 
-func TestCloseOpenVaultWithInvalidPassword(t *testing.T) {
+func TestCloseLoadSecretsWithInvalidPassword(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
@@ -99,13 +99,13 @@ func TestCloseOpenVaultWithInvalidPassword(t *testing.T) {
 	v.Cert = []byte("test")
 	v.Add("key1", []byte("value1"))
 	v.Add("key2", []byte("value2"))
-	err = v.CloseVault()
+	err = v.SaveSecrets()
 	if err != nil {
 		t.Fatal(err)
 	}
 	v.data = make(map[string][]byte, 0)
 	v.Cert = []byte("invalid")
-	err = v.OpenVault()
+	err = v.LoadSecrets()
 	if err == nil {
 		t.Fatal("error should not have been nil.")
 	}
@@ -132,13 +132,13 @@ func TestAnExistingVaultFileIsNotOverwritten(t *testing.T) {
 	defer os.Remove(vaultName)
 	v.Cert = []byte("test")
 	v.Add("test", []byte("value"))
-	v.CloseVault()
+	v.SaveSecrets()
 	v2, _ := NewVault()
 	if v2.Path != v.Path {
 		t.Fatal("paths should have equaled. were: ", v2.Path, v.Path)
 	}
 	v2.Cert = []byte("test")
-	v2.OpenVault()
+	v2.LoadSecrets()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,12 +161,12 @@ func TestRemovingFromTheVault(t *testing.T) {
 	}
 	v.Add("key1", []byte("value1"))
 	v.Add("key2", []byte("value2"))
-	err = v.CloseVault()
+	err = v.SaveSecrets()
 	if err != nil {
 		t.Fatal(err)
 	}
 	v.data = make(map[string][]byte, 0)
-	err = v.OpenVault()
+	err = v.LoadSecrets()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,9 +175,9 @@ func TestRemovingFromTheVault(t *testing.T) {
 		t.Fatal("could not properly retrieve value for key1. was:", string(val))
 	}
 	v.Remove("key1")
-	v.CloseVault()
+	v.SaveSecrets()
 	v.data = make(map[string][]byte, 0)
-	v.OpenVault()
+	v.LoadSecrets()
 	_, err = v.Get("key1")
 	if err == nil {
 		t.Fatal("should have failed to retrieve non-existant key")
@@ -198,11 +198,11 @@ func TestGetAll(t *testing.T) {
 	}
 	v.Add("key1", []byte("value1"))
 	v.Add("key2", []byte("value2"))
-	err = v.CloseVault()
+	err = v.SaveSecrets()
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = v.OpenVault()
+	err = v.LoadSecrets()
 	if err != nil {
 		t.Fatal(err)
 	}

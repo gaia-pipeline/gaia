@@ -50,8 +50,8 @@ func NewVault() (*Vault, error) {
 	return v, nil
 }
 
-// OpenVault decrypts the contents of the vault and fills up a map of data to work with.
-func (v *Vault) OpenVault() error {
+// LoadSecrets decrypts the contents of the vault and fills up a map of data to work with.
+func (v *Vault) LoadSecrets() error {
 	r, err := ioutil.ReadFile(v.Path)
 	if err != nil {
 		return err
@@ -63,8 +63,8 @@ func (v *Vault) OpenVault() error {
 	return v.parseToMap(data)
 }
 
-// CloseVault encrypts data passed to the vault in a k/v format and saves it to the vault file.
-func (v *Vault) CloseVault() error {
+// SaveSecrets encrypts data passed to the vault in a k/v format and saves it to the vault file.
+func (v *Vault) SaveSecrets() error {
 	// open f
 	data := v.parseFromMap()
 	encryptedData, err := v.encrypt(data)

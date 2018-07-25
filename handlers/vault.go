@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gaia-pipeline/gaia/security"
@@ -28,13 +27,13 @@ func AddSecret(c echo.Context) error {
 		gaia.Cfg.Logger.Error("error initializing vault", "error", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	err = v.OpenVault()
+	err = v.LoadSecrets()
 	if err != nil {
 		gaia.Cfg.Logger.Error("error opening vault", "error", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 	v.Add(s.Key, []byte(s.Value))
-	err = v.CloseVault()
+	err = v.SaveSecrets()
 	if err != nil {
 		gaia.Cfg.Logger.Error("error saving vault", "error", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
@@ -51,7 +50,7 @@ func ListSecrets(c echo.Context) error {
 		gaia.Cfg.Logger.Error("error initializing vault", "error", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	err = v.OpenVault()
+	err = v.LoadSecrets()
 	if err != nil {
 		gaia.Cfg.Logger.Error("error opening vault", "error", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
@@ -61,12 +60,30 @@ func ListSecrets(c echo.Context) error {
 		s := secret{Key: k, Value: string(v)}
 		secrets = append(secrets, s)
 	}
-	log.Println(secrets)
 	return c.JSON(http.StatusOK, secrets)
 }
 
 // RemoveSecret removes a secret from the vault.
 func RemoveSecret(c echo.Context) error {
-	gaia.Cfg.Logger.Info("received remove")
-	return nil
+	key := c.Param("key")
+	if key == "" {
+		return c.String(http.StatusBadRequest, "invalid key given")
+	}
+	v, err := security.NewVault()
+	if err != nil {
+		gaia.Cfg.Logger.Error("error initializing vault", "error", err.Error())
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+	err = v.LoadSecrets()
+	if err != nil {
+		gaia.Cfg.Logger.Error("error opening vault", "error", err.Error())
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+	v.Remove(key)
+	err = v.SaveSecrets()
+	if err != nil {
+		gaia.Cfg.Logger.Error("error opening vault", "error", err.Error())
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+	return c.String(http.StatusOK, "secret successfully deleted")
 }
