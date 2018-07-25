@@ -231,6 +231,16 @@ func TestPipelinePut(t *testing.T) {
 		t.Fatal("ID is 0, it should be a unique ID")
 	}
 
+	id := p.ID
+	err = store.PipelinePut(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if p.ID != id {
+		t.Fatal("ID should not be generated if it is already present")
+	}
+
 }
 
 func TestPipelineGet(t *testing.T) {
