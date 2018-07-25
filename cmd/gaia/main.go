@@ -170,6 +170,11 @@ func main() {
 	}
 
 	// Initiating Vault
+	// Check Vault path
+	if gaia.Cfg.VaultPath == "" {
+		// Set default to data folder
+		gaia.Cfg.VaultPath = gaia.Cfg.DataPath
+	}
 	_, err = security.NewVault()
 	if err != nil {
 		gaia.Cfg.Logger.Error("error initiating vault")
