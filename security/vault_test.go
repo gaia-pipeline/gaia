@@ -206,10 +206,7 @@ func TestGetAll(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := map[string][]byte{
-		"key1": []byte("value1"),
-		"key2": []byte("value2"),
-	}
+	expected := []string{"key1", "key2"}
 	actual := v.GetAll()
 	if !reflect.DeepEqual(expected, actual) {
 		t.Fatalf("actual did not equal expected. actual was: %+v, expected: %+v.", actual, expected)

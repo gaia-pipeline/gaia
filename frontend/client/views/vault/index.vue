@@ -28,7 +28,7 @@
                         <span>{{ props.row.key }}</span>
                       </td>
                       <td v-tippy="{ arrow : true,  animation : 'shift-away'}">
-                        <span>*******************</span>
+                        <span>{{ props.row.value }}</span>
                       </td>
                       <td>
                         <a v-on:click="deleteSecretModal(props.row)"><i class="fa fa-trash" style="color: whitesmoke;"></i></a>

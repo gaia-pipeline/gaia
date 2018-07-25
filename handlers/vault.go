@@ -56,8 +56,8 @@ func ListSecrets(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 	kvs := v.GetAll()
-	for k, v := range kvs {
-		s := secret{Key: k, Value: string(v)}
+	for _, k := range kvs {
+		s := secret{Key: k, Value: "**********"}
 		secrets = append(secrets, s)
 	}
 	return c.JSON(http.StatusOK, secrets)

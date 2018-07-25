@@ -76,10 +76,10 @@ func (v *Vault) SaveSecrets() error {
 }
 
 // GetAll returns all keys and values in a copy of the internal data.
-func (v *Vault) GetAll() map[string][]byte {
-	m := make(map[string][]byte, 0)
-	for k, v := range v.data {
-		m[k] = v
+func (v *Vault) GetAll() []string {
+	m := make([]string, 0)
+	for k := range v.data {
+		m = append(m, k)
 	}
 	return m
 }
@@ -122,7 +122,8 @@ func (v *Vault) Get(key string) ([]byte, error) {
 // In the end we encrypt the whole thing to Base64 for ease of saving an handling.
 func (v *Vault) encrypt(data []byte) (string, error) {
 	if len(data) < 1 {
-		return "", errors.New("tried to save an empty data set")
+		// User has deleted all the secrets. the file will be empty.
+		return "", nil
 	}
 	paddedPassword := v.pad(v.Cert)
 	block, err := aes.NewCipher(paddedPassword)
