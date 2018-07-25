@@ -61,12 +61,14 @@ func (s *Store) PipelinePut(p *gaia.Pipeline) error {
 		// Get pipeline bucket
 		b := tx.Bucket(pipelineBucket)
 
-		// Generate ID for the pipeline.
-		id, err := b.NextSequence()
-		if err != nil {
-			return err
+		// Generate ID for the pipeline if its new.
+		if p.ID == 0 {
+			id, err := b.NextSequence()
+			if err != nil {
+				return err
+			}
+			p.ID = int(id)
 		}
-		p.ID = int(id)
 
 		// Marshal pipeline data into bytes.
 		buf, err := json.Marshal(p)
@@ -308,5 +310,16 @@ func (s *Store) PipelineGetLatestRun(pipelineID int) (*gaia.PipelineRun, error) 
 
 			return nil
 		})
+	})
+}
+
+// PipelineDelete deletes the pipeline with the given id.
+func (s *Store) PipelineDelete(id int) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		// Get bucket
+		b := tx.Bucket(pipelineBucket)
+
+		// Delete pipeline
+		return b.Delete(itob(id))
 	})
 }

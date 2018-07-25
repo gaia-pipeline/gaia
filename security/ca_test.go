@@ -5,23 +5,22 @@ import (
 	"crypto/x509"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/gaia-pipeline/gaia"
 )
 
-func TestGenerateCA(t *testing.T) {
+func TestInitCA(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.DataPath = os.TempDir()
 
-	err := GenerateCA()
+	c, err := InitCA()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	caCertPath := filepath.Join(gaia.Cfg.DataPath, "ca.crt")
-	caKeyPath := filepath.Join(gaia.Cfg.DataPath, "ca.key")
+	// Get root CA cert path
+	caCertPath, caKeyPath := c.GetCACertPath()
 
 	// Load CA plain
 	caPlain, err := tls.LoadX509KeyPair(caCertPath, caKeyPath)
@@ -55,7 +54,7 @@ func TestGenerateCA(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = cleanupCerts(caCertPath, caKeyPath)
+	err = c.CleanupCerts(caCertPath, caKeyPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,15 +64,15 @@ func TestCreateSignedCert(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.DataPath = os.TempDir()
 
-	err := GenerateCA()
+	c, err := InitCA()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	caCertPath := filepath.Join(gaia.Cfg.DataPath, "ca.crt")
-	caKeyPath := filepath.Join(gaia.Cfg.DataPath, "ca.key")
+	// Get root ca cert path
+	caCertPath, caKeyPath := c.GetCACertPath()
 
-	certPath, keyPath, err := createSignedCert()
+	certPath, keyPath, err := c.CreateSignedCert()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,11 +109,44 @@ func TestCreateSignedCert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = cleanupCerts(caCertPath, caKeyPath)
+	err = c.CleanupCerts(caCertPath, caKeyPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = cleanupCerts(certPath, keyPath)
+	err = c.CleanupCerts(certPath, keyPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGenerateTLSConfig(t *testing.T) {
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.DataPath = os.TempDir()
+
+	c, err := InitCA()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Get root ca cert path
+	caCertPath, caKeyPath := c.GetCACertPath()
+
+	certPath, keyPath, err := c.CreateSignedCert()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Generate TLS Config
+	_, err = c.GenerateTLSConfig(certPath, keyPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = c.CleanupCerts(caCertPath, caKeyPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = c.CleanupCerts(certPath, keyPath)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -44,7 +44,51 @@
             </div>
           </div>
         </tab-pane>
-        <!--<tab-pane label="Manage Pipelines" icon="fa fa-wrench"></tab-pane>-->
+        <tab-pane label="Manage Pipelines" icon="fa fa-wrench">
+          <div class="tile is-ancestor">
+            <div class="tile is-vertical">
+              <div class="tile is-parent">
+                <a class="button is-primary" v-on:click="createPipeline" style="margin-bottom: -10px;">
+                  <span class="icon">
+                    <i class="fa fa-plus"></i>
+                  </span>
+                  <span>Create Pipeline</span>
+                </a>
+              </div>
+              <div class="tile is-parent">
+                <article class="tile is-child notification content-article box">
+                  <vue-good-table
+                    :columns="pipelineColumns"
+                    :rows="pipelineRows"
+                    :paginate="true"
+                    :global-search="true"
+                    :defaultSortBy="{field: 'id', type: 'desc'}"
+                    globalSearchPlaceholder="Search ..."
+                    styleClass="table table-own-bordered">
+                    <template slot="table-row" slot-scope="props">
+                      <td>
+                        <span>{{ props.row.name }}</span>
+                      </td>
+                      <td>
+                        <span>{{ props.row.type }}</span>
+                      </td>
+                      <td>
+                        <span>{{ convertTime(props.row.created) }}</span>
+                      </td>
+                      <td>
+                        <a v-on:click="editPipelineModal(props.row)"><i class="fa fa-edit" style="color: whitesmoke;"></i></a>
+                        <a v-on:click="deletePipelineModal(props.row)"><i class="fa fa-trash" style="color: whitesmoke;"></i></a>
+                      </td>
+                    </template>
+                    <div slot="emptystate" class="empty-table-text">
+                      No active pipelines.
+                    </div>
+                  </vue-good-table>
+                </article>
+              </div>
+            </div>
+          </div>
+        </tab-pane>
       </tabs>
     </div>
 
@@ -157,6 +201,57 @@
         </div>
       </div>
     </modal>
+
+    <!-- edit pipeline modal -->
+    <modal :visible="showEditPipelineModal" class="modal-z-index" @close="close">
+      <div class="box pipeline-modal">
+        <div class="block pipeline-modal-content">
+          <collapse accordion is-fullwidth>
+            <collapse-item title="Change Pipeline Name" selected>
+              <div class="pipeline-modal-content">
+                <p class="control has-icons-left" style="padding-bottom: 5px;">
+                  <input class="input is-medium input-bar" v-focus v-model="selectPipeline.name" placeholder="Pipeline Name">
+                  <span class="icon is-small is-left">
+                    <i class="fa fa-book"></i>
+                  </span>
+                </p>
+              </div>
+            </collapse-item>
+          </collapse>
+          <div class="modal-footer">
+            <div style="float: left;">
+              <button class="button is-primary" v-on:click="changePipelineName">Change Name</button>
+            </div>
+            <div style="float: right;">
+              <button class="button is-danger" v-on:click="close">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </modal>
+
+    <!-- delete pipeline modal -->
+    <modal :visible="showDeletePipelineModal" class="modal-z-index" @close="close">
+      <div class="box pipeline-modal">
+        <article class="media">
+          <div class="media-content">
+            <div class="content">
+              <p>
+                <span style="color: whitesmoke;">Do you really want to delete the pipeline "{{ selectPipeline.name }}"?</span>
+              </p>
+            </div>
+            <div class="modal-footer">
+              <div style="float: left;">
+                <button class="button is-primary" v-on:click="deletePipeline" style="width:150px;">Yes</button>
+              </div>
+              <div style="float: right;">
+                <button class="button is-danger" v-on:click="close" style="width:130px;">No</button>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </modal>
   </div>
 </template>
 
@@ -214,10 +309,31 @@ export default {
         }
       ],
       userRows: [],
+      pipelineColumns: [
+        {
+          label: 'Name',
+          field: 'name'
+        },
+        {
+          label: 'Type',
+          field: 'type'
+        },
+        {
+          label: 'Created',
+          field: 'created'
+        },
+        {
+          label: ''
+        }
+      ],
+      pipelineRows: [],
       selectUser: {},
+      selectPipeline: {},
       showEditUserModal: false,
       showDeleteUserModal: false,
-      showAddUserModal: false
+      showAddUserModal: false,
+      showEditPipelineModal: false,
+      showDeletePipelineModal: false
     }
   },
 
@@ -245,6 +361,17 @@ export default {
         .catch((error) => {
           this.$onError(error)
         })
+      this.$http
+        .get('/api/v1/pipeline', { showProgressBar: false })
+        .then(response => {
+          if (response.data) {
+            this.pipelineRows = response.data;
+          } else {
+            this.pipelineRows = [];
+          }
+        }).catch((error) => {
+          this.$onError(error)
+        })
     },
 
     convertTime (time) {
@@ -266,11 +393,24 @@ export default {
       this.showAddUserModal = true
     },
 
+    editPipelineModal (pipeline) {
+      this.selectPipeline = pipeline
+      this.showEditPipelineModal = true
+    },
+
+    deletePipelineModal (pipeline) {
+      this.selectPipeline = pipeline
+      this.showDeletePipelineModal = true
+    },
+
     close () {
       this.showEditUserModal = false
       this.showDeleteUserModal = false
       this.showAddUserModal = false
       this.selectUser = {}
+      this.showEditPipelineModal = false
+      this.showDeletePipelineModal = false
+      this.selectPipeline = {}
       this.$emit('close')
     },
 
@@ -372,6 +512,45 @@ export default {
         .catch((error) => {
           this.$onError(error)
         })
+    },
+
+    createPipeline () {
+      this.$router.push('/pipeline/create')
+    },
+
+    changePipelineName () {
+      this.$http
+        .put('/api/v1/pipeline/' + this.selectPipeline.id, this.selectPipeline)
+        .then(response => {
+          openNotification({
+            title: 'Pipeline updated!',
+            message: 'Pipeline has been successfully updated.',
+            type: 'success'
+          })
+          this.fetchData()
+          this.close()
+        })
+        .catch((error) => {
+          this.$onError(error)
+        })
+      this.close()
+    },
+
+    deletePipeline () {
+      this.$http
+        .delete('/api/v1/pipeline/' + this.selectPipeline.id)
+        .then(response => {
+          openNotification({
+            title: 'Pipeline deleted!',
+            message: 'Pipeline ' + this.selectPipeline.name + ' has been successfully deleted.',
+            type: 'success'
+          })
+          this.fetchData()
+          this.close()
+        })
+        .catch((error) => {
+          this.$onError(error)
+        })
     }
   }
 }
@@ -393,12 +572,12 @@ export default {
   border-bottom-color: #4da2fc !important;
 }
 
-.user-modal {
+.user-modal, .pipeline-modal {
   text-align: center;
   background-color: #2a2735;
 }
 
-.user-modal-content {
+.user-modal-content, .pipeline-modal-content {
   margin: auto;
   padding: 10px;
 }
