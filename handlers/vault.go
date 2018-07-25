@@ -14,6 +14,39 @@ type secret struct {
 	Value string `json:"value"`
 }
 
+type updateSecret struct {
+	Key   string `json:"key"`
+	Value string `json:"newvalue"`
+}
+
+// UpdateSecret updates a secret using the vault.
+func UpdateSecret(c echo.Context) error {
+	s := new(updateSecret)
+	err := c.Bind(s)
+	if err != nil {
+		gaia.Cfg.Logger.Error("error reading secret", "error", err.Error())
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	v, err := security.NewVault()
+	if err != nil {
+		gaia.Cfg.Logger.Error("error initializing vault", "error", err.Error())
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+	err = v.LoadSecrets()
+	if err != nil {
+		gaia.Cfg.Logger.Error("error opening vault", "error", err.Error())
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+	v.Add(s.Key, []byte(s.Value))
+	err = v.SaveSecrets()
+	if err != nil {
+		gaia.Cfg.Logger.Error("error saving vault", "error", err.Error())
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+	gaia.Cfg.Logger.Info("secret successfully updated")
+	return c.String(http.StatusOK, "secret successfully updated")
+}
+
 // AddSecret creates a secret using the vault.
 func AddSecret(c echo.Context) error {
 	s := new(secret)

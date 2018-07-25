@@ -35,6 +35,7 @@ type Vault struct {
 // KEY2=VALUE2
 func NewVault() (*Vault, error) {
 	v := new(Vault)
+	// Creating vault file
 	vaultPath := filepath.Join(gaia.Cfg.VaultPath, vaultName)
 	if _, osErr := os.Stat(vaultPath); os.IsNotExist(osErr) {
 		gaia.Cfg.Logger.Info("vault file doesn't exist. creating...")
@@ -44,7 +45,17 @@ func NewVault() (*Vault, error) {
 			return nil, err
 		}
 	}
-	v.Cert = []byte("readthecertificatehere")
+
+	// Setting up certificate key content
+	c, err := InitCA()
+	if err != nil {
+		return nil, err
+	}
+	data, err := ioutil.ReadFile(c.caKeyPath)
+	if err != nil {
+		return nil, err
+	}
+	v.Cert = data
 	v.Path = vaultPath
 	v.data = make(map[string][]byte, 0)
 	return v, nil
@@ -126,7 +137,8 @@ func (v *Vault) encrypt(data []byte) (string, error) {
 		return "", nil
 	}
 	paddedPassword := v.pad(v.Cert)
-	block, err := aes.NewCipher(paddedPassword)
+	ci := base64.URLEncoding.EncodeToString(paddedPassword)
+	block, err := aes.NewCipher([]byte(ci[:aes.BlockSize]))
 	if err != nil {
 		return "", err
 	}
@@ -150,7 +162,8 @@ func (v *Vault) decrypt(data []byte) ([]byte, error) {
 		return []byte{}, nil
 	}
 	paddedPassword := v.pad(v.Cert)
-	block, err := aes.NewCipher(paddedPassword)
+	ci := base64.URLEncoding.EncodeToString(paddedPassword)
+	block, err := aes.NewCipher([]byte(ci[:aes.BlockSize]))
 	if err != nil {
 		return []byte{}, err
 	}
@@ -190,7 +203,7 @@ func (v *Vault) parseToMap(data []byte) error {
 			// It is possible that if there is a password failure it's not caught
 			// by the padding process. Here it will be caught because we can't
 			// marshal the data into proper k/v pairs.
-			return errors.New("possible mistype of password")
+			return errors.New("possible mistyped password")
 		}
 		v.data[string(d[0])] = d[1]
 	}

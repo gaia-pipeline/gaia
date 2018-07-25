@@ -15,6 +15,7 @@ func TestNewVault(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
+	gaia.Cfg.CAPath = tmp
 	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -34,6 +35,7 @@ func TestAddAndGet(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
+	gaia.Cfg.CAPath = tmp
 	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -55,6 +57,7 @@ func TestCloseLoadSecrets(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
+	gaia.Cfg.CAPath = tmp
 	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -86,6 +89,7 @@ func TestCloseLoadSecretsWithInvalidPassword(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
+	gaia.Cfg.CAPath = tmp
 	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -119,6 +123,7 @@ func TestAnExistingVaultFileIsNotOverwritten(t *testing.T) {
 	tmp := "."
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
+	gaia.Cfg.CAPath = tmp
 	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -130,6 +135,8 @@ func TestAnExistingVaultFileIsNotOverwritten(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.Remove(vaultName)
+	defer os.Remove("ca.crt")
+	defer os.Remove("ca.key")
 	v.Cert = []byte("test")
 	v.Add("test", []byte("value"))
 	v.SaveSecrets()
@@ -155,6 +162,7 @@ func TestRemovingFromTheVault(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
+	gaia.Cfg.CAPath = tmp
 	v, err := NewVault()
 	if err != nil {
 		t.Fatal(err)
@@ -192,12 +200,12 @@ func TestGetAll(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
+	gaia.Cfg.CAPath = tmp
 	v, err := NewVault()
 	if err != nil {
 		t.Fatal(err)
 	}
 	v.Add("key1", []byte("value1"))
-	v.Add("key2", []byte("value2"))
 	err = v.SaveSecrets()
 	if err != nil {
 		t.Fatal(err)
@@ -206,9 +214,29 @@ func TestGetAll(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := []string{"key1", "key2"}
+	expected := []string{"key1"}
 	actual := v.GetAll()
 	if !reflect.DeepEqual(expected, actual) {
 		t.Fatalf("actual did not equal expected. actual was: %+v, expected: %+v.", actual, expected)
+	}
+}
+
+func TestEditValueWithAddingItAgain(t *testing.T) {
+	tmp := os.TempDir()
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.VaultPath = tmp
+	gaia.Cfg.CAPath = tmp
+	v, _ := NewVault()
+	v.Add("key1", []byte("value1"))
+	v.SaveSecrets()
+	v.data = make(map[string][]byte, 0)
+	v.LoadSecrets()
+	v.Add("key1", []byte("value2"))
+	v.SaveSecrets()
+	v.data = make(map[string][]byte, 0)
+	v.LoadSecrets()
+	val, _ := v.Get("key1")
+	if bytes.Compare(val, []byte("value2")) != 0 {
+		t.Fatal("value should have equaled expected 'value2'. was: ", string(val))
 	}
 }

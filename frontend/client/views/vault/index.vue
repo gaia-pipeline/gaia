@@ -28,9 +28,10 @@
                         <span>{{ props.row.key }}</span>
                       </td>
                       <td v-tippy="{ arrow : true,  animation : 'shift-away'}">
-                        <span>{{ props.row.value }}</span>
+                        <span>*****</span>
                       </td>
                       <td>
+                        <a v-on:click="editSecretModal(props.row)"><i class="fa fa-edit" style="color: whitesmoke;"></i></a>
                         <a v-on:click="deleteSecretModal(props.row)"><i class="fa fa-trash" style="color: whitesmoke;"></i></a>
                       </td>
                     </template>
@@ -45,6 +46,41 @@
         </tab-pane>
       </tabs>
     </div>
+
+    <!-- edit secret modal -->
+    <modal :visible="showEditSecretModal" class="modal-z-index" @close="close">
+      <div class="box secret-modal">
+        <div class="block secret-modal-content">
+          <collapse accordion is-fullwidth>
+            <collapse-item title="Change Secret" selected>
+              <div class="secret-modal-content">
+                <label class="label" style="text-align: left;">Change secret value for key {{ selectSecret.key }}:</label>
+                <p class="control has-icons-left">
+                  <input class="input is-medium input-bar" type="password" v-model="selectSecret.newvalue" placeholder="New Value">
+                  <span class="icon is-small is-left">
+                    <i class="fa fa-lock"></i>
+                  </span>
+                </p>
+                <p class="control has-icons-left">
+                  <input class="input is-medium input-bar" type="password" v-model="selectSecret.newvalueconf" placeholder="New Value confirmation">
+                  <span class="icon is-small is-left">
+                    <i class="fa fa-lock"></i>
+                  </span>
+                </p>
+              </div>
+            </collapse-item>
+          </collapse>
+          <div class="modal-footer">
+            <div style="float: left;">
+              <button class="button is-primary" v-on:click="changeSecret">Change Secret Value</button>
+            </div>
+            <div style="float: right;">
+              <button class="button is-danger" v-on:click="close">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </modal>
 
     <!-- delete secret modal -->
     <modal :visible="showDeleteSecretModal" class="modal-z-index" @close="close">
@@ -168,6 +204,7 @@ export default {
       ],
       keyRows: [],
       selectSecret: {},
+      showEditSecretModal: false,
       showDeleteSecretModal: false,
       showAddSecretModal: false
     }
@@ -203,6 +240,11 @@ export default {
       return moment(time).fromNow()
     },
 
+    editSecretModal (secret) {
+      this.selectSecret = secret
+      this.showEditSecretModal = true
+    },
+
     deleteSecretModal (secret) {
       this.selectSecret = secret
       this.showDeleteSecretModal = true
@@ -214,10 +256,51 @@ export default {
     },
 
     close () {
+      this.showEditSecretModal = false
       this.showDeleteSecretModal = false
       this.showAddSecretModal = false
       this.selectSecret = {}
       this.$emit('close')
+    },
+
+    changeSecret () {
+      // pre-validate
+      if (!this.selectSecret.newvalue || !this.selectSecret.newvalueconf) {
+        openNotification({
+          title: 'Empty value',
+          message: 'Empty value is not allowed.',
+          type: 'danger'
+        })
+        this.close()
+        return
+      }
+
+      // pre-validate
+      if (this.selectSecret.newvalue !== this.selectSecret.newvalueconf) {
+        openNotification({
+          title: 'value not identical',
+          message: 'value and confirmation are not identical!',
+          type: 'danger'
+        })
+        this.close()
+        return
+      }
+
+      this.$http
+        .post('/api/v1/secret/update', this.selectSecret)
+        .then(response => {
+          openNotification({
+            title: 'Secret changed!',
+            message: 'Secret has been successful changed.',
+            type: 'success'
+          })
+          this.selectSecret.newvalue = ''
+          this.selectSecret.newvalueconf = ''
+        })
+        .catch(error => {
+          this.$onError(error)
+        })
+      this.close()
     },
 
     addSecret () {
@@ -263,6 +346,7 @@ export default {
             message: 'Secret has been successfully added.',
             type: 'success'
           })
+          this.selectSecret.value = null
           this.fetchData()
         })
         .catch(error => {
