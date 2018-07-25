@@ -15,6 +15,7 @@ import (
 	"github.com/gaia-pipeline/gaia/pipeline"
 	"github.com/gaia-pipeline/gaia/plugin"
 	scheduler "github.com/gaia-pipeline/gaia/scheduler"
+	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
@@ -41,10 +42,12 @@ func init() {
 	flag.StringVar(&gaia.Cfg.HomePath, "homepath", "", "Path to the gaia home folder")
 	flag.StringVar(&gaia.Cfg.Worker, "worker", "2", "Number of worker gaia will use to execute pipelines in parallel")
 	flag.StringVar(&gaia.Cfg.JwtPrivateKeyPath, "jwtPrivateKeyPath", "", "A RSA private key used to sign JWT tokens")
+	flag.StringVar(&gaia.Cfg.CAPath, "capath", "", "Folder path where the generated CA certificate files will be saved")
 	flag.BoolVar(&gaia.Cfg.DevMode, "dev", false, "If true, gaia will be started in development mode. Don't use this in production!")
 	flag.BoolVar(&gaia.Cfg.VersionSwitch, "version", false, "If true, will print the version and immediately exit")
 	flag.BoolVar(&gaia.Cfg.Poll, "poll", false, "Instead of using a Webhook, keep polling git for changes on pipelines")
 	flag.IntVar(&gaia.Cfg.PVal, "pval", 1, "The interval in minutes in which to poll vcs for changes")
+
 	// Default values
 	gaia.Cfg.Bolt.Mode = 0600
 }
@@ -120,6 +123,19 @@ func main() {
 	err = os.MkdirAll(gaia.Cfg.WorkspacePath, 0700)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot create data folder", "error", err.Error(), "path", gaia.Cfg.WorkspacePath)
+		os.Exit(1)
+	}
+
+	// Check CA path
+	if gaia.Cfg.CAPath == "" {
+		// Set default to data folder
+		gaia.Cfg.CAPath = gaia.Cfg.DataPath
+	}
+
+	// Setup CA for cerificate signing
+	_, err = security.InitCA()
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot create CA", "error", err.Error())
 		os.Exit(1)
 	}
 

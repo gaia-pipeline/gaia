@@ -162,6 +162,7 @@ type Config struct {
 	JwtPrivateKeyPath string
 	JWTKey            interface{}
 	Logger            hclog.Logger
+	CAPath            string
 
 	Bolt struct {
 		Mode os.FileMode
