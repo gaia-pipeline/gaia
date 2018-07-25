@@ -35,7 +35,7 @@ type Vault struct {
 // KEY2=VALUE2
 func NewVault() (*Vault, error) {
 	v := new(Vault)
-	vaultPath := filepath.Join(gaia.Cfg.HomePath, vaultName)
+	vaultPath := filepath.Join(gaia.Cfg.VaultPath, vaultName)
 	if _, osErr := os.Stat(vaultPath); os.IsNotExist(osErr) {
 		gaia.Cfg.Logger.Info("vault file doesn't exist. creating...")
 		_, err := os.Create(vaultPath)
@@ -44,6 +44,7 @@ func NewVault() (*Vault, error) {
 			return nil, err
 		}
 	}
+	v.Cert = []byte("readthecertificatehere")
 	v.Path = vaultPath
 	v.data = make(map[string][]byte, 0)
 	return v, nil
@@ -60,6 +61,27 @@ func (v *Vault) OpenVault() error {
 		return err
 	}
 	return v.parseToMap(data)
+}
+
+// CloseVault encrypts data passed to the vault in a k/v format and saves it to the vault file.
+func (v *Vault) CloseVault() error {
+	// open f
+	data := v.parseFromMap()
+	encryptedData, err := v.encrypt(data)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(v.Path, []byte(encryptedData), 0400)
+	return err
+}
+
+// GetAll returns all keys and values in a copy of the internal data.
+func (v *Vault) GetAll() map[string][]byte {
+	m := make(map[string][]byte, 0)
+	for k, v := range v.data {
+		m[k] = v
+	}
+	return m
 }
 
 // Add adds a value to the vault. This operation is safe to use concurrently.
@@ -90,18 +112,6 @@ func (v *Vault) Get(key string) ([]byte, error) {
 	}
 
 	return val, nil
-}
-
-// CloseVault encrypts data passed to the vault in a k/v format and saves it to the vault file.
-func (v *Vault) CloseVault() error {
-	// open f
-	data := v.parseFromMap()
-	encryptedData, err := v.encrypt(data)
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(v.Path, []byte(encryptedData), 0400)
-	return err
 }
 
 // encrypt uses an aes cipher provided by the certificate file for encryption.

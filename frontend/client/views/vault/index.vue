@@ -100,7 +100,7 @@
             </div>
             <div class="modal-footer">
               <div style="float: left;">
-                <button class="button is-primary" v-on:click="deleteUser" style="width:150px;">Yes</button>
+                <button class="button is-primary" v-on:click="deleteSecret" style="width:150px;">Yes</button>
               </div>
               <div style="float: right;">
                 <button class="button is-danger" v-on:click="close" style="width:130px;">No</button>
@@ -347,7 +347,7 @@ export default {
       this.close()
     },
 
-    deleteUser () {
+    deleteSecret () {
       this.$http
         .delete('/api/v1/secret/' + this.selectSecret.value)
         .then(response => {

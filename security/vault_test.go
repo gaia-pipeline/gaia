@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/gaia-pipeline/gaia"
@@ -13,7 +14,7 @@ import (
 func TestNewVault(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = &gaia.Config{}
-	gaia.Cfg.HomePath = tmp
+	gaia.Cfg.VaultPath = tmp
 	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -24,7 +25,7 @@ func TestNewVault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if v.Path != filepath.Join(gaia.Cfg.HomePath, vaultName) {
+	if v.Path != filepath.Join(gaia.Cfg.VaultPath, vaultName) {
 		t.Fatal("file path of vault file did not equal expected. was:", v.Path)
 	}
 }
@@ -32,7 +33,7 @@ func TestNewVault(t *testing.T) {
 func TestAddAndGet(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = &gaia.Config{}
-	gaia.Cfg.HomePath = tmp
+	gaia.Cfg.VaultPath = tmp
 	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -53,7 +54,7 @@ func TestAddAndGet(t *testing.T) {
 func TestCloseOpenVault(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = &gaia.Config{}
-	gaia.Cfg.HomePath = tmp
+	gaia.Cfg.VaultPath = tmp
 	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -64,7 +65,6 @@ func TestCloseOpenVault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	v.Cert = []byte("test")
 	v.Add("key1", []byte("value1"))
 	v.Add("key2", []byte("value2"))
 	err = v.CloseVault()
@@ -85,7 +85,7 @@ func TestCloseOpenVault(t *testing.T) {
 func TestCloseOpenVaultWithInvalidPassword(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = &gaia.Config{}
-	gaia.Cfg.HomePath = tmp
+	gaia.Cfg.VaultPath = tmp
 	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -118,7 +118,7 @@ func TestCloseOpenVaultWithInvalidPassword(t *testing.T) {
 func TestAnExistingVaultFileIsNotOverwritten(t *testing.T) {
 	tmp := "."
 	gaia.Cfg = &gaia.Config{}
-	gaia.Cfg.HomePath = tmp
+	gaia.Cfg.VaultPath = tmp
 	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -154,12 +154,11 @@ func TestAnExistingVaultFileIsNotOverwritten(t *testing.T) {
 func TestRemovingFromTheVault(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = &gaia.Config{}
-	gaia.Cfg.HomePath = tmp
+	gaia.Cfg.VaultPath = tmp
 	v, err := NewVault()
 	if err != nil {
 		t.Fatal(err)
 	}
-	v.Cert = []byte("test")
 	v.Add("key1", []byte("value1"))
 	v.Add("key2", []byte("value2"))
 	err = v.CloseVault()
@@ -186,5 +185,33 @@ func TestRemovingFromTheVault(t *testing.T) {
 	expected := "key 'key1' not found in vault"
 	if err.Error() != expected {
 		t.Fatalf("got the wrong error message. expected: \n'%s'\n was: \n'%s'\n", expected, err.Error())
+	}
+}
+
+func TestGetAll(t *testing.T) {
+	tmp := os.TempDir()
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.VaultPath = tmp
+	v, err := NewVault()
+	if err != nil {
+		t.Fatal(err)
+	}
+	v.Add("key1", []byte("value1"))
+	v.Add("key2", []byte("value2"))
+	err = v.CloseVault()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = v.OpenVault()
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := map[string][]byte{
+		"key1": []byte("value1"),
+		"key2": []byte("value2"),
+	}
+	actual := v.GetAll()
+	if !reflect.DeepEqual(expected, actual) {
+		t.Fatalf("actual did not equal expected. actual was: %+v, expected: %+v.", actual, expected)
 	}
 }
