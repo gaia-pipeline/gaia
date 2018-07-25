@@ -65,8 +65,8 @@ type CAAPI interface {
 // InitCA setups a new instance of CA and generates a new CA if not already exists.
 func InitCA() (*CA, error) {
 	t := &CA{
-		caCertPath: filepath.Join(gaia.Cfg.DataPath, certName),
-		caKeyPath:  filepath.Join(gaia.Cfg.DataPath, keyName),
+		caCertPath: filepath.Join(gaia.Cfg.CAPath, certName),
+		caKeyPath:  filepath.Join(gaia.Cfg.CAPath, keyName),
 	}
 	return t, t.generateCA()
 }
