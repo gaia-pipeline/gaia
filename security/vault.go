@@ -23,8 +23,8 @@ const (
 
 // Vault is a secret storage for data that gaia needs to store encrypted.
 type Vault struct {
-	Path string
-	Cert []byte
+	path string
+	cert []byte
 	data map[string][]byte
 	sync.RWMutex
 }
@@ -33,7 +33,7 @@ type Vault struct {
 // The format is:
 // KEY=VALUE
 // KEY2=VALUE2
-func NewVault() (*Vault, error) {
+func NewVault(ca *CA) (*Vault, error) {
 	v := new(Vault)
 	// Creating vault file
 	vaultPath := filepath.Join(gaia.Cfg.VaultPath, vaultName)
@@ -47,23 +47,20 @@ func NewVault() (*Vault, error) {
 	}
 
 	// Setting up certificate key content
-	c, err := InitCA()
+	_, certKey := ca.GetCACertPath()
+	data, err := ioutil.ReadFile(certKey)
 	if err != nil {
 		return nil, err
 	}
-	data, err := ioutil.ReadFile(c.caKeyPath)
-	if err != nil {
-		return nil, err
-	}
-	v.Cert = data
-	v.Path = vaultPath
+	v.cert = data
+	v.path = vaultPath
 	v.data = make(map[string][]byte, 0)
 	return v, nil
 }
 
 // LoadSecrets decrypts the contents of the vault and fills up a map of data to work with.
 func (v *Vault) LoadSecrets() error {
-	r, err := ioutil.ReadFile(v.Path)
+	r, err := ioutil.ReadFile(v.path)
 	if err != nil {
 		return err
 	}
@@ -82,12 +79,14 @@ func (v *Vault) SaveSecrets() error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(v.Path, []byte(encryptedData), 0400)
+	err = ioutil.WriteFile(v.path, []byte(encryptedData), 0400)
 	return err
 }
 
 // GetAll returns all keys and values in a copy of the internal data.
 func (v *Vault) GetAll() []string {
+	v.RLock()
+	defer v.RUnlock()
 	m := make([]string, 0)
 	for k := range v.data {
 		m = append(m, k)
@@ -136,7 +135,7 @@ func (v *Vault) encrypt(data []byte) (string, error) {
 		// User has deleted all the secrets. the file will be empty.
 		return "", nil
 	}
-	paddedPassword := v.pad(v.Cert)
+	paddedPassword := v.pad(v.cert)
 	ci := base64.URLEncoding.EncodeToString(paddedPassword)
 	block, err := aes.NewCipher([]byte(ci[:aes.BlockSize]))
 	if err != nil {
@@ -161,7 +160,7 @@ func (v *Vault) decrypt(data []byte) ([]byte, error) {
 		gaia.Cfg.Logger.Info("the vault is empty")
 		return []byte{}, nil
 	}
-	paddedPassword := v.pad(v.Cert)
+	paddedPassword := v.pad(v.cert)
 	ci := base64.URLEncoding.EncodeToString(paddedPassword)
 	block, err := aes.NewCipher([]byte(ci[:aes.BlockSize]))
 	if err != nil {

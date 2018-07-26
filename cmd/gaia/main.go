@@ -134,7 +134,7 @@ func main() {
 	}
 
 	// Setup CA for cerificate signing
-	_, err = security.InitCA()
+	cert, err := security.InitCA()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot create CA", "error", err.Error())
 		os.Exit(1)
@@ -175,7 +175,7 @@ func main() {
 		// Set default to data folder
 		gaia.Cfg.VaultPath = gaia.Cfg.DataPath
 	}
-	_, err = security.NewVault()
+	_, err = security.NewVault(cert)
 	if err != nil {
 		gaia.Cfg.Logger.Error("error initiating vault")
 		os.Exit(1)

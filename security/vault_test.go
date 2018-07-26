@@ -22,12 +22,13 @@ func TestNewVault(t *testing.T) {
 		Output: buf,
 		Name:   "Gaia",
 	})
-	v, err := NewVault()
+	c, _ := InitCA()
+	v, err := NewVault(c)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if v.Path != filepath.Join(gaia.Cfg.VaultPath, vaultName) {
-		t.Fatal("file path of vault file did not equal expected. was:", v.Path)
+	if v.path != filepath.Join(gaia.Cfg.VaultPath, vaultName) {
+		t.Fatal("file path of vault file did not equal expected. was:", v.path)
 	}
 }
 
@@ -42,7 +43,8 @@ func TestAddAndGet(t *testing.T) {
 		Output: buf,
 		Name:   "Gaia",
 	})
-	v, err := NewVault()
+	c, _ := InitCA()
+	v, err := NewVault(c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +66,8 @@ func TestCloseLoadSecrets(t *testing.T) {
 		Output: buf,
 		Name:   "Gaia",
 	})
-	v, err := NewVault()
+	c, _ := InitCA()
+	v, err := NewVault(c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,11 +99,12 @@ func TestCloseLoadSecretsWithInvalidPassword(t *testing.T) {
 		Output: buf,
 		Name:   "Gaia",
 	})
-	v, err := NewVault()
+	c, _ := InitCA()
+	v, err := NewVault(c)
 	if err != nil {
 		t.Fatal(err)
 	}
-	v.Cert = []byte("test")
+	v.cert = []byte("test")
 	v.Add("key1", []byte("value1"))
 	v.Add("key2", []byte("value2"))
 	err = v.SaveSecrets()
@@ -108,7 +112,7 @@ func TestCloseLoadSecretsWithInvalidPassword(t *testing.T) {
 		t.Fatal(err)
 	}
 	v.data = make(map[string][]byte, 0)
-	v.Cert = []byte("invalid")
+	v.cert = []byte("invalid")
 	err = v.LoadSecrets()
 	if err == nil {
 		t.Fatal("error should not have been nil.")
@@ -130,21 +134,22 @@ func TestAnExistingVaultFileIsNotOverwritten(t *testing.T) {
 		Output: buf,
 		Name:   "Gaia",
 	})
-	v, err := NewVault()
+	c, _ := InitCA()
+	v, err := NewVault(c)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.Remove(vaultName)
 	defer os.Remove("ca.crt")
 	defer os.Remove("ca.key")
-	v.Cert = []byte("test")
+	v.cert = []byte("test")
 	v.Add("test", []byte("value"))
 	v.SaveSecrets()
-	v2, _ := NewVault()
-	if v2.Path != v.Path {
-		t.Fatal("paths should have equaled. were: ", v2.Path, v.Path)
+	v2, _ := NewVault(c)
+	if v2.path != v.path {
+		t.Fatal("paths should have equaled. were: ", v2.path, v.path)
 	}
-	v2.Cert = []byte("test")
+	v2.cert = []byte("test")
 	v2.LoadSecrets()
 	if err != nil {
 		t.Fatal(err)
@@ -163,7 +168,8 @@ func TestRemovingFromTheVault(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
 	gaia.Cfg.CAPath = tmp
-	v, err := NewVault()
+	c, _ := InitCA()
+	v, err := NewVault(c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -201,7 +207,8 @@ func TestGetAll(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
 	gaia.Cfg.CAPath = tmp
-	v, err := NewVault()
+	c, _ := InitCA()
+	v, err := NewVault(c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -226,7 +233,8 @@ func TestEditValueWithAddingItAgain(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
 	gaia.Cfg.CAPath = tmp
-	v, _ := NewVault()
+	c, _ := InitCA()
+	v, _ := NewVault(c)
 	v.Add("key1", []byte("value1"))
 	v.SaveSecrets()
 	v.data = make(map[string][]byte, 0)
