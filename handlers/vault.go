@@ -55,7 +55,7 @@ func SetSecret(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	return c.String(http.StatusOK, "secret successfully set")
+	return c.String(http.StatusCreated, "secret successfully set")
 }
 
 // ListSecrets retrieves all secrets from the vault.
