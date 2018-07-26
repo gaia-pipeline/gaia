@@ -8,7 +8,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-type secret struct {
+type addSecret struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
 }
@@ -18,12 +18,25 @@ type updateSecret struct {
 	Value string `json:"newvalue"`
 }
 
-// UpdateSecret updates a secret using the vault.
-func UpdateSecret(c echo.Context) error {
-	s := new(updateSecret)
-	err := c.Bind(s)
-	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
+// SetSecret creates or updates a given secret
+func SetSecret(c echo.Context) error {
+	var key, value string
+	if c.Request().Method == "POST" {
+		s := new(addSecret)
+		err := c.Bind(s)
+		if err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+		key = s.Key
+		value = s.Value
+	} else if c.Request().Method == "PUT" {
+		s := new(updateSecret)
+		err := c.Bind(s)
+		if err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+		key = s.Key
+		value = s.Value
 	}
 	cert, err := security.InitCA()
 	if err != nil {
@@ -37,44 +50,17 @@ func UpdateSecret(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	v.Add(s.Key, []byte(s.Value))
+	v.Add(key, []byte(value))
 	err = v.SaveSecrets()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	return c.String(http.StatusOK, "secret successfully updated")
-}
-
-// AddSecret creates a secret using the vault.
-func AddSecret(c echo.Context) error {
-	s := new(secret)
-	err := c.Bind(s)
-	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-	cert, err := security.InitCA()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
-	}
-	v, err := security.NewVault(cert)
-	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
-	}
-	err = v.LoadSecrets()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
-	}
-	v.Add(s.Key, []byte(s.Value))
-	err = v.SaveSecrets()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
-	}
-	return c.String(http.StatusCreated, "secret successfully added")
+	return c.String(http.StatusOK, "secret successfully set")
 }
 
 // ListSecrets retrieves all secrets from the vault.
 func ListSecrets(c echo.Context) error {
-	secrets := make([]secret, 0)
+	secrets := make([]addSecret, 0)
 	cert, err := security.InitCA()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
@@ -89,7 +75,7 @@ func ListSecrets(c echo.Context) error {
 	}
 	kvs := v.GetAll()
 	for _, k := range kvs {
-		s := secret{Key: k, Value: "**********"}
+		s := addSecret{Key: k, Value: "**********"}
 		secrets = append(secrets, s)
 	}
 	return c.JSON(http.StatusOK, secrets)

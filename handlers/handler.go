@@ -94,8 +94,8 @@ func InitHandlers(e *echo.Echo, store *store.Store, scheduler *scheduler.Schedul
 	// Secrets
 	e.GET(p+"secrets", ListSecrets)
 	e.DELETE(p+"secret/:key", RemoveSecret)
-	e.POST(p+"secret", AddSecret)
-	e.POST(p+"secret/update", UpdateSecret)
+	e.POST(p+"secret", SetSecret)
+	e.PUT(p+"secret/update", SetSecret)
 
 	// Middleware
 	e.Use(middleware.Recover())

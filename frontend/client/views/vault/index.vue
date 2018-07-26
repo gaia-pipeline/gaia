@@ -286,16 +286,15 @@ export default {
         return
       }
 
+      this.selectSecret.value = null
       this.$http
-        .post('/api/v1/secret/update', this.selectSecret)
+        .put('/api/v1/secret/update', this.selectSecret)
         .then(response => {
           openNotification({
             title: 'Secret changed!',
             message: 'Secret has been successful changed.',
             type: 'success'
           })
-          this.selectSecret.newvalue = ''
-          this.selectSecret.newvalueconf = ''
         })
         .catch(error => {
           this.$onError(error)
@@ -346,7 +345,6 @@ export default {
             message: 'Secret has been successfully added.',
             type: 'success'
           })
-          this.selectSecret.value = null
           this.fetchData()
         })
         .catch(error => {
