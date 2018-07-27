@@ -133,9 +133,9 @@ Gaia will compile it and add it to it's store for later execution.
 Please find a bit more sophisticated example in our `go-example repo`_.
 
 Security
---------
+========
 
-See the Documentation located here: |security-docs|.
+See the Documentation located here: `security-docs`_.
 
 Documentation and more
 ======================
@@ -212,6 +212,7 @@ If you have any questions feel free to contact us on `gitter`_.
 .. _`Kubernetes deployment with vault integration`: https://docs.gaia-pipeline.io/tutorials/kube-vault-deploy/
 .. _`git push`: https://git-scm.com/docs/git-push
 .. _`HTTP/2`: https://http2.github.io/
+.. _`security-docs`: https://github.com/gaia-pipeline/gaia/blob/master/security/README.md
 
 .. |build-status| image:: https://circleci.com/gh/gaia-pipeline/gaia/tree/master.svg?style=shield&circle-token=c0e15edfb08f8076076cbbb55558af6cfecb89b8
     :alt: Build Status
@@ -264,6 +265,4 @@ If you have any questions feel free to contact us on `gitter`_.
 .. |sh-settings| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/142a2969c4d27d4135ef8f96213bb166009fda1e/settings.png
     :alt: gaia settings screenshot
     :width: 650px
-.. |security-docs|
-    :alt: Security in Gaia
-    :target: https://github.com/gaia-pipeline/gaia/blob/master/security/README.md
+
