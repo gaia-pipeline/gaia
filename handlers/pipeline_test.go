@@ -10,9 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/services"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/pipeline"
-	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
@@ -33,14 +34,8 @@ func TestPipelineGitLSRemote(t *testing.T) {
 		DataPath: dataDir,
 	}
 
-	dataStore := store.NewStore()
-	err = dataStore.Init()
-	if err != nil {
-		t.Fatalf("cannot initialize store: %v", err.Error())
-	}
-
 	e := echo.New()
-	InitHandlers(e, dataStore, nil)
+	InitHandlers(e)
 
 	t.Run("fails with invalid data", func(t *testing.T) {
 		req := httptest.NewRequest(echo.POST, "/api/"+apiVersion+"/pipeline/gitlsremote", nil)
@@ -109,19 +104,15 @@ func TestPipelineUpdate(t *testing.T) {
 	}
 
 	// Initialize store
-	dataStore := store.NewStore()
-	err = dataStore.Init()
-	if err != nil {
-		t.Fatalf("cannot initialize store: %v", err.Error())
-	}
-
+	p := new(services.Provider)
+	dataStore := p.StorageService()
 	// Initialize global active pipelines
 	ap := pipeline.NewActivePipelines()
 	pipeline.GlobalActivePipelines = ap
 
 	// Initialize echo
 	e := echo.New()
-	InitHandlers(e, dataStore, nil)
+	InitHandlers(e)
 
 	pipeline1 := gaia.Pipeline{
 		ID:      1,
@@ -200,7 +191,8 @@ func TestPipelineDelete(t *testing.T) {
 	}
 
 	// Initialize store
-	dataStore := store.NewStore()
+	provider := new(services.Provider)
+	dataStore := provider.StorageService()
 	err = dataStore.Init()
 	if err != nil {
 		t.Fatalf("cannot initialize store: %v", err.Error())
@@ -212,7 +204,7 @@ func TestPipelineDelete(t *testing.T) {
 
 	// Initialize echo
 	e := echo.New()
-	InitHandlers(e, dataStore, nil)
+	InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:      1,

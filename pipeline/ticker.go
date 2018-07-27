@@ -12,8 +12,7 @@ import (
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
-	scheduler "github.com/gaia-pipeline/gaia/scheduler"
-	"github.com/gaia-pipeline/gaia/store"
+	"github.com/gaia-pipeline/gaia/services"
 )
 
 const (
@@ -22,22 +21,11 @@ const (
 	tickerIntervalSeconds = 5
 )
 
-// storeService is an instance of store.
-// Use this to talk to the store.
-var storeService *store.Store
-
-// schedulerService is an instance of scheduler.
-var schedulerService *scheduler.Scheduler
-
 // InitTicker inititates the pipeline ticker.
 // This periodic job will check for new pipelines.
-func InitTicker(store *store.Store, scheduler *scheduler.Scheduler) {
+func InitTicker() {
 	// Init global active pipelines slice
 	GlobalActivePipelines = NewActivePipelines()
-
-	// Save instances
-	storeService = store
-	schedulerService = scheduler
 
 	// Check immediately to make sure we fill the list as fast as possible.
 	checkActivePipelines()
@@ -77,6 +65,9 @@ func InitTicker(store *store.Store, scheduler *scheduler.Scheduler) {
 // Every file will be handled as an active pipeline and therefore
 // saved in the global active pipelines slice.
 func checkActivePipelines() {
+	sp := new(services.Provider)
+	storeService := sp.StorageService()
+	schedulerService := sp.SchedulerService()
 	var existingPipelineNames []string
 	files, err := ioutil.ReadDir(gaia.Cfg.PipelinePath)
 	if err != nil {

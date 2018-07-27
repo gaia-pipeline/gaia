@@ -14,7 +14,6 @@ import (
 	"testing"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
 )
 
@@ -246,9 +245,6 @@ func TestCopyBinarySrcDoesNotExist(t *testing.T) {
 }
 
 func TestSavePipeline(t *testing.T) {
-	s := store.NewStore()
-	s.Init()
-	storeService = s
 	defer os.Remove("gaia.db")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = "/tmp"

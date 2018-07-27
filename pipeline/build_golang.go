@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/services"
 	"github.com/satori/go.uuid"
 )
 
@@ -129,7 +130,9 @@ func (b *BuildPipelineGolang) SavePipeline(p *gaia.Pipeline) error {
 	p.Name = strings.TrimSuffix(filepath.Base(dest), typeDelimiter+gaia.PTypeGolang.String())
 	p.Created = time.Now()
 	// Our pipeline is finished constructing. Save it.
-	return storeService.PipelinePut(p)
+	sp := new(services.Provider)
+	ss := sp.StorageService()
+	return ss.PipelinePut(p)
 }
 
 // copyFileContents copies the content from source to destination.

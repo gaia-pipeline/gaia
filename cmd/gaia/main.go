@@ -13,10 +13,8 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
 	"github.com/gaia-pipeline/gaia/pipeline"
-	"github.com/gaia-pipeline/gaia/plugin"
-	scheduler "github.com/gaia-pipeline/gaia/scheduler"
 	"github.com/gaia-pipeline/gaia/security"
-	"github.com/gaia-pipeline/gaia/store"
+	"github.com/gaia-pipeline/gaia/services"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
@@ -142,34 +140,24 @@ func main() {
 	// Initialize echo instance
 	echoInstance = echo.New()
 
-	// Initialize store
-	store := store.NewStore()
-	err = store.Init()
-	if err != nil {
-		gaia.Cfg.Logger.Error("cannot initialize store", "error", err.Error())
-		os.Exit(1)
-	}
+	// Create a service provider
+	p := new(services.Provider)
 
-	// Create new plugin system
-	pS := &plugin.Plugin{}
+	// Initialize store
+	p.StorageService()
 
 	// Initialize scheduler
-	scheduler := scheduler.NewScheduler(store, pS)
-	err = scheduler.Init()
-	if err != nil {
-		gaia.Cfg.Logger.Error("cannot initialize scheduler:", "error", err.Error())
-		os.Exit(1)
-	}
+	p.SchedulerService()
 
 	// Initialize handlers
-	err = handlers.InitHandlers(echoInstance, store, scheduler)
+	err = handlers.InitHandlers(echoInstance)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
 		os.Exit(1)
 	}
 
 	// Start ticker. Periodic job to check for new plugins.
-	pipeline.InitTicker(store, scheduler)
+	pipeline.InitTicker()
 
 	// Start listen
 	echoInstance.Logger.Fatal(echoInstance.Start(":" + gaia.Cfg.ListenPort))
