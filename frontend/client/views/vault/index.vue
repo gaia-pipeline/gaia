@@ -263,25 +263,30 @@ export default {
       this.$emit('close')
     },
 
-    changeSecret () {
-      // pre-validate
-      if (!this.selectSecret.newvalue || !this.selectSecret.newvalueconf) {
+    preValidate (value, valueconf) {
+      if (!value || !valueconf) {
         openNotification({
           title: 'Empty value',
           message: 'Empty value is not allowed.',
           type: 'danger'
         })
-        this.close()
-        return
+        return false
       }
 
       // pre-validate
-      if (this.selectSecret.newvalue !== this.selectSecret.newvalueconf) {
+      if (value !== valueconf) {
         openNotification({
           title: 'value not identical',
           message: 'value and confirmation are not identical!',
           type: 'danger'
         })
+        return false
+      }
+      return true
+    },
+
+    changeSecret () {
+      if (!this.preValidate(this.selectSecret.newvalue, this.selectSecret.newvalueconf)) {
         this.close()
         return
       }
@@ -303,13 +308,7 @@ export default {
     },
 
     addSecret () {
-      // pre-validate
-      if (!this.selectSecret.value || !this.selectSecret.valueconf) {
-        openNotification({
-          title: 'Empty value',
-          message: 'Empty value is not allowed.',
-          type: 'danger'
-        })
+      if (!this.preValidate(this.selectSecret.value, this.selectSecret.valueconf)) {
         this.close()
         return
       }
@@ -319,17 +318,6 @@ export default {
         openNotification({
           title: 'Empty secret',
           message: 'Empty secret is not allowed.',
-          type: 'danger'
-        })
-        this.close()
-        return
-      }
-
-      // pre-validate
-      if (this.selectSecret.value !== this.selectSecret.valueconf) {
-        openNotification({
-          title: 'value not identical',
-          message: 'value and confirmation are not identical!',
           type: 'danger'
         })
         this.close()
