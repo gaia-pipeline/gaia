@@ -25,8 +25,7 @@ type jwtCustomClaims struct {
 // UserLogin authenticates the user with
 // the given credentials.
 func UserLogin(c echo.Context) error {
-	sp := new(services.Provider)
-	storeService := sp.StorageService()
+	storeService := services.StorageService()
 	u := &gaia.User{}
 	if err := c.Bind(u); err != nil {
 		gaia.Cfg.Logger.Debug("error reading json during UserLogin", "error", err.Error())
@@ -78,8 +77,7 @@ func UserLogin(c echo.Context) error {
 // UserGetAll returns all users stored in store.
 func UserGetAll(c echo.Context) error {
 	// Get all users
-	sp := new(services.Provider)
-	storeService := sp.StorageService()
+	storeService := services.StorageService()
 	users, err := storeService.UserGetAll()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
@@ -99,8 +97,7 @@ type changePasswordRequest struct {
 func UserChangePassword(c echo.Context) error {
 	// Get required parameters
 	r := &changePasswordRequest{}
-	sp := new(services.Provider)
-	storeService := sp.StorageService()
+	storeService := services.StorageService()
 	if err := c.Bind(r); err != nil {
 		return c.String(http.StatusBadRequest, "Invalid parameters given for password change request")
 	}
@@ -141,8 +138,7 @@ func UserDelete(c echo.Context) error {
 	if u == "" {
 		return c.String(http.StatusBadRequest, "Invalid username given")
 	}
-	sp := new(services.Provider)
-	storeService := sp.StorageService()
+	storeService := services.StorageService()
 	// Delete user
 	err := storeService.UserDelete(u)
 	if err != nil {
@@ -159,8 +155,7 @@ func UserAdd(c echo.Context) error {
 	if err := c.Bind(u); err != nil {
 		return c.String(http.StatusBadRequest, "Invalid parameters given for add user request")
 	}
-	sp := new(services.Provider)
-	storeService := sp.StorageService()
+	storeService := services.StorageService()
 	// Add user
 	u.LastLogin = time.Now()
 	err := storeService.UserPut(u, true)

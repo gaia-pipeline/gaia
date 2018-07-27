@@ -39,8 +39,7 @@ func PipelineGitLSRemote(c echo.Context) error {
 // CreatePipeline accepts all data needed to create a pipeline.
 // It then starts the create pipeline execution process async.
 func CreatePipeline(c echo.Context) error {
-	sp := new(services.Provider)
-	storeService := sp.StorageService()
+	storeService := services.StorageService()
 	p := &gaia.CreatePipeline{}
 	if err := c.Bind(p); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
@@ -69,8 +68,7 @@ func CreatePipeline(c echo.Context) error {
 // all pipelines which have been compiled.
 func CreatePipelineGetAll(c echo.Context) error {
 	// Get all create pipelines
-	sp := new(services.Provider)
-	storeService := sp.StorageService()
+	storeService := services.StorageService()
 	pipelineList, err := storeService.CreatePipelineGet()
 	if err != nil {
 		gaia.Cfg.Logger.Debug("cannot get create pipelines from store", "error", err.Error())
@@ -143,8 +141,7 @@ func PipelineGet(c echo.Context) error {
 
 // PipelineUpdate updates the given pipeline.
 func PipelineUpdate(c echo.Context) error {
-	sp := new(services.Provider)
-	storeService := sp.StorageService()
+	storeService := services.StorageService()
 	p := gaia.Pipeline{}
 	if err := c.Bind(&p); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
@@ -195,8 +192,7 @@ func PipelineUpdate(c echo.Context) error {
 // PipelineDelete accepts a pipeline id and deletes it from the
 // store. It also removes the binary inside the pipeline folder.
 func PipelineDelete(c echo.Context) error {
-	sp := new(services.Provider)
-	storeService := sp.StorageService()
+	storeService := services.StorageService()
 	pipelineIDStr := c.Param("pipelineid")
 
 	pipelineID, err := strconv.Atoi(pipelineIDStr)
@@ -241,8 +237,7 @@ func PipelineDelete(c echo.Context) error {
 // PipelineStart starts a pipeline by the given id.
 // Afterwards it returns the created/scheduled pipeline run.
 func PipelineStart(c echo.Context) error {
-	sp := new(services.Provider)
-	schedulerService := sp.SchedulerService()
+	schedulerService := services.SchedulerService()
 	pipelineIDStr := c.Param("pipelineid")
 
 	// Convert string to int because id is int
@@ -281,8 +276,7 @@ type getAllWithLatestRun struct {
 // included with the latest run.
 func PipelineGetAllWithLatestRun(c echo.Context) error {
 	// Get all active pipelines
-	sp := new(services.Provider)
-	storeService := sp.StorageService()
+	storeService := services.StorageService()
 	var pipelines []gaia.Pipeline
 	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
 		pipelines = append(pipelines, pipeline)

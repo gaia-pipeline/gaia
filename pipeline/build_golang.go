@@ -130,9 +130,7 @@ func (b *BuildPipelineGolang) SavePipeline(p *gaia.Pipeline) error {
 	p.Name = strings.TrimSuffix(filepath.Base(dest), typeDelimiter+gaia.PTypeGolang.String())
 	p.Created = time.Now()
 	// Our pipeline is finished constructing. Save it.
-	sp := new(services.Provider)
-	ss := sp.StorageService()
-	return ss.PipelinePut(p)
+	return services.StorageService().PipelinePut(p)
 }
 
 // copyFileContents copies the content from source to destination.

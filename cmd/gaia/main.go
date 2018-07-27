@@ -140,14 +140,11 @@ func main() {
 	// Initialize echo instance
 	echoInstance = echo.New()
 
-	// Create a service provider
-	p := new(services.Provider)
-
 	// Initialize store
-	p.StorageService()
+	services.StorageService()
 
 	// Initialize scheduler
-	p.SchedulerService()
+	services.SchedulerService()
 
 	// Initialize handlers
 	err = handlers.InitHandlers(echoInstance)
