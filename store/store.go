@@ -61,8 +61,8 @@ type GaiaStore interface {
 	UserDelete(u string) error
 }
 
-// Provides an embeddable interface so that not all of the methods need
-// to be overriden in case of a Mock.
+// Compile time interface compliance check for BoltStore. If BoltStore
+// wouldn't implement GaiaStore this line wouldn't compile.
 var _ GaiaStore = (*BoltStore)(nil)
 
 // NewBoltStore creates a new instance of Store.
