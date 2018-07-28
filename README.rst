@@ -186,7 +186,7 @@ If you think you found a good first issue, please consider this list as a short 
 Contact
 =======
 
-If you have any questions feel free to contact us on `gitter`_.
+If you have any questions feel free to contact us on `gitter`_ or `slack`_.
 
 .. _`HashiCorp's go-plugin`: https://github.com/hashicorp/go-plugin
 .. _`gRPC`: https://grpc.io/
@@ -204,6 +204,7 @@ If you have any questions feel free to contact us on `gitter`_.
 .. _`nodeJS`: https://nodejs.org/
 .. _`go-example repo`: https://github.com/gaia-pipeline/go-example
 .. _`gitter`: https://gitter.im/gaia-pipeline
+.. _`slack`: https://gaia-slack-invite.herokuapp.com/
 .. _`Kubernetes deployment with vault integration`: https://docs.gaia-pipeline.io/tutorials/kube-vault-deploy/
 .. _`git push`: https://git-scm.com/docs/git-push
 .. _`HTTP/2`: https://http2.github.io/
