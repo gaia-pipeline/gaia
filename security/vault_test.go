@@ -317,3 +317,15 @@ func TestWriteErrorForVault(t *testing.T) {
 		t.Fatal("got a different error than expected. was: ", err.Error())
 	}
 }
+
+func TestDefaultStorerIsAFileStorer(t *testing.T) {
+	tmp := os.TempDir()
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.VaultPath = tmp
+	gaia.Cfg.CAPath = tmp
+	c, _ := InitCA()
+	v, _ := NewVault(c, nil)
+	if _, ok := v.storer.(*FileVaultStorer); !ok {
+		t.Fatal("default filestorer not created when nil is passed in")
+	}
+}
