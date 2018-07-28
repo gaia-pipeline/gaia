@@ -29,18 +29,9 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 	}
 
 	// Attach credentials if provided
-	var auth transport.AuthMethod
-	if repo.Username != "" && repo.Password != "" {
-		// Basic auth provided
-		auth = &http.BasicAuth{
-			Username: repo.Username,
-			Password: repo.Password,
-		}
-	} else if repo.PrivateKey.Key != "" {
-		auth, err = ssh.NewPublicKeys(repo.PrivateKey.Username, []byte(repo.PrivateKey.Key), repo.PrivateKey.Password)
-		if err != nil {
-			return err
-		}
+	auth, err := getAuthInfo(repo)
+	if err != nil {
+		return err
 	}
 
 	// Create client
@@ -78,23 +69,13 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 // The destination will be attached to the given repo obj.
 func gitCloneRepo(repo *gaia.GitRepo) error {
 	// Check if credentials were provided
-	var auth transport.AuthMethod
-	if repo.Username != "" && repo.Password != "" {
-		// Basic auth provided
-		auth = &http.BasicAuth{
-			Username: repo.Username,
-			Password: repo.Password,
-		}
-	} else if repo.PrivateKey.Key != "" {
-		var err error
-		auth, err = ssh.NewPublicKeys(repo.PrivateKey.Username, []byte(repo.PrivateKey.Key), repo.PrivateKey.Password)
-		if err != nil {
-			return err
-		}
+	auth, err := getAuthInfo(repo)
+	if err != nil {
+		return err
 	}
 
 	// Clone repo
-	_, err := git.PlainClone(repo.LocalDest, false, &git.CloneOptions{
+	_, err = git.PlainClone(repo.LocalDest, false, &git.CloneOptions{
 		Auth:              auth,
 		URL:               repo.URL,
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
@@ -151,4 +132,22 @@ func updateAllCurrentPipelines() {
 		}(p)
 	}
 	wg.Wait()
+}
+
+func getAuthInfo(repo *gaia.GitRepo) (transport.AuthMethod, error) {
+	var auth transport.AuthMethod
+	if repo.Username != "" && repo.Password != "" {
+		// Basic auth provided
+		auth = &http.BasicAuth{
+			Username: repo.Username,
+			Password: repo.Password,
+		}
+	} else if repo.PrivateKey.Key != "" {
+		var err error
+		auth, err = ssh.NewPublicKeys(repo.PrivateKey.Username, []byte(repo.PrivateKey.Key), repo.PrivateKey.Password)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return auth, nil
 }
