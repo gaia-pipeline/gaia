@@ -112,9 +112,16 @@ func updateAllCurrentPipelines() {
 			}
 			gaia.Cfg.Logger.Debug("checking pipeline: ", pipe.Name)
 			gaia.Cfg.Logger.Debug("selected branch : ", pipe.Repo.SelectedBranch)
+			auth, err := getAuthInfo(&pipe.Repo)
+			if err != nil {
+				// It's also an error if the repo is already up to date so we just move on.
+				gaia.Cfg.Logger.Error("error getting auth info while doing a pull request : ", err.Error())
+				return
+			}
 			tree, _ := r.Worktree()
 			err = tree.Pull(&git.PullOptions{
 				RemoteName: "origin",
+				Auth:       auth,
 			})
 			if err != nil {
 				// It's also an error if the repo is already up to date so we just move on.
