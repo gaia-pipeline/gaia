@@ -21,11 +21,29 @@ const (
 	vaultName = ".gaia_vault"
 )
 
+// VaultStorer defines a storage medium for the Vault.
+type VaultStorer interface {
+	// Init initializes the medium by creating the file, or bootstraping the
+	// db or simply setting up an in-memory mock storage device. The Init
+	// function of a storage medium should be idempotent. Meaning it should
+	// be callable multiple times without changing the underlying medium.
+	Init() error
+	// Read will read bytes from the storage medium and return it to the caller.
+	Read() (data []byte, err error)
+	// Write will store the passed in encrypted data. How, is up to the implementor.
+	Write(data []byte) error
+}
+
+// FileVaultStorer implements VaultStorer as a simple file based storage device.
+type FileVaultStorer struct {
+	path string
+}
+
 // Vault is a secret storage for data that gaia needs to store encrypted.
 type Vault struct {
-	path string
-	cert []byte
-	data map[string][]byte
+	storer VaultStorer
+	cert   []byte
+	data   map[string][]byte
 	sync.RWMutex
 }
 
@@ -33,34 +51,34 @@ type Vault struct {
 // The format is:
 // KEY=VALUE
 // KEY2=VALUE2
-func NewVault(ca *CA) (*Vault, error) {
+// NewVault also can take a storer which is an implementation of VaultStorer.
+// This defines a storage medium for the vault. If it's left to nil the vault
+// will use a default FileVaultStorer.
+func NewVault(ca *CA, storer VaultStorer) (*Vault, error) {
 	v := new(Vault)
-	// Creating vault file
-	vaultPath := filepath.Join(gaia.Cfg.VaultPath, vaultName)
-	if _, osErr := os.Stat(vaultPath); os.IsNotExist(osErr) {
-		gaia.Cfg.Logger.Info("vault file doesn't exist. creating...")
-		_, err := os.Create(vaultPath)
-		if err != nil {
-			gaia.Cfg.Logger.Error("failed creating vault file: ", err.Error())
-			return nil, err
-		}
-	}
 
+	if storer == nil {
+		storer = new(FileVaultStorer)
+	}
+	err := storer.Init()
+	if err != nil {
+		return nil, err
+	}
 	// Setting up certificate key content
 	_, certKey := ca.GetCACertPath()
 	data, err := ioutil.ReadFile(certKey)
 	if err != nil {
 		return nil, err
 	}
+	v.storer = storer
 	v.cert = data
-	v.path = vaultPath
 	v.data = make(map[string][]byte, 0)
 	return v, nil
 }
 
 // LoadSecrets decrypts the contents of the vault and fills up a map of data to work with.
 func (v *Vault) LoadSecrets() error {
-	r, err := ioutil.ReadFile(v.path)
+	r, err := v.storer.Read()
 	if err != nil {
 		return err
 	}
@@ -79,8 +97,7 @@ func (v *Vault) SaveSecrets() error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(v.path, []byte(encryptedData), 0400)
-	return err
+	return v.storer.Write([]byte(encryptedData))
 }
 
 // GetAll returns all keys and values in a copy of the internal data.
@@ -122,6 +139,32 @@ func (v *Vault) Get(key string) ([]byte, error) {
 	}
 
 	return val, nil
+}
+
+// Init initializes the FileVaultStorer.
+func (fvs *FileVaultStorer) Init() error {
+	vaultPath := filepath.Join(gaia.Cfg.VaultPath, vaultName)
+	if _, osErr := os.Stat(vaultPath); os.IsNotExist(osErr) {
+		gaia.Cfg.Logger.Info("vault file doesn't exist. creating...")
+		_, err := os.Create(vaultPath)
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed creating vault file: ", err.Error())
+			return err
+		}
+	}
+	fvs.path = vaultPath
+	return nil
+}
+
+// Read defines a read for the FileVaultStorer.
+func (fvs *FileVaultStorer) Read() ([]byte, error) {
+	r, err := ioutil.ReadFile(fvs.path)
+	return r, err
+}
+
+// Write defines a read for the FileVaultStorer.
+func (fvs *FileVaultStorer) Write(data []byte) error {
+	return ioutil.WriteFile(fvs.path, []byte(data), 0400)
 }
 
 // encrypt uses an aes cipher provided by the certificate file for encryption.

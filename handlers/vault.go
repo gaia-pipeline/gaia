@@ -42,7 +42,7 @@ func SetSecret(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	v, err := security.NewVault(cert)
+	v, err := security.NewVault(cert, nil)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -65,7 +65,7 @@ func ListSecrets(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	v, err := security.NewVault(cert)
+	v, err := security.NewVault(cert, nil)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -91,7 +91,7 @@ func RemoveSecret(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	v, err := security.NewVault(cert)
+	v, err := security.NewVault(cert, nil)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
