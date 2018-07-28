@@ -12,10 +12,10 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-var store *Store
+var store *BoltStore
 
 func TestMain(m *testing.M) {
-	store = NewStore()
+	store = NewBoltStore()
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.DataPath = "data"
 	gaia.Cfg.Bolt.Mode = 0600

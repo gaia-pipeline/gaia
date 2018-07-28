@@ -56,14 +56,14 @@ type Scheduler struct {
 
 	// storeService is an instance of store.
 	// Use this to talk to the store.
-	storeService *store.Store
+	storeService store.GaiaStore
 
 	// pluginSystem is the used plugin system.
 	pluginSystem Plugin
 }
 
 // NewScheduler creates a new instance of Scheduler.
-func NewScheduler(store *store.Store, pS Plugin) *Scheduler {
+func NewScheduler(store store.GaiaStore, pS Plugin) *Scheduler {
 	// Create new scheduler
 	s := &Scheduler{
 		scheduledRuns: make(chan gaia.PipelineRun, schedulerBufferLimit),

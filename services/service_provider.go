@@ -11,24 +11,32 @@ import (
 
 // storeService is an instance of store.
 // Use this to talk to the store.
-var storeService *store.Store
+var storeService store.GaiaStore
 
 // schedulerService is an instance of scheduler.
 var schedulerService *scheduler.Scheduler
 
 // StorageService initializes and keeps track of a storage service.
 // If the internal storage service is a singleton.
-func StorageService() *store.Store {
+func StorageService() store.GaiaStore {
 	if storeService != nil {
 		return storeService
 	}
-	storeService = store.NewStore()
+	storeService = store.NewBoltStore()
 	err := storeService.Init()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize store", "error", err.Error())
 		os.Exit(1)
 	}
 	return storeService
+}
+
+// MockStorageService sets the internal store singleton to the give
+// mock implementation. A mock needs to be created in the test. The
+// provider will make sure that everything that would use the store
+// will use the mock instead.
+func MockStorageService(store store.GaiaStore) {
+	storeService = store
 }
 
 // SchedulerService initializes keeps track of the scheduler service.

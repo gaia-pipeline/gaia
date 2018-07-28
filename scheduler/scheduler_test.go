@@ -24,7 +24,7 @@ func (p *PluginFake) Close()                                       {}
 
 func TestInit(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
-	storeInstance := store.NewStore()
+	storeInstance := store.NewBoltStore()
 	gaia.Cfg.DataPath = os.TempDir()
 	gaia.Cfg.WorkspacePath = filepath.Join(os.TempDir(), "tmp")
 	gaia.Cfg.Bolt.Mode = 0600
@@ -50,7 +50,7 @@ func TestInit(t *testing.T) {
 
 func TestPrepareAndExec(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
-	storeInstance := store.NewStore()
+	storeInstance := store.NewBoltStore()
 	gaia.Cfg.DataPath = os.TempDir()
 	gaia.Cfg.WorkspacePath = filepath.Join(os.TempDir(), "tmp")
 	gaia.Cfg.Bolt.Mode = 0600
@@ -84,7 +84,7 @@ func TestPrepareAndExec(t *testing.T) {
 
 func TestSchedulePipeline(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
-	storeInstance := store.NewStore()
+	storeInstance := store.NewBoltStore()
 	gaia.Cfg.DataPath = os.TempDir()
 	gaia.Cfg.WorkspacePath = filepath.Join(os.TempDir(), "tmp")
 	gaia.Cfg.Bolt.Mode = 0600
@@ -117,7 +117,7 @@ func TestSchedulePipeline(t *testing.T) {
 
 func TestSchedule(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
-	storeInstance := store.NewStore()
+	storeInstance := store.NewBoltStore()
 	gaia.Cfg.DataPath = os.TempDir()
 	gaia.Cfg.WorkspacePath = filepath.Join(os.TempDir(), "tmp")
 	gaia.Cfg.Bolt.Mode = 0600
@@ -161,7 +161,7 @@ func TestSchedule(t *testing.T) {
 
 func TestSetPipelineJobs(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
-	storeInstance := store.NewStore()
+	storeInstance := store.NewBoltStore()
 	gaia.Cfg.DataPath = os.TempDir()
 	gaia.Cfg.WorkspacePath = filepath.Join(os.TempDir(), "tmp")
 	gaia.Cfg.Bolt.Mode = 0600

@@ -3,6 +3,7 @@ package pipeline
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -13,12 +14,25 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gaia-pipeline/gaia/services"
+
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
 )
 
 var killContext = false
 var killOnBuild = false
+
+type mockStorer struct {
+	store.GaiaStore
+	Error error
+}
+
+// PipelinePut is a Mock implementation for pipelines
+func (m *mockStorer) PipelinePut(p *gaia.Pipeline) error {
+	return m.Error
+}
 
 func fakeExecCommandContext(ctx context.Context, name string, args ...string) *exec.Cmd {
 	if killContext {
@@ -254,6 +268,8 @@ func TestSavePipeline(t *testing.T) {
 	p.Name = "main"
 	p.Type = gaia.PTypeGolang
 	b := new(BuildPipelineGolang)
+	m := new(mockStorer)
+	services.MockStorageService(m)
 	err := b.SavePipeline(p)
 	if err != nil {
 		t.Fatal("something went wrong. wasn't supposed to get error: ", err)
@@ -263,5 +279,27 @@ func TestSavePipeline(t *testing.T) {
 	}
 	if p.Type != gaia.PTypeGolang {
 		t.Fatal("type of pipeline was not go. instead was: ", p.Type)
+	}
+}
+
+func TestSavePipelineSaveErrors(t *testing.T) {
+	defer os.Remove("gaia.db")
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.HomePath = "/tmp"
+	gaia.Cfg.PipelinePath = "/tmp/pipelines/"
+	// Initialize shared logger
+	p := new(gaia.Pipeline)
+	p.Name = "main"
+	p.Type = gaia.PTypeGolang
+	b := new(BuildPipelineGolang)
+	m := new(mockStorer)
+	m.Error = errors.New("database error")
+	services.MockStorageService(m)
+	err := b.SavePipeline(p)
+	if err == nil {
+		t.Fatal("expected error which did not occur")
+	}
+	if err.Error() != "database error" {
+		t.Fatal("error message was not the expected message. was: ", err.Error())
 	}
 }

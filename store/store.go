@@ -33,14 +33,41 @@ const (
 	boltDBFileName = "gaia.db"
 )
 
-// Store represents the access type for store
-type Store struct {
+// BoltStore represents the access type for store
+type BoltStore struct {
 	db *bolt.DB
 }
 
-// NewStore creates a new instance of Store.
-func NewStore() *Store {
-	s := &Store{}
+// GaiaStore is the interface that defines methods needed to store
+// pipeline and user related information.
+type GaiaStore interface {
+	Init() error
+	CreatePipelinePut(createPipeline *gaia.CreatePipeline) error
+	CreatePipelineGet() (listOfPipelines []gaia.CreatePipeline, err error)
+	PipelinePut(pipeline *gaia.Pipeline) error
+	PipelineGet(id int) (pipeline *gaia.Pipeline, err error)
+	PipelineGetByName(name string) (pipline *gaia.Pipeline, err error)
+	PipelineGetRunHighestID(pipeline *gaia.Pipeline) (id int, err error)
+	PipelinePutRun(r *gaia.PipelineRun) error
+	PipelineGetScheduled(limit int) ([]*gaia.PipelineRun, error)
+	PipelineGetRunByPipelineIDAndID(pipelineid int, runid int) (*gaia.PipelineRun, error)
+	PipelineGetAllRuns(pipelineID int) ([]gaia.PipelineRun, error)
+	PipelineGetLatestRun(pipelineID int) (*gaia.PipelineRun, error)
+	PipelineDelete(id int) error
+	UserPut(u *gaia.User, encryptPassword bool) error
+	UserAuth(u *gaia.User, updateLastLogin bool) (*gaia.User, error)
+	UserGet(username string) (*gaia.User, error)
+	UserGetAll() ([]gaia.User, error)
+	UserDelete(u string) error
+}
+
+// Provides an embeddable interface so that not all of the methods need
+// to be overriden in case of a Mock.
+var _ GaiaStore = (*BoltStore)(nil)
+
+// NewBoltStore creates a new instance of Store.
+func NewBoltStore() *BoltStore {
+	s := &BoltStore{}
 
 	return s
 }
@@ -49,7 +76,7 @@ func NewStore() *Store {
 // generates private key and bolt database.
 // This should be called only once per database
 // because bolt holds a lock on the database file.
-func (s *Store) Init() error {
+func (s *BoltStore) Init() error {
 	// Open connection to bolt database
 	path := filepath.Join(gaia.Cfg.DataPath, boltDBFileName)
 	db, err := bolt.Open(path, gaia.Cfg.Bolt.Mode, nil)
@@ -64,7 +91,7 @@ func (s *Store) Init() error {
 
 // setupDatabase create all buckets in the db.
 // Additionally, it makes sure that the admin user exists.
-func (s *Store) setupDatabase() error {
+func (s *BoltStore) setupDatabase() error {
 	// Create bucket if not exists function
 	var bucketName []byte
 	c := func(tx *bolt.Tx) error {

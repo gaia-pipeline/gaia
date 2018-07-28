@@ -9,7 +9,7 @@ import (
 
 // CreatePipelinePut adds a pipeline which
 // is not yet compiled but is about to.
-func (s *Store) CreatePipelinePut(p *gaia.CreatePipeline) error {
+func (s *BoltStore) CreatePipelinePut(p *gaia.CreatePipeline) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		// Get bucket
 		b := tx.Bucket(createPipelineBucket)
@@ -27,7 +27,7 @@ func (s *Store) CreatePipelinePut(p *gaia.CreatePipeline) error {
 
 // CreatePipelineGet returns all available create pipeline
 // objects in the store.
-func (s *Store) CreatePipelineGet() ([]gaia.CreatePipeline, error) {
+func (s *BoltStore) CreatePipelineGet() ([]gaia.CreatePipeline, error) {
 	// create list
 	var pipelineList []gaia.CreatePipeline
 
@@ -56,7 +56,7 @@ func (s *Store) CreatePipelineGet() ([]gaia.CreatePipeline, error) {
 
 // PipelinePut puts a pipeline into the store.
 // On persist, the pipeline will get a unique id.
-func (s *Store) PipelinePut(p *gaia.Pipeline) error {
+func (s *BoltStore) PipelinePut(p *gaia.Pipeline) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		// Get pipeline bucket
 		b := tx.Bucket(pipelineBucket)
@@ -82,7 +82,7 @@ func (s *Store) PipelinePut(p *gaia.Pipeline) error {
 }
 
 // PipelineGet gets a pipeline by given id.
-func (s *Store) PipelineGet(id int) (*gaia.Pipeline, error) {
+func (s *BoltStore) PipelineGet(id int) (*gaia.Pipeline, error) {
 	var pipeline = &gaia.Pipeline{}
 
 	return pipeline, s.db.View(func(tx *bolt.Tx) error {
@@ -109,7 +109,7 @@ func (s *Store) PipelineGet(id int) (*gaia.Pipeline, error) {
 
 // PipelineGetByName looks up a pipeline by the given name.
 // Returns nil if pipeline was not found.
-func (s *Store) PipelineGetByName(n string) (*gaia.Pipeline, error) {
+func (s *BoltStore) PipelineGetByName(n string) (*gaia.Pipeline, error) {
 	var pipeline *gaia.Pipeline
 
 	return pipeline, s.db.View(func(tx *bolt.Tx) error {
@@ -138,7 +138,7 @@ func (s *Store) PipelineGetByName(n string) (*gaia.Pipeline, error) {
 }
 
 // PipelineGetRunHighestID looks for the highest public id for the given pipeline.
-func (s *Store) PipelineGetRunHighestID(p *gaia.Pipeline) (int, error) {
+func (s *BoltStore) PipelineGetRunHighestID(p *gaia.Pipeline) (int, error) {
 	var highestID int
 
 	return highestID, s.db.View(func(tx *bolt.Tx) error {
@@ -171,7 +171,7 @@ func (s *Store) PipelineGetRunHighestID(p *gaia.Pipeline) (int, error) {
 
 // PipelinePutRun takes the given pipeline run and puts it into the store.
 // If a pipeline run already exists in the store it will be overwritten.
-func (s *Store) PipelinePutRun(r *gaia.PipelineRun) error {
+func (s *BoltStore) PipelinePutRun(r *gaia.PipelineRun) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		// Get bucket
 		b := tx.Bucket(pipelineRunBucket)
@@ -188,7 +188,7 @@ func (s *Store) PipelinePutRun(r *gaia.PipelineRun) error {
 }
 
 // PipelineGetScheduled returns the scheduled pipelines with a return limit.
-func (s *Store) PipelineGetScheduled(limit int) ([]*gaia.PipelineRun, error) {
+func (s *BoltStore) PipelineGetScheduled(limit int) ([]*gaia.PipelineRun, error) {
 	// create returning list
 	var runList []*gaia.PipelineRun
 
@@ -222,7 +222,7 @@ func (s *Store) PipelineGetScheduled(limit int) ([]*gaia.PipelineRun, error) {
 }
 
 // PipelineGetRunByPipelineIDAndID looks for pipeline run by given pipeline id and run id.
-func (s *Store) PipelineGetRunByPipelineIDAndID(pipelineid int, runid int) (*gaia.PipelineRun, error) {
+func (s *BoltStore) PipelineGetRunByPipelineIDAndID(pipelineid int, runid int) (*gaia.PipelineRun, error) {
 	var pipelineRun *gaia.PipelineRun
 
 	return pipelineRun, s.db.View(func(tx *bolt.Tx) error {
@@ -251,7 +251,7 @@ func (s *Store) PipelineGetRunByPipelineIDAndID(pipelineid int, runid int) (*gai
 }
 
 // PipelineGetAllRuns looks for all pipeline runs by the given pipeline id.
-func (s *Store) PipelineGetAllRuns(pipelineID int) ([]gaia.PipelineRun, error) {
+func (s *BoltStore) PipelineGetAllRuns(pipelineID int) ([]gaia.PipelineRun, error) {
 	var runs []gaia.PipelineRun
 
 	return runs, s.db.View(func(tx *bolt.Tx) error {
@@ -281,7 +281,7 @@ func (s *Store) PipelineGetAllRuns(pipelineID int) ([]gaia.PipelineRun, error) {
 }
 
 // PipelineGetLatestRun returns the latest run by the given pipeline id.
-func (s *Store) PipelineGetLatestRun(pipelineID int) (*gaia.PipelineRun, error) {
+func (s *BoltStore) PipelineGetLatestRun(pipelineID int) (*gaia.PipelineRun, error) {
 	var run *gaia.PipelineRun
 
 	return run, s.db.View(func(tx *bolt.Tx) error {
@@ -314,7 +314,7 @@ func (s *Store) PipelineGetLatestRun(pipelineID int) (*gaia.PipelineRun, error) 
 }
 
 // PipelineDelete deletes the pipeline with the given id.
-func (s *Store) PipelineDelete(id int) error {
+func (s *BoltStore) PipelineDelete(id int) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		// Get bucket
 		b := tx.Bucket(pipelineBucket)
