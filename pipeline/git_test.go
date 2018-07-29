@@ -156,3 +156,60 @@ func TestUpdateAllPipelinesHundredPipelines(t *testing.T) {
 		t.Fatal("log output did not contain error message that the repo is up-to-date.: ", b.String())
 	}
 }
+
+func TestGetAuthInfo(t *testing.T) {
+	repoWithUsernameAndPassword := &gaia.GitRepo{
+		URL:       "https://github.com/gaia-pipeline/go-test-example",
+		LocalDest: "tmp",
+		Username:  "username",
+		Password:  "password",
+	}
+
+	auth, err := getAuthInfo(repoWithUsernameAndPassword)
+	if auth == nil {
+		t.Fatal("auth should not be nil when username and password is provided")
+	}
+
+	samplePrivateKey := `
+-----BEGIN RSA PRIVATE KEY-----
+MD8CAQACCQDB9DczYvFuZQIDAQABAgkAtqAKvH9QoQECBQDjAl9BAgUA2rkqJQIE
+Xbs5AQIEIzWnmQIFAOEml+E=
+-----END RSA PRIVATE KEY-----
+`
+	repoWithValidPrivateKey := &gaia.GitRepo{
+		URL:       "https://github.com/gaia-pipeline/go-test-example",
+		LocalDest: "tmp",
+		PrivateKey: gaia.PrivateKey{
+			Key:      samplePrivateKey,
+			Username: "username",
+			Password: "password",
+		},
+	}
+	_, err = getAuthInfo(repoWithValidPrivateKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repoWithInvalidPrivateKey := &gaia.GitRepo{
+		URL:       "https://github.com/gaia-pipeline/go-test-example",
+		LocalDest: "tmp",
+		PrivateKey: gaia.PrivateKey{
+			Key:      "random_key",
+			Username: "username",
+			Password: "password",
+		},
+	}
+	auth, _ = getAuthInfo(repoWithInvalidPrivateKey)
+	if auth != nil {
+		t.Fatal("auth should be nil for invalid private key")
+	}
+
+	repoWithoutAuthInfo := &gaia.GitRepo{
+		URL:       "https://github.com/gaia-pipeline/go-test-example",
+		LocalDest: "tmp",
+	}
+	auth, _ = getAuthInfo(repoWithoutAuthInfo)
+	if auth != nil {
+		t.Fatal("auth should be nil when no authentication info is provided")
+	}
+}
