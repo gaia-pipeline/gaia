@@ -49,6 +49,15 @@ type Plugin interface {
 	Close()
 }
 
+// GaiaScheduler is a job scheduler for gaia pipeline runs.
+type GaiaScheduler interface {
+	Init() error
+	SchedulePipeline(p *gaia.Pipeline) (*gaia.PipelineRun, error)
+	SetPipelineJobs(p *gaia.Pipeline) error
+}
+
+var _ GaiaScheduler = (*Scheduler)(nil)
+
 // Scheduler represents the schuler object
 type Scheduler struct {
 	// buffered channel which is used as queue

@@ -14,7 +14,7 @@ import (
 var storeService store.GaiaStore
 
 // schedulerService is an instance of scheduler.
-var schedulerService *scheduler.Scheduler
+var schedulerService scheduler.GaiaScheduler
 
 // StorageService initializes and keeps track of a storage service.
 // If the internal storage service is a singleton.
@@ -41,7 +41,7 @@ func MockStorageService(store store.GaiaStore) {
 
 // SchedulerService initializes keeps track of the scheduler service.
 // The internal service is a singleton.
-func SchedulerService() *scheduler.Scheduler {
+func SchedulerService() scheduler.GaiaScheduler {
 	if schedulerService != nil {
 		return schedulerService
 	}
@@ -53,4 +53,10 @@ func SchedulerService() *scheduler.Scheduler {
 		os.Exit(1)
 	}
 	return schedulerService
+}
+
+// MockSchedulerService which replaces the scheduler service
+// with a mocked one.
+func MockSchedulerService(scheduler scheduler.GaiaScheduler) {
+	schedulerService = scheduler
 }
