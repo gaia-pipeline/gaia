@@ -2,7 +2,7 @@
 
     <img src="https://cdn.rawgit.com/michelvocks/ef3894f63c3bb004bca1a2fd5f7eb644/raw/c36d614db8afe229b466b38de1636a82ad809f64/gaia-logo-text.png" width="650px">
 
-|build-status| |go-report| |go-doc| |apache2| |chat| |slack-chat| |codecov|
+|build-status| |go-report| |go-doc| |apache2| |chat| |codecov|
 
 Gaia is an open source automation platform which makes it easy and fun to build powerful pipelines in any programming language. Based on `HashiCorp's go-plugin`_ and `gRPC`_, gaia is efficient, fast, lightweight and developer friendly. Gaia is currently alpha! `Do not use it for mission critical jobs yet!`_
 
@@ -186,7 +186,7 @@ If you think you found a good first issue, please consider this list as a short 
 Contact
 =======
 
-If you have any questions feel free to contact us on `gitter`_ or `slack`_.
+If you have any questions feel free to contact us on `slack`_.
 
 .. _`HashiCorp's go-plugin`: https://github.com/hashicorp/go-plugin
 .. _`gRPC`: https://grpc.io/
@@ -203,7 +203,6 @@ If you have any questions feel free to contact us on `gitter`_ or `slack`_.
 .. _`Go installed`: https://golang.org/doc/install
 .. _`nodeJS`: https://nodejs.org/
 .. _`go-example repo`: https://github.com/gaia-pipeline/go-example
-.. _`gitter`: https://gitter.im/gaia-pipeline
 .. _`slack`: https://gaia-slack-invite.herokuapp.com/
 .. _`Kubernetes deployment with vault integration`: https://docs.gaia-pipeline.io/tutorials/kube-vault-deploy/
 .. _`git push`: https://git-scm.com/docs/git-push
@@ -226,11 +225,7 @@ If you have any questions feel free to contact us on `gitter`_ or `slack`_.
     :alt: Apache licensed
     :target: https://github.com/gaia-pipeline/gaia/blob/master/LICENSE
 
-.. |chat| image:: https://badges.gitter.im/Join%20Chat.svg
-    :alt: Gitter
-    :target: https://gitter.im/gaia-pipeline
-
-.. |slack-chat| image:: https://gaia-slack-invite.herokuapp.com/badge.svg
+.. |chat| image:: https://gaia-slack-invite.herokuapp.com/badge.svg
     :alt: Slack
     :target: https://gaia-slack-invite.herokuapp.com/
 
