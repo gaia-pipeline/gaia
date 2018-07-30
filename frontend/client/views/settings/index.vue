@@ -365,9 +365,9 @@ export default {
         .get('/api/v1/pipeline', { showProgressBar: false })
         .then(response => {
           if (response.data) {
-            this.pipelineRows = response.data;
+            this.pipelineRows = response.data
           } else {
-            this.pipelineRows = [];
+            this.pipelineRows = []
           }
         }).catch((error) => {
           this.$onError(error)
@@ -560,7 +560,7 @@ export default {
 
 .tabs {
   margin: 10px;
-  
+
   .tab-content {
     min-height: 50px;
   }
