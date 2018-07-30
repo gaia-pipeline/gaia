@@ -6,6 +6,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/scheduler"
+	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
 )
 
@@ -15,6 +16,11 @@ var storeService store.GaiaStore
 
 // schedulerService is an instance of scheduler.
 var schedulerService scheduler.GaiaScheduler
+
+// certificateService is the singleton holding the certificate manager.
+var certificateService security.CAAPI
+
+var vaultService security.VaultAPI
 
 // StorageService initializes and keeps track of a storage service.
 // If the internal storage service is a singleton.
@@ -46,7 +52,7 @@ func SchedulerService() scheduler.GaiaScheduler {
 		return schedulerService
 	}
 	pS := &plugin.Plugin{}
-	schedulerService = scheduler.NewScheduler(StorageService(), pS)
+	schedulerService = scheduler.NewScheduler(storeService, pS)
 	err := schedulerService.Init()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize scheduler:", "error", err.Error())
@@ -59,4 +65,34 @@ func SchedulerService() scheduler.GaiaScheduler {
 // with a mocked one.
 func MockSchedulerService(scheduler scheduler.GaiaScheduler) {
 	schedulerService = scheduler
+}
+
+// CertificateService creates a certificate manager service.
+func CertificateService() (security.CAAPI, error) {
+	if certificateService != nil {
+		return certificateService, nil
+	}
+
+	c, err := security.InitCA()
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot initialize certificate manager:", "error", err.Error())
+		return nil, err
+	}
+	certificateService = c
+	return certificateService, nil
+}
+
+// VaultService creates a vault manager service.
+func VaultService(vaultStore security.VaultStorer) (security.VaultAPI, error) {
+	if vaultService != nil {
+		return vaultService, nil
+	}
+
+	v, err := security.NewVault(certificateService, vaultStore)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot initialize vault manager:", "error", err.Error())
+		return nil, err
+	}
+	vaultService = v
+	return vaultService, nil
 }

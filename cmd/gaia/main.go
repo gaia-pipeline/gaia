@@ -13,7 +13,6 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
 	"github.com/gaia-pipeline/gaia/pipeline"
-	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/services"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
@@ -131,8 +130,8 @@ func main() {
 		gaia.Cfg.CAPath = gaia.Cfg.DataPath
 	}
 
-	// Setup CA for cerificate signing
-	cert, err := security.InitCA()
+	// Initialize the certificate manager service
+	_, err = services.CertificateService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot create CA", "error", err.Error())
 		os.Exit(1)
@@ -160,7 +159,7 @@ func main() {
 		// Set default to data folder
 		gaia.Cfg.VaultPath = gaia.Cfg.DataPath
 	}
-	_, err = security.NewVault(cert, nil)
+	_, err = services.VaultService(nil)
 	if err != nil {
 		gaia.Cfg.Logger.Error("error initiating vault")
 		os.Exit(1)
