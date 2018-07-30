@@ -1,5 +1,5 @@
 .. raw:: html
-    
+
     <img src="https://cdn.rawgit.com/michelvocks/ef3894f63c3bb004bca1a2fd5f7eb644/raw/c36d614db8afe229b466b38de1636a82ad809f64/gaia-logo-text.png" width="650px">
 
 |build-status| |go-report| |go-doc| |apache2| |chat| |codecov|
@@ -13,8 +13,8 @@ Motivation
 
 .. begin-motivation
 
-*Automation Engineer*, *DevOps*, *SRE*, *Cloud Engineer*, 
-*Platform Engineer* - they all have one in common: 
+*Automation Engineer*, *DevOps*, *SRE*, *Cloud Engineer*,
+*Platform Engineer* - they all have one in common:
 The majority of tech people are not motivated to take up this work and they are hard to recruit.
 
 One of the main reasons for this is the abstraction and poor execution of many automation tools. They come with their own configuration (`YAML`_ syntax) specification or limit the user to one specific programming language. Testing is nearly impossible because most automation tools lack the ability to mock services and subsystems. Even tiny things, for example parsing a JSON file, are sometimes really painful because external, outdated libraries were used and not included in the standard framework.
@@ -26,11 +26,11 @@ How does it work?
 
 .. begin-architecture
 
-Gaia is based on `HashiCorp's go-plugin`_. It's a plugin system that uses `gRPC`_ to communicate over `HTTP/2`_. HashiCorp developed this tool initially for `Packer`_ but it's now heavily used by `Terraform`_, `Nomad`_, and `Vault`_ too. 
+Gaia is based on `HashiCorp's go-plugin`_. It's a plugin system that uses `gRPC`_ to communicate over `HTTP/2`_. HashiCorp developed this tool initially for `Packer`_ but it's now heavily used by `Terraform`_, `Nomad`_, and `Vault`_ too.
 
 Plugins, which we named pipelines, are applications which can be written in any programming language as long as `gRPC`_ is supported. All functions, which we call Jobs, are exposed to Gaia and can form up a dependency graph which describes the order of execution.
 
-Pipelines can be compiled locally or simply over the build system. Gaia clones the git repository and automatically builds the included pipeline. If a change (`git push`_) happened, Gaia will automatically rebuild the pipeline for you.  
+Pipelines can be compiled locally or simply over the build system. Gaia clones the git repository and automatically builds the included pipeline. If a change (`git push`_) happened, Gaia will automatically rebuild the pipeline for you.
 
 After a pipeline has been started, all log output are returned back to Gaia and displayed in a detailed overview with their final result status.
 
@@ -107,7 +107,7 @@ Here is an example:
         jobs := sdk.Jobs{
             sdk.Job{
                 Handler:     DoSomethingAwesome,
-	        Title:       "DoSomethingAwesome", 
+	        Title:       "DoSomethingAwesome",
 		Description: "This job does something awesome.",
 
                 // Increase the priority if this job should be executed later than other jobs.
@@ -123,7 +123,7 @@ Here is an example:
 
 Like you can see, pipelines are defined by jobs. Usually, a function represents a job. You can define as many jobs in your pipeline as you want.
 
-At the end, we define a jobs array that populates all jobs to gaia. We also add some information like a title, a description and the priority. 
+At the end, we define a jobs array that populates all jobs to gaia. We also add some information like a title, a description and the priority.
 
 The priority is really important and should always be used. If, for example, job A has a higher priority (decimal number) as job B, job A will be executed **after** job B. Priority defines therefore the order of execution. If two or more jobs have the same priority, those will be executed simultanously. You can compare it with the `Unix nice level`_.
 
@@ -131,6 +131,11 @@ That's it! Put this code into a git repository and create a new pipeline via the
 Gaia will compile it and add it to it's store for later execution.
 
 Please find a bit more sophisticated example in our `go-example repo`_.
+
+Security
+========
+
+See the Documentation located here: `security-docs`_.
 
 Documentation and more
 ======================
@@ -144,11 +149,11 @@ What problem solves **Gaia**?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Literally every tool which were designed for automation, continuous integration (CI), and continuous deployment (CD) like Spinnaker, Jenkins, Gitlab CI/CD, TravisCI, CircleCI, Codeship, Bamboo and many more, introduced their own configuration format. Some of them don't even support *configuration/automation as code*. This works well for simple tasks like running a ``go install`` or ``mvn clean install`` but in the real world there is more to do.
 
-Gaia is the first platform which does not limit the user and provides full support for almost all common programming languages without losing the features offered by todays CI/CD tools.    
+Gaia is the first platform which does not limit the user and provides full support for almost all common programming languages without losing the features offered by todays CI/CD tools.
 
 What is a **pipeline**?
 ~~~~~~~~~~~~~~~~~~~~~~~
-A pipeline is a real application with at least one function (we call it Job). Every programming language can be used as long as gRPC is supported. We offer SDKs (currently only Go but others are already in development) to support the development. 
+A pipeline is a real application with at least one function (we call it Job). Every programming language can be used as long as gRPC is supported. We offer SDKs (currently only Go but others are already in development) to support the development.
 
 What is a **job**?
 ~~~~~~~~~~~~~~~~~~
@@ -169,12 +174,12 @@ Gaia is currently in alpha version available. We extremely recommend to not use 
 
 One of the main issues currently is the lack of unit- and integration tests. This is on our to-do list and we are working on this topic with high priority.
 
-It is planned that other programming languages should be supported in the next few month. It is up to the community which languages will be supported next. 
+It is planned that other programming languages should be supported in the next few month. It is up to the community which languages will be supported next.
 
 Contributing
 ============
 
-Gaia can only evolve and become a great product with the help of contributors. If you like to contribute, please have a look at our `issues section`_. We do our best to mark issues for new contributors with the label *good first issue*. 
+Gaia can only evolve and become a great product with the help of contributors. If you like to contribute, please have a look at our `issues section`_. We do our best to mark issues for new contributors with the label *good first issue*.
 
 If you think you found a good first issue, please consider this list as a short guide:
 
@@ -207,6 +212,7 @@ If you have any questions feel free to contact us on `gitter`_.
 .. _`Kubernetes deployment with vault integration`: https://docs.gaia-pipeline.io/tutorials/kube-vault-deploy/
 .. _`git push`: https://git-scm.com/docs/git-push
 .. _`HTTP/2`: https://http2.github.io/
+.. _`security-docs`: https://github.com/gaia-pipeline/gaia/blob/master/security/README.md
 
 .. |build-status| image:: https://circleci.com/gh/gaia-pipeline/gaia/tree/master.svg?style=shield&circle-token=c0e15edfb08f8076076cbbb55558af6cfecb89b8
     :alt: Build Status
@@ -225,7 +231,7 @@ If you have any questions feel free to contact us on `gitter`_.
     :alt: Apache licensed
     :target: https://github.com/gaia-pipeline/gaia/blob/master/LICENSE
 
-.. |chat| image:: https://badges.gitter.im/Join%20Chat.svg   
+.. |chat| image:: https://badges.gitter.im/Join%20Chat.svg
     :alt: Gitter
     :target: https://gitter.im/gaia-pipeline
 
@@ -247,11 +253,11 @@ If you have any questions feel free to contact us on `gitter`_.
 .. |sh-create-pipeline-history| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/142a2969c4d27d4135ef8f96213bb166009fda1e/create_pipeline_history.png
     :alt: gaia create pipeline history screenshot
     :width: 650px
-    
+
 .. |sh-pipeline-detailed| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/51b4d6cbc3d86b1fe9531250db5456595423d9ec/pipeline_detailed.png
     :alt: gaia pipeline detailed screenshot
     :width: 650px
-    
+
 .. |sh-pipeline-logs| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/51b4d6cbc3d86b1fe9531250db5456595423d9ec/pipeline_logs.png
     :alt: gaia pipeline logs screenshot
     :width: 650px
@@ -259,3 +265,4 @@ If you have any questions feel free to contact us on `gitter`_.
 .. |sh-settings| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/142a2969c4d27d4135ef8f96213bb166009fda1e/settings.png
     :alt: gaia settings screenshot
     :width: 650px
+
