@@ -82,6 +82,12 @@ func CertificateService() (security.CAAPI, error) {
 	return certificateService, nil
 }
 
+// MockCertificateService provides a way to create and set a mock
+// for the internal certificate service manager.
+func MockCertificateService(service security.CAAPI) {
+	certificateService = service
+}
+
 // VaultService creates a vault manager service.
 func VaultService(vaultStore security.VaultStorer) (security.VaultAPI, error) {
 	if vaultService != nil {
@@ -95,4 +101,10 @@ func VaultService(vaultStore security.VaultStorer) (security.VaultAPI, error) {
 	}
 	vaultService = v
 	return vaultService, nil
+}
+
+// MockVaultService provides a way to create and set a mock
+// for the internal vault service manager.
+func MockVaultService(service security.VaultAPI) {
+	vaultService = service
 }
