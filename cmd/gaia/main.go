@@ -40,6 +40,7 @@ func init() {
 	// command line arguments
 	flag.StringVar(&gaia.Cfg.ListenPort, "port", "8080", "Listen port for gaia")
 	flag.StringVar(&gaia.Cfg.HomePath, "homepath", "", "Path to the gaia home folder")
+	flag.StringVar(&gaia.Cfg.VaultPath, "vaultpath", "", "Path to the gaia vault folder")
 	flag.StringVar(&gaia.Cfg.Worker, "worker", "2", "Number of worker gaia will use to execute pipelines in parallel")
 	flag.StringVar(&gaia.Cfg.JwtPrivateKeyPath, "jwtPrivateKeyPath", "", "A RSA private key used to sign JWT tokens")
 	flag.StringVar(&gaia.Cfg.CAPath, "capath", "", "Folder path where the generated CA certificate files will be saved")
@@ -133,7 +134,7 @@ func main() {
 	}
 
 	// Setup CA for cerificate signing
-	_, err = security.InitCA()
+	cert, err := security.InitCA()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot create CA", "error", err.Error())
 		os.Exit(1)
@@ -165,6 +166,18 @@ func main() {
 	err = handlers.InitHandlers(echoInstance, store, scheduler)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
+		os.Exit(1)
+	}
+
+	// Initiating Vault
+	// Check Vault path
+	if gaia.Cfg.VaultPath == "" {
+		// Set default to data folder
+		gaia.Cfg.VaultPath = gaia.Cfg.DataPath
+	}
+	_, err = security.NewVault(cert, nil)
+	if err != nil {
+		gaia.Cfg.Logger.Error("error initiating vault")
 		os.Exit(1)
 	}
 

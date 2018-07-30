@@ -23,6 +23,14 @@ const state = {
       component: lazyLoading('pipeline/create')
     },
     {
+      name: 'Vault',
+      path: '/vault',
+      meta: {
+        icon: 'fa-lock'
+      },
+      component: lazyLoading('vault', true)
+    },
+    {
       name: 'Settings',
       path: '/settings',
       meta: {
