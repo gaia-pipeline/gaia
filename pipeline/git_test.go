@@ -157,7 +157,7 @@ func TestUpdateAllPipelinesHundredPipelines(t *testing.T) {
 	}
 }
 
-func TestGetAuthInfo(t *testing.T) {
+func TestGetAuthInfoWithUsernameAndPassword(t *testing.T) {
 	repoWithUsernameAndPassword := &gaia.GitRepo{
 		URL:       "https://github.com/gaia-pipeline/go-test-example",
 		LocalDest: "tmp",
@@ -165,11 +165,13 @@ func TestGetAuthInfo(t *testing.T) {
 		Password:  "password",
 	}
 
-	auth, err := getAuthInfo(repoWithUsernameAndPassword)
+	auth, _ := getAuthInfo(repoWithUsernameAndPassword)
 	if auth == nil {
 		t.Fatal("auth should not be nil when username and password is provided")
 	}
+}
 
+func TestGetAuthInfoWithPrivateKey(t *testing.T) {
 	samplePrivateKey := `
 -----BEGIN RSA PRIVATE KEY-----
 MD8CAQACCQDB9DczYvFuZQIDAQABAgkAtqAKvH9QoQECBQDjAl9BAgUA2rkqJQIE
@@ -185,7 +187,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 			Password: "password",
 		},
 	}
-	_, err = getAuthInfo(repoWithValidPrivateKey)
+	_, err := getAuthInfo(repoWithValidPrivateKey)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -199,16 +201,18 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 			Password: "password",
 		},
 	}
-	auth, _ = getAuthInfo(repoWithInvalidPrivateKey)
+	auth, _ := getAuthInfo(repoWithInvalidPrivateKey)
 	if auth != nil {
 		t.Fatal("auth should be nil for invalid private key")
 	}
+}
 
+func TestGetAuthInfoEmpty(t *testing.T) {
 	repoWithoutAuthInfo := &gaia.GitRepo{
 		URL:       "https://github.com/gaia-pipeline/go-test-example",
 		LocalDest: "tmp",
 	}
-	auth, _ = getAuthInfo(repoWithoutAuthInfo)
+	auth, _ := getAuthInfo(repoWithoutAuthInfo)
 	if auth != nil {
 		t.Fatal("auth should be nil when no authentication info is provided")
 	}
