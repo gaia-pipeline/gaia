@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/store"
@@ -133,25 +132,17 @@ func TestSchedule(t *testing.T) {
 	p, _ := prepareTestData()
 	storeInstance.PipelinePut(&p)
 	s := NewScheduler(storeInstance, &PluginFake{})
-	err := s.Init()
+	_, err := s.SchedulePipeline(&p)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.SchedulePipeline(&p)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// Wait some time to pickup work and finish.
-	// We have to wait at least 3 seconds for scheduler tick interval.
-	time.Sleep(5 * time.Second)
+	s.schedule()
 	r, err := storeInstance.PipelineGetRunByPipelineIDAndID(p.ID, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, job := range r.Jobs {
-		if job.Status != gaia.JobSuccess {
-			t.Fatalf("Job %s has status %s but should be %s!\n", job.Title, string(job.Status), string(gaia.JobSuccess))
-		}
+	if r.Status != gaia.RunScheduled {
+		t.Fatalf("run has status %s but should be %s\n", r.Status, string(gaia.RunScheduled))
 	}
 	err = os.Remove(filepath.Join(os.TempDir(), "gaia.db"))
 	if err != nil {
