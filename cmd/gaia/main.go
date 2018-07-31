@@ -155,7 +155,7 @@ func main() {
 	pS := &plugin.Plugin{}
 
 	// Initialize scheduler
-	scheduler := scheduler.NewScheduler(store, pS)
+	scheduler := scheduler.NewScheduler(store, pS, cert)
 	err = scheduler.Init()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize scheduler:", "error", err.Error())

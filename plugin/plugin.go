@@ -9,16 +9,22 @@ import (
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/scheduler"
+	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/protobuf"
 	plugin "github.com/hashicorp/go-plugin"
 )
 
 const (
 	pluginMapKey = "Plugin"
+
+	// env variable key names for TLS cert path
+	serverCertEnv = "GAIA_PLUGIN_CERT"
+	serverKeyEnv  = "GAIA_PLUGIN_KEY"
+	rootCACertEnv = "GAIA_PLUGIN_CA_CERT"
 )
 
 var handshake = plugin.HandshakeConfig{
-	ProtocolVersion: 1,
+	ProtocolVersion: 2,
 	MagicCookieKey:  "GAIA_PLUGIN",
 	// This cookie should never be changed again
 	MagicCookieValue: "FdXjW27mN6XuG2zDBP4LixXUwDAGCEkidxwqBGYpUhxiWHzctATYZvpz4ZJdALmh",
@@ -42,12 +48,21 @@ type Plugin struct {
 
 	// Writer used to write logs from execution to file
 	writer *bufio.Writer
+
+	// CA instance used to handle certificates
+	ca security.CAAPI
+
+	// Created certificates path for pipeline run
+	certPath       string
+	keyPath        string
+	serverCertPath string
+	serverKeyPath  string
 }
 
 // NewPlugin creates a new instance of Plugin.
 // One Plugin instance represents one connection to a plugin.
-func (p *Plugin) NewPlugin() scheduler.Plugin {
-	return &Plugin{}
+func (p *Plugin) NewPlugin(ca security.CAAPI) scheduler.Plugin {
+	return &Plugin{ca: ca}
 }
 
 // Connect prepares the log path, starts the plugin, initiates the
@@ -75,6 +90,32 @@ func (p *Plugin) Connect(command *exec.Cmd, logPath *string) error {
 	// Create new writer
 	p.writer = bufio.NewWriter(p.logFile)
 
+	// Create and sign a new pair of certificates for the server
+	var err error
+	p.serverCertPath, p.serverKeyPath, err = p.ca.CreateSignedCert()
+	if err != nil {
+		return err
+	}
+
+	// Expose path of server certificates as well as public CA cert.
+	// This allows the plugin to grab the certificates.
+	caCert, _ := p.ca.GetCACertPath()
+	command.Env = append(command.Env, serverCertEnv+"="+p.serverCertPath)
+	command.Env = append(command.Env, serverKeyEnv+"="+p.serverKeyPath)
+	command.Env = append(command.Env, rootCACertEnv+"="+caCert)
+
+	// Create and sign a new pair of certificates for the client
+	p.certPath, p.keyPath, err = p.ca.CreateSignedCert()
+	if err != nil {
+		return err
+	}
+
+	// Generate TLS config
+	tlsConfig, err := p.ca.GenerateTLSConfig(p.certPath, p.keyPath)
+	if err != nil {
+		return err
+	}
+
 	// Get new client
 	p.client = plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  handshake,
@@ -82,6 +123,7 @@ func (p *Plugin) Connect(command *exec.Cmd, logPath *string) error {
 		Cmd:              command,
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
 		Stderr:           p.writer,
+		TLSConfig:        tlsConfig,
 	})
 
 	// Connect via gRPC
@@ -176,5 +218,9 @@ func (p *Plugin) Close() {
 
 		// Close log file
 		p.logFile.Close()
+
+		// Cleanup certificates
+		p.ca.CleanupCerts(p.certPath, p.keyPath)
+		p.ca.CleanupCerts(p.serverCertPath, p.serverKeyPath)
 	}()
 }

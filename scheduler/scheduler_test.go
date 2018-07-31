@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"crypto/tls"
 	"hash/fnv"
 	"os"
 	"os/exec"
@@ -8,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
 	uuid "github.com/satori/go.uuid"
@@ -15,11 +17,18 @@ import (
 
 type PluginFake struct{}
 
-func (p *PluginFake) NewPlugin() Plugin                            { return &PluginFake{} }
+func (p *PluginFake) NewPlugin(ca security.CAAPI) Plugin           { return &PluginFake{} }
 func (p *PluginFake) Connect(cmd *exec.Cmd, logPath *string) error { return nil }
 func (p *PluginFake) Execute(j *gaia.Job) error                    { return nil }
 func (p *PluginFake) GetJobs() ([]gaia.Job, error)                 { return prepareJobs(), nil }
 func (p *PluginFake) Close()                                       {}
+
+type CAFake struct{}
+
+func (c *CAFake) CreateSignedCert() (string, string, error)                       { return "", "", nil }
+func (c *CAFake) GenerateTLSConfig(certPath, keyPath string) (*tls.Config, error) { return nil, nil }
+func (c *CAFake) CleanupCerts(crt, key string) error                              { return nil }
+func (c *CAFake) GetCACertPath() (string, string)                                 { return "", "" }
 
 func TestInit(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
@@ -36,7 +45,9 @@ func TestInit(t *testing.T) {
 	if err := storeInstance.Init(); err != nil {
 		t.Fatal(err)
 	}
-	s := NewScheduler(storeInstance, &PluginFake{})
+	var ca security.CAAPI
+	ca = &CAFake{}
+	s := NewScheduler(storeInstance, &PluginFake{}, ca)
 	err := s.Init()
 	if err != nil {
 		t.Fatal(err)
@@ -64,7 +75,9 @@ func TestPrepareAndExec(t *testing.T) {
 	}
 	p, r := prepareTestData()
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFake{})
+	var ca security.CAAPI
+	ca = &CAFake{}
+	s := NewScheduler(storeInstance, &PluginFake{}, ca)
 	s.prepareAndExec(r)
 
 	// Iterate jobs
@@ -98,7 +111,9 @@ func TestSchedulePipeline(t *testing.T) {
 	}
 	p, _ := prepareTestData()
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFake{})
+	var ca security.CAAPI
+	ca = &CAFake{}
+	s := NewScheduler(storeInstance, &PluginFake{}, ca)
 	err := s.Init()
 	if err != nil {
 		t.Fatal(err)
@@ -131,7 +146,9 @@ func TestSchedule(t *testing.T) {
 	}
 	p, _ := prepareTestData()
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFake{})
+	var ca security.CAAPI
+	ca = &CAFake{}
+	s := NewScheduler(storeInstance, &PluginFake{}, ca)
 	_, err := s.SchedulePipeline(&p)
 	if err != nil {
 		t.Fatal(err)
@@ -166,7 +183,9 @@ func TestSetPipelineJobs(t *testing.T) {
 	}
 	p, _ := prepareTestData()
 	p.Jobs = nil
-	s := NewScheduler(storeInstance, &PluginFake{})
+	var ca security.CAAPI
+	ca = &CAFake{}
+	s := NewScheduler(storeInstance, &PluginFake{}, ca)
 	err := s.SetPipelineJobs(&p)
 	if err != nil {
 		t.Fatal(err)
