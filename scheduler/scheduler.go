@@ -2,11 +2,11 @@ package scheduler
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
@@ -22,12 +22,18 @@ const (
 	// schedulerIntervalSeconds defines the interval the scheduler will look
 	// for new work to schedule. Definition in seconds.
 	schedulerIntervalSeconds = 3
+
+	// errCircularDep is thrown when a circular dependency has been detected.
+	errCircularDep = "circular dependency detected between %s and %s"
 )
 
 var (
 	// errCreateCMDForPipeline is thrown when we couldnt create a command to start
 	// a plugin.
 	errCreateCMDForPipeline = errors.New("could not create execute command for plugin")
+
+	// Java executeable name
+	javaExecuteableName = "java"
 )
 
 // Plugin represents the plugin implementation which is used
@@ -129,7 +135,7 @@ func (s *Scheduler) work() {
 	}
 }
 
-// prepareAndExec does the real preparation and start the execution.
+// prepareAndExec does the preparation and starts the execution.
 func (s *Scheduler) prepareAndExec(r gaia.PipelineRun) {
 	// Mark the scheduled run as running
 	r.Status = gaia.RunRunning
@@ -150,9 +156,8 @@ func (s *Scheduler) prepareAndExec(r gaia.PipelineRun) {
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot get pipeline jobs before execution", "error", err.Error())
 
-		// Update store
-		r.Status = gaia.RunFailed
-		s.storeService.PipelinePutRun(&r)
+		// Finish pipeline run
+		s.finishPipelineRun(&r, gaia.RunFailed)
 		return
 	}
 
@@ -161,6 +166,18 @@ func (s *Scheduler) prepareAndExec(r gaia.PipelineRun) {
 		// Finish pipeline run
 		s.finishPipelineRun(&r, gaia.RunSuccess)
 		return
+	}
+
+	// Check if circular dependency exists
+	for _, job := range r.Jobs {
+		if _, err := s.checkCircularDep(job, []gaia.Job{}, []gaia.Job{}); err != nil {
+			gaia.Cfg.Logger.Info("circular dependency detected", "pipeline", pipeline)
+			gaia.Cfg.Logger.Info("information", "info", err.Error())
+
+			// Update store
+			s.finishPipelineRun(&r, gaia.RunFailed)
+			return
+		}
 	}
 
 	// Create logs folder for this run
@@ -192,7 +209,7 @@ func (s *Scheduler) prepareAndExec(r gaia.PipelineRun) {
 
 	// Schedule jobs and execute them.
 	// Also update the run in the store.
-	s.scheduleJobsByPriority(r, pS)
+	s.executeScheduledJobs(r, pS)
 }
 
 // schedule looks in the store for new work and schedules it.
@@ -227,8 +244,7 @@ func (s *Scheduler) schedule() {
 }
 
 // SchedulePipeline schedules a pipeline. We create a new schedule object
-// and save it in our store. The scheduler will later pick up this schedule object
-// and will continue the work.
+// and save it in our store. The scheduler will later pick this up and will continue the work.
 func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline) (*gaia.PipelineRun, error) {
 	// Get highest public id used for this pipeline
 	highestID, err := s.storeService.PipelineGetRunHighestID(p)
@@ -261,74 +277,181 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline) (*gaia.PipelineRun, error
 	return &run, s.storeService.PipelinePutRun(&run)
 }
 
-// executeJob executes a single job.
+// executeJob executes a job and informs via triggerSave that the job can be saved to the store.
 // This method is blocking.
-func executeJob(job gaia.Job, pS Plugin, wg *sync.WaitGroup, triggerSave chan gaia.Job) {
-	defer wg.Done()
+func executeJob(j gaia.Job, pS Plugin, triggerSave chan gaia.Job) {
 	defer func() {
-		triggerSave <- job
+		triggerSave <- j
 	}()
 
 	// Set Job to running and trigger save
-	job.Status = gaia.JobRunning
-	triggerSave <- job
+	j.Status = gaia.JobRunning
+	triggerSave <- j
 
 	// Execute job
-	if err := pS.Execute(&job); err != nil {
+	if err := pS.Execute(&j); err != nil {
 		// TODO: Show it to user
-		gaia.Cfg.Logger.Debug("error during job execution", "error", err.Error(), "job", job)
-		job.Status = gaia.JobFailed
+		gaia.Cfg.Logger.Debug("error during job execution", "error", err.Error(), "job", j)
+		j.Status = gaia.JobFailed
 		return
 	}
 
 	// If we are here, the job execution was ok
-	job.Status = gaia.JobSuccess
+	j.Status = gaia.JobSuccess
 }
 
-// scheduleJobsByPriority schedules the given jobs by their respective
-// priority. This method is designed to be recursive and blocking.
-// If jobs have the same priority, they will be executed in parallel.
-func (s *Scheduler) scheduleJobsByPriority(r gaia.PipelineRun, pS Plugin) {
-	// Do a prescheduling and set it to the first waiting job
-	var lowestPrio int64
-	for _, job := range r.Jobs {
-		if job.Status == gaia.JobWaitingExec {
-			lowestPrio = job.Priority
-			break
+// checkCircularDep checks for circular dependencies.
+// An error is thrown when one is found.
+func (s *Scheduler) checkCircularDep(j gaia.Job, resolved []gaia.Job, unresolved []gaia.Job) ([]gaia.Job, error) {
+	unresolved = append(unresolved, j)
+	for _, job := range j.DependsOn {
+		// Check if job is already in resolved list
+		var inResolved bool
+		for _, resolvedJob := range resolved {
+			if resolvedJob.ID == job.ID {
+				inResolved = true
+				break
+			}
+		}
+
+		// Job has been resolved
+		if inResolved {
+			continue
+		}
+
+		// Check if job is alreay in unresolved list
+		for _, unresolvedJob := range unresolved {
+			if unresolvedJob.ID == job.ID {
+				// Circular dependency detected
+				// Return the conflicting dependencies
+				return nil, fmt.Errorf(errCircularDep, unresolvedJob.Title, j.Title)
+			}
+		}
+
+		// Resolve job
+		var err error
+		resolved, err = s.checkCircularDep(*job, resolved, unresolved)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	// Find the job with the lowest priority
+	return append(resolved, j), nil
+}
+
+// resolveDependencies resolves the dependencies of the given workload
+// and sends all resolved workloads to our executenScheduler queue.
+// After a workload has been send to the executenSCheduler, the method will
+// block and wait until the workload is done.
+// This method is designed to be called recursive and blocking.
+func (s *Scheduler) resolveDependencies(j gaia.Job, mw *managedWorkloads, executenScheduler chan gaia.Job, quit chan bool) {
+	for _, depJob := range j.DependsOn {
+		// Check if this workdload is already resolved
+		var resolved bool
+		for workload := range mw.Iter() {
+			if workload.done && workload.job.ID == depJob.ID {
+				resolved = true
+			}
+		}
+
+		// Job has been resolved
+		if resolved {
+			continue
+		}
+
+		// Resolve job
+		s.resolveDependencies(*depJob, mw, executenScheduler, quit)
+	}
+
+	// quit function if signaled.
+	// We do not block here because this is just a pre-validation step.
+	select {
+	case <-quit:
+		return
+	default:
+	}
+
+	// If we are here, then the job is resolved.
+	// We have to check if the job still needs to be run
+	// or if another goroutine has already started the execution.
+	relatedWL := mw.GetByID(j.ID)
+	if !relatedWL.started {
+		// Job has not been executed yet.
+		// Send workload to executen scheduler.
+		executenScheduler <- j
+
+		// Wait until finished
+		<-relatedWL.finishedSig
+	} else if !relatedWL.done {
+		// Job has been started but not finished.
+		// Let us wait till finished.
+		<-relatedWL.finishedSig
+	}
+}
+
+// executeScheduledJobs is a small wrapper around executenScheduler which
+// is responsible for finalizing the pipeline run.
+func (s *Scheduler) executeScheduledJobs(r gaia.PipelineRun, pS Plugin) {
+	// Start the main executen process and wait until finished.
+	s.executenScheduler(&r, pS)
+
+	// Run finished. Set pipeline status.
+	var runFail bool
 	for _, job := range r.Jobs {
-		if job.Priority < lowestPrio && job.Status == gaia.JobWaitingExec {
-			lowestPrio = job.Priority
+		if job.Status != gaia.JobSuccess {
+			runFail = true
 		}
 	}
 
-	// We might have multiple jobs with the same priority.
-	// It means these jobs should be started in parallel.
-	var wg sync.WaitGroup
+	if runFail {
+		s.finishPipelineRun(&r, gaia.RunFailed)
+	} else {
+		s.finishPipelineRun(&r, gaia.RunSuccess)
+	}
+}
+
+// executenScheduler is our main function which coordinates the
+// whole execution process and dependency resolve algorithm.
+func (s *Scheduler) executenScheduler(r *gaia.PipelineRun, pS Plugin) {
+	// Create a queue which is used to execute the resolved workloads.
+	executenScheduler := make(chan gaia.Job)
+
+	// Quit queue to signal go routines to exit.
+	// This is usually used when a job failed and the whole pipeline
+	// should be cancelled.
+	quit := make(chan bool)
+
+	// Iterate all jobs from this run
+	mw := newManagedWorkloads()
+	for _, job := range r.Jobs {
+		// Create new workload object
+		mw.Append(workload{
+			job:         job,
+			finishedSig: make(chan bool),
+		})
+
+		// Start resolving go routine for this job
+		go s.resolveDependencies(job, mw, executenScheduler, quit)
+	}
+
+	// Separate channel to save updates about the status of job executions.
 	triggerSave := make(chan gaia.Job)
-	done := make(chan bool)
-	for id, job := range r.Jobs {
-		if job.Priority == lowestPrio && job.Status == gaia.JobWaitingExec {
-			// Increase wait group by one
-			wg.Add(1)
 
-			// Execute this job in a separate goroutine
-			go executeJob(r.Jobs[id], pS, &wg, triggerSave)
+	// Let's loop until we are done
+	var finalize bool
+	finished := make(chan bool, 1)
+	for {
+		// check if we finished the run
+		select {
+		case <-finished:
+			return
+		default:
 		}
-	}
 
-	// Create channel for storing job run results and spawn results routine
-	go func() {
-		for {
-			j, open := <-triggerSave
-
-			// Channel has been closed
-			if !open {
-				done <- true
-				return
+		select {
+		case j, ok := <-triggerSave:
+			if !ok {
+				break
 			}
 
 			// Filter out the job
@@ -339,37 +462,88 @@ func (s *Scheduler) scheduleJobsByPriority(r gaia.PipelineRun, pS Plugin) {
 				}
 			}
 
-			// Store update
-			s.storeService.PipelinePutRun(&r)
-		}
-	}()
+			// Store status update
+			s.storeService.PipelinePutRun(r)
 
-	// Wait until all jobs have been finished and close results channel
-	wg.Wait()
-	close(triggerSave)
-	<-done
+			// Send signal to resolver that this job is finished.
+			if j.Status == gaia.JobSuccess || j.Status == gaia.JobFailed {
+				// Job is done
+				wl := mw.GetByID(j.ID)
+				wl.done = true
+				mw.Replace(*wl)
 
-	// Check if a job has been failed. If so, stop execution.
-	// We also check if all jobs has been executed.
-	var notExecJob bool
-	for _, job := range r.Jobs {
-		switch job.Status {
-		case gaia.JobFailed:
-			s.finishPipelineRun(&r, gaia.RunFailed)
-			return
-		case gaia.JobWaitingExec:
-			notExecJob = true
+				// Let's check if we are done and if all jobs ran successful.
+				var allWLDone = true
+				for wl := range mw.Iter() {
+					if !wl.done {
+						allWLDone = false
+					}
+				}
+
+				if allWLDone {
+					close(executenScheduler)
+					close(quit)
+					close(triggerSave)
+					finished <- true
+				}
+
+				// Close go-routine which was waiting for this job.
+				close(wl.finishedSig)
+			}
+
+			// Dependent of the status output, decide what should happen next.
+			if !finalize && j.Status == gaia.JobFailed {
+				// we are entering the finalize phase
+				finalize = true
+
+				// Send quit signal to all resolvers
+				close(quit)
+
+				// Close executenScheduler. No new jobs should be scheduled.
+				close(executenScheduler)
+
+				// A job failed. Finish all currently running jobs.
+				go func() {
+					// We might have still running jobs. Wait until all jobs are finished.
+					for {
+						var notFinishedWL *workload
+						for singleWL := range mw.Iter() {
+							if singleWL.started && !singleWL.done {
+								notFinishedWL = &singleWL
+							}
+						}
+
+						if notFinishedWL == nil {
+							break
+						}
+
+						// wait until finished
+						<-notFinishedWL.finishedSig
+					}
+
+					finished <- true
+					close(triggerSave)
+				}()
+			}
+		case j, ok := <-executenScheduler:
+			if !ok {
+				break
+			}
+
+			// Get related workload
+			wl := mw.GetByID(j.ID)
+
+			// Check if this workload has been already started by another routine.
+			if !wl.started {
+				// Update
+				wl.started = true
+				mw.Replace(*wl)
+
+				// Start execution
+				go executeJob(j, pS, triggerSave)
+			}
 		}
 	}
-
-	// All jobs have been executed
-	if !notExecJob {
-		s.finishPipelineRun(&r, gaia.RunSuccess)
-		return
-	}
-
-	// Run scheduleJobsByPriority again until all jobs have been executed
-	s.scheduleJobsByPriority(r, pS)
 }
 
 // getPipelineJobs uses the plugin system to get all jobs from the given pipeline.
@@ -419,7 +593,7 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 		c.Path = p.ExecPath
 	case gaia.PTypeJava:
 		// Look for golang executeable
-		path, err := exec.LookPath("java")
+		path, err := exec.LookPath(javaExecuteableName)
 		if err != nil {
 			gaia.Cfg.Logger.Debug("cannot find java executeable", "error", err.Error())
 			return nil

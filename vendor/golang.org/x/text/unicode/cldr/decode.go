@@ -58,10 +58,9 @@ func (d *Decoder) Decode(l Loader) (cldr *CLDR, err error) {
 			if len(d.dirFilter) > 0 && !in(d.dirFilter, m[1]) {
 				continue
 			}
-			var r io.ReadCloser
+			var r io.Reader
 			if r, err = l.Reader(i); err == nil {
 				err = d.decode(m[1], m[2], r)
-				r.Close()
 			}
 			if err != nil {
 				return nil, err

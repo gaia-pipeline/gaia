@@ -3,8 +3,8 @@ package plugin
 import (
 	"context"
 
-	"github.com/gaia-pipeline/protobuf"
 	plugin "github.com/hashicorp/go-plugin"
+	"github.com/michelvocks/protobuf"
 	"google.golang.org/grpc"
 )
 

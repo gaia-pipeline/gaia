@@ -1074,6 +1074,8 @@ const (
 	NETLINK_UNUSED                       = 0x1
 	NETLINK_USERSOCK                     = 0x2
 	NETLINK_XFRM                         = 0x6
+	NETNSA_MAX                           = 0x3
+	NETNSA_NSID_NOT_ASSIGNED             = -0x1
 	NFNETLINK_V0                         = 0x0
 	NFNLGRP_ACCT_QUOTA                   = 0x8
 	NFNLGRP_CONNTRACK_DESTROY            = 0x3
