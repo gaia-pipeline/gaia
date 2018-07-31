@@ -191,7 +191,7 @@ If you think you found a good first issue, please consider this list as a short 
 Contact
 =======
 
-If you have any questions feel free to contact us on `gitter`_.
+If you have any questions feel free to contact us on `slack`_.
 
 .. _`HashiCorp's go-plugin`: https://github.com/hashicorp/go-plugin
 .. _`gRPC`: https://grpc.io/
@@ -208,7 +208,7 @@ If you have any questions feel free to contact us on `gitter`_.
 .. _`Go installed`: https://golang.org/doc/install
 .. _`nodeJS`: https://nodejs.org/
 .. _`go-example repo`: https://github.com/gaia-pipeline/go-example
-.. _`gitter`: https://gitter.im/gaia-pipeline
+.. _`slack`: https://gaia-slack-invite.herokuapp.com/
 .. _`Kubernetes deployment with vault integration`: https://docs.gaia-pipeline.io/tutorials/kube-vault-deploy/
 .. _`git push`: https://git-scm.com/docs/git-push
 .. _`HTTP/2`: https://http2.github.io/
@@ -231,9 +231,9 @@ If you have any questions feel free to contact us on `gitter`_.
     :alt: Apache licensed
     :target: https://github.com/gaia-pipeline/gaia/blob/master/LICENSE
 
-.. |chat| image:: https://badges.gitter.im/Join%20Chat.svg
-    :alt: Gitter
-    :target: https://gitter.im/gaia-pipeline
+.. |chat| image:: https://gaia-slack-invite.herokuapp.com/badge.svg
+    :alt: Slack
+    :target: https://gaia-slack-invite.herokuapp.com/
 
 .. |codecov| image:: https://codecov.io/gh/gaia-pipeline/gaia/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/gaia-pipeline/gaia

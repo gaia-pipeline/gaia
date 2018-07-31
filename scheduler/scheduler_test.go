@@ -1,14 +1,15 @@
 package scheduler
 
 import (
+	"crypto/tls"
 	"hash/fnv"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
 	uuid "github.com/satori/go.uuid"
@@ -16,11 +17,18 @@ import (
 
 type PluginFake struct{}
 
-func (p *PluginFake) NewPlugin() Plugin                            { return &PluginFake{} }
+func (p *PluginFake) NewPlugin(ca security.CAAPI) Plugin           { return &PluginFake{} }
 func (p *PluginFake) Connect(cmd *exec.Cmd, logPath *string) error { return nil }
 func (p *PluginFake) Execute(j *gaia.Job) error                    { return nil }
 func (p *PluginFake) GetJobs() ([]gaia.Job, error)                 { return prepareJobs(), nil }
 func (p *PluginFake) Close()                                       {}
+
+type CAFake struct{}
+
+func (c *CAFake) CreateSignedCert() (string, string, error)                       { return "", "", nil }
+func (c *CAFake) GenerateTLSConfig(certPath, keyPath string) (*tls.Config, error) { return nil, nil }
+func (c *CAFake) CleanupCerts(crt, key string) error                              { return nil }
+func (c *CAFake) GetCACertPath() (string, string)                                 { return "", "" }
 
 func TestInit(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
@@ -37,7 +45,9 @@ func TestInit(t *testing.T) {
 	if err := storeInstance.Init(); err != nil {
 		t.Fatal(err)
 	}
-	s := NewScheduler(storeInstance, &PluginFake{})
+	var ca security.CAAPI
+	ca = &CAFake{}
+	s := NewScheduler(storeInstance, &PluginFake{}, ca)
 	err := s.Init()
 	if err != nil {
 		t.Fatal(err)
@@ -65,7 +75,9 @@ func TestPrepareAndExec(t *testing.T) {
 	}
 	p, r := prepareTestData()
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFake{})
+	var ca security.CAAPI
+	ca = &CAFake{}
+	s := NewScheduler(storeInstance, &PluginFake{}, ca)
 	s.prepareAndExec(r)
 
 	// Iterate jobs
@@ -99,7 +111,9 @@ func TestSchedulePipeline(t *testing.T) {
 	}
 	p, _ := prepareTestData()
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFake{})
+	var ca security.CAAPI
+	ca = &CAFake{}
+	s := NewScheduler(storeInstance, &PluginFake{}, ca)
 	err := s.Init()
 	if err != nil {
 		t.Fatal(err)
@@ -132,26 +146,20 @@ func TestSchedule(t *testing.T) {
 	}
 	p, _ := prepareTestData()
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFake{})
-	err := s.Init()
+	var ca security.CAAPI
+	ca = &CAFake{}
+	s := NewScheduler(storeInstance, &PluginFake{}, ca)
+	_, err := s.SchedulePipeline(&p)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.SchedulePipeline(&p)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// Wait some time to pickup work and finish.
-	// We have to wait at least 3 seconds for scheduler tick interval.
-	time.Sleep(5 * time.Second)
+	s.schedule()
 	r, err := storeInstance.PipelineGetRunByPipelineIDAndID(p.ID, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, job := range r.Jobs {
-		if job.Status != gaia.JobSuccess {
-			t.Fatalf("Job %s has status %s but should be %s!\n", job.Title, string(job.Status), string(gaia.JobSuccess))
-		}
+	if r.Status != gaia.RunScheduled {
+		t.Fatalf("run has status %s but should be %s\n", r.Status, string(gaia.RunScheduled))
 	}
 	err = os.Remove(filepath.Join(os.TempDir(), "gaia.db"))
 	if err != nil {
@@ -175,7 +183,9 @@ func TestSetPipelineJobs(t *testing.T) {
 	}
 	p, _ := prepareTestData()
 	p.Jobs = nil
-	s := NewScheduler(storeInstance, &PluginFake{})
+	var ca security.CAAPI
+	ca = &CAFake{}
+	s := NewScheduler(storeInstance, &PluginFake{}, ca)
 	err := s.SetPipelineJobs(&p)
 	if err != nil {
 		t.Fatal(err)
