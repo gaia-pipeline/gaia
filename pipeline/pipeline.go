@@ -1,11 +1,15 @@
 package pipeline
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/gaia-pipeline/gaia"
 )
@@ -59,6 +63,12 @@ var (
 	errMissingType = errors.New("couldnt find pipeline type definition")
 )
 
+// execution command context used for build
+var execCommandContext = exec.CommandContext
+
+// Source folder name where the sources are stored
+const srcFolder = "src"
+
 // newBuildPipeline creates a new build pipeline for the given
 // pipeline type.
 func newBuildPipeline(t gaia.PipelineType) BuildPipeline {
@@ -68,6 +78,10 @@ func newBuildPipeline(t gaia.PipelineType) BuildPipeline {
 	switch t {
 	case gaia.PTypeGolang:
 		bP = &BuildPipelineGolang{
+			Type: t,
+		}
+	case gaia.PTypeJava:
+		bP = &BuildPipelineJava{
 			Type: t,
 		}
 	}
@@ -246,4 +260,43 @@ func GetExecPath(p gaia.Pipeline) string {
 // This allows us later to define the pipeline type by the name.
 func appendTypeToName(n string, pType gaia.PipelineType) string {
 	return fmt.Sprintf("%s%s%s", n, typeDelimiter, pType.String())
+}
+
+// executeCmd wraps a context around the command and executes it.
+func executeCmd(path string, args []string, env []string, dir string) ([]byte, error) {
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), maxTimeoutMinutes*time.Minute)
+	defer cancel()
+
+	// Create command
+	cmd := execCommandContext(ctx, path, args...)
+	cmd.Env = env
+	cmd.Dir = dir
+
+	// Execute command
+	return cmd.CombinedOutput()
+}
+
+// copyFileContents copies the content from source to destination.
+func copyFileContents(src, dst string) (err error) {
+	in, err := os.Open(src)
+	if err != nil {
+		return
+	}
+	defer in.Close()
+	out, err := os.Create(dst)
+	if err != nil {
+		return
+	}
+	defer func() {
+		cerr := out.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
+	if _, err = io.Copy(out, in); err != nil {
+		return
+	}
+	err = out.Sync()
+	return
 }

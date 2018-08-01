@@ -63,11 +63,11 @@
               <div class="pipelinetype" title="Golang" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-on:click="createPipeline.pipeline.type = 'golang'" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'golang' }" data-tippy-hideOnClick="false">
                 <img src="~assets/golang.png" class="typeimage">
               </div>
+              <div class="pipelinetype" title="Java" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-on:click="createPipeline.pipeline.type = 'java'" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'java' }" data-tippy-hideOnClick="false">
+                <img src="~assets/java.png" class="typeimage">
+              </div>
               <div class="pipelinetype" title="Python (not yet supported)" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'python' }" data-tippy-hideOnClick="false">
                 <img src="~assets/python.png" class="typeimage typeimagenotyetsupported">
-              </div>
-              <div class="pipelinetype" title="Java (not yet supported)" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'java' }" data-tippy-hideOnClick="false">
-                <img src="~assets/java.png" class="typeimage typeimagenotyetsupported">
               </div>
             </div>
             <div class="content" style="display: flex;">

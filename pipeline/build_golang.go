@@ -1,8 +1,6 @@
 package pipeline
 
 import (
-	"context"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,10 +15,7 @@ import (
 const (
 	golangBinaryName = "go"
 	golangFolder     = "golang"
-	srcFolder        = "src"
 )
-
-var execCommandContext = exec.CommandContext
 
 // BuildPipelineGolang is the real implementation of BuildPipeline for golang
 type BuildPipelineGolang struct {
@@ -91,21 +86,6 @@ func (b *BuildPipelineGolang) ExecuteBuild(p *gaia.CreatePipeline) error {
 	return nil
 }
 
-// executeCmd wraps a context around the command and executes it.
-func executeCmd(path string, args []string, env []string, dir string) ([]byte, error) {
-	// Create context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), maxTimeoutMinutes*time.Minute)
-	defer cancel()
-
-	// Create command
-	cmd := execCommandContext(ctx, path, args...)
-	cmd.Env = env
-	cmd.Dir = dir
-
-	// Execute command
-	return cmd.CombinedOutput()
-}
-
 // CopyBinary copies the final compiled archive to the
 // destination folder.
 func (b *BuildPipelineGolang) CopyBinary(p *gaia.CreatePipeline) error {
@@ -131,28 +111,4 @@ func (b *BuildPipelineGolang) SavePipeline(p *gaia.Pipeline) error {
 	p.Created = time.Now()
 	// Our pipeline is finished constructing. Save it.
 	return services.StorageService().PipelinePut(p)
-}
-
-// copyFileContents copies the content from source to destination.
-func copyFileContents(src, dst string) (err error) {
-	in, err := os.Open(src)
-	if err != nil {
-		return
-	}
-	defer in.Close()
-	out, err := os.Create(dst)
-	if err != nil {
-		return
-	}
-	defer func() {
-		cerr := out.Close()
-		if err == nil {
-			err = cerr
-		}
-	}()
-	if _, err = io.Copy(out, in); err != nil {
-		return
-	}
-	err = out.Sync()
-	return
 }

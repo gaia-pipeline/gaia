@@ -63,7 +63,7 @@ func TestExecCommandContextHelper(t *testing.T) {
 	os.Exit(i)
 }
 
-func TestPrepareEnvironment(t *testing.T) {
+func TestPrepareEnvironmentGo(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
@@ -79,7 +79,7 @@ func TestPrepareEnvironment(t *testing.T) {
 	}
 }
 
-func TestPrepareEnvironmentInvalidPathForMkdir(t *testing.T) {
+func TestPrepareEnvironmentInvalidPathForMkdirGo(t *testing.T) {
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = "/notexists"
 	b := new(BuildPipelineGolang)
@@ -90,7 +90,7 @@ func TestPrepareEnvironmentInvalidPathForMkdir(t *testing.T) {
 	}
 }
 
-func TestExecuteBuild(t *testing.T) {
+func TestExecuteBuildGo(t *testing.T) {
 	execCommandContext = fakeExecCommandContext
 	defer func() {
 		execCommandContext = exec.CommandContext
@@ -112,7 +112,7 @@ func TestExecuteBuild(t *testing.T) {
 	}
 }
 
-func TestExecuteBuildFailPipelineBuild(t *testing.T) {
+func TestExecuteBuildFailPipelineBuildGo(t *testing.T) {
 	os.Mkdir("tmp", 0744)
 	ioutil.WriteFile(filepath.Join("tmp", "main.go"), []byte(`package main
 		import "os"
@@ -145,7 +145,7 @@ func TestExecuteBuildFailPipelineBuild(t *testing.T) {
 	}
 }
 
-func TestExecuteBuildContextTimeout(t *testing.T) {
+func TestExecuteBuildContextTimeoutGo(t *testing.T) {
 	execCommandContext = fakeExecCommandContext
 	killContext = true
 	defer func() {
@@ -173,7 +173,7 @@ func TestExecuteBuildContextTimeout(t *testing.T) {
 	}
 }
 
-func TestExecuteBuildBinaryNotFoundError(t *testing.T) {
+func TestExecuteBuildBinaryNotFoundErrorGo(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
@@ -198,7 +198,7 @@ func TestExecuteBuildBinaryNotFoundError(t *testing.T) {
 	}
 }
 
-func TestCopyBinary(t *testing.T) {
+func TestCopyBinaryGo(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
@@ -233,7 +233,7 @@ func TestCopyBinary(t *testing.T) {
 	}
 }
 
-func TestCopyBinarySrcDoesNotExist(t *testing.T) {
+func TestCopyBinarySrcDoesNotExistGo(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
@@ -258,7 +258,7 @@ func TestCopyBinarySrcDoesNotExist(t *testing.T) {
 	}
 }
 
-func TestSavePipeline(t *testing.T) {
+func TestSavePipelineGo(t *testing.T) {
 	defer os.Remove("gaia.db")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = "/tmp"

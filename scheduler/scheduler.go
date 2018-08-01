@@ -417,6 +417,21 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 	switch p.Type {
 	case gaia.PTypeGolang:
 		c.Path = p.ExecPath
+	case gaia.PTypeJava:
+		// Look for golang executeable
+		path, err := exec.LookPath("java")
+		if err != nil {
+			gaia.Cfg.Logger.Debug("cannot find java executeable", "error", err.Error())
+			return nil
+		}
+
+		// Build start command
+		c.Path = path
+		c.Args = []string{
+			path,
+			"-jar",
+			p.ExecPath,
+		}
 	default:
 		c = nil
 	}

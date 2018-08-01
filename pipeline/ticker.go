@@ -48,12 +48,12 @@ func InitTicker() {
 			gaia.Cfg.Logger.Info(errorMessage)
 			gaia.Cfg.PVal = 1
 		}
-		pollTicket := time.NewTicker(time.Duration(gaia.Cfg.PVal) * time.Minute)
+		pollTicker := time.NewTicker(time.Duration(gaia.Cfg.PVal) * time.Minute)
 		go func() {
-			defer pollTicket.Stop()
+			defer pollTicker.Stop()
 			for {
 				select {
-				case <-pollTicket.C:
+				case <-pollTicker.C:
 					updateAllCurrentPipelines()
 				}
 			}
@@ -179,6 +179,8 @@ func getPipelineType(n string) (gaia.PipelineType, error) {
 	switch t {
 	case gaia.PTypeGolang.String():
 		return gaia.PTypeGolang, nil
+	case gaia.PTypeJava.String():
+		return gaia.PTypeJava, nil
 	}
 
 	return gaia.PTypeUnknown, errMissingType
