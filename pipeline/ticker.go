@@ -189,6 +189,8 @@ func getPipelineType(n string) (gaia.PipelineType, error) {
 	switch t {
 	case gaia.PTypeGolang.String():
 		return gaia.PTypeGolang, nil
+	case gaia.PTypeJava.String():
+		return gaia.PTypeJava, nil
 	}
 
 	return gaia.PTypeUnknown, errMissingType

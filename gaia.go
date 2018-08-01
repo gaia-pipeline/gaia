@@ -28,6 +28,9 @@ const (
 	// PTypeGolang golang plugin type
 	PTypeGolang PipelineType = "golang"
 
+	// PTypeJava java plugin type
+	PTypeJava PipelineType = "java"
+
 	// CreatePipelineFailed status
 	CreatePipelineFailed CreatePipelineType = "failed"
 
