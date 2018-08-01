@@ -22,7 +22,7 @@ const (
 // of a plugin.
 // After each step, the status is written to store and can be retrieved via API.
 func CreatePipeline(p *gaia.CreatePipeline) {
-	storeService := services.StorageService()
+	storeService, _ := services.StorageService()
 	// Define build process for the given type
 	bP := newBuildPipeline(p.Pipeline.Type)
 	if bP == nil {

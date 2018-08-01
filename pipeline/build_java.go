@@ -98,5 +98,6 @@ func (b *BuildPipelineJava) SavePipeline(p *gaia.Pipeline) error {
 	p.Name = strings.TrimSuffix(filepath.Base(dest), typeDelimiter+gaia.PTypeJava.String())
 	p.Created = time.Now()
 	// Our pipeline is finished constructing. Save it.
-	return services.StorageService().PipelinePut(p)
+	storeService, _ := services.StorageService()
+	return storeService.PipelinePut(p)
 }

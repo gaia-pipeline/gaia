@@ -65,8 +65,8 @@ func InitTicker() {
 // Every file will be handled as an active pipeline and therefore
 // saved in the global active pipelines slice.
 func checkActivePipelines() {
-	schedulerService := services.SchedulerService()
-	storeService := services.StorageService()
+	schedulerService, _ := services.SchedulerService()
+	storeService, _ := services.StorageService()
 	var existingPipelineNames []string
 	files, err := ioutil.ReadDir(gaia.Cfg.PipelinePath)
 	if err != nil {

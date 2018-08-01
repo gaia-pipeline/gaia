@@ -141,10 +141,16 @@ func main() {
 	echoInstance = echo.New()
 
 	// Initialize store
-	services.StorageService()
+	_, err = services.StorageService()
+	if err != nil {
+		os.Exit(1)
+	}
 
 	// Initialize scheduler
-	services.SchedulerService()
+	_, err = services.SchedulerService()
+	if err != nil {
+		os.Exit(1)
+	}
 
 	// Initialize handlers
 	err = handlers.InitHandlers(echoInstance)

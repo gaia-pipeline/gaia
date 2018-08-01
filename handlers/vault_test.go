@@ -33,7 +33,7 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 		VaultPath: dataDir,
 	}
 
-	dataStore := services.StorageService()
+	dataStore, _ := services.StorageService()
 	err = dataStore.Init()
 	if err != nil {
 		t.Fatalf("cannot initialize store: %v", err.Error())

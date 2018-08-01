@@ -1,8 +1,6 @@
 package services
 
 import (
-	"os"
-
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/scheduler"
@@ -23,18 +21,21 @@ var certificateService security.CAAPI
 var vaultService security.VaultAPI
 
 // StorageService initializes and keeps track of a storage service.
-// If the internal storage service is a singleton.
-func StorageService() store.GaiaStore {
+// If the internal storage service is a singleton. This function retruns an error
+// but most of the times we don't care about it, because it's only ever
+// initialized once in the main.go. If it wouldn't work, main would
+// os.Exit(1) and the rest of the application would just stop.
+func StorageService() (store.GaiaStore, error) {
 	if storeService != nil {
-		return storeService
+		return storeService, nil
 	}
 	storeService = store.NewBoltStore()
 	err := storeService.Init()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize store", "error", err.Error())
-		os.Exit(1)
+		return storeService, err
 	}
-	return storeService
+	return storeService, nil
 }
 
 // MockStorageService sets the internal store singleton to the give
@@ -46,19 +47,22 @@ func MockStorageService(store store.GaiaStore) {
 }
 
 // SchedulerService initializes keeps track of the scheduler service.
-// The internal service is a singleton.
-func SchedulerService() scheduler.GaiaScheduler {
+// The internal service is a singleton. This function retruns an error
+// but most of the times we don't care about it, because it's only ever
+// initialized once in the main.go. If it wouldn't work, main would
+// os.Exit(1) and the rest of the application would just stop.
+func SchedulerService() (scheduler.GaiaScheduler, error) {
 	if schedulerService != nil {
-		return schedulerService
+		return schedulerService, nil
 	}
 	pS := &plugin.Plugin{}
 	schedulerService = scheduler.NewScheduler(storeService, pS, certificateService)
 	err := schedulerService.Init()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize scheduler:", "error", err.Error())
-		os.Exit(1)
+		return schedulerService, err
 	}
-	return schedulerService
+	return schedulerService, nil
 }
 
 // MockSchedulerService which replaces the scheduler service
