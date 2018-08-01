@@ -71,8 +71,8 @@ func TestExecuteBuildContextTimeoutJava(t *testing.T) {
 	buildKillContext = true
 	defer func() {
 		execCommandContext = exec.CommandContext
+		buildKillContext = false
 	}()
-	defer func() { buildKillContext = false }()
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp

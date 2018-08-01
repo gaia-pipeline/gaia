@@ -2,15 +2,12 @@ package pipeline
 
 import (
 	"bytes"
-	"context"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -21,8 +18,6 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 )
 
-var buildKillContext = false
-
 type mockStorer struct {
 	store.GaiaStore
 	Error error
@@ -31,35 +26,6 @@ type mockStorer struct {
 // PipelinePut is a Mock implementation for pipelines
 func (m *mockStorer) PipelinePut(p *gaia.Pipeline) error {
 	return m.Error
-}
-
-func fakeExecCommandContext(ctx context.Context, name string, args ...string) *exec.Cmd {
-	if buildKillContext {
-		c, cancel := context.WithTimeout(context.Background(), 0)
-		defer cancel()
-		ctx = c
-	}
-	cs := []string{"-test.run=TestExecCommandContextHelper", "--", name}
-	cs = append(cs, args...)
-	cmd := exec.CommandContext(ctx, os.Args[0], cs...)
-	arg := strings.Join(cs, ",")
-	envArgs := os.Getenv("CMD_ARGS")
-	if len(envArgs) != 0 {
-		envArgs += ":" + arg
-	} else {
-		envArgs = arg
-	}
-	os.Setenv("CMD_ARGS", envArgs)
-	return cmd
-}
-
-func TestExecCommandContextHelper(t *testing.T) {
-	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
-		return
-	}
-	fmt.Fprintf(os.Stdout, os.Getenv("STDOUT"))
-	i, _ := strconv.Atoi(os.Getenv("EXIT_STATUS"))
-	os.Exit(i)
 }
 
 func TestPrepareEnvironmentGo(t *testing.T) {
@@ -149,8 +115,8 @@ func TestExecuteBuildContextTimeoutGo(t *testing.T) {
 	buildKillContext = true
 	defer func() {
 		execCommandContext = exec.CommandContext
+		buildKillContext = false
 	}()
-	defer func() { buildKillContext = false }()
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
