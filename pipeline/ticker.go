@@ -60,12 +60,12 @@ func InitTicker(store *store.Store, scheduler *scheduler.Scheduler) {
 			gaia.Cfg.Logger.Info(errorMessage)
 			gaia.Cfg.PVal = 1
 		}
-		pollTicket := time.NewTicker(time.Duration(gaia.Cfg.PVal) * time.Minute)
+		pollTicker := time.NewTicker(time.Duration(gaia.Cfg.PVal) * time.Minute)
 		go func() {
-			defer pollTicket.Stop()
+			defer pollTicker.Stop()
 			for {
 				select {
-				case <-pollTicket.C:
+				case <-pollTicker.C:
 					updateAllCurrentPipelines()
 				}
 			}
