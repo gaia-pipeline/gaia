@@ -21,8 +21,7 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 )
 
-var killContext = false
-var killOnBuild = false
+var buildKillContext = false
 
 type mockStorer struct {
 	store.GaiaStore
@@ -35,7 +34,7 @@ func (m *mockStorer) PipelinePut(p *gaia.Pipeline) error {
 }
 
 func fakeExecCommandContext(ctx context.Context, name string, args ...string) *exec.Cmd {
-	if killContext {
+	if buildKillContext {
 		c, cancel := context.WithTimeout(context.Background(), 0)
 		defer cancel()
 		ctx = c
@@ -147,11 +146,11 @@ func TestExecuteBuildFailPipelineBuildGo(t *testing.T) {
 
 func TestExecuteBuildContextTimeoutGo(t *testing.T) {
 	execCommandContext = fakeExecCommandContext
-	killContext = true
+	buildKillContext = true
 	defer func() {
 		execCommandContext = exec.CommandContext
 	}()
-	defer func() { killContext = false }()
+	defer func() { buildKillContext = false }()
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
