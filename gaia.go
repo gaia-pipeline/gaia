@@ -28,6 +28,9 @@ const (
 	// PTypeGolang golang plugin type
 	PTypeGolang PipelineType = "golang"
 
+	// PTypeJava java plugin type
+	PTypeJava PipelineType = "java"
+
 	// CreatePipelineFailed status
 	CreatePipelineFailed CreatePipelineType = "failed"
 
@@ -157,6 +160,7 @@ type Config struct {
 	ListenPort        string
 	HomePath          string
 	Hostname          string
+	VaultPath         string
 	DataPath          string
 	PipelinePath      string
 	WorkspacePath     string
@@ -164,6 +168,7 @@ type Config struct {
 	JwtPrivateKeyPath string
 	JWTKey            interface{}
 	Logger            hclog.Logger
+	CAPath            string
 
 	Bolt struct {
 		Mode os.FileMode

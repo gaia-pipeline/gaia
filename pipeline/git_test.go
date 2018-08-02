@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"bytes"
 	"os"
 	"strconv"
 	"strings"
@@ -28,10 +29,10 @@ func TestUpdateAllPipelinesRepositoryNotFound(t *testing.T) {
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
-	var b strings.Builder
+	b := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &b,
+		Output: b,
 		Name:   "Gaia",
 	})
 
@@ -49,10 +50,10 @@ func TestUpdateAllPipelinesAlreadyUpToDate(t *testing.T) {
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = "tmp"
 	// Initialize shared logger
-	var b strings.Builder
+	b := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &b,
+		Output: b,
 		Name:   "Gaia",
 	})
 	repo := &gaia.GitRepo{
@@ -82,10 +83,10 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = "tmp"
 	// Initialize shared logger
-	var b strings.Builder
+	b := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &b,
+		Output: b,
 		Name:   "Gaia",
 	})
 	repo := &gaia.GitRepo{
@@ -124,10 +125,10 @@ func TestUpdateAllPipelinesHundredPipelines(t *testing.T) {
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = "tmp"
 	// Initialize shared logger
-	var b strings.Builder
+	b := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &b,
+		Output: b,
 		Name:   "Gaia",
 	})
 	repo := &gaia.GitRepo{
@@ -153,5 +154,66 @@ func TestUpdateAllPipelinesHundredPipelines(t *testing.T) {
 	updateAllCurrentPipelines()
 	if !strings.Contains(b.String(), "already up-to-date") {
 		t.Fatal("log output did not contain error message that the repo is up-to-date.: ", b.String())
+	}
+}
+
+func TestGetAuthInfoWithUsernameAndPassword(t *testing.T) {
+	repoWithUsernameAndPassword := &gaia.GitRepo{
+		URL:       "https://github.com/gaia-pipeline/go-test-example",
+		LocalDest: "tmp",
+		Username:  "username",
+		Password:  "password",
+	}
+
+	auth, _ := getAuthInfo(repoWithUsernameAndPassword)
+	if auth == nil {
+		t.Fatal("auth should not be nil when username and password is provided")
+	}
+}
+
+func TestGetAuthInfoWithPrivateKey(t *testing.T) {
+	samplePrivateKey := `
+-----BEGIN RSA PRIVATE KEY-----
+MD8CAQACCQDB9DczYvFuZQIDAQABAgkAtqAKvH9QoQECBQDjAl9BAgUA2rkqJQIE
+Xbs5AQIEIzWnmQIFAOEml+E=
+-----END RSA PRIVATE KEY-----
+`
+	repoWithValidPrivateKey := &gaia.GitRepo{
+		URL:       "https://github.com/gaia-pipeline/go-test-example",
+		LocalDest: "tmp",
+		PrivateKey: gaia.PrivateKey{
+			Key:      samplePrivateKey,
+			Username: "username",
+			Password: "password",
+		},
+	}
+	_, err := getAuthInfo(repoWithValidPrivateKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repoWithInvalidPrivateKey := &gaia.GitRepo{
+		URL:       "https://github.com/gaia-pipeline/go-test-example",
+		LocalDest: "tmp",
+		PrivateKey: gaia.PrivateKey{
+			Key:      "random_key",
+			Username: "username",
+			Password: "password",
+		},
+	}
+	auth, _ := getAuthInfo(repoWithInvalidPrivateKey)
+	if auth != nil {
+		t.Fatal("auth should be nil for invalid private key")
+	}
+}
+
+func TestGetAuthInfoEmpty(t *testing.T) {
+	repoWithoutAuthInfo := &gaia.GitRepo{
+		URL:       "https://github.com/gaia-pipeline/go-test-example",
+		LocalDest: "tmp",
+	}
+	auth, _ := getAuthInfo(repoWithoutAuthInfo)
+	if auth != nil {
+		t.Fatal("auth should be nil when no authentication info is provided")
 	}
 }

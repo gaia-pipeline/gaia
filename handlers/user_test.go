@@ -16,7 +16,6 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/store"
 	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
@@ -43,14 +42,8 @@ func TestUserLoginHMACKey(t *testing.T) {
 		DataPath: dataDir,
 	}
 
-	dataStore := store.NewStore()
-	err = dataStore.Init()
-	if err != nil {
-		t.Fatalf("cannot initialize store: %v", err.Error())
-	}
-
 	e := echo.New()
-	InitHandlers(e, dataStore, nil)
+	InitHandlers(e)
 
 	body := map[string]string{
 		"username": "admin",
@@ -105,14 +98,8 @@ func TestUserLoginRSAKey(t *testing.T) {
 		DataPath: dataDir,
 	}
 
-	dataStore := store.NewStore()
-	err = dataStore.Init()
-	if err != nil {
-		t.Fatalf("cannot initialize store: %v", err.Error())
-	}
-
 	e := echo.New()
-	InitHandlers(e, dataStore, nil)
+	InitHandlers(e)
 
 	body := map[string]string{
 		"username": "admin",

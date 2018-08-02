@@ -1,55 +1,34 @@
 package pipeline
 
 import (
-	"context"
-	"fmt"
+	"bytes"
+	"errors"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/gaia-pipeline/gaia/services"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
 )
 
-var killContext = false
-var killOnBuild = false
-
-func fakeExecCommandContext(ctx context.Context, name string, args ...string) *exec.Cmd {
-	if killContext {
-		c, cancel := context.WithTimeout(context.Background(), 0)
-		defer cancel()
-		ctx = c
-	}
-	cs := []string{"-test.run=TestExecCommandContextHelper", "--", name}
-	cs = append(cs, args...)
-	cmd := exec.CommandContext(ctx, os.Args[0], cs...)
-	arg := strings.Join(cs, ",")
-	envArgs := os.Getenv("CMD_ARGS")
-	if len(envArgs) != 0 {
-		envArgs += ":" + arg
-	} else {
-		envArgs = arg
-	}
-	os.Setenv("CMD_ARGS", envArgs)
-	return cmd
+type mockStorer struct {
+	store.GaiaStore
+	Error error
 }
 
-func TestExecCommandContextHelper(t *testing.T) {
-	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
-		return
-	}
-	fmt.Fprintf(os.Stdout, os.Getenv("STDOUT"))
-	i, _ := strconv.Atoi(os.Getenv("EXIT_STATUS"))
-	os.Exit(i)
+// PipelinePut is a Mock implementation for pipelines
+func (m *mockStorer) PipelinePut(p *gaia.Pipeline) error {
+	return m.Error
 }
 
-func TestPrepareEnvironment(t *testing.T) {
+func TestPrepareEnvironmentGo(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
@@ -65,7 +44,7 @@ func TestPrepareEnvironment(t *testing.T) {
 	}
 }
 
-func TestPrepareEnvironmentInvalidPathForMkdir(t *testing.T) {
+func TestPrepareEnvironmentInvalidPathForMkdirGo(t *testing.T) {
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = "/notexists"
 	b := new(BuildPipelineGolang)
@@ -76,7 +55,7 @@ func TestPrepareEnvironmentInvalidPathForMkdir(t *testing.T) {
 	}
 }
 
-func TestExecuteBuild(t *testing.T) {
+func TestExecuteBuildGo(t *testing.T) {
 	execCommandContext = fakeExecCommandContext
 	defer func() {
 		execCommandContext = exec.CommandContext
@@ -98,7 +77,7 @@ func TestExecuteBuild(t *testing.T) {
 	}
 }
 
-func TestExecuteBuildFailPipelineBuild(t *testing.T) {
+func TestExecuteBuildFailPipelineBuildGo(t *testing.T) {
 	os.Mkdir("tmp", 0744)
 	ioutil.WriteFile(filepath.Join("tmp", "main.go"), []byte(`package main
 		import "os"
@@ -112,10 +91,10 @@ func TestExecuteBuildFailPipelineBuild(t *testing.T) {
 	}()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
-	var logOutput strings.Builder
+	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &logOutput,
+		Output: buf,
 		Name:   "Gaia",
 	})
 	b := new(BuildPipelineGolang)
@@ -131,21 +110,21 @@ func TestExecuteBuildFailPipelineBuild(t *testing.T) {
 	}
 }
 
-func TestExecuteBuildContextTimeout(t *testing.T) {
+func TestExecuteBuildContextTimeoutGo(t *testing.T) {
 	execCommandContext = fakeExecCommandContext
-	killContext = true
+	buildKillContext = true
 	defer func() {
 		execCommandContext = exec.CommandContext
+		buildKillContext = false
 	}()
-	defer func() { killContext = false }()
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
-	var logOutput strings.Builder
+	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &logOutput,
+		Output: buf,
 		Name:   "Gaia",
 	})
 	b := new(BuildPipelineGolang)
@@ -159,15 +138,15 @@ func TestExecuteBuildContextTimeout(t *testing.T) {
 	}
 }
 
-func TestExecuteBuildBinaryNotFoundError(t *testing.T) {
+func TestExecuteBuildBinaryNotFoundErrorGo(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
-	var logOutput strings.Builder
+	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &logOutput,
+		Output: buf,
 		Name:   "Gaia",
 	})
 	currentPath := os.Getenv("PATH")
@@ -184,15 +163,15 @@ func TestExecuteBuildBinaryNotFoundError(t *testing.T) {
 	}
 }
 
-func TestCopyBinary(t *testing.T) {
+func TestCopyBinaryGo(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
-	var logOutput strings.Builder
+	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &logOutput,
+		Output: buf,
 		Name:   "Gaia",
 	})
 	b := new(BuildPipelineGolang)
@@ -219,15 +198,15 @@ func TestCopyBinary(t *testing.T) {
 	}
 }
 
-func TestCopyBinarySrcDoesNotExist(t *testing.T) {
+func TestCopyBinarySrcDoesNotExistGo(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
-	var logOutput strings.Builder
+	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
-		Output: &logOutput,
+		Output: buf,
 		Name:   "Gaia",
 	})
 	b := new(BuildPipelineGolang)
@@ -244,10 +223,7 @@ func TestCopyBinarySrcDoesNotExist(t *testing.T) {
 	}
 }
 
-func TestSavePipeline(t *testing.T) {
-	s := store.NewStore()
-	s.Init()
-	storeService = s
+func TestSavePipelineGo(t *testing.T) {
 	defer os.Remove("gaia.db")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = "/tmp"
@@ -257,6 +233,8 @@ func TestSavePipeline(t *testing.T) {
 	p.Name = "main"
 	p.Type = gaia.PTypeGolang
 	b := new(BuildPipelineGolang)
+	m := new(mockStorer)
+	services.MockStorageService(m)
 	err := b.SavePipeline(p)
 	if err != nil {
 		t.Fatal("something went wrong. wasn't supposed to get error: ", err)
@@ -266,5 +244,27 @@ func TestSavePipeline(t *testing.T) {
 	}
 	if p.Type != gaia.PTypeGolang {
 		t.Fatal("type of pipeline was not go. instead was: ", p.Type)
+	}
+}
+
+func TestSavePipelineSaveErrors(t *testing.T) {
+	defer os.Remove("gaia.db")
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.HomePath = "/tmp"
+	gaia.Cfg.PipelinePath = "/tmp/pipelines/"
+	// Initialize shared logger
+	p := new(gaia.Pipeline)
+	p.Name = "main"
+	p.Type = gaia.PTypeGolang
+	b := new(BuildPipelineGolang)
+	m := new(mockStorer)
+	m.Error = errors.New("database error")
+	services.MockStorageService(m)
+	err := b.SavePipeline(p)
+	if err == nil {
+		t.Fatal("expected error which did not occur")
+	}
+	if err.Error() != "database error" {
+		t.Fatal("error message was not the expected message. was: ", err.Error())
 	}
 }

@@ -12,8 +12,7 @@ import (
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
-	scheduler "github.com/gaia-pipeline/gaia/scheduler"
-	"github.com/gaia-pipeline/gaia/store"
+	"github.com/gaia-pipeline/gaia/services"
 )
 
 const (
@@ -22,22 +21,11 @@ const (
 	tickerIntervalSeconds = 5
 )
 
-// storeService is an instance of store.
-// Use this to talk to the store.
-var storeService *store.Store
-
-// schedulerService is an instance of scheduler.
-var schedulerService *scheduler.Scheduler
-
 // InitTicker inititates the pipeline ticker.
 // This periodic job will check for new pipelines.
-func InitTicker(store *store.Store, scheduler *scheduler.Scheduler) {
+func InitTicker() {
 	// Init global active pipelines slice
 	GlobalActivePipelines = NewActivePipelines()
-
-	// Save instances
-	storeService = store
-	schedulerService = scheduler
 
 	// Check immediately to make sure we fill the list as fast as possible.
 	checkActivePipelines()
@@ -60,12 +48,12 @@ func InitTicker(store *store.Store, scheduler *scheduler.Scheduler) {
 			gaia.Cfg.Logger.Info(errorMessage)
 			gaia.Cfg.PVal = 1
 		}
-		pollTicket := time.NewTicker(time.Duration(gaia.Cfg.PVal) * time.Minute)
+		pollTicker := time.NewTicker(time.Duration(gaia.Cfg.PVal) * time.Minute)
 		go func() {
-			defer pollTicket.Stop()
+			defer pollTicker.Stop()
 			for {
 				select {
-				case <-pollTicket.C:
+				case <-pollTicker.C:
 					updateAllCurrentPipelines()
 				}
 			}
@@ -77,6 +65,8 @@ func InitTicker(store *store.Store, scheduler *scheduler.Scheduler) {
 // Every file will be handled as an active pipeline and therefore
 // saved in the global active pipelines slice.
 func checkActivePipelines() {
+	schedulerService, _ := services.SchedulerService()
+	storeService, _ := services.StorageService()
 	var existingPipelineNames []string
 	files, err := ioutil.ReadDir(gaia.Cfg.PipelinePath)
 	if err != nil {
@@ -189,6 +179,8 @@ func getPipelineType(n string) (gaia.PipelineType, error) {
 	switch t {
 	case gaia.PTypeGolang.String():
 		return gaia.PTypeGolang, nil
+	case gaia.PTypeJava.String():
+		return gaia.PTypeJava, nil
 	}
 
 	return gaia.PTypeUnknown, errMissingType

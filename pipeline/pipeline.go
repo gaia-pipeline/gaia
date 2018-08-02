@@ -1,9 +1,15 @@
 package pipeline
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/gaia-pipeline/gaia"
 )
@@ -57,6 +63,12 @@ var (
 	errMissingType = errors.New("couldnt find pipeline type definition")
 )
 
+// execution command context used for build
+var execCommandContext = exec.CommandContext
+
+// Source folder name where the sources are stored
+const srcFolder = "src"
+
 // newBuildPipeline creates a new build pipeline for the given
 // pipeline type.
 func newBuildPipeline(t gaia.PipelineType) BuildPipeline {
@@ -66,6 +78,10 @@ func newBuildPipeline(t gaia.PipelineType) BuildPipeline {
 	switch t {
 	case gaia.PTypeGolang:
 		bP = &BuildPipelineGolang{
+			Type: t,
+		}
+	case gaia.PTypeJava:
+		bP = &BuildPipelineJava{
 			Type: t,
 		}
 	}
@@ -88,6 +104,14 @@ func (ap *ActivePipelines) Append(p gaia.Pipeline) {
 	defer ap.Unlock()
 
 	ap.Pipelines = append(ap.Pipelines, p)
+}
+
+// Update updates a pipeline at the given index with the given pipeline.
+func (ap *ActivePipelines) Update(index int, p gaia.Pipeline) {
+	ap.Lock()
+	defer ap.Unlock()
+
+	ap.Pipelines[index] = p
 }
 
 // Remove removes a pipeline at the given index from ActivePipelines.
@@ -137,6 +161,29 @@ func (ap *ActivePipelines) Replace(p gaia.Pipeline) bool {
 	// Yes
 	ap.Pipelines[i] = p
 	return true
+}
+
+// ReplaceByName replaces the pipeline that has the given name with the given pipeline.
+func (ap *ActivePipelines) ReplaceByName(n string, p gaia.Pipeline) bool {
+
+	var index int
+	var pipelineIndex int
+	var found bool
+
+	for pipeline := range ap.Iter() {
+		if pipeline.Name == n {
+			found = true
+			pipelineIndex = index
+		}
+		index++
+	}
+
+	if found {
+		ap.Update(pipelineIndex, p)
+	}
+
+	return found
+
 }
 
 // Iter iterates over the pipelines in the concurrent slice.
@@ -191,8 +238,65 @@ func (ap *ActivePipelines) RemoveDeletedPipelines(existingPipelineNames []string
 	}
 }
 
+// RenameBinary renames the binary file for the given pipeline.
+func RenameBinary(p gaia.Pipeline, newName string) error {
+	currentBinaryName := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
+	newBinaryName := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(newName, p.Type))
+	return os.Rename(currentBinaryName, newBinaryName)
+}
+
+// DeleteBinary deletes the binary for the given pipeline.
+func DeleteBinary(p gaia.Pipeline) error {
+	binaryFile := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
+	return os.Remove(binaryFile)
+}
+
+// GetExecPath returns the path to the executable for the given pipeline.
+func GetExecPath(p gaia.Pipeline) string {
+	return filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
+}
+
 // appendTypeToName appends the type to the output binary name.
 // This allows us later to define the pipeline type by the name.
 func appendTypeToName(n string, pType gaia.PipelineType) string {
 	return fmt.Sprintf("%s%s%s", n, typeDelimiter, pType.String())
+}
+
+// executeCmd wraps a context around the command and executes it.
+func executeCmd(path string, args []string, env []string, dir string) ([]byte, error) {
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), maxTimeoutMinutes*time.Minute)
+	defer cancel()
+
+	// Create command
+	cmd := execCommandContext(ctx, path, args...)
+	cmd.Env = env
+	cmd.Dir = dir
+
+	// Execute command
+	return cmd.CombinedOutput()
+}
+
+// copyFileContents copies the content from source to destination.
+func copyFileContents(src, dst string) (err error) {
+	in, err := os.Open(src)
+	if err != nil {
+		return
+	}
+	defer in.Close()
+	out, err := os.Create(dst)
+	if err != nil {
+		return
+	}
+	defer func() {
+		cerr := out.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
+	if _, err = io.Copy(out, in); err != nil {
+		return
+	}
+	err = out.Sync()
+	return
 }

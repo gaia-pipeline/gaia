@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/services"
 	"github.com/labstack/echo"
 )
 
@@ -26,6 +27,7 @@ type jobLogs struct {
 // Required parameters are pipelineid and runid.
 func PipelineRunGet(c echo.Context) error {
 	// Convert string to int because id is int
+	storeService, _ := services.StorageService()
 	pipelineID, err := strconv.Atoi(c.Param("pipelineid"))
 	if err != nil {
 		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
@@ -52,6 +54,7 @@ func PipelineRunGet(c echo.Context) error {
 // PipelineGetAllRuns returns all runs about the given pipeline.
 func PipelineGetAllRuns(c echo.Context) error {
 	// Convert string to int because id is int
+	storeService, _ := services.StorageService()
 	pipelineID, err := strconv.Atoi(c.Param("pipelineid"))
 	if err != nil {
 		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
@@ -69,6 +72,7 @@ func PipelineGetAllRuns(c echo.Context) error {
 // PipelineGetLatestRun returns the latest run of a pipeline, given by id.
 func PipelineGetLatestRun(c echo.Context) error {
 	// Convert string to int because id is int
+	storeService, _ := services.StorageService()
 	pipelineID, err := strconv.Atoi(c.Param("pipelineid"))
 	if err != nil {
 		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
@@ -90,6 +94,7 @@ func PipelineGetLatestRun(c echo.Context) error {
 // pipelinerunid - Related pipeline run id
 func GetJobLogs(c echo.Context) error {
 	// Get parameters and validate
+	storeService, _ := services.StorageService()
 	pipelineID := c.Param("pipelineid")
 	pipelineRunID := c.Param("runid")
 

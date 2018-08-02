@@ -13,9 +13,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
 	"github.com/gaia-pipeline/gaia/pipeline"
-	"github.com/gaia-pipeline/gaia/plugin"
-	scheduler "github.com/gaia-pipeline/gaia/scheduler"
-	"github.com/gaia-pipeline/gaia/store"
+	"github.com/gaia-pipeline/gaia/services"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
@@ -40,12 +38,15 @@ func init() {
 	flag.StringVar(&gaia.Cfg.ListenPort, "port", "8080", "Listen port for gaia")
 	flag.StringVar(&gaia.Cfg.HomePath, "homepath", "", "Path to the gaia home folder")
 	flag.StringVar(&gaia.Cfg.Hostname, "hostname", "https://localhost", "The host's name under which gaia is deployed at exp: https://gaia-pipeline.com")
+	flag.StringVar(&gaia.Cfg.VaultPath, "vaultpath", "", "Path to the gaia vault folder")
 	flag.StringVar(&gaia.Cfg.Worker, "worker", "2", "Number of worker gaia will use to execute pipelines in parallel")
 	flag.StringVar(&gaia.Cfg.JwtPrivateKeyPath, "jwtPrivateKeyPath", "", "A RSA private key used to sign JWT tokens")
+	flag.StringVar(&gaia.Cfg.CAPath, "capath", "", "Folder path where the generated CA certificate files will be saved")
 	flag.BoolVar(&gaia.Cfg.DevMode, "dev", false, "If true, gaia will be started in development mode. Don't use this in production!")
 	flag.BoolVar(&gaia.Cfg.VersionSwitch, "version", false, "If true, will print the version and immediately exit")
 	flag.BoolVar(&gaia.Cfg.Poll, "poll", false, "Instead of using a Webhook, keep polling git for changes on pipelines")
 	flag.IntVar(&gaia.Cfg.PVal, "pval", 1, "The interval in minutes in which to poll vcs for changes")
+
 	// Default values
 	gaia.Cfg.Bolt.Mode = 0600
 }
@@ -124,37 +125,55 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Check CA path
+	if gaia.Cfg.CAPath == "" {
+		// Set default to data folder
+		gaia.Cfg.CAPath = gaia.Cfg.DataPath
+	}
+
+	// Initialize the certificate manager service
+	_, err = services.CertificateService()
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot create CA", "error", err.Error())
+		os.Exit(1)
+	}
+
 	// Initialize echo instance
 	echoInstance = echo.New()
 
 	// Initialize store
-	store := store.NewStore()
-	err = store.Init()
+	_, err = services.StorageService()
 	if err != nil {
-		gaia.Cfg.Logger.Error("cannot initialize store", "error", err.Error())
 		os.Exit(1)
 	}
 
-	// Create new plugin system
-	pS := &plugin.Plugin{}
-
 	// Initialize scheduler
-	scheduler := scheduler.NewScheduler(store, pS)
-	err = scheduler.Init()
+	_, err = services.SchedulerService()
 	if err != nil {
-		gaia.Cfg.Logger.Error("cannot initialize scheduler:", "error", err.Error())
 		os.Exit(1)
 	}
 
 	// Initialize handlers
-	err = handlers.InitHandlers(echoInstance, store, scheduler)
+	err = handlers.InitHandlers(echoInstance)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
 		os.Exit(1)
 	}
 
+	// Initiating Vault
+	// Check Vault path
+	if gaia.Cfg.VaultPath == "" {
+		// Set default to data folder
+		gaia.Cfg.VaultPath = gaia.Cfg.DataPath
+	}
+	_, err = services.VaultService(nil)
+	if err != nil {
+		gaia.Cfg.Logger.Error("error initiating vault")
+		os.Exit(1)
+	}
+
 	// Start ticker. Periodic job to check for new plugins.
-	pipeline.InitTicker(store, scheduler)
+	pipeline.InitTicker()
 
 	// Start listen
 	echoInstance.Logger.Fatal(echoInstance.Start(":" + gaia.Cfg.ListenPort))

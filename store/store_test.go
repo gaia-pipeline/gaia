@@ -12,10 +12,10 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-var store *Store
+var store *BoltStore
 
 func TestMain(m *testing.M) {
-	store = NewStore()
+	store = NewBoltStore()
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.DataPath = "data"
 	gaia.Cfg.Bolt.Mode = 0600
@@ -229,6 +229,16 @@ func TestPipelinePut(t *testing.T) {
 
 	if p.ID == 0 {
 		t.Fatal("ID is 0, it should be a unique ID")
+	}
+
+	id := p.ID
+	err = store.PipelinePut(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if p.ID != id {
+		t.Fatal("ID should not be generated if it is already present")
 	}
 
 }

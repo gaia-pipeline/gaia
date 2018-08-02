@@ -12,8 +12,6 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
-	scheduler "github.com/gaia-pipeline/gaia/scheduler"
-	"github.com/gaia-pipeline/gaia/store"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
@@ -41,20 +39,16 @@ var (
 
 	// errLogNotFound is thrown when a job log file was not found
 	errLogNotFound = errors.New("job log file not found")
+
+	// errPipelineDelete is thrown when a pipeline binary could not be deleted
+	errPipelineDelete = errors.New("pipeline could not be deleted. Perhaps you don't have the right permissions")
+
+	// errPipelineRename is thrown when a pipeline binary could not be renamed
+	errPipelineRename = errors.New("pipeline could not be renamed")
 )
 
-// storeService is an instance of store.
-// Use this to talk to the store.
-var storeService *store.Store
-
-var schedulerService *scheduler.Scheduler
-
 // InitHandlers initializes(registers) all handlers
-func InitHandlers(e *echo.Echo, store *store.Store, scheduler *scheduler.Scheduler) error {
-	// Set instances
-	storeService = store
-	schedulerService = scheduler
-
+func InitHandlers(e *echo.Echo) error {
 	// Define prefix
 	p := "/api/" + apiVersion + "/"
 
@@ -74,6 +68,8 @@ func InitHandlers(e *echo.Echo, store *store.Store, scheduler *scheduler.Schedul
 	e.GET(p+"pipeline/name", PipelineNameAvailable)
 	e.GET(p+"pipeline", PipelineGetAll)
 	e.GET(p+"pipeline/:pipelineid", PipelineGet)
+	e.PUT(p+"pipeline/:pipelineid", PipelineUpdate)
+	e.DELETE(p+"pipeline/:pipelineid", PipelineDelete)
 	e.POST(p+"pipeline/:pipelineid/start", PipelineStart)
 	e.GET(p+"pipeline/latest", PipelineGetAllWithLatestRun)
 	e.POST(p+"pipeline/githook", GitWebHook)
@@ -83,6 +79,12 @@ func InitHandlers(e *echo.Echo, store *store.Store, scheduler *scheduler.Schedul
 	e.GET(p+"pipelinerun/:pipelineid", PipelineGetAllRuns)
 	e.GET(p+"pipelinerun/:pipelineid/latest", PipelineGetLatestRun)
 	e.GET(p+"pipelinerun/:pipelineid/:runid/log", GetJobLogs)
+
+	// Secrets
+	e.GET(p+"secrets", ListSecrets)
+	e.DELETE(p+"secret/:key", RemoveSecret)
+	e.POST(p+"secret", SetSecret)
+	e.PUT(p+"secret/update", SetSecret)
 
 	// Middleware
 	e.Use(middleware.Recover())
