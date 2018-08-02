@@ -13,7 +13,7 @@ import (
 // to the bolt database. User will be overwritten
 // if it already exists.
 // It also clears the password field afterwards.
-func (s *Store) UserPut(u *gaia.User, encryptPassword bool) error {
+func (s *BoltStore) UserPut(u *gaia.User, encryptPassword bool) error {
 	// Encrypt password before we save it
 	if encryptPassword {
 		hash, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.MinCost)
@@ -45,7 +45,7 @@ func (s *Store) UserPut(u *gaia.User, encryptPassword bool) error {
 // Then it compares passwords and returns user obj if
 // given password is valid. Returns nil if password was
 // wrong or user not found.
-func (s *Store) UserAuth(u *gaia.User, updateLastLogin bool) (*gaia.User, error) {
+func (s *BoltStore) UserAuth(u *gaia.User, updateLastLogin bool) (*gaia.User, error) {
 	// Look up user
 	user, err := s.UserGet(u.Username)
 
@@ -78,7 +78,7 @@ func (s *Store) UserAuth(u *gaia.User, updateLastLogin bool) (*gaia.User, error)
 
 // UserGet looks up a user by given username.
 // Returns nil if user was not found.
-func (s *Store) UserGet(username string) (*gaia.User, error) {
+func (s *BoltStore) UserGet(username string) (*gaia.User, error) {
 	user := &gaia.User{}
 	err := s.db.View(func(tx *bolt.Tx) error {
 		// Get bucket
@@ -102,7 +102,7 @@ func (s *Store) UserGet(username string) (*gaia.User, error) {
 }
 
 // UserGetAll returns all stored users.
-func (s *Store) UserGetAll() ([]gaia.User, error) {
+func (s *BoltStore) UserGetAll() ([]gaia.User, error) {
 	var users []gaia.User
 
 	return users, s.db.View(func(tx *bolt.Tx) error {
@@ -130,7 +130,7 @@ func (s *Store) UserGetAll() ([]gaia.User, error) {
 }
 
 // UserDelete deletes the given user.
-func (s *Store) UserDelete(u string) error {
+func (s *BoltStore) UserDelete(u string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		// Get bucket
 		b := tx.Bucket(userBucket)

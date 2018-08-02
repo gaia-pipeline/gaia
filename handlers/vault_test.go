@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/store"
+	"github.com/gaia-pipeline/gaia/services"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
@@ -33,14 +33,19 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 		VaultPath: dataDir,
 	}
 
-	dataStore := store.NewStore()
+	dataStore, _ := services.StorageService()
 	err = dataStore.Init()
 	if err != nil {
 		t.Fatalf("cannot initialize store: %v", err.Error())
 	}
 
+	_, err = services.CertificateService()
+	if err != nil {
+		t.Fatalf("cannot initialize certificate service: %v", err.Error())
+	}
+
 	e := echo.New()
-	InitHandlers(e, dataStore, nil)
+	InitHandlers(e)
 	t.Run("can add secret", func(t *testing.T) {
 		body := map[string]string{
 			"Key":   "Key",

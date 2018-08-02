@@ -21,6 +21,16 @@ const (
 	vaultName = ".gaia_vault"
 )
 
+// VaultAPI defines a set of apis that a Vault must provide in order to be a Gaia Vault.
+type VaultAPI interface {
+	LoadSecrets() error
+	GetAll() []string
+	SaveSecrets() error
+	Add(key string, value []byte)
+	Remove(key string)
+	Get(key string) ([]byte, error)
+}
+
 // VaultStorer defines a storage medium for the Vault.
 type VaultStorer interface {
 	// Init initializes the medium by creating the file, or bootstraping the
@@ -54,7 +64,7 @@ type Vault struct {
 // NewVault also can take a storer which is an implementation of VaultStorer.
 // This defines a storage medium for the vault. If it's left to nil the vault
 // will use a default FileVaultStorer.
-func NewVault(ca *CA, storer VaultStorer) (*Vault, error) {
+func NewVault(ca CAAPI, storer VaultStorer) (*Vault, error) {
 	v := new(Vault)
 
 	if storer == nil {

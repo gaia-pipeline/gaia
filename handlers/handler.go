@@ -12,8 +12,6 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
-	scheduler "github.com/gaia-pipeline/gaia/scheduler"
-	"github.com/gaia-pipeline/gaia/store"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
@@ -49,18 +47,8 @@ var (
 	errPipelineRename = errors.New("pipeline could not be renamed")
 )
 
-// storeService is an instance of store.
-// Use this to talk to the store.
-var storeService *store.Store
-
-var schedulerService *scheduler.Scheduler
-
 // InitHandlers initializes(registers) all handlers
-func InitHandlers(e *echo.Echo, store *store.Store, scheduler *scheduler.Scheduler) error {
-	// Set instances
-	storeService = store
-	schedulerService = scheduler
-
+func InitHandlers(e *echo.Echo) error {
 	// Define prefix
 	p := "/api/" + apiVersion + "/"
 

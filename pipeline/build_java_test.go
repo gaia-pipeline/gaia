@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
 )
@@ -67,11 +68,11 @@ func TestExecuteBuildJava(t *testing.T) {
 
 func TestExecuteBuildContextTimeoutJava(t *testing.T) {
 	execCommandContext = fakeExecCommandContext
-	killContext = true
+	buildKillContext = true
 	defer func() {
 		execCommandContext = exec.CommandContext
+		buildKillContext = false
 	}()
-	defer func() { killContext = false }()
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
@@ -157,14 +158,23 @@ func TestCopyBinarySrcDoesNotExistJava(t *testing.T) {
 	}
 }
 
+type javaMockStorer struct {
+	store.GaiaStore
+	Error error
+}
+
+// PipelinePut is a Mock implementation for pipelines
+func (m *javaMockStorer) PipelinePut(p *gaia.Pipeline) error {
+	return m.Error
+}
+
 func TestSavePipelineJava(t *testing.T) {
 	tmp := os.TempDir()
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
+	m := new(javaMockStorer)
+	services.MockStorageService(m)
 	defer os.Remove(tmp)
-	s := store.NewStore()
-	s.Init()
-	storeService = s
 	defer os.Remove("gaia.db")
 	gaia.Cfg.PipelinePath = tmp + "/pipelines/"
 	defer os.Remove(gaia.Cfg.PipelinePath)

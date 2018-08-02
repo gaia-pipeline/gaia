@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/gaia-pipeline/gaia/security"
+	"github.com/gaia-pipeline/gaia/services"
 
 	"github.com/labstack/echo"
 )
@@ -38,11 +38,7 @@ func SetSecret(c echo.Context) error {
 		key = s.Key
 		value = s.Value
 	}
-	cert, err := security.InitCA()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
-	}
-	v, err := security.NewVault(cert, nil)
+	v, err := services.VaultService(nil)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -61,11 +57,7 @@ func SetSecret(c echo.Context) error {
 // ListSecrets retrieves all secrets from the vault.
 func ListSecrets(c echo.Context) error {
 	secrets := make([]addSecret, 0)
-	cert, err := security.InitCA()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
-	}
-	v, err := security.NewVault(cert, nil)
+	v, err := services.VaultService(nil)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -87,11 +79,7 @@ func RemoveSecret(c echo.Context) error {
 	if key == "" {
 		return c.String(http.StatusBadRequest, "invalid key given")
 	}
-	cert, err := security.InitCA()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
-	}
-	v, err := security.NewVault(cert, nil)
+	v, err := services.VaultService(nil)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}

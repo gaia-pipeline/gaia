@@ -13,10 +13,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
 	"github.com/gaia-pipeline/gaia/pipeline"
-	"github.com/gaia-pipeline/gaia/plugin"
-	scheduler "github.com/gaia-pipeline/gaia/scheduler"
-	"github.com/gaia-pipeline/gaia/security"
-	"github.com/gaia-pipeline/gaia/store"
+	"github.com/gaia-pipeline/gaia/services"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
@@ -133,8 +130,8 @@ func main() {
 		gaia.Cfg.CAPath = gaia.Cfg.DataPath
 	}
 
-	// Setup CA for cerificate signing
-	cert, err := security.InitCA()
+	// Initialize the certificate manager service
+	_, err = services.CertificateService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot create CA", "error", err.Error())
 		os.Exit(1)
@@ -144,26 +141,19 @@ func main() {
 	echoInstance = echo.New()
 
 	// Initialize store
-	store := store.NewStore()
-	err = store.Init()
+	_, err = services.StorageService()
 	if err != nil {
-		gaia.Cfg.Logger.Error("cannot initialize store", "error", err.Error())
 		os.Exit(1)
 	}
 
-	// Create new plugin system
-	pS := &plugin.Plugin{}
-
 	// Initialize scheduler
-	scheduler := scheduler.NewScheduler(store, pS, cert)
-	err = scheduler.Init()
+	_, err = services.SchedulerService()
 	if err != nil {
-		gaia.Cfg.Logger.Error("cannot initialize scheduler:", "error", err.Error())
 		os.Exit(1)
 	}
 
 	// Initialize handlers
-	err = handlers.InitHandlers(echoInstance, store, scheduler)
+	err = handlers.InitHandlers(echoInstance)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
 		os.Exit(1)
@@ -175,14 +165,14 @@ func main() {
 		// Set default to data folder
 		gaia.Cfg.VaultPath = gaia.Cfg.DataPath
 	}
-	_, err = security.NewVault(cert, nil)
+	_, err = services.VaultService(nil)
 	if err != nil {
 		gaia.Cfg.Logger.Error("error initiating vault")
 		os.Exit(1)
 	}
 
 	// Start ticker. Periodic job to check for new plugins.
-	pipeline.InitTicker(store, scheduler)
+	pipeline.InitTicker()
 
 	// Start listen
 	echoInstance.Logger.Fatal(echoInstance.Start(":" + gaia.Cfg.ListenPort))
