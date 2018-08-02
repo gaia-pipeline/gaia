@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gaia-pipeline/gaia/services"
+
 	"github.com/gaia-pipeline/gaia"
 
 	"github.com/labstack/echo"
@@ -21,8 +23,6 @@ type Hook struct {
 	ID        string
 	Payload   []byte
 }
-
-const secret = "superawesomesecretgithubpassword"
 
 func signBody(secret, body []byte) []byte {
 	computed := hmac.New(sha1.New, secret)
@@ -76,7 +76,12 @@ func parse(secret []byte, req *http.Request) (Hook, error) {
 
 // GitWebHook handles callbacks from GitHub's webhook system.
 func GitWebHook(c echo.Context) error {
-	h, err := parse([]byte(secret), c.Request())
+	vault, _ := services.VaultService(nil)
+	secret, err := vault.Get("GITHUB_WEBHOOK_SECRET")
+	if err != nil {
+		c.String(http.StatusBadRequest, "Please define GITHUB_WEBHOOK_SECRET to use as password for hooks.")
+	}
+	h, err := parse(secret, c.Request())
 	c.Request().Header.Set("Content-type", "application/json")
 
 	if err != nil {
@@ -90,5 +95,5 @@ func GitWebHook(c echo.Context) error {
 
 	gaia.Cfg.Logger.Info("received: ", h.Event)
 	// TODO: trigger a build process for a specific pipeline.
-	return c.JSON(http.StatusOK, struct{}{})
+	return c.String(http.StatusOK, "successfully processed event")
 }

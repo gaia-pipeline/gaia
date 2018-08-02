@@ -22,6 +22,8 @@ const (
 // of a plugin.
 // After each step, the status is written to store and can be retrieved via API.
 func CreatePipeline(p *gaia.CreatePipeline) {
+	gitToken := p.GitHubToken
+	p.GitHubToken = ""
 	storeService, _ := services.StorageService()
 	// Define build process for the given type
 	bP := newBuildPipeline(p.Pipeline.Type)
@@ -102,15 +104,14 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 		return
 	}
 
-	if !gaia.Cfg.Poll && len(p.GitHubToken) > 0 {
+	if !gaia.Cfg.Poll && len(gitToken) > 0 {
 		// if there is a githubtoken provided, that means that a webhook was requested to be added.
-		err = createGithubWebhook(p.GitHubToken, &p.Pipeline.Repo)
+		err = createGithubWebhook(gitToken, &p.Pipeline.Repo)
 		if err != nil {
 			gaia.Cfg.Logger.Error("error while creating webhook for repository", "error", err.Error())
 			return
 		}
 		// after the webhook has been successfully created, we delete the token.
-		p.GitHubToken = ""
 		storeService.CreatePipelinePut(p)
 	}
 }

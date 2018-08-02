@@ -32,8 +32,6 @@
                   </span>
                   <span>Add credentials</span>
                 </a>
-              </p>
-              <p class="control" style="padding-top: 10px;">
                 <a class="button is-primary" v-on:click="showGitHubWebHookModal">
                   <span class="icon">
                     <i class="fa fa-certificate"></i>

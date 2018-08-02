@@ -2,11 +2,12 @@ package pipeline
 
 import (
 	"context"
-	"log"
 	"path"
 	"regexp"
 	"strings"
 	"sync"
+
+	"github.com/gaia-pipeline/gaia/services"
 
 	"golang.org/x/oauth2"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -109,49 +110,57 @@ func updateAllCurrentPipelines() {
 			defer wg.Done()
 			sem <- 1
 			defer func() { <-sem }()
-			r, err := git.PlainOpen(pipe.Repo.LocalDest)
-			if err != nil {
-				// We don't stop gaia working because of an automated update failed.
-				// So we just move on.
-				gaia.Cfg.Logger.Error("error while opening repo: ", pipe.Repo.LocalDest, err.Error())
-				return
-			}
-			gaia.Cfg.Logger.Debug("checking pipeline: ", pipe.Name)
-			gaia.Cfg.Logger.Debug("selected branch : ", pipe.Repo.SelectedBranch)
-			auth, err := getAuthInfo(&pipe.Repo)
-			if err != nil {
-				// It's also an error if the repo is already up to date so we just move on.
-				gaia.Cfg.Logger.Error("error getting auth info while doing a pull request : ", err.Error())
-				return
-			}
-			tree, _ := r.Worktree()
-			err = tree.Pull(&git.PullOptions{
-				RemoteName: "origin",
-				Auth:       auth,
-			})
-			if err != nil {
-				// It's also an error if the repo is already up to date so we just move on.
-				gaia.Cfg.Logger.Error("error while doing a pull request : ", err.Error())
-				return
-			}
-
-			gaia.Cfg.Logger.Debug("updating pipeline: ", pipe.Name)
-			b := newBuildPipeline(pipe.Type)
-			createPipeline := &gaia.CreatePipeline{}
-			createPipeline.Pipeline = pipe
-			b.ExecuteBuild(createPipeline)
-			b.CopyBinary(createPipeline)
-			gaia.Cfg.Logger.Debug("successfully updated: ", pipe.Name)
+			updateRepository(&pipe)
 		}(p)
 	}
 	wg.Wait()
 }
 
 func rebuildPipeline(name string) {
+	gaia.Cfg.Logger.Debug("update hook received for pipeline: ", name)
+	pipe := GlobalActivePipelines.GetByName(name)
+	updateRepository(pipe)
+}
 
+func updateRepository(pipe *gaia.Pipeline) error {
+	r, err := git.PlainOpen(pipe.Repo.LocalDest)
+	if err != nil {
+		// We don't stop gaia working because of an automated update failed.
+		// So we just move on.
+		gaia.Cfg.Logger.Error("error while opening repo: ", pipe.Repo.LocalDest, err.Error())
+		return err
+	}
+	gaia.Cfg.Logger.Debug("checking pipeline: ", pipe.Name)
+	gaia.Cfg.Logger.Debug("selected branch : ", pipe.Repo.SelectedBranch)
+	auth, err := getAuthInfo(&pipe.Repo)
+	if err != nil {
+		// It's also an error if the repo is already up to date so we just move on.
+		gaia.Cfg.Logger.Error("error getting auth info while doing a pull request : ", err.Error())
+		return err
+	}
+	tree, _ := r.Worktree()
+	err = tree.Pull(&git.PullOptions{
+		RemoteName: "origin",
+		Auth:       auth,
+	})
+	if err != nil {
+		// It's also an error if the repo is already up to date so we just move on.
+		gaia.Cfg.Logger.Error("error while doing a pull request : ", err.Error())
+		return err
+	}
+
+	gaia.Cfg.Logger.Debug("updating pipeline: ", pipe.Name)
+	b := newBuildPipeline(pipe.Type)
+	createPipeline := &gaia.CreatePipeline{}
+	createPipeline.Pipeline = *pipe
+	b.ExecuteBuild(createPipeline)
+	b.CopyBinary(createPipeline)
+	gaia.Cfg.Logger.Debug("successfully updated: ", pipe.Name)
+	return nil
 }
 
 func createGithubWebhook(token string, repo *gaia.GitRepo) error {
+	vault, _ := services.VaultService(nil)
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
@@ -159,7 +168,12 @@ func createGithubWebhook(token string, repo *gaia.GitRepo) error {
 	tc := oauth2.NewClient(ctx, ts)
 	config := make(map[string]interface{})
 	config["url"] = gaia.Cfg.Hostname + "/pipeline/github/build-hook"
-	config["secret"] = "superawesomesecretgithubpassword"
+	secret, err := vault.Get("GITHUB_WEBHOOK_SECRET")
+	if err != nil {
+		gaia.Cfg.Logger.Error("Please define secret GITHUB_WEBHOOK_SECRET to use as password for hooks.")
+		return err
+	}
+	config["secret"] = string(secret)
 	config["content_type"] = "json"
 
 	client := github.NewClient(tc)
@@ -176,11 +190,11 @@ func createGithubWebhook(token string, repo *gaia.GitRepo) error {
 		Config: config,
 	})
 	if err != nil {
-		log.Println(err)
+		gaia.Cfg.Logger.Error("error while trying to create webhook: ", "error", err.Error())
 		return err
 	}
-	log.Println("hook created: ", github.Stringify(hook.Name), resp.Status)
-	log.Println("hook url: ", hook.GetURL())
+	gaia.Cfg.Logger.Info("hook created: ", github.Stringify(hook.Name), resp.Status)
+	gaia.Cfg.Logger.Info("hook url: ", hook.GetURL())
 	return nil
 }
 
