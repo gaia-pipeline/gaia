@@ -72,6 +72,45 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 	return nil
 }
 
+// UpdateRepository takes a git type repository and updates
+// it by pulling in new code if it's available.
+func UpdateRepository(pipe *gaia.Pipeline) error {
+	r, err := git.PlainOpen(pipe.Repo.LocalDest)
+	if err != nil {
+		// We don't stop gaia working because of an automated update failed.
+		// So we just move on.
+		gaia.Cfg.Logger.Error("error while opening repo: ", pipe.Repo.LocalDest, err.Error())
+		return err
+	}
+	gaia.Cfg.Logger.Debug("checking pipeline: ", pipe.Name)
+	gaia.Cfg.Logger.Debug("selected branch : ", pipe.Repo.SelectedBranch)
+	auth, err := getAuthInfo(&pipe.Repo)
+	if err != nil {
+		// It's also an error if the repo is already up to date so we just move on.
+		gaia.Cfg.Logger.Error("error getting auth info while doing a pull request : ", err.Error())
+		return err
+	}
+	tree, _ := r.Worktree()
+	err = tree.Pull(&git.PullOptions{
+		RemoteName: "origin",
+		Auth:       auth,
+	})
+	if err != nil {
+		// It's also an error if the repo is already up to date so we just move on.
+		gaia.Cfg.Logger.Error("error while doing a pull request : ", err.Error())
+		return err
+	}
+
+	gaia.Cfg.Logger.Debug("updating pipeline: ", pipe.Name)
+	b := newBuildPipeline(pipe.Type)
+	createPipeline := &gaia.CreatePipeline{}
+	createPipeline.Pipeline = *pipe
+	b.ExecuteBuild(createPipeline)
+	b.CopyBinary(createPipeline)
+	gaia.Cfg.Logger.Debug("successfully updated: ", pipe.Name)
+	return nil
+}
+
 // gitCloneRepo clones the given repo to a local folder.
 // The destination will be attached to the given repo obj.
 func gitCloneRepo(repo *gaia.GitRepo) error {
@@ -110,53 +149,10 @@ func updateAllCurrentPipelines() {
 			defer wg.Done()
 			sem <- 1
 			defer func() { <-sem }()
-			updateRepository(&pipe)
+			UpdateRepository(&pipe)
 		}(p)
 	}
 	wg.Wait()
-}
-
-func rebuildPipeline(name string) {
-	gaia.Cfg.Logger.Debug("update hook received for pipeline: ", name)
-	pipe := GlobalActivePipelines.GetByName(name)
-	updateRepository(pipe)
-}
-
-func updateRepository(pipe *gaia.Pipeline) error {
-	r, err := git.PlainOpen(pipe.Repo.LocalDest)
-	if err != nil {
-		// We don't stop gaia working because of an automated update failed.
-		// So we just move on.
-		gaia.Cfg.Logger.Error("error while opening repo: ", pipe.Repo.LocalDest, err.Error())
-		return err
-	}
-	gaia.Cfg.Logger.Debug("checking pipeline: ", pipe.Name)
-	gaia.Cfg.Logger.Debug("selected branch : ", pipe.Repo.SelectedBranch)
-	auth, err := getAuthInfo(&pipe.Repo)
-	if err != nil {
-		// It's also an error if the repo is already up to date so we just move on.
-		gaia.Cfg.Logger.Error("error getting auth info while doing a pull request : ", err.Error())
-		return err
-	}
-	tree, _ := r.Worktree()
-	err = tree.Pull(&git.PullOptions{
-		RemoteName: "origin",
-		Auth:       auth,
-	})
-	if err != nil {
-		// It's also an error if the repo is already up to date so we just move on.
-		gaia.Cfg.Logger.Error("error while doing a pull request : ", err.Error())
-		return err
-	}
-
-	gaia.Cfg.Logger.Debug("updating pipeline: ", pipe.Name)
-	b := newBuildPipeline(pipe.Type)
-	createPipeline := &gaia.CreatePipeline{}
-	createPipeline.Pipeline = *pipe
-	b.ExecuteBuild(createPipeline)
-	b.CopyBinary(createPipeline)
-	gaia.Cfg.Logger.Debug("successfully updated: ", pipe.Name)
-	return nil
 }
 
 func createGithubWebhook(token string, repo *gaia.GitRepo) error {

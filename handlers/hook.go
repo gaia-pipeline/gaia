@@ -6,13 +6,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
-	"github.com/gaia-pipeline/gaia/services"
-
 	"github.com/gaia-pipeline/gaia"
+
+	"github.com/gaia-pipeline/gaia/pipeline"
+	"github.com/gaia-pipeline/gaia/services"
 
 	"github.com/labstack/echo"
 )
@@ -46,7 +48,6 @@ func signBody(secret, body []byte) []byte {
 }
 
 func verifySignature(secret []byte, signature string, body []byte) bool {
-
 	signaturePrefix := "sha1="
 	signatureLength := 45
 
@@ -94,28 +95,30 @@ func GitWebHook(c echo.Context) error {
 	vault, _ := services.VaultService(nil)
 	secret, err := vault.Get("GITHUB_WEBHOOK_SECRET")
 	if err != nil {
-		c.String(http.StatusBadRequest, "Please define GITHUB_WEBHOOK_SECRET to use as password for hooks.")
+		return c.String(http.StatusBadRequest, "Please define GITHUB_WEBHOOK_SECRET to use as password for hooks.")
 	}
 	h, err := parse(secret, c.Request())
 	c.Request().Header.Set("Content-type", "application/json")
 
 	if err != nil {
-		e := struct {
-			Message string
-		}{
-			Message: err.Error(),
-		}
-		return c.JSON(400, e)
+		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	gaia.Cfg.Logger.Info("received: ", h.Event)
-	p := new(Repository)
+	p := new(Payload)
 	if err := json.Unmarshal(h.Payload, p); err != nil {
 		return c.String(http.StatusBadRequest, "error in unmarshalling json payload")
 	}
-	gaia.Cfg.Logger.Info("got url: ", p.GitURL)
-	// Get the git url from the payload, and search for that
-	// pipeline with the given URL.
-	// TODO: trigger a build process for a specific pipeline.
+
+	var foundPipe *gaia.Pipeline
+	for pipe := range pipeline.GlobalActivePipelines.Iter() {
+		if pipe.Repo.URL == p.Repo.GitURL || pipe.Repo.URL == p.Repo.HTMLURL || pipe.Repo.URL == p.Repo.SSHURL {
+			foundPipe = &pipe
+		}
+	}
+	err = pipeline.UpdateRepository(foundPipe)
+	if err != nil {
+		message := fmt.Sprintln("failed to build pipeline: ", err.Error())
+		return c.String(http.StatusInternalServerError, message)
+	}
 	return c.String(http.StatusOK, "successfully processed event")
 }
