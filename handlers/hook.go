@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"net/http"
@@ -22,6 +23,20 @@ type Hook struct {
 	Event     string
 	ID        string
 	Payload   []byte
+}
+
+// Repository contains information about the repository. All we care about
+// here are the possible urls for identification.
+type Repository struct {
+	GitURL  string `json:"git_url"`
+	SSHURL  string `json:"ssh_url"`
+	HTMLURL string `json:"html_url"`
+}
+
+// Payload contains information about the event like, user, commit id and so on.
+// All we care about for the sake of identification is the repository.
+type Payload struct {
+	Repo Repository `json:"repository"`
 }
 
 func signBody(secret, body []byte) []byte {
@@ -94,6 +109,13 @@ func GitWebHook(c echo.Context) error {
 	}
 
 	gaia.Cfg.Logger.Info("received: ", h.Event)
+	p := new(Repository)
+	if err := json.Unmarshal(h.Payload, p); err != nil {
+		return c.String(http.StatusBadRequest, "error in unmarshalling json payload")
+	}
+	gaia.Cfg.Logger.Info("got url: ", p.GitURL)
+	// Get the git url from the payload, and search for that
+	// pipeline with the given URL.
 	// TODO: trigger a build process for a specific pipeline.
 	return c.String(http.StatusOK, "successfully processed event")
 }
