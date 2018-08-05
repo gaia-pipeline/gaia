@@ -17,7 +17,7 @@ import (
 )
 
 func TestPrepareEnvironmentJava(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestPrepareEnvironmentJava")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	b := new(BuildPipelineJava)
@@ -48,7 +48,7 @@ func TestExecuteBuildJava(t *testing.T) {
 	defer func() {
 		execCommandContext = exec.CommandContext
 	}()
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestExecuteBuildJava")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	b := new(BuildPipelineJava)
@@ -73,7 +73,7 @@ func TestExecuteBuildContextTimeoutJava(t *testing.T) {
 		execCommandContext = exec.CommandContext
 		buildKillContext = false
 	}()
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestExecuteBuildContextTimeoutJava")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
@@ -97,7 +97,7 @@ func TestExecuteBuildContextTimeoutJava(t *testing.T) {
 }
 
 func TestCopyBinaryJava(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestCopyBinaryJava")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
@@ -134,7 +134,7 @@ func TestCopyBinaryJava(t *testing.T) {
 }
 
 func TestCopyBinarySrcDoesNotExistJava(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestCopyBinarySrcDoesNotExistJava")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
@@ -169,7 +169,7 @@ func (m *javaMockStorer) PipelinePut(p *gaia.Pipeline) error {
 }
 
 func TestSavePipelineJava(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestSavePipelineJava")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	m := new(javaMockStorer)

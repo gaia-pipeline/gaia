@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"bytes"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -13,7 +14,7 @@ import (
 
 func TestGitCloneRepo(t *testing.T) {
 	repo := &gaia.GitRepo{
-		URL:       "https://github.com/gaia-pipeline/go-test-example",
+		URL:       "https://github.com/gaia-pipeline/pipeline-test",
 		LocalDest: "tmp",
 	}
 	// always ensure that tmp folder is cleaned up
@@ -25,7 +26,7 @@ func TestGitCloneRepo(t *testing.T) {
 }
 
 func TestUpdateAllPipelinesRepositoryNotFound(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestUpdateAllPipelinesRepositoryNotFound")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
@@ -57,7 +58,7 @@ func TestUpdateAllPipelinesAlreadyUpToDate(t *testing.T) {
 		Name:   "Gaia",
 	})
 	repo := &gaia.GitRepo{
-		URL:       "https://github.com/gaia-pipeline/go-test-example",
+		URL:       "https://github.com/gaia-pipeline/pipeline-test",
 		LocalDest: "tmp",
 	}
 	// always ensure that tmp folder is cleaned up
@@ -90,7 +91,7 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 		Name:   "Gaia",
 	})
 	repo := &gaia.GitRepo{
-		URL:       "https://github.com/gaia-pipeline/go-test-example",
+		URL:       "https://github.com/gaia-pipeline/pipeline-test",
 		LocalDest: "tmp",
 	}
 	// always ensure that tmp folder is cleaned up
@@ -132,7 +133,7 @@ func TestUpdateAllPipelinesHundredPipelines(t *testing.T) {
 		Name:   "Gaia",
 	})
 	repo := &gaia.GitRepo{
-		URL:       "https://github.com/gaia-pipeline/go-test-example",
+		URL:       "https://github.com/gaia-pipeline/pipeline-test",
 		LocalDest: "tmp",
 	}
 	// always ensure that tmp folder is cleaned up
@@ -159,7 +160,7 @@ func TestUpdateAllPipelinesHundredPipelines(t *testing.T) {
 
 func TestGetAuthInfoWithUsernameAndPassword(t *testing.T) {
 	repoWithUsernameAndPassword := &gaia.GitRepo{
-		URL:       "https://github.com/gaia-pipeline/go-test-example",
+		URL:       "https://github.com/gaia-pipeline/pipeline-test",
 		LocalDest: "tmp",
 		Username:  "username",
 		Password:  "password",
@@ -179,7 +180,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 -----END RSA PRIVATE KEY-----
 `
 	repoWithValidPrivateKey := &gaia.GitRepo{
-		URL:       "https://github.com/gaia-pipeline/go-test-example",
+		URL:       "https://github.com/gaia-pipeline/pipeline-test",
 		LocalDest: "tmp",
 		PrivateKey: gaia.PrivateKey{
 			Key:      samplePrivateKey,
@@ -193,7 +194,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 	}
 
 	repoWithInvalidPrivateKey := &gaia.GitRepo{
-		URL:       "https://github.com/gaia-pipeline/go-test-example",
+		URL:       "https://github.com/gaia-pipeline/pipeline-test",
 		LocalDest: "tmp",
 		PrivateKey: gaia.PrivateKey{
 			Key:      "random_key",
@@ -209,7 +210,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 
 func TestGetAuthInfoEmpty(t *testing.T) {
 	repoWithoutAuthInfo := &gaia.GitRepo{
-		URL:       "https://github.com/gaia-pipeline/go-test-example",
+		URL:       "https://github.com/gaia-pipeline/pipeline-test",
 		LocalDest: "tmp",
 	}
 	auth, _ := getAuthInfo(repoWithoutAuthInfo)

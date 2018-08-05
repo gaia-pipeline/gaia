@@ -2,7 +2,7 @@ package services
 
 import (
 	"bytes"
-	"os"
+	"io/ioutil"
 	"testing"
 
 	"github.com/gaia-pipeline/gaia"
@@ -10,7 +10,7 @@ import (
 )
 
 func TestStorageService(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestStorageService")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	gaia.Cfg.DataPath = tmp
@@ -31,7 +31,7 @@ func TestStorageService(t *testing.T) {
 }
 
 func TestSchedulerService(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestSchedulerService")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	gaia.Cfg.DataPath = tmp
@@ -52,7 +52,7 @@ func TestSchedulerService(t *testing.T) {
 }
 
 func TestVaultService(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestVaultService")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	gaia.Cfg.DataPath = tmp
@@ -80,7 +80,7 @@ func TestVaultService(t *testing.T) {
 }
 
 func TestCertificateService(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestCertificateService")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	gaia.Cfg.DataPath = tmp

@@ -107,6 +107,8 @@ func (v *Vault) SaveSecrets() error {
 	if err != nil {
 		return err
 	}
+	// clear the hash after saving so the system always has a fresh view of the vault.
+	v.data = make(map[string][]byte, 0)
 	return v.storer.Write([]byte(encryptedData))
 }
 

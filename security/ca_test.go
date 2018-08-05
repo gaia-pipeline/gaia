@@ -12,7 +12,8 @@ import (
 
 func TestInitCA(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
-	gaia.Cfg.DataPath = os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestInitCA")
+	gaia.Cfg.DataPath = tmp
 
 	c, err := InitCA()
 	if err != nil {
