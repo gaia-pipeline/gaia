@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"io/ioutil"
-	"os"
 	"testing"
 
 	"github.com/gaia-pipeline/gaia"
@@ -63,7 +62,8 @@ func TestInitCA(t *testing.T) {
 
 func TestCreateSignedCert(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
-	gaia.Cfg.DataPath = os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestCreateSignedCert")
+	gaia.Cfg.DataPath = tmp
 
 	c, err := InitCA()
 	if err != nil {
@@ -122,7 +122,8 @@ func TestCreateSignedCert(t *testing.T) {
 
 func TestGenerateTLSConfig(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
-	gaia.Cfg.DataPath = os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestGenerateTLSConfig")
+	gaia.Cfg.DataPath = tmp
 
 	c, err := InitCA()
 	if err != nil {
