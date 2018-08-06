@@ -115,7 +115,7 @@ func TestReplace(t *testing.T) {
 		Name: "Pipeline A",
 		Type: gaia.PTypeGolang,
 		Repo: gaia.GitRepo{
-			URL:       "https://github.com/gaia-pipeline/go-test-example-1",
+			URL:       "https://github.com/gaia-pipeline/pipeline-test-1",
 			LocalDest: "tmp",
 		},
 		Created: time.Now(),
@@ -126,7 +126,7 @@ func TestReplace(t *testing.T) {
 		Name: "Pipeline A",
 		Type: gaia.PTypeGolang,
 		Repo: gaia.GitRepo{
-			URL:       "https://github.com/gaia-pipeline/go-test-example-2",
+			URL:       "https://github.com/gaia-pipeline/pipeline-test-2",
 			LocalDest: "tmp",
 		},
 		Created: time.Now(),
@@ -139,7 +139,7 @@ func TestReplace(t *testing.T) {
 	}
 
 	p := ap.GetByName("Pipeline A")
-	if p.Repo.URL != "https://github.com/gaia-pipeline/go-test-example-2" {
+	if p.Repo.URL != "https://github.com/gaia-pipeline/pipeline-test-2" {
 		t.Fatalf("The pipeline repo URL should have been replaced")
 	}
 }
@@ -255,17 +255,20 @@ func TestRemoveDeletedPipelines(t *testing.T) {
 }
 
 func TestRenameBinary(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestRenameBinary")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.PipelinePath = tmp
+	gaia.Cfg.HomePath = tmp
+	gaia.Cfg.DataPath = tmp
+	defer os.Remove("_golang")
 
 	p := gaia.Pipeline{
-		Name:    "Pipeline A",
+		Name:    "PipelineA",
 		Type:    gaia.PTypeGolang,
 		Created: time.Now(),
 	}
 
-	newName := "Pipeline B"
+	newName := "PipelineB"
 
 	src := filepath.Join(tmp, appendTypeToName(p.Name, p.Type))
 	dst := filepath.Join(tmp, appendTypeToName(newName, p.Type))
@@ -292,12 +295,14 @@ func TestRenameBinary(t *testing.T) {
 }
 
 func TestDeleteBinary(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestDeleteBinary")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.PipelinePath = tmp
+	gaia.Cfg.HomePath = tmp
+	gaia.Cfg.DataPath = tmp
 
 	p := gaia.Pipeline{
-		Name:    "Pipeline A",
+		Name:    "PipelineA",
 		Type:    gaia.PTypeGolang,
 		Created: time.Now(),
 	}
@@ -321,9 +326,11 @@ func TestDeleteBinary(t *testing.T) {
 }
 
 func TestGetExecPath(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestGetExecPath")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.PipelinePath = tmp
+	gaia.Cfg.DataPath = tmp
+	gaia.Cfg.HomePath = tmp
 
 	p := gaia.Pipeline{
 		Name:    "Pipeline A",
