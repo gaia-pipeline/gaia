@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -28,14 +29,10 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 		VaultPath: dataDir,
 	}
 
-	ce, err := services.CertificateService()
+	_, err := services.CertificateService()
 	if err != nil {
 		t.Fatalf("cannot initialize certificate service: %v", err.Error())
 	}
-
-	// Make sure the cert exists because if the service was alreay
-	// created, Init won't be called again.
-	ce.CreateSignedCert()
 
 	e := echo.New()
 	InitHandlers(e)
@@ -53,6 +50,8 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 		SetSecret(c)
 
 		if rec.Code != http.StatusCreated {
+			b, _ := ioutil.ReadAll(rec.Body)
+			log.Println(string(b))
 			t.Fatalf("expected response code %v got %v", http.StatusCreated, rec.Code)
 		}
 	})
