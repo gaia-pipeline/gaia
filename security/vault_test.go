@@ -3,6 +3,7 @@ package security
 import (
 	"bytes"
 	"errors"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -32,7 +33,7 @@ func (mvs *MockVaultStorer) Write(data []byte) error {
 }
 
 func TestNewVault(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestNewVault")
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
 	gaia.Cfg.CAPath = tmp
@@ -52,7 +53,7 @@ func TestNewVault(t *testing.T) {
 }
 
 func TestAddAndGet(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestAddAndGet")
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
 	gaia.Cfg.CAPath = tmp
@@ -77,7 +78,7 @@ func TestAddAndGet(t *testing.T) {
 }
 
 func TestCloseLoadSecrets(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestCloseLoadSecrets")
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
 	gaia.Cfg.CAPath = tmp
@@ -112,7 +113,7 @@ func TestCloseLoadSecrets(t *testing.T) {
 }
 
 func TestCloseLoadSecretsWithInvalidPassword(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestCloseLoadSecretsWithInvalidPassword")
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
 	gaia.Cfg.CAPath = tmp
@@ -189,8 +190,14 @@ func TestAnExistingVaultFileIsNotOverwritten(t *testing.T) {
 }
 
 func TestRemovingFromTheVault(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestRemovingFromTheVault")
 	gaia.Cfg = &gaia.Config{}
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
 	gaia.Cfg.VaultPath = tmp
 	gaia.Cfg.CAPath = tmp
 	c, _ := InitCA()
@@ -230,10 +237,16 @@ func TestRemovingFromTheVault(t *testing.T) {
 }
 
 func TestGetAll(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestGetAll")
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
 	gaia.Cfg.CAPath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
 	c, _ := InitCA()
 	v, err := NewVault(c, nil)
 	if err != nil {
@@ -258,10 +271,16 @@ func TestGetAll(t *testing.T) {
 }
 
 func TestEditValueWithAddingItAgain(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestEditValueWithAddingItAgain")
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
 	gaia.Cfg.CAPath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
 	c, _ := InitCA()
 	v, _ := NewVault(c, nil)
 	mvs := new(MockVaultStorer)
@@ -281,10 +300,16 @@ func TestEditValueWithAddingItAgain(t *testing.T) {
 }
 
 func TestReadErrorForVault(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestReadErrorForVault")
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
 	gaia.Cfg.CAPath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
 	c, _ := InitCA()
 	v, _ := NewVault(c, nil)
 	mvs := new(MockVaultStorer)
@@ -300,10 +325,16 @@ func TestReadErrorForVault(t *testing.T) {
 }
 
 func TestWriteErrorForVault(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestWriteErrorForVault")
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
 	gaia.Cfg.CAPath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
 	c, _ := InitCA()
 	v, _ := NewVault(c, nil)
 	mvs := new(MockVaultStorer)
@@ -319,10 +350,16 @@ func TestWriteErrorForVault(t *testing.T) {
 }
 
 func TestDefaultStorerIsAFileStorer(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestDefaultStorerIsAFileStorer")
 	gaia.Cfg = &gaia.Config{}
 	gaia.Cfg.VaultPath = tmp
 	gaia.Cfg.CAPath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
 	c, _ := InitCA()
 	v, _ := NewVault(c, nil)
 	if _, ok := v.storer.(*FileVaultStorer); !ok {

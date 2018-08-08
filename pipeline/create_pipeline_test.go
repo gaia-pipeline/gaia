@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"io/ioutil"
-	"os"
 	"testing"
 
 	"github.com/gaia-pipeline/gaia/services"
@@ -30,7 +29,7 @@ func (mcp *mockCreatePipelineStore) PipelinePut(p *gaia.Pipeline) error {
 }
 
 func TestCreatePipelineUnknownType(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestCreatePipelineUnknownType")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	buf := new(bytes.Buffer)
@@ -41,6 +40,7 @@ func TestCreatePipelineUnknownType(t *testing.T) {
 	})
 	mcp := new(mockCreatePipelineStore)
 	services.MockStorageService(mcp)
+	defer func() { services.MockStorageService(nil) }()
 	cp := new(gaia.CreatePipeline)
 	cp.Pipeline.Type = gaia.PTypeUnknown
 	CreatePipeline(cp)
@@ -53,7 +53,7 @@ func TestCreatePipelineUnknownType(t *testing.T) {
 }
 
 func TestCreatePipelineMissingGitURL(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestCreatePipelineMissingGitURL")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	buf := new(bytes.Buffer)
@@ -64,6 +64,7 @@ func TestCreatePipelineMissingGitURL(t *testing.T) {
 	})
 	mcp := new(mockCreatePipelineStore)
 	services.MockStorageService(mcp)
+	defer func() { services.MockStorageService(nil) }()
 	cp := new(gaia.CreatePipeline)
 	cp.Pipeline.Type = gaia.PTypeGolang
 	CreatePipeline(cp)
@@ -73,7 +74,7 @@ func TestCreatePipelineMissingGitURL(t *testing.T) {
 }
 
 func TestCreatePipelineFailedToUpdatePipeline(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestCreatePipelineFailedToUpdatePipeline")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	buf := new(bytes.Buffer)
@@ -85,9 +86,10 @@ func TestCreatePipelineFailedToUpdatePipeline(t *testing.T) {
 	mcp := new(mockCreatePipelineStore)
 	mcp.Error = errors.New("failed")
 	services.MockStorageService(mcp)
+	defer func() { services.MockStorageService(nil) }()
 	cp := new(gaia.CreatePipeline)
 	cp.Pipeline.Type = gaia.PTypeGolang
-	cp.Pipeline.Repo.URL = "https://github.com/gaia-pipeline/go-test-example"
+	cp.Pipeline.Repo.URL = "https://github.com/gaia-pipeline/pipeline-test"
 	CreatePipeline(cp)
 	body, _ := ioutil.ReadAll(buf)
 	if !bytes.Contains(body, []byte("cannot put create pipeline into store: error=failed")) {
@@ -96,10 +98,9 @@ func TestCreatePipelineFailedToUpdatePipeline(t *testing.T) {
 }
 
 func TestCreatePipeline(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestCreatePipeline")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
-	defer os.Remove("_golang")
 	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -108,9 +109,10 @@ func TestCreatePipeline(t *testing.T) {
 	})
 	mcp := new(mockCreatePipelineStore)
 	services.MockStorageService(mcp)
+	defer func() { services.MockStorageService(nil) }()
 	cp := new(gaia.CreatePipeline)
 	cp.Pipeline.Type = gaia.PTypeGolang
-	cp.Pipeline.Repo.URL = "https://github.com/gaia-pipeline/go-test-example"
+	cp.Pipeline.Repo.URL = "https://github.com/gaia-pipeline/pipeline-test"
 	CreatePipeline(cp)
 	if cp.StatusType != gaia.CreatePipelineSuccess {
 		t.Fatal("pipeline status was not success. was: ", cp.StatusType)

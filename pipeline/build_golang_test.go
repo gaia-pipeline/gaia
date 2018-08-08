@@ -29,7 +29,7 @@ func (m *mockStorer) PipelinePut(p *gaia.Pipeline) error {
 }
 
 func TestPrepareEnvironmentGo(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestPrepareEnvironmentGo")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	b := new(BuildPipelineGolang)
@@ -60,7 +60,7 @@ func TestExecuteBuildGo(t *testing.T) {
 	defer func() {
 		execCommandContext = exec.CommandContext
 	}()
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestExecuteBuildGo")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	b := new(BuildPipelineGolang)
@@ -117,7 +117,7 @@ func TestExecuteBuildContextTimeoutGo(t *testing.T) {
 		execCommandContext = exec.CommandContext
 		buildKillContext = false
 	}()
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestExecuteBuildContextTimeoutGo")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
@@ -139,7 +139,7 @@ func TestExecuteBuildContextTimeoutGo(t *testing.T) {
 }
 
 func TestExecuteBuildBinaryNotFoundErrorGo(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestExecuteBuildBinaryNotFoundErrorGo")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
@@ -164,7 +164,7 @@ func TestExecuteBuildBinaryNotFoundErrorGo(t *testing.T) {
 }
 
 func TestCopyBinaryGo(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestCopyBinaryGo")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
@@ -199,7 +199,7 @@ func TestCopyBinaryGo(t *testing.T) {
 }
 
 func TestCopyBinarySrcDoesNotExistGo(t *testing.T) {
-	tmp := os.TempDir()
+	tmp, _ := ioutil.TempDir("", "TestCopyBinarySrcDoesNotExistGo")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger

@@ -3,7 +3,7 @@ package scheduler
 import (
 	"crypto/tls"
 	"hash/fnv"
-	"os"
+	"io/ioutil"
 	"os/exec"
 	"path/filepath"
 	"testing"
@@ -33,8 +33,9 @@ func (c *CAFake) GetCACertPath() (string, string)                               
 func TestInit(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
 	storeInstance := store.NewBoltStore()
-	gaia.Cfg.DataPath = os.TempDir()
-	gaia.Cfg.WorkspacePath = filepath.Join(os.TempDir(), "tmp")
+	tmp, _ := ioutil.TempDir("", "TestInit")
+	gaia.Cfg.DataPath = tmp
+	gaia.Cfg.WorkspacePath = filepath.Join(tmp, "tmp")
 	gaia.Cfg.Bolt.Mode = 0600
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -52,17 +53,14 @@ func TestInit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.Remove(filepath.Join(os.TempDir(), "gaia.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
 }
 
 func TestPrepareAndExec(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
 	storeInstance := store.NewBoltStore()
-	gaia.Cfg.DataPath = os.TempDir()
-	gaia.Cfg.WorkspacePath = filepath.Join(os.TempDir(), "tmp")
+	tmp, _ := ioutil.TempDir("", "TestPrepareAndExec")
+	gaia.Cfg.DataPath = tmp
+	gaia.Cfg.WorkspacePath = filepath.Join(tmp, "tmp")
 	gaia.Cfg.Bolt.Mode = 0600
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -88,17 +86,14 @@ func TestPrepareAndExec(t *testing.T) {
 			t.Logf("Job %s has been executed...", job.Title)
 		}
 	}
-	err := os.Remove(filepath.Join(os.TempDir(), "gaia.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
 }
 
 func TestSchedulePipeline(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
 	storeInstance := store.NewBoltStore()
-	gaia.Cfg.DataPath = os.TempDir()
-	gaia.Cfg.WorkspacePath = filepath.Join(os.TempDir(), "tmp")
+	tmp, _ := ioutil.TempDir("", "TestSchedulePipeline")
+	gaia.Cfg.DataPath = tmp
+	gaia.Cfg.WorkspacePath = filepath.Join(tmp, "tmp")
 	gaia.Cfg.Bolt.Mode = 0600
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -122,18 +117,14 @@ func TestSchedulePipeline(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	err = os.Remove(filepath.Join(os.TempDir(), "gaia.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
 }
 
 func TestSchedule(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
 	storeInstance := store.NewBoltStore()
-	gaia.Cfg.DataPath = os.TempDir()
-	gaia.Cfg.WorkspacePath = filepath.Join(os.TempDir(), "tmp")
+	tmp, _ := ioutil.TempDir("", "TestSchedule")
+	gaia.Cfg.DataPath = tmp
+	gaia.Cfg.WorkspacePath = filepath.Join(tmp, "tmp")
 	gaia.Cfg.Bolt.Mode = 0600
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -161,17 +152,14 @@ func TestSchedule(t *testing.T) {
 	if r.Status != gaia.RunScheduled {
 		t.Fatalf("run has status %s but should be %s\n", r.Status, string(gaia.RunScheduled))
 	}
-	err = os.Remove(filepath.Join(os.TempDir(), "gaia.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
 }
 
 func TestSetPipelineJobs(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
 	storeInstance := store.NewBoltStore()
-	gaia.Cfg.DataPath = os.TempDir()
-	gaia.Cfg.WorkspacePath = filepath.Join(os.TempDir(), "tmp")
+	tmp, _ := ioutil.TempDir("", "TestSetPipelineJobs")
+	gaia.Cfg.DataPath = tmp
+	gaia.Cfg.WorkspacePath = filepath.Join(tmp, "tmp")
 	gaia.Cfg.Bolt.Mode = 0600
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -192,10 +180,6 @@ func TestSetPipelineJobs(t *testing.T) {
 	}
 	if len(p.Jobs) != 4 {
 		t.Fatalf("Number of jobs should be 4 but was %d\n", len(p.Jobs))
-	}
-	err = os.Remove(filepath.Join(os.TempDir(), "gaia.db"))
-	if err != nil {
-		t.Fatal(err)
 	}
 }
 
