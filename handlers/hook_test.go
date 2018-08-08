@@ -62,6 +62,7 @@ func TestHookReceive(t *testing.T) {
 	m := new(MockVaultStorer)
 	v, _ := services.VaultService(m)
 	v.Add("GITHUB_WEBHOOK_SECRET", []byte("superawesomesecretgithubpassword"))
+	defer func() { services.MockVaultService(nil) }()
 	defer func() {
 		v.Remove("GITHUB_WEBHOOK_SECRET")
 	}()
