@@ -125,7 +125,7 @@ As you can see, pipelines are defined by jobs, and functions usually represent j
 
 At the end, we define a jobs array that populates all jobs to gaia. We also add some information like a title, a description and the priority.
 
-The priority is really important and should always be used. If, for example, *job A* has a higher priority (decimal number) than *job B*, *job A* will be executed **after** *job B*. Priority defines therefore the order of execution. If two or more jobs have the same priority, those will be executed simultanously. You can compare it with the `Unix nice level`_.
+The priority is really important and should always be used. If, for example, job A has a higher priority (decimal number) than job B, A will be executed **after** B. Priority defines therefore the order of execution. If two or more jobs have the same priority, those will be executed simultanously. You can compare it with the `Unix nice level`_.
 
 That's it! Put this code into a git repository and create a new pipeline via the gaia UI.
 Gaia will compile it and add it to it's store for later execution.
