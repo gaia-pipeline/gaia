@@ -304,19 +304,14 @@ func executeJob(j gaia.Job, pS Plugin, triggerSave chan gaia.Job) {
 // An error is thrown when one is found.
 func (s *Scheduler) checkCircularDep(j gaia.Job, resolved []gaia.Job, unresolved []gaia.Job) ([]gaia.Job, error) {
 	unresolved = append(unresolved, j)
+
+DEPENDSON_LOOP:
 	for _, job := range j.DependsOn {
 		// Check if job is already in resolved list
-		var inResolved bool
 		for _, resolvedJob := range resolved {
 			if resolvedJob.ID == job.ID {
-				inResolved = true
-				break
+				continue DEPENDSON_LOOP
 			}
-		}
-
-		// Job has been resolved
-		if inResolved {
-			continue
 		}
 
 		// Check if job is alreay in unresolved list
@@ -340,11 +335,11 @@ func (s *Scheduler) checkCircularDep(j gaia.Job, resolved []gaia.Job, unresolved
 }
 
 // resolveDependencies resolves the dependencies of the given workload
-// and sends all resolved workloads to our executenScheduler queue.
-// After a workload has been send to the executenSCheduler, the method will
+// and sends all resolved workloads to our executeScheduler queue.
+// After a workload has been send to the executeScheduler, the method will
 // block and wait until the workload is done.
 // This method is designed to be called recursive and blocking.
-func (s *Scheduler) resolveDependencies(j gaia.Job, mw *managedWorkloads, executenScheduler chan gaia.Job, quit chan bool) {
+func (s *Scheduler) resolveDependencies(j gaia.Job, mw *managedWorkloads, executeScheduler chan gaia.Job, done chan bool) {
 	for _, depJob := range j.DependsOn {
 		// Check if this workdload is already resolved
 		var resolved bool
@@ -360,13 +355,13 @@ func (s *Scheduler) resolveDependencies(j gaia.Job, mw *managedWorkloads, execut
 		}
 
 		// Resolve job
-		s.resolveDependencies(*depJob, mw, executenScheduler, quit)
+		s.resolveDependencies(*depJob, mw, executeScheduler, done)
 	}
 
-	// quit function if signaled.
+	// Queue used to signal that the work should be finished soon.
 	// We do not block here because this is just a pre-validation step.
 	select {
-	case <-quit:
+	case <-done:
 		return
 	default:
 	}
@@ -377,8 +372,8 @@ func (s *Scheduler) resolveDependencies(j gaia.Job, mw *managedWorkloads, execut
 	relatedWL := mw.GetByID(j.ID)
 	if !relatedWL.started {
 		// Job has not been executed yet.
-		// Send workload to executen scheduler.
-		executenScheduler <- j
+		// Send workload to execute scheduler.
+		executeScheduler <- j
 
 		// Wait until finished
 		<-relatedWL.finishedSig
@@ -389,11 +384,11 @@ func (s *Scheduler) resolveDependencies(j gaia.Job, mw *managedWorkloads, execut
 	}
 }
 
-// executeScheduledJobs is a small wrapper around executenScheduler which
+// executeScheduledJobs is a small wrapper around executeScheduler which
 // is responsible for finalizing the pipeline run.
 func (s *Scheduler) executeScheduledJobs(r gaia.PipelineRun, pS Plugin) {
-	// Start the main executen process and wait until finished.
-	s.executenScheduler(&r, pS)
+	// Start the main execute process and wait until finished.
+	s.executeScheduler(&r, pS)
 
 	// Run finished. Set pipeline status.
 	var runFail bool
@@ -410,16 +405,16 @@ func (s *Scheduler) executeScheduledJobs(r gaia.PipelineRun, pS Plugin) {
 	}
 }
 
-// executenScheduler is our main function which coordinates the
+// executeScheduler is our main function which coordinates the
 // whole execution process and dependency resolve algorithm.
-func (s *Scheduler) executenScheduler(r *gaia.PipelineRun, pS Plugin) {
+func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 	// Create a queue which is used to execute the resolved workloads.
-	executenScheduler := make(chan gaia.Job)
+	executeScheduler := make(chan gaia.Job)
 
-	// Quit queue to signal go routines to exit.
+	// Done queue to signal go routines to exit.
 	// This is usually used when a job failed and the whole pipeline
 	// should be cancelled.
-	quit := make(chan bool)
+	done := make(chan bool)
 
 	// Iterate all jobs from this run
 	mw := newManagedWorkloads()
@@ -431,7 +426,7 @@ func (s *Scheduler) executenScheduler(r *gaia.PipelineRun, pS Plugin) {
 		})
 
 		// Start resolving go routine for this job
-		go s.resolveDependencies(job, mw, executenScheduler, quit)
+		go s.resolveDependencies(job, mw, executeScheduler, done)
 	}
 
 	// Separate channel to save updates about the status of job executions.
@@ -481,8 +476,8 @@ func (s *Scheduler) executenScheduler(r *gaia.PipelineRun, pS Plugin) {
 				}
 
 				if allWLDone {
-					close(executenScheduler)
-					close(quit)
+					close(executeScheduler)
+					close(done)
 					close(triggerSave)
 					finished <- true
 				}
@@ -496,11 +491,11 @@ func (s *Scheduler) executenScheduler(r *gaia.PipelineRun, pS Plugin) {
 				// we are entering the finalize phase
 				finalize = true
 
-				// Send quit signal to all resolvers
-				close(quit)
+				// Send done signal to all resolvers
+				close(done)
 
-				// Close executenScheduler. No new jobs should be scheduled.
-				close(executenScheduler)
+				// Close executeScheduler. No new jobs should be scheduled.
+				close(executeScheduler)
 
 				// A job failed. Finish all currently running jobs.
 				go func() {
@@ -525,7 +520,7 @@ func (s *Scheduler) executenScheduler(r *gaia.PipelineRun, pS Plugin) {
 					close(triggerSave)
 				}()
 			}
-		case j, ok := <-executenScheduler:
+		case j, ok := <-executeScheduler:
 			if !ok {
 				break
 			}

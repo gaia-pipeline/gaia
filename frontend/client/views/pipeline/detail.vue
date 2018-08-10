@@ -288,15 +288,15 @@ export default {
         if (!deps) {
           continue
         }
-        console.log(deps)
+
         // Iterate all dependent jobs
-        for (let x = 0, y = deps.length; x < y; x++) {
+        for (let depJobID = 0, depsLength = deps.length; depJobID < depsLength; depJobID++) {
           // iterate again all jobs
-          for (let a = 0, b = jobs.length; a < b; a++) {
-            if (jobs[a].id === deps[x].id) {
+          for (let jobID = 0, jobsLength = jobs.length; jobID < jobsLength; jobID++) {
+            if (jobs[jobID].id === deps[depJobID].id) {
               // create edge
               let edge = {
-                from: a,
+                from: jobID,
                 to: i
               }
 

@@ -62,7 +62,7 @@ func (mw *managedWorkloads) Replace(wl workload) bool {
 	defer mw.Unlock()
 
 	// Search for the id
-	var i = -1
+	i := -1
 	for id, currWL := range mw.workloads {
 		if currWL.job.ID == wl.job.ID {
 			i = id
