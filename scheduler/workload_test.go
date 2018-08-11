@@ -48,3 +48,34 @@ func TestNewWorkload(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestReplaceWorkload(t *testing.T) {
+	mw := newManagedWorkloads()
+	finished := make(chan bool)
+	wl := workload{
+		done:        true,
+		finishedSig: finished,
+		job: gaia.Job{
+			Description: "Test job",
+			ID:          1,
+			Title:       "Test",
+		},
+		started: true,
+	}
+	mw.Append(wl)
+	replaceWl := workload{
+		done:        true,
+		finishedSig: finished,
+		job: gaia.Job{
+			Description: "Test job replaced",
+			ID:          1,
+			Title:       "Test replaced",
+		},
+		started: true,
+	}
+	mw.Replace(replaceWl)
+	l := mw.GetByID(1)
+	if l.job.Title != "Test replaced" {
+		t.Fatalf("got title: %s. wanted: 'Test replaced'", l.job.Title)
+	}
+}
