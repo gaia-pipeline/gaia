@@ -55,7 +55,7 @@ func (mw *managedWorkloads) GetByID(id uint32) *workload {
 	return &foundWorkload
 }
 
-// Replace takes the given worklaod and replaces it in the managedWorkloads
+// Replace takes the given workload and replaces it in the managedWorkloads
 // slice. Return true when success otherwise false.
 func (mw *managedWorkloads) Replace(wl workload) bool {
 	mw.Lock()

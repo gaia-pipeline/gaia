@@ -44,7 +44,7 @@ var createCertRetryAfter = time.Minute
 var pseudoRand *lockedMathRand
 
 func init() {
-	src := mathrand.NewSource(timeNow().UnixNano())
+	src := mathrand.NewSource(time.Now().UnixNano())
 	pseudoRand = &lockedMathRand{rnd: mathrand.New(src)}
 }
 
@@ -183,6 +183,9 @@ type Manager struct {
 	// for tls-alpn.
 	// The entries are stored for the duration of the authorization flow.
 	certTokens map[string]*tls.Certificate
+	// nowFunc, if not nil, returns the current time. This may be set for
+	// testing purposes.
+	nowFunc func() time.Time
 }
 
 // certKey is the key by which certificates are tracked in state, renewal and cache.
@@ -480,7 +483,7 @@ func (m *Manager) cacheGet(ctx context.Context, ck certKey) (*tls.Certificate, e
 	}
 
 	// verify and create TLS cert
-	leaf, err := validCert(ck, pubDER, privKey)
+	leaf, err := validCert(ck, pubDER, privKey, m.now())
 	if err != nil {
 		return nil, ErrCacheMiss
 	}
@@ -575,7 +578,7 @@ func (m *Manager) createCert(ctx context.Context, ck certKey) (*tls.Certificate,
 			if !ok {
 				return
 			}
-			if _, err := validCert(ck, s.cert, s.key); err == nil {
+			if _, err := validCert(ck, s.cert, s.key, m.now()); err == nil {
 				return
 			}
 			delete(m.state, ck)
@@ -644,7 +647,7 @@ func (m *Manager) authorizedCert(ctx context.Context, key crypto.Signer, ck cert
 	if err != nil {
 		return nil, nil, err
 	}
-	leaf, err = validCert(ck, der, key)
+	leaf, err = validCert(ck, der, key, m.now())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -988,6 +991,13 @@ func (m *Manager) renewBefore() time.Duration {
 	return 720 * time.Hour // 30 days
 }
 
+func (m *Manager) now() time.Time {
+	if m.nowFunc != nil {
+		return m.nowFunc()
+	}
+	return time.Now()
+}
+
 // certState is ready when its mutex is unlocked for reading.
 type certState struct {
 	sync.RWMutex
@@ -1054,7 +1064,7 @@ func parsePrivateKey(der []byte) (crypto.Signer, error) {
 // are valid. It doesn't do any revocation checking.
 //
 // The returned value is the verified leaf cert.
-func validCert(ck certKey, der [][]byte, key crypto.Signer) (leaf *x509.Certificate, err error) {
+func validCert(ck certKey, der [][]byte, key crypto.Signer, now time.Time) (leaf *x509.Certificate, err error) {
 	// parse public part(s)
 	var n int
 	for _, b := range der {
@@ -1071,7 +1081,6 @@ func validCert(ck certKey, der [][]byte, key crypto.Signer) (leaf *x509.Certific
 	}
 	// verify the leaf is not expired and matches the domain name
 	leaf = x509Cert[0]
-	now := timeNow()
 	if now.Before(leaf.NotBefore) {
 		return nil, errors.New("acme/autocert: certificate is not valid yet")
 	}
@@ -1125,8 +1134,6 @@ func (r *lockedMathRand) int63n(max int64) int64 {
 
 // For easier testing.
 var (
-	timeNow = time.Now
-
 	// Called when a state is removed.
 	testDidRemoveState = func(certKey) {}
 )

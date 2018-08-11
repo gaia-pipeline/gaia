@@ -10,8 +10,8 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/scheduler"
 	"github.com/gaia-pipeline/gaia/security"
+	"github.com/gaia-pipeline/protobuf"
 	plugin "github.com/hashicorp/go-plugin"
-	"github.com/michelvocks/protobuf"
 )
 
 const (

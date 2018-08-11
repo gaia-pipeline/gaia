@@ -341,7 +341,7 @@ DEPENDSON_LOOP:
 // This method is designed to be called recursive and blocking.
 func (s *Scheduler) resolveDependencies(j gaia.Job, mw *managedWorkloads, executeScheduler chan gaia.Job, done chan bool) {
 	for _, depJob := range j.DependsOn {
-		// Check if this workdload is already resolved
+		// Check if this workload is already resolved
 		var resolved bool
 		for workload := range mw.Iter() {
 			if workload.done && workload.job.ID == depJob.ID {
