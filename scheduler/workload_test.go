@@ -49,7 +49,7 @@ func TestNewWorkload(t *testing.T) {
 	wg.Wait()
 }
 
-func TestReplaceWorkload(t *testing.T) {
+func TestReplaceWorkloadFlow(t *testing.T) {
 	mw := newManagedWorkloads()
 	finished := make(chan bool)
 	wl := workload{
@@ -63,19 +63,45 @@ func TestReplaceWorkload(t *testing.T) {
 		started: true,
 	}
 	mw.Append(wl)
-	replaceWl := workload{
-		done:        true,
-		finishedSig: finished,
-		job: gaia.Job{
-			Description: "Test job replaced",
-			ID:          1,
-			Title:       "Test replaced",
-		},
-		started: true,
-	}
-	mw.Replace(replaceWl)
-	l := mw.GetByID(1)
-	if l.job.Title != "Test replaced" {
-		t.Fatalf("got title: %s. wanted: 'Test replaced'", l.job.Title)
-	}
+	t.Run("replace works", func(t *testing.T) {
+		replaceWl := workload{
+			done:        true,
+			finishedSig: finished,
+			job: gaia.Job{
+				Description: "Test job replaced",
+				ID:          1,
+				Title:       "Test replaced",
+			},
+			started: true,
+		}
+		v := mw.Replace(replaceWl)
+		if !v {
+			t.Fatalf("return should be true. was false.")
+		}
+		l := mw.GetByID(1)
+		if l.job.Title != "Test replaced" {
+			t.Fatalf("got title: %s. wanted: 'Test replaced'", l.job.Title)
+		}
+	})
+
+	t.Run("returns false if workload was not found", func(t *testing.T) {
+		replaceWl := workload{
+			done:        true,
+			finishedSig: finished,
+			job: gaia.Job{
+				Description: "Test job replaced",
+				ID:          2,
+				Title:       "Test replaced",
+			},
+			started: true,
+		}
+		v := mw.Replace(replaceWl)
+		if v {
+			t.Fatalf("return should be false. was true.")
+		}
+		l := mw.GetByID(2)
+		if l != nil {
+			t.Fatal("should have not found id 2 which was replaced:", l)
+		}
+	})
 }
