@@ -57,6 +57,9 @@ export default {
       }
       this.pipelineID = pipelineID
 
+      // reset args
+      this.args = []
+
       this.$http
         .get('/api/v1/pipeline/' + pipelineID, { showProgressBar: false })
         .then(response => {

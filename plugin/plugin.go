@@ -201,6 +201,18 @@ func (p *Plugin) GetJobs() ([]gaia.Job, error) {
 			return nil, err
 		}
 
+		// Transform arguments
+		args := []gaia.Argument{}
+		for _, arg := range job.Args {
+			a := gaia.Argument{
+				Description: arg.Description,
+				Key:         arg.Key,
+				Type:        arg.Type,
+			}
+
+			args = append(args, a)
+		}
+
 		// add proto object to separate list to rebuild dep later.
 		pList = append(pList, job)
 
@@ -210,6 +222,7 @@ func (p *Plugin) GetJobs() ([]gaia.Job, error) {
 			Title:       job.Title,
 			Description: job.Description,
 			Status:      gaia.JobWaitingExec,
+			Args:        args,
 		}
 		l = append(l, j)
 	}

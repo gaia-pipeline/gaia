@@ -111,9 +111,11 @@ export default {
         if (pipeline.jobs[x].args && pipeline.jobs[x].args.type !== 'vault') {
           // we found args. Redirect user to params view.
           this.$router.push({path: '/pipeline/params', query: { pipelineid: pipeline.id }})
+          return
         }
       }
-       // No args. Just start pipeline.
+
+      // No args. Just start pipeline.
       this.startPipeline()
     },
 
