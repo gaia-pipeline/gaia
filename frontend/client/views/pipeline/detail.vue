@@ -2,7 +2,7 @@
   <div class="tile is-ancestor">
     <div class="tile is-vertical">
       <div class="tile is-parent">
-        <a class="button is-primary" @click="startPipeline(pipelineID)" style="margin-right: 10px;">
+        <a class="button is-primary" @click="checkPipelineArgs" style="margin-right: 10px;">
           <span class="icon">
             <i class="fa fa-play-circle"></i>
           </span>
@@ -120,7 +120,8 @@ export default {
           },
           arrows: {to: true}
         }
-      }
+      },
+      pipeline: null
     }
   },
 
@@ -183,6 +184,7 @@ export default {
               this.drawPipelineDetail(pipeline.data, pipelineRun.data)
             }
             this.runsRows = pipelineRuns.data
+            this.pipeline = pipeline.data
           }.bind(this)))
           .catch((error) => {
             this.$store.commit('clearIntervals')
@@ -201,6 +203,7 @@ export default {
             if (pipelineRuns.data) {
               this.runsRows = pipelineRuns.data
             }
+            this.pipeline = pipeline.data
           }.bind(this)))
           .catch((error) => {
             this.$store.commit('clearIntervals')
@@ -355,13 +358,25 @@ export default {
       this.$router.push({path: '/pipeline/log', query: { pipelineid: this.pipelineID, runid: this.runID }})
     },
 
-    startPipeline (pipelineid) {
+    checkPipelineArgs () {
+      // check if this pipeline has args
+      for (let x = 0, y = this.pipeline.jobs.length; x < y; x++) {
+        if (this.pipeline.jobs[x].args && this.pipeline.jobs[x].args.type !== 'vault') {
+          // we found args. Redirect user to params view.
+          this.$router.push({path: '/pipeline/params', query: { pipelineid: this.pipeline.id }})
+        }
+      }
+       // No args. Just start pipeline.
+      this.startPipeline()
+    },
+
+    startPipeline () {
       // Send start request
       this.$http
-        .post('/api/v1/pipeline/' + pipelineid + '/start')
+        .post('/api/v1/pipeline/' + this.pipeline.id + '/start')
         .then(response => {
           if (response.data) {
-            this.$router.push({path: '/pipeline/detail', query: { pipelineid: pipelineid, runid: response.data.id }})
+            this.$router.push({path: '/pipeline/detail', query: { pipelineid: this.pipeline.id, runid: response.data.id }})
           }
         })
         .catch((error) => {

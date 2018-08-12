@@ -38,7 +38,7 @@
                 unknown
               </span><br />
               <div class="pipelinegrid-footer">
-                <a class="button is-primary" @click="startPipeline(pipeline.p.id)" style="width: 250px;">
+                <a class="button is-primary" @click="checkPipelineArgs(pipeline.p)" style="width: 250px;">
                   <span class="icon">
                     <i class="fa fa-play-circle"></i>
                   </span>
@@ -52,7 +52,7 @@
     </template>
     <div v-if="pipelines.length == 0" class="no-pipelines-div">
       <span class="no-pipelines-text">No pipelines are available. Please create a pipeline first.</span>
-    </div>         
+    </div>    
   </div>
 </template>
 
@@ -62,7 +62,8 @@ import moment from 'moment'
 export default {
   data () {
     return {
-      pipelines: []
+      pipelines: [],
+      pipeline: null
     }
   },
 
@@ -102,13 +103,27 @@ export default {
         })
     },
 
-    startPipeline (pipelineid) {
+    checkPipelineArgs (pipeline) {
+      this.pipeline = pipeline
+
+      // check if this pipeline has args
+      for (let x = 0, y = pipeline.jobs.length; x < y; x++) {
+        if (pipeline.jobs[x].args && pipeline.jobs[x].args.type !== 'vault') {
+          // we found args. Redirect user to params view.
+          this.$router.push({path: '/pipeline/params', query: { pipelineid: pipeline.id }})
+        }
+      }
+       // No args. Just start pipeline.
+      this.startPipeline()
+    },
+
+    startPipeline () {
       // Send start request
       this.$http
-        .post('/api/v1/pipeline/' + pipelineid + '/start')
+        .post('/api/v1/pipeline/' + this.pipeline.id + '/start')
         .then(response => {
           if (response.data) {
-            this.$router.push({path: '/pipeline/detail', query: { pipelineid: pipelineid, runid: response.data.id }})
+            this.$router.push({path: '/pipeline/detail', query: { pipelineid: this.pipeline.id, runid: response.data.id }})
           }
         })
         .catch((error) => {
