@@ -283,22 +283,21 @@ export default {
         // Add node to nodes list
         nodesArray.push(node)
 
-        // Iterate all jobs again to find the next highest job priority
-        var highestPrio = null
-        for (let x = 0, y = jobs.length; x < y; x++) {
-          if (jobs[x].priority > jobs[i].priority && (jobs[x].priority < highestPrio || !highestPrio)) {
-            highestPrio = jobs[x].priority
-          }
+        // Check if this job has dependencies
+        let deps = jobs[i].dependson
+        if (!deps) {
+          continue
         }
 
-        // Iterate again all jobs to set all edges
-        if (highestPrio) {
-          for (let x = 0, y = jobs.length; x < y; x++) {
-            if (jobs[x].priority === highestPrio) {
+        // Iterate all dependent jobs
+        for (let depJobID = 0, depsLength = deps.length; depJobID < depsLength; depJobID++) {
+          // iterate again all jobs
+          for (let jobID = 0, jobsLength = jobs.length; jobID < jobsLength; jobID++) {
+            if (jobs[jobID].id === deps[depJobID].id) {
               // create edge
               let edge = {
-                from: i,
-                to: x
+                from: jobID,
+                to: i
               }
 
               // add edge to edges list

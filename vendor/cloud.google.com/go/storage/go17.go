@@ -24,3 +24,7 @@ import (
 func withContext(r *http.Request, ctx context.Context) *http.Request {
 	return r.WithContext(ctx)
 }
+
+func goHTTPUncompressed(res *http.Response) bool {
+	return res.Uncompressed
+}
