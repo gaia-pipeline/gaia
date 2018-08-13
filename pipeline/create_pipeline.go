@@ -106,7 +106,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 
 	if !gaia.Cfg.Poll && len(gitToken) > 0 {
 		// if there is a githubtoken provided, that means that a webhook was requested to be added.
-		err = createGithubWebhook(gitToken, &p.Pipeline.Repo)
+		err = createGithubWebhook(gitToken, &p.Pipeline.Repo, nil)
 		if err != nil {
 			gaia.Cfg.Logger.Error("error while creating webhook for repository", "error", err.Error())
 			return

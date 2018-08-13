@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"context"
+	gohttp "net/http"
 	"path"
 	"regexp"
 	"strings"
@@ -155,8 +156,49 @@ func updateAllCurrentPipelines() {
 	wg.Wait()
 }
 
-func createGithubWebhook(token string, repo *gaia.GitRepo) error {
-	vault, _ := services.VaultService(nil)
+// GithubRepoService is an interface defining the Wrapper Interface
+// needed to test the github client.
+type GithubRepoService interface {
+	CreateHook(ctx context.Context, owner, repo string, hook *github.Hook) (*github.Hook, *github.Response, error)
+}
+
+// GithubClient is a client that has the ability to replace the actual
+// git client.
+type GithubClient struct {
+	Repositories GithubRepoService
+	*github.Client
+}
+
+// NewGithubClient creates a wrapper around the github client. This is
+// needed in order to decouple gaia from github client to be
+// able to unit test createGithubWebhook and ultimately have
+// the ability to replace github with anything else.
+func NewGithubClient(httpClient *gohttp.Client, repoMock GithubRepoService) GithubClient {
+	if repoMock != nil {
+		return GithubClient{
+			Repositories: repoMock,
+		}
+	}
+	client := github.NewClient(httpClient)
+
+	return GithubClient{
+		Repositories: client.Repositories,
+	}
+}
+
+func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoService) error {
+	vault, err := services.VaultService(nil)
+	if err != nil {
+		gaia.Cfg.Logger.Error("unable to initialize vault: " + err.Error())
+		return err
+	}
+
+	err = vault.LoadSecrets()
+	if err != nil {
+		gaia.Cfg.Logger.Error("unable to open vault: " + err.Error())
+		return err
+	}
+
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
@@ -166,13 +208,13 @@ func createGithubWebhook(token string, repo *gaia.GitRepo) error {
 	config["url"] = gaia.Cfg.Hostname + "/pipeline/github/build-hook"
 	secret, err := vault.Get("GITHUB_WEBHOOK_SECRET")
 	if err != nil {
-		gaia.Cfg.Logger.Error("Please define secret GITHUB_WEBHOOK_SECRET to use as password for hooks.")
+		gaia.Cfg.Logger.Error("GITHUB_WEBHOOK_SECRET is not set")
 		return err
 	}
 	config["secret"] = string(secret)
 	config["content_type"] = "json"
 
-	client := github.NewClient(tc)
+	client := NewGithubClient(tc, gitRepo)
 	repoName := path.Base(repo.URL)
 	repoName = strings.TrimSuffix(repoName, ".git")
 	// var repoLocation string
