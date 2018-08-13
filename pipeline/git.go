@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"context"
+	"errors"
 	gohttp "net/http"
 	"path"
 	"regexp"
@@ -220,6 +221,9 @@ func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoSer
 	// var repoLocation string
 	re := regexp.MustCompile("^(https|git)(:\\/\\/|@)([^\\/:]+)[\\/:]([^\\/:]+)\\/(.+)$")
 	m := re.FindAllStringSubmatch(repo.URL, -1)
+	if m == nil {
+		return errors.New("failed to extract url parameters from git url")
+	}
 	repoUser := m[0][4]
 	hook, resp, err := client.Repositories.CreateHook(context.Background(), repoUser, repoName, &github.Hook{
 		Events: []string{"push"},

@@ -3,6 +3,7 @@ package pipeline
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -247,9 +248,17 @@ type MockGithubRepositoryService struct {
 	Hook     *github.Hook
 	Response *github.Response
 	Error    error
+	Owner    string
+	Repo     string
 }
 
 func (mgc *MockGithubRepositoryService) CreateHook(ctx context.Context, owner, repo string, hook *github.Hook) (*github.Hook, *github.Response, error) {
+	if owner != mgc.Owner {
+		return nil, nil, errors.New("owner did not equal expected owner: was: " + owner)
+	}
+	if repo != mgc.Repo {
+		return nil, nil, errors.New("repo did not equal expected repo: was: " + repo)
+	}
 	return mgc.Hook, mgc.Response, mgc.Error
 }
 
@@ -283,13 +292,15 @@ func TestCreateGithubWebhook(t *testing.T) {
 	mock := new(MockGithubRepositoryService)
 	mock.Hook = &github.Hook{
 		Name: github.String("test hook"),
-		URL:  github.String("https://github.com/gaia-pipline/testurl"),
+		URL:  github.String("https://github.com/gaia-pipeline/gaia/testurl"),
 	}
 	mock.Response = &github.Response{
 		Response: &http.Response{
 			Status: "Ok",
 		},
 	}
+	mock.Owner = "gaia-pipeline"
+	mock.Repo = "gaia"
 
 	err = createGithubWebhook("asdf", &repo, mock)
 	if err != nil {
@@ -297,11 +308,132 @@ func TestCreateGithubWebhook(t *testing.T) {
 	}
 	body, _ := ioutil.ReadAll(buf)
 	expectedStatusMessage := []byte("hook created: : \"test hook\"=Ok")
-	expectedHookURL := []byte("https://github.com/gaia-pipline/testurl")
+	expectedHookURL := []byte("https://github.com/gaia-pipeline/gaia/testurl")
 	if !bytes.Contains(body, expectedStatusMessage) {
 		t.Fatalf("expected status message not found in logs. want:'%s', got: '%s'", expectedStatusMessage, body)
 	}
 	if !bytes.Contains(body, expectedHookURL) {
 		t.Fatalf("expected hook url not found in logs. want:'%s', got: '%s'", expectedHookURL, body)
 	}
+}
+
+func TestMultipleGithubWebHookURLTypes(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestCreateGithubWebhook")
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.VaultPath = tmp
+	gaia.Cfg.CAPath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
+	_, err := services.CertificateService()
+	if err != nil {
+		t.Fatalf("cannot initialize certificate service: %v", err.Error())
+	}
+
+	m := new(MockGitVaultStorer)
+	v, _ := services.VaultService(m)
+	v.Add("GITHUB_WEBHOOK_SECRET", []byte("superawesomesecretgithubpassword"))
+	defer func() {
+		services.MockVaultService(nil)
+		services.MockCertificateService(nil)
+	}()
+
+	t.Run("https url", func(t *testing.T) {
+		repo := gaia.GitRepo{
+			URL: "https://github.com/gaia-pipeline/gaia",
+		}
+
+		mock := new(MockGithubRepositoryService)
+		mock.Hook = &github.Hook{
+			Name: github.String("test hook"),
+			URL:  github.String("https://github.com/gaia-pipeline/gaia/testurl"),
+		}
+		mock.Response = &github.Response{
+			Response: &http.Response{
+				Status: "Ok",
+			},
+		}
+		mock.Owner = "gaia-pipeline"
+		mock.Repo = "gaia"
+
+		err = createGithubWebhook("asdf", &repo, mock)
+		if err != nil {
+			t.Fatal("did not expect error to occur. was: ", err)
+		}
+	})
+
+	t.Run("ssh url", func(t *testing.T) {
+		repo := gaia.GitRepo{
+			URL: "git@github.com:gaia-pipeline/gaia.git",
+		}
+
+		mock := new(MockGithubRepositoryService)
+		mock.Hook = &github.Hook{
+			Name: github.String("test hook"),
+			URL:  github.String("https://github.com/gaia-pipeline/gaia/testurl"),
+		}
+		mock.Response = &github.Response{
+			Response: &http.Response{
+				Status: "Ok",
+			},
+		}
+		mock.Owner = "gaia-pipeline"
+		mock.Repo = "gaia"
+
+		err = createGithubWebhook("asdf", &repo, mock)
+		if err != nil {
+			t.Fatal("did not expect error to occur. was: ", err)
+		}
+	})
+
+	t.Run("simple http with git extension", func(t *testing.T) {
+		repo := gaia.GitRepo{
+			URL: "https://github.com/gaia-pipeline/gaia.git",
+		}
+
+		mock := new(MockGithubRepositoryService)
+		mock.Hook = &github.Hook{
+			Name: github.String("test hook"),
+			URL:  github.String("https://github.com/gaia-pipeline/gaia/testurl"),
+		}
+		mock.Response = &github.Response{
+			Response: &http.Response{
+				Status: "Ok",
+			},
+		}
+		mock.Owner = "gaia-pipeline"
+		mock.Repo = "gaia"
+
+		err = createGithubWebhook("asdf", &repo, mock)
+		if err != nil {
+			t.Fatal("did not expect error to occur. was: ", err)
+		}
+	})
+
+	t.Run("failed extracting repo owner", func(t *testing.T) {
+		repo := gaia.GitRepo{
+			URL: "https://invalid-giturl.com",
+		}
+
+		mock := new(MockGithubRepositoryService)
+		mock.Hook = &github.Hook{
+			Name: github.String("test hook"),
+			URL:  github.String("https://github.com/gaia-pipeline/gaia/testurl"),
+		}
+		mock.Response = &github.Response{
+			Response: &http.Response{
+				Status: "Ok",
+			},
+		}
+		mock.Owner = "gaia-pipeline"
+		mock.Repo = "gaia"
+
+		err = createGithubWebhook("asdf", &repo, mock)
+		if err == nil {
+			t.Fatal("expected error. none found")
+		}
+	})
 }
