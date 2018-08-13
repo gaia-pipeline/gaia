@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"crypto/tls"
+	"errors"
 	"hash/fnv"
 	"io/ioutil"
 	"os/exec"
@@ -55,7 +56,53 @@ func TestInit(t *testing.T) {
 	}
 }
 
-func TestPrepareAndExec(t *testing.T) {
+type PluginFakeFailed struct{}
+
+func (p *PluginFakeFailed) NewPlugin(ca security.CAAPI) Plugin           { return &PluginFakeFailed{} }
+func (p *PluginFakeFailed) Connect(cmd *exec.Cmd, logPath *string) error { return nil }
+func (p *PluginFakeFailed) Execute(j *gaia.Job) error                    { return errors.New("job failed") }
+func (p *PluginFakeFailed) GetJobs() ([]gaia.Job, error)                 { return prepareJobs(), nil }
+func (p *PluginFakeFailed) Close()                                       {}
+
+func TestPrepareAndExecFail(t *testing.T) {
+	gaia.Cfg = &gaia.Config{}
+	storeInstance := store.NewBoltStore()
+	tmp, _ := ioutil.TempDir("", "TestPrepareAndExecFail")
+	gaia.Cfg.DataPath = tmp
+	gaia.Cfg.WorkspacePath = filepath.Join(tmp, "tmp")
+	gaia.Cfg.Bolt.Mode = 0600
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: hclog.DefaultOutput,
+		Name:   "Gaia",
+	})
+
+	if err := storeInstance.Init(); err != nil {
+		t.Fatal(err)
+	}
+	p, r := prepareTestData()
+	storeInstance.PipelinePut(&p)
+	s := NewScheduler(storeInstance, &PluginFakeFailed{}, &CAFake{})
+	s.prepareAndExec(r)
+
+	// get pipeline run from store
+	run, err := storeInstance.PipelineGetRunByPipelineIDAndID(p.ID, r.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// jobs should be existent
+	if len(run.Jobs) == 0 {
+		t.Fatal("No jobs in pipeline run found.")
+	}
+
+	// Check run status
+	if run.Status != gaia.RunFailed {
+		t.Fatalf("Run should be of type %s but was %s\n", gaia.RunFailed, run.Status)
+	}
+}
+
+func TestPrepareAndExecInvalidType(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
 	storeInstance := store.NewBoltStore()
 	tmp, _ := ioutil.TempDir("", "TestPrepareAndExec")
@@ -72,14 +119,61 @@ func TestPrepareAndExec(t *testing.T) {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
+	p.Type = gaia.PTypeUnknown
 	storeInstance.PipelinePut(&p)
 	var ca security.CAAPI
 	ca = &CAFake{}
 	s := NewScheduler(storeInstance, &PluginFake{}, ca)
 	s.prepareAndExec(r)
 
+	// get pipeline run from store
+	run, err := storeInstance.PipelineGetRunByPipelineIDAndID(p.ID, r.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Check run status
+	if run.Status != gaia.RunFailed {
+		t.Fatalf("Run should be of type %s but was %s\n", gaia.RunFailed, run.Status)
+	}
+}
+
+func TestPrepareAndExecJavaType(t *testing.T) {
+	gaia.Cfg = &gaia.Config{}
+	storeInstance := store.NewBoltStore()
+	tmp, _ := ioutil.TempDir("", "TestPrepareAndExecJavaType")
+	gaia.Cfg.DataPath = tmp
+	gaia.Cfg.WorkspacePath = filepath.Join(tmp, "tmp")
+	gaia.Cfg.Bolt.Mode = 0600
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: hclog.DefaultOutput,
+		Name:   "Gaia",
+	})
+
+	if err := storeInstance.Init(); err != nil {
+		t.Fatal(err)
+	}
+	p, r := prepareTestData()
+	javaExecuteableName = "go"
+	p.Type = gaia.PTypeJava
+	storeInstance.PipelinePut(&p)
+	s := NewScheduler(storeInstance, &PluginFake{}, &CAFake{})
+	s.prepareAndExec(r)
+
+	// get pipeline run from store
+	run, err := storeInstance.PipelineGetRunByPipelineIDAndID(p.ID, r.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// jobs should be existent
+	if len(run.Jobs) == 0 {
+		t.Fatal("No jobs in pipeline run found.")
+	}
+
 	// Iterate jobs
-	for _, job := range r.Jobs {
+	for _, job := range run.Jobs {
 		if job.Status != gaia.JobSuccess {
 			t.Fatalf("job status should be success but was %s", string(job.Status))
 		} else {
@@ -185,28 +279,28 @@ func TestSetPipelineJobs(t *testing.T) {
 
 func prepareJobs() []gaia.Job {
 	job1 := gaia.Job{
-		ID:       hash("Job1"),
-		Title:    "Job1",
-		Priority: 0,
-		Status:   gaia.JobWaitingExec,
+		ID:        hash("Job1"),
+		Title:     "Job1",
+		DependsOn: []*gaia.Job{},
+		Status:    gaia.JobWaitingExec,
 	}
 	job2 := gaia.Job{
-		ID:       hash("Job2"),
-		Title:    "Job2",
-		Priority: 10,
-		Status:   gaia.JobWaitingExec,
+		ID:        hash("Job2"),
+		Title:     "Job2",
+		DependsOn: []*gaia.Job{&job1},
+		Status:    gaia.JobWaitingExec,
 	}
 	job3 := gaia.Job{
-		ID:       hash("Job3"),
-		Title:    "Job3",
-		Priority: 20,
-		Status:   gaia.JobWaitingExec,
+		ID:        hash("Job3"),
+		Title:     "Job3",
+		DependsOn: []*gaia.Job{&job2},
+		Status:    gaia.JobWaitingExec,
 	}
 	job4 := gaia.Job{
-		ID:       hash("Job4"),
-		Title:    "Job4",
-		Priority: 20,
-		Status:   gaia.JobWaitingExec,
+		ID:        hash("Job4"),
+		Title:     "Job4",
+		DependsOn: []*gaia.Job{&job3},
+		Status:    gaia.JobWaitingExec,
 	}
 
 	return []gaia.Job{

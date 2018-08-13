@@ -113,7 +113,7 @@ type Job struct {
 	ID          uint32    `json:"id,omitempty"`
 	Title       string    `json:"title,omitempty"`
 	Description string    `json:"desc,omitempty"`
-	Priority    int64     `json:"priority"`
+	DependsOn   []*Job    `json:"dependson,omitempty"`
 	Status      JobStatus `json:"status,omitempty"`
 }
 

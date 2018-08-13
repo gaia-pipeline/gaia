@@ -346,7 +346,7 @@ func (o *ObjectHandle) Generation(gen int64) *ObjectHandle {
 
 // If returns a new ObjectHandle that applies a set of preconditions.
 // Preconditions already set on the ObjectHandle are ignored.
-// Operations on the new handle will only occur if the preconditions are
+// Operations on the new handle will return an error if the preconditions are not
 // satisfied. See https://cloud.google.com/storage/docs/generations-preconditions
 // for more details.
 func (o *ObjectHandle) If(conds Conditions) *ObjectHandle {
@@ -467,6 +467,9 @@ func (o *ObjectHandle) Update(ctx context.Context, uattrs ObjectAttrsToUpdate) (
 	if o.userProject != "" {
 		call.UserProject(o.userProject)
 	}
+	if uattrs.PredefinedACL != "" {
+		call.PredefinedAcl(uattrs.PredefinedACL)
+	}
 	if err := setEncryptionHeaders(call.Header(), o.encryptionKey, false); err != nil {
 		return nil, err
 	}
@@ -501,6 +504,10 @@ type ObjectAttrsToUpdate struct {
 	CacheControl       optional.String
 	Metadata           map[string]string // set to map[string]string{} to delete
 	ACL                []ACLRule
+
+	// If not empty, applies a predefined set of access controls. ACL must be nil.
+	// See https://cloud.google.com/storage/docs/json_api/v1/objects/patch.
+	PredefinedACL string
 }
 
 // Delete deletes the single specified object.
@@ -595,23 +602,8 @@ func parseKey(key []byte) (*rsa.PrivateKey, error) {
 	return parsed, nil
 }
 
-func toRawObjectACL(oldACL []ACLRule) []*raw.ObjectAccessControl {
-	var acl []*raw.ObjectAccessControl
-	if len(oldACL) > 0 {
-		acl = make([]*raw.ObjectAccessControl, len(oldACL))
-		for i, rule := range oldACL {
-			acl[i] = &raw.ObjectAccessControl{
-				Entity: string(rule.Entity),
-				Role:   string(rule.Role),
-			}
-		}
-	}
-	return acl
-}
-
 // toRawObject copies the editable attributes from o to the raw library's Object type.
 func (o *ObjectAttrs) toRawObject(bucket string) *raw.Object {
-	acl := toRawObjectACL(o.ACL)
 	return &raw.Object{
 		Bucket:             bucket,
 		Name:               o.Name,
@@ -621,7 +613,7 @@ func (o *ObjectAttrs) toRawObject(bucket string) *raw.Object {
 		CacheControl:       o.CacheControl,
 		ContentDisposition: o.ContentDisposition,
 		StorageClass:       o.StorageClass,
-		Acl:                acl,
+		Acl:                toRawObjectACL(o.ACL),
 		Metadata:           o.Metadata,
 	}
 }
@@ -648,6 +640,14 @@ type ObjectAttrs struct {
 
 	// ACL is the list of access control rules for the object.
 	ACL []ACLRule
+
+	// If not empty, applies a predefined set of access controls. It should be set
+	// only when writing, copying or composing an object. When copying or composing,
+	// it acts as the destinationPredefinedAcl parameter.
+	// PredefinedACL is always empty for ObjectAttrs returned from the service.
+	// See https://cloud.google.com/storage/docs/json_api/v1/objects/insert
+	// for valid values.
+	PredefinedACL string
 
 	// Owner is the owner of the object. This field is read-only.
 	//
@@ -751,13 +751,6 @@ func newObject(o *raw.Object) *ObjectAttrs {
 	if o == nil {
 		return nil
 	}
-	acl := make([]ACLRule, len(o.Acl))
-	for i, rule := range o.Acl {
-		acl[i] = ACLRule{
-			Entity: ACLEntity(rule.Entity),
-			Role:   ACLRole(rule.Role),
-		}
-	}
 	owner := ""
 	if o.Owner != nil {
 		owner = o.Owner.Entity
@@ -774,7 +767,7 @@ func newObject(o *raw.Object) *ObjectAttrs {
 		ContentType:        o.ContentType,
 		ContentLanguage:    o.ContentLanguage,
 		CacheControl:       o.CacheControl,
-		ACL:                acl,
+		ACL:                toObjectACLRules(o.Acl),
 		Owner:              owner,
 		ContentEncoding:    o.ContentEncoding,
 		ContentDisposition: o.ContentDisposition,

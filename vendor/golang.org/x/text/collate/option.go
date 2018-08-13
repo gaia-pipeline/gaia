@@ -217,7 +217,7 @@ func Reorder(s ...string) Option {
 // alternateHandling identifies the various ways in which variables are handled.
 // A rune with a primary weight lower than the variable top is considered a
 // variable.
-// See http://www.unicode.org/reports/tr10/#Variable_Weighting for details.
+// See https://www.unicode.org/reports/tr10/#Variable_Weighting for details.
 type alternateHandling int
 
 const (

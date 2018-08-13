@@ -176,6 +176,7 @@ func (p *Plugin) GetJobs() ([]gaia.Job, error) {
 	}
 
 	// receive all jobs
+	pList := []*proto.Job{}
 	for {
 		job, err := stream.Recv()
 
@@ -189,19 +190,44 @@ func (p *Plugin) GetJobs() ([]gaia.Job, error) {
 			return nil, err
 		}
 
+		// add proto object to separate list to rebuild dep later.
+		pList = append(pList, job)
+
 		// Convert proto object to gaia.Job struct
 		j := gaia.Job{
 			ID:          job.UniqueId,
 			Title:       job.Title,
 			Description: job.Description,
-			Priority:    job.Priority,
 			Status:      gaia.JobWaitingExec,
 		}
 		l = append(l, j)
 	}
 
+	// Rebuild dependency tree
+	for id, job := range l {
+		for _, pJob := range pList {
+			if job.ID == pJob.UniqueId {
+				l[id].DependsOn = rebuildDepTree(pJob.Dependson, l)
+			}
+		}
+	}
+
 	// return list
 	return l, nil
+}
+
+// rebuildDepTree resolves related depenendencies and returns
+// list of pointers to dependent jobs.
+func rebuildDepTree(dep []uint32, l []gaia.Job) []*gaia.Job {
+	depTree := []*gaia.Job{}
+	for _, jobHash := range dep {
+		for id, job := range l {
+			if job.ID == jobHash {
+				depTree = append(depTree, &l[id])
+			}
+		}
+	}
+	return depTree
 }
 
 // Close shutdown the plugin and kills the gRPC connection.

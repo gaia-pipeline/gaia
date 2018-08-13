@@ -12,8 +12,14 @@
     "internal/version",
     "storage"
   ]
-  revision = "777200caa7fb8936aed0f12b1fd79af64cc83ec9"
-  version = "v0.24.0"
+  revision = "64a2037ec6be8a4b0c1d1f706ed35b428b989239"
+  version = "v0.26.0"
+
+[[projects]]
+  name = "contrib.go.opencensus.io/exporter/stackdriver"
+  packages = ["propagation"]
+  revision = "37aa2801fbf0205003e15636096ebf0373510288"
+  version = "v0.5.0"
 
 [[projects]]
   branch = "master"
@@ -57,15 +63,9 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/gaia-pipeline/gosdk"
-  packages = ["."]
-  revision = "7a8c848dcbb6807e056cd6ef4d65222bdbd6db3e"
-
-[[projects]]
-  branch = "master"
   name = "github.com/gaia-pipeline/protobuf"
   packages = ["."]
-  revision = "49d40b8e0ca0377abd552a63e185e30765ca3096"
+  revision = "7be8a901b55a21397f998640deb72864223424f9"
 
 [[projects]]
   branch = "master"
@@ -126,7 +126,7 @@
   branch = "master"
   name = "github.com/hashicorp/go-hclog"
   packages = ["."]
-  revision = "69ff559dc25f3b435631604f573a5fa1efdb6433"
+  revision = "ff2cf002a8dd750586d91dddd4470c341f981fe1"
 
 [[projects]]
   branch = "master"
@@ -192,9 +192,21 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/michelvocks/gosdk"
+  packages = ["."]
+  revision = "090544df4a09cf99a924cb592060c33766c3f9c8"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/michelvocks/protobuf"
+  packages = ["."]
+  revision = "72c5e607afe159f8e940379ab4af470613334c1b"
+
+[[projects]]
+  branch = "master"
   name = "github.com/mitchellh/go-homedir"
   packages = ["."]
-  revision = "3864e76763d94a6df2f9960b16a20a33da9f9a66"
+  revision = "58046073cbffe2f25d425fe1331102f55cf719de"
 
 [[projects]]
   branch = "master"
@@ -213,6 +225,12 @@
   packages = ["."]
   revision = "c37440a7cf42ac63b919c752ca73a85067e05992"
   version = "v0.2.0"
+
+[[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
 
 [[projects]]
   name = "github.com/satori/go.uuid"
@@ -250,16 +268,15 @@
   revision = "dcecefd839c4193db0d35b88ec65b4c12d360ab0"
 
 [[projects]]
-  branch = "master"
   name = "github.com/xanzy/ssh-agent"
   packages = ["."]
-  revision = "ba9c9e33906f58169366275e3450db66139a31a9"
+  revision = "640f0ab560aeb89d523bb6ac322b1244d5c3796c"
+  version = "v0.2.0"
 
 [[projects]]
   name = "go.opencensus.io"
   packages = [
     ".",
-    "exporter/stackdriver/propagation",
     "internal",
     "internal/tagencoding",
     "plugin/ochttp",
@@ -272,20 +289,20 @@
     "trace/internal",
     "trace/propagation"
   ]
-  revision = "6edeb78af2d9e4f169abb223feaef35da2e45d06"
-  version = "v0.13.0"
+  revision = "e262766cd0d230a1bb7c37281e345e465f19b41b"
+  version = "v0.14.0"
 
 [[projects]]
   branch = "master"
   name = "go4.org"
   packages = ["syncutil/singleflight"]
-  revision = "9599cf28b011184741f249bd9f9330756b506cbc"
+  revision = "417644f6feb5ed3a356ca5d6d8e3a3fac7dfd33f"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/build"
   packages = ["autocertcache"]
-  revision = "9b1b5cdabb26d3a6aeee8b2f01d84f64803bbf15"
+  revision = "69da2ad2cb16ec1ac421d45b72afc98807f4952c"
 
 [[projects]]
   branch = "master"
@@ -313,7 +330,7 @@
     "ssh/knownhosts",
     "ssh/terminal"
   ]
-  revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
+  revision = "de0752318171da717af4ce24d0a2e8626afaeb11"
 
 [[projects]]
   branch = "master"
@@ -333,7 +350,7 @@
     "internal/timeseries",
     "trace"
   ]
-  revision = "afe8f62b1d6bbd81f31868121a50b06d8188e1f9"
+  revision = "c39426892332e1bb5ec0a434a079bf82f5d30c54"
 
 [[projects]]
   branch = "master"
@@ -345,7 +362,7 @@
     "jws",
     "jwt"
   ]
-  revision = "ef147856a6ddbb60760db74283d2424e98c87bff"
+  revision = "3d292e4d0cdc3a0113e6d207bb137145ef1de42f"
 
 [[projects]]
   branch = "master"
@@ -360,7 +377,7 @@
     "unix",
     "windows"
   ]
-  revision = "c4afb3effaa53fd9a06ca61262dc7ce8df4c081b"
+  revision = "98c5dad5d1a0e8a73845ecc8897d0bd56586511d"
 
 [[projects]]
   branch = "master"
@@ -410,7 +427,7 @@
     "unicode/rangetable",
     "unicode/runenames"
   ]
-  revision = "5cec4b58c438bd98288aeb248bab2c1840713d21"
+  revision = "6e3c4e7365ddcc329f090f96e4348398f6310088"
 
 [[projects]]
   branch = "master"
@@ -420,12 +437,16 @@
     "go/buildutil",
     "go/callgraph",
     "go/callgraph/cha",
+    "go/gcexportdata",
+    "go/internal/cgo",
+    "go/internal/gcimporter",
     "go/loader",
+    "go/packages",
     "go/ssa",
     "go/ssa/ssautil",
     "go/types/typeutil"
   ]
-  revision = "16699b2d33e2654d743c50b4525ab7e73e346238"
+  revision = "27709f6afec43b6c6d899bd199bf0f39c731216c"
 
 [[projects]]
   branch = "master"
@@ -442,7 +463,7 @@
     "storage/v1",
     "transport/http"
   ]
-  revision = "082d671a2a341aa205b22b580fa69747dcc3cdc8"
+  revision = "0aa0a1f2c0c4478587971a63e931e711086a5271"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -472,7 +493,7 @@
     "googleapis/rpc/status",
     "protobuf/field_mask"
   ]
-  revision = "80063a038e333bbe006c878e4c5ce4c74d055498"
+  revision = "383e8b2c3b9e36c4076b235b32537292176bae20"
 
 [[projects]]
   name = "google.golang.org/grpc"
@@ -514,8 +535,11 @@
     "internal",
     "internal/backoff",
     "internal/channelz",
+    "internal/envconfig",
     "internal/grpcrand",
     "internal/leakcheck",
+    "internal/syscall",
+    "internal/transport",
     "interop",
     "interop/grpc_testing",
     "keepalive",
@@ -535,11 +559,10 @@
     "test/bufconn",
     "test/codec_perf",
     "test/grpc_testing",
-    "testdata",
-    "transport"
+    "testdata"
   ]
-  revision = "168a6198bcb0ef175f7dacec0b8691fc141dc9b8"
-  version = "v1.13.0"
+  revision = "32fb0ac620c32ba40a4626ddf94d90d12cce3455"
+  version = "v1.14.0"
 
 [[projects]]
   name = "gopkg.in/src-d/go-billy.v4"
@@ -597,8 +620,8 @@
     "utils/merkletrie/internal/frame",
     "utils/merkletrie/noder"
   ]
-  revision = "b23570073eaee3489e5e3d666f22ba5cbeb53243"
-  version = "v4.4.1"
+  revision = "3bd5e82b2512d85becae9677fa06b5a973fd4cfb"
+  version = "v4.5.0"
 
 [[projects]]
   name = "gopkg.in/warnings.v0"
@@ -609,6 +632,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fcca93d42f667b259b6e739ae566d68a90b70ac07c3e9330a8ad13ee07956dfb"
+  inputs-digest = "533b34873026d0319a9452ccdf8552ec8da1ee8b9d1bb306bf1b43f470517f80"
   solver-name = "gps-cdcl"
   solver-version = 1
