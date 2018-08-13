@@ -111,7 +111,5 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 			gaia.Cfg.Logger.Error("error while creating webhook for repository", "error", err.Error())
 			return
 		}
-		// after the webhook has been successfully created, we delete the token.
-		storeService.CreatePipelinePut(p)
 	}
 }
