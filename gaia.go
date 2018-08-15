@@ -110,11 +110,20 @@ type GitRepo struct {
 
 // Job represents a single job of a pipeline
 type Job struct {
-	ID          uint32    `json:"id,omitempty"`
-	Title       string    `json:"title,omitempty"`
-	Description string    `json:"desc,omitempty"`
-	DependsOn   []*Job    `json:"dependson,omitempty"`
-	Status      JobStatus `json:"status,omitempty"`
+	ID          uint32     `json:"id,omitempty"`
+	Title       string     `json:"title,omitempty"`
+	Description string     `json:"desc,omitempty"`
+	DependsOn   []*Job     `json:"dependson,omitempty"`
+	Status      JobStatus  `json:"status,omitempty"`
+	Args        []Argument `json:"args,omitempty"`
+}
+
+// Argument represents a single argument of a job
+type Argument struct {
+	Description string `json:"desc,omitempty"`
+	Type        string `json:"type,omitempty"`
+	Key         string `json:"key,omitempty"`
+	Value       string `json:"value,omitempty"`
 }
 
 // CreatePipeline represents a pipeline which is not yet

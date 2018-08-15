@@ -25,6 +25,9 @@ const (
 
 	// errCircularDep is thrown when a circular dependency has been detected.
 	errCircularDep = "circular dependency detected between %s and %s"
+
+	// argTypeVault is the argument type vault.
+	argTypeVault = "vault"
 )
 
 var (
@@ -59,7 +62,7 @@ type Plugin interface {
 // GaiaScheduler is a job scheduler for gaia pipeline runs.
 type GaiaScheduler interface {
 	Init() error
-	SchedulePipeline(p *gaia.Pipeline) (*gaia.PipelineRun, error)
+	SchedulePipeline(p *gaia.Pipeline, args []gaia.Argument) (*gaia.PipelineRun, error)
 	SetPipelineJobs(p *gaia.Pipeline) error
 }
 
@@ -79,16 +82,20 @@ type Scheduler struct {
 
 	// ca is the instance of the CA used to handle certs.
 	ca security.CAAPI
+
+	// vault is the instance of the vault.
+	vault security.VaultAPI
 }
 
 // NewScheduler creates a new instance of Scheduler.
-func NewScheduler(store store.GaiaStore, pS Plugin, ca security.CAAPI) *Scheduler {
+func NewScheduler(store store.GaiaStore, pS Plugin, ca security.CAAPI, vault security.VaultAPI) *Scheduler {
 	// Create new scheduler
 	s := &Scheduler{
 		scheduledRuns: make(chan gaia.PipelineRun, schedulerBufferLimit),
 		storeService:  store,
 		pluginSystem:  pS,
 		ca:            ca,
+		vault:         vault,
 	}
 
 	return s
@@ -150,16 +157,6 @@ func (s *Scheduler) prepareAndExec(r gaia.PipelineRun) {
 
 	// Get related pipeline from pipeline run
 	pipeline, _ := s.storeService.PipelineGet(r.PipelineID)
-
-	// Get all jobs
-	r.Jobs, err = s.getPipelineJobs(pipeline)
-	if err != nil {
-		gaia.Cfg.Logger.Error("cannot get pipeline jobs before execution", "error", err.Error())
-
-		// Finish pipeline run
-		s.finishPipelineRun(&r, gaia.RunFailed)
-		return
-	}
 
 	// Check if this pipeline has jobs declared
 	if len(r.Jobs) == 0 {
@@ -245,7 +242,7 @@ func (s *Scheduler) schedule() {
 
 // SchedulePipeline schedules a pipeline. We create a new schedule object
 // and save it in our store. The scheduler will later pick this up and will continue the work.
-func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline) (*gaia.PipelineRun, error) {
+func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []gaia.Argument) (*gaia.PipelineRun, error) {
 	// Get highest public id used for this pipeline
 	highestID, err := s.storeService.PipelineGetRunHighestID(p)
 	if err != nil {
@@ -261,6 +258,38 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline) (*gaia.PipelineRun, error
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot get pipeline jobs during schedule", "error", err.Error(), "pipeline", p)
 		return nil, err
+	}
+
+	// Load secret from vault and set it
+	err = s.vault.LoadSecrets()
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot load secrets from vault during schedule pipeline", "error", err.Error())
+		return nil, err
+	}
+	// We have to go through all jobs to find the related arguments.
+	// We will only pass related arguments to the specific job.
+	for jobID, job := range jobs {
+		if job.Args != nil {
+			for argID, arg := range job.Args {
+				// check if it's of type vault
+				if arg.Type == argTypeVault {
+					// Get & Set argument
+					s, err := s.vault.Get(arg.Key)
+					if err != nil {
+						gaia.Cfg.Logger.Error("cannot find secret with given key in vault", "key", arg.Key, "pipeline", p)
+						return nil, err
+					}
+					jobs[jobID].Args[argID].Value = string(s)
+				} else {
+					// Find related argument in given arguments
+					for _, givenArg := range args {
+						if arg.Key == givenArg.Key {
+							jobs[jobID].Args[argID] = givenArg
+						}
+					}
+				}
+			}
+		}
 	}
 
 	// Create new not scheduled pipeline run
