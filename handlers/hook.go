@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"crypto/hmac"
-	"crypto/rand"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
@@ -105,15 +104,7 @@ func GitWebHook(c echo.Context) error {
 
 	secret, err := vault.Get("GITHUB_WEBHOOK_SECRET")
 	if err != nil {
-		secret, err = generateWebhookSecret()
-		if err != nil {
-			return c.String(http.StatusInternalServerError, "unable to generate password")
-		}
-		vault.Add("GITHUB_WEBHOOK_SECRET", secret)
-		err = vault.SaveSecrets()
-		if err != nil {
-			return c.String(http.StatusInternalServerError, "unable to save vault file: "+err.Error())
-		}
+		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	h, err := parse(secret, c.Request())
@@ -140,10 +131,4 @@ func GitWebHook(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, message)
 	}
 	return c.String(http.StatusOK, "successfully processed event")
-}
-
-func generateWebhookSecret() ([]byte, error) {
-	secret := make([]byte, 32)
-	_, err := rand.Read(secret)
-	return secret, err
 }

@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	gohttp "net/http"
 	"path"
@@ -206,11 +207,18 @@ func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoSer
 	)
 	tc := oauth2.NewClient(ctx, ts)
 	config := make(map[string]interface{})
-	config["url"] = gaia.Cfg.Hostname + "/pipeline/github/build-hook"
+	config["url"] = gaia.Cfg.Hostname + "/api/" + gaia.APIVersion + "/pipeline/githook"
 	secret, err := vault.Get("GITHUB_WEBHOOK_SECRET")
 	if err != nil {
-		gaia.Cfg.Logger.Error("GITHUB_WEBHOOK_SECRET is not set")
-		return err
+		secret, err = generateWebhookSecret()
+		if err != nil {
+			return err
+		}
+		vault.Add("GITHUB_WEBHOOK_SECRET", secret)
+		err = vault.SaveSecrets()
+		if err != nil {
+			return err
+		}
 	}
 	config["secret"] = string(secret)
 	config["content_type"] = "json"
@@ -238,6 +246,12 @@ func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoSer
 	gaia.Cfg.Logger.Info("hook created: ", github.Stringify(hook.Name), resp.Status)
 	gaia.Cfg.Logger.Info("hook url: ", hook.GetURL())
 	return nil
+}
+
+func generateWebhookSecret() ([]byte, error) {
+	secret := make([]byte, 32)
+	_, err := rand.Read(secret)
+	return secret, err
 }
 
 func getAuthInfo(repo *gaia.GitRepo) (transport.AuthMethod, error) {

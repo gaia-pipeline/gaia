@@ -294,7 +294,7 @@ func TestCreateGithubWebhook(t *testing.T) {
 		mock := new(MockGithubRepositoryService)
 		mock.Hook = &github.Hook{
 			Name: github.String("test hook"),
-			URL:  github.String("https://github.com/gaia-pipeline/gaia/testurl"),
+			URL:  github.String("https://api.github.com/repos/gaia-pipeline/gaia/hooks/44321286/test"),
 		}
 		mock.Response = &github.Response{
 			Response: &http.Response{
@@ -310,7 +310,7 @@ func TestCreateGithubWebhook(t *testing.T) {
 		}
 		body, _ := ioutil.ReadAll(buf)
 		expectedStatusMessage := []byte("hook created: : \"test hook\"=Ok")
-		expectedHookURL := []byte("https://github.com/gaia-pipeline/gaia/testurl")
+		expectedHookURL := []byte("https://api.github.com/repos/gaia-pipeline/gaia/hooks/44321286/test")
 		if !bytes.Contains(body, expectedStatusMessage) {
 			t.Fatalf("expected status message not found in logs. want:'%s', got: '%s'", expectedStatusMessage, body)
 		}
@@ -328,7 +328,7 @@ func TestCreateGithubWebhook(t *testing.T) {
 		mock.Error = errors.New("error from create webhook")
 		mock.Hook = &github.Hook{
 			Name: github.String("test hook"),
-			URL:  github.String("https://github.com/gaia-pipeline/gaia/testurl"),
+			URL:  github.String("https://api.github.com/repos/gaia-pipeline/gaia/hooks/44321286/test"),
 		}
 		mock.Response = &github.Response{
 			Response: &http.Response{
@@ -341,6 +341,80 @@ func TestCreateGithubWebhook(t *testing.T) {
 		err = createGithubWebhook("asdf", &repo, mock)
 		if err == nil {
 			t.Fatal("CreateWebhook should have failed.")
+		}
+	})
+
+	t.Run("successfully create webhook when password is not defined in advance", func(t *testing.T) {
+		v.Remove("GITHUB_WEBHOOK_SECRET")
+		v.SaveSecrets()
+		repo := gaia.GitRepo{
+			URL: "https://github.com/gaia-pipeline/gaia",
+		}
+
+		mock := new(MockGithubRepositoryService)
+		mock.Hook = &github.Hook{
+			Name: github.String("test hook"),
+			URL:  github.String("https://api.github.com/repos/gaia-pipeline/gaia/hooks/44321286/test"),
+		}
+		mock.Response = &github.Response{
+			Response: &http.Response{
+				Status: "Ok",
+			},
+		}
+		mock.Owner = "gaia-pipeline"
+		mock.Repo = "gaia"
+
+		err = createGithubWebhook("asdf", &repo, mock)
+		if err != nil {
+			t.Fatal("did not expect error to occur. was: ", err)
+		}
+		body, _ := ioutil.ReadAll(buf)
+		expectedStatusMessage := []byte("hook created: : \"test hook\"=Ok")
+		expectedHookURL := []byte("https://api.github.com/repos/gaia-pipeline/gaia/hooks/44321286/test")
+		if !bytes.Contains(body, expectedStatusMessage) {
+			t.Fatalf("expected status message not found in logs. want:'%s', got: '%s'", expectedStatusMessage, body)
+		}
+		if !bytes.Contains(body, expectedHookURL) {
+			t.Fatalf("expected hook url not found in logs. want:'%s', got: '%s'", expectedHookURL, body)
+		}
+	})
+
+	t.Run("if a secret is already defined it will not be overwritten", func(t *testing.T) {
+		v.Add("GITHUB_WEBHOOK_SECRET", []byte("superawesomesecretgithubpassword"))
+		v.SaveSecrets()
+		repo := gaia.GitRepo{
+			URL: "https://github.com/gaia-pipeline/gaia",
+		}
+
+		mock := new(MockGithubRepositoryService)
+		mock.Hook = &github.Hook{
+			Name: github.String("test hook"),
+			URL:  github.String("https://api.github.com/repos/gaia-pipeline/gaia/hooks/44321286/test"),
+		}
+		mock.Response = &github.Response{
+			Response: &http.Response{
+				Status: "Ok",
+			},
+		}
+		mock.Owner = "gaia-pipeline"
+		mock.Repo = "gaia"
+
+		err = createGithubWebhook("asdf", &repo, mock)
+		if err != nil {
+			t.Fatal("did not expect error to occur. was: ", err)
+		}
+		body, _ := ioutil.ReadAll(buf)
+		expectedStatusMessage := []byte("hook created: : \"test hook\"=Ok")
+		expectedHookURL := []byte("https://api.github.com/repos/gaia-pipeline/gaia/hooks/44321286/test")
+		if !bytes.Contains(body, expectedStatusMessage) {
+			t.Fatalf("expected status message not found in logs. want:'%s', got: '%s'", expectedStatusMessage, body)
+		}
+		if !bytes.Contains(body, expectedHookURL) {
+			t.Fatalf("expected hook url not found in logs. want:'%s', got: '%s'", expectedHookURL, body)
+		}
+		secret, _ := v.Get("GITHUB_WEBHOOK_SECRET")
+		if bytes.Compare(secret, []byte("superawesomesecretgithubpassword")) != 0 {
+			t.Fatalf("secret did not match. want: '%s' got: '%s'", "superawesomesecretgithubpassword", string(secret))
 		}
 	})
 }
@@ -377,7 +451,7 @@ func TestMultipleGithubWebHookURLTypes(t *testing.T) {
 		mock := new(MockGithubRepositoryService)
 		mock.Hook = &github.Hook{
 			Name: github.String("test hook"),
-			URL:  github.String("https://github.com/gaia-pipeline/gaia/testurl"),
+			URL:  github.String("https://api.github.com/repos/gaia-pipeline/gaia/hooks/44321286/test"),
 		}
 		mock.Response = &github.Response{
 			Response: &http.Response{
@@ -401,7 +475,7 @@ func TestMultipleGithubWebHookURLTypes(t *testing.T) {
 		mock := new(MockGithubRepositoryService)
 		mock.Hook = &github.Hook{
 			Name: github.String("test hook"),
-			URL:  github.String("https://github.com/gaia-pipeline/gaia/testurl"),
+			URL:  github.String("https://api.github.com/repos/gaia-pipeline/gaia/hooks/44321286/test"),
 		}
 		mock.Response = &github.Response{
 			Response: &http.Response{
@@ -425,7 +499,7 @@ func TestMultipleGithubWebHookURLTypes(t *testing.T) {
 		mock := new(MockGithubRepositoryService)
 		mock.Hook = &github.Hook{
 			Name: github.String("test hook"),
-			URL:  github.String("https://github.com/gaia-pipeline/gaia/testurl"),
+			URL:  github.String("https://api.github.com/repos/gaia-pipeline/gaia/hooks/44321286/test"),
 		}
 		mock.Response = &github.Response{
 			Response: &http.Response{
@@ -449,7 +523,7 @@ func TestMultipleGithubWebHookURLTypes(t *testing.T) {
 		mock := new(MockGithubRepositoryService)
 		mock.Hook = &github.Hook{
 			Name: github.String("test hook"),
-			URL:  github.String("https://github.com/gaia-pipeline/gaia/testurl"),
+			URL:  github.String("https://api.github.com/repos/gaia-pipeline/gaia/hooks/44321286/test"),
 		}
 		mock.Response = &github.Response{
 			Response: &http.Response{
@@ -464,39 +538,4 @@ func TestMultipleGithubWebHookURLTypes(t *testing.T) {
 			t.Fatal("expected error. none found")
 		}
 	})
-}
-
-func TestCreateGithubWebhookNoPasswordDefinedInVault(t *testing.T) {
-	tmp, _ := ioutil.TempDir("", "TestCreateGithubWebhookNoPasswordDefinedInVault")
-	gaia.Cfg = &gaia.Config{}
-	gaia.Cfg.VaultPath = tmp
-	gaia.Cfg.CAPath = tmp
-	buf := new(bytes.Buffer)
-	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
-		Level:  hclog.Trace,
-		Output: buf,
-		Name:   "Gaia",
-	})
-	_, err := services.CertificateService()
-	if err != nil {
-		t.Fatalf("cannot initialize certificate service: %v", err.Error())
-	}
-
-	m := new(MockGitVaultStorer)
-	services.VaultService(m)
-	defer func() {
-		services.MockVaultService(nil)
-		services.MockCertificateService(nil)
-	}()
-	repo := gaia.GitRepo{
-		URL: "https://github.com/gaia-pipeline/gaia",
-	}
-	err = createGithubWebhook("asdf", &repo, nil)
-	if err == nil {
-		t.Fatal("expected error. but nothing happened.")
-	}
-	want := "key 'GITHUB_WEBHOOK_SECRET' not found in vault"
-	if err.Error() != want {
-		t.Fatalf("expected error message did not match. want: '%s', got: '%s'", want, err.Error())
-	}
 }

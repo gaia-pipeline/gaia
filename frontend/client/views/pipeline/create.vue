@@ -34,7 +34,7 @@
                 </a>
                 <a class="button is-primary" v-on:click="showGitHubWebHookModal">
                   <span class="icon">
-                    <i class="fa fa-certificate"></i>
+                    <i class="fa fa-wrench"></i>
                   </span>
                   <span>Add GitHub WebHook</span>
                 </a>
@@ -196,7 +196,7 @@
                 <p class="control has-icons-left" style="padding-bottom: 5px;">
                   <input class="input is-medium input-bar" v-focus type="text" v-model="createPipeline.githubtoken" placeholder="Token">
                   <span class="icon is-small is-left">
-                    <i class="fa fa-user-circle"></i>
+                    <i class="fas fa-code-branch"></i>
                   </span>
                 </p>
               </div>

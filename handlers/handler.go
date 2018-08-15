@@ -16,11 +16,6 @@ import (
 	"github.com/labstack/echo/middleware"
 )
 
-const (
-	// apiVersion represents the current API version
-	apiVersion = "v1"
-)
-
 var (
 	// errNotAuthorized is thrown when user wants to access resource which is protected
 	errNotAuthorized = errors.New("no or invalid jwt token provided. You are not authorized")
@@ -50,7 +45,7 @@ var (
 // InitHandlers initializes(registers) all handlers
 func InitHandlers(e *echo.Echo) error {
 	// Define prefix
-	p := "/api/" + apiVersion + "/"
+	p := "/api/" + gaia.APIVersion + "/"
 
 	// --- Register handlers at echo instance ---
 

@@ -72,6 +72,9 @@ const (
 
 	// LogsFileName represents the file name of the logs output
 	LogsFileName = "output.log"
+
+	// APIVersion represents the current API version
+	APIVersion = "v1"
 )
 
 // User is the user object

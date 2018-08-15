@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -42,7 +41,7 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 			"Value": "Value",
 		}
 		bodyBytes, _ := json.Marshal(body)
-		req := httptest.NewRequest(echo.POST, "/api/"+apiVersion+"/secret", bytes.NewBuffer(bodyBytes))
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/secret", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -50,8 +49,6 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 		SetSecret(c)
 
 		if rec.Code != http.StatusCreated {
-			b, _ := ioutil.ReadAll(rec.Body)
-			log.Println(string(b))
 			t.Fatalf("expected response code %v got %v", http.StatusCreated, rec.Code)
 		}
 	})
@@ -62,7 +59,7 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 			"Value": "Value",
 		}
 		bodyBytes, _ := json.Marshal(body)
-		req := httptest.NewRequest(echo.PUT, "/api/"+apiVersion+"/secret", bytes.NewBuffer(bodyBytes))
+		req := httptest.NewRequest(echo.PUT, "/api/"+gaia.APIVersion+"/secret", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -75,7 +72,7 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 	})
 
 	t.Run("can list secrets", func(t *testing.T) {
-		req := httptest.NewRequest(echo.GET, "/api/"+apiVersion+"/secrets", nil)
+		req := httptest.NewRequest(echo.GET, "/api/"+gaia.APIVersion+"/secrets", nil)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -93,7 +90,7 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 	})
 
 	t.Run("can delete secrets", func(t *testing.T) {
-		req := httptest.NewRequest(echo.DELETE, "/api/"+apiVersion+"/secret/:key", nil)
+		req := httptest.NewRequest(echo.DELETE, "/api/"+gaia.APIVersion+"/secret/:key", nil)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -108,7 +105,7 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 	})
 
 	t.Run("can delete fails if no secret is provided", func(t *testing.T) {
-		req := httptest.NewRequest(echo.DELETE, "/api/"+apiVersion+"/secret/:key", nil)
+		req := httptest.NewRequest(echo.DELETE, "/api/"+gaia.APIVersion+"/secret/:key", nil)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
