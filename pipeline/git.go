@@ -3,7 +3,9 @@ package pipeline
 import (
 	"context"
 	"crypto/rand"
+	"encoding/base64"
 	"errors"
+	"log"
 	gohttp "net/http"
 	"path"
 	"regexp"
@@ -79,6 +81,7 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 // it by pulling in new code if it's available.
 func UpdateRepository(pipe *gaia.Pipeline) error {
 	r, err := git.PlainOpen(pipe.Repo.LocalDest)
+	log.Println(pipe.Repo.LocalDest)
 	if err != nil {
 		// We don't stop gaia working because of an automated update failed.
 		// So we just move on.
@@ -95,12 +98,15 @@ func UpdateRepository(pipe *gaia.Pipeline) error {
 	}
 	tree, _ := r.Worktree()
 	err = tree.Pull(&git.PullOptions{
-		RemoteName: "origin",
-		Auth:       auth,
+		ReferenceName: plumbing.ReferenceName(pipe.Repo.SelectedBranch),
+		SingleBranch:  true,
+		RemoteName:    "origin",
+		Auth:          auth,
 	})
 	if err != nil {
 		// It's also an error if the repo is already up to date so we just move on.
-		gaia.Cfg.Logger.Error("error while doing a pull request : ", err.Error())
+		message := "error while doing a pull request: " + err.Error()
+		gaia.Cfg.Logger.Error(message)
 		return err
 	}
 
@@ -210,10 +216,7 @@ func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoSer
 	config["url"] = gaia.Cfg.Hostname + "/api/" + gaia.APIVersion + "/pipeline/githook"
 	secret, err := vault.Get("GITHUB_WEBHOOK_SECRET")
 	if err != nil {
-		secret, err = generateWebhookSecret()
-		if err != nil {
-			return err
-		}
+		secret = []byte(generateWebhookSecret())
 		vault.Add("GITHUB_WEBHOOK_SECRET", secret)
 		err = vault.SaveSecrets()
 		if err != nil {
@@ -248,10 +251,11 @@ func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoSer
 	return nil
 }
 
-func generateWebhookSecret() ([]byte, error) {
-	secret := make([]byte, 32)
-	_, err := rand.Read(secret)
-	return secret, err
+func generateWebhookSecret() string {
+	secret := make([]byte, 16)
+	rand.Read(secret)
+	based := base64.URLEncoding.EncodeToString(secret)
+	return strings.TrimSuffix(based, "==")
 }
 
 func getAuthInfo(repo *gaia.GitRepo) (transport.AuthMethod, error) {

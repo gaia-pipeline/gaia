@@ -63,8 +63,9 @@ func TestUpdateAllPipelinesAlreadyUpToDate(t *testing.T) {
 		Name:   "Gaia",
 	})
 	repo := &gaia.GitRepo{
-		URL:       "https://github.com/gaia-pipeline/pipeline-test",
-		LocalDest: "tmp",
+		URL:            "https://github.com/gaia-pipeline/pipeline-test",
+		LocalDest:      "tmp",
+		SelectedBranch: "refs/heads/master",
 	}
 	// always ensure that tmp folder is cleaned up
 	defer os.RemoveAll("tmp")
@@ -75,7 +76,7 @@ func TestUpdateAllPipelinesAlreadyUpToDate(t *testing.T) {
 
 	p := new(gaia.Pipeline)
 	p.Name = "main"
-	p.Repo.SelectedBranch = "master"
+	p.Repo.SelectedBranch = "refs/heads/master"
 	p.Repo.LocalDest = "tmp"
 	GlobalActivePipelines = NewActivePipelines()
 	GlobalActivePipelines.Append(*p)
@@ -96,8 +97,9 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 		Name:   "Gaia",
 	})
 	repo := &gaia.GitRepo{
-		URL:       "https://github.com/gaia-pipeline/pipeline-test",
-		LocalDest: "tmp",
+		URL:            "https://github.com/gaia-pipeline/pipeline-test",
+		LocalDest:      "tmp",
+		SelectedBranch: "refs/heads/master",
 	}
 	// always ensure that tmp folder is cleaned up
 	defer os.RemoveAll("tmp")
@@ -108,11 +110,11 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 
 	p1 := new(gaia.Pipeline)
 	p1.Name = "main"
-	p1.Repo.SelectedBranch = "master"
+	p1.Repo.SelectedBranch = "refs/heads/master"
 	p1.Repo.LocalDest = "tmp"
 	p2 := new(gaia.Pipeline)
 	p2.Name = "main"
-	p2.Repo.SelectedBranch = "master"
+	p2.Repo.SelectedBranch = "refs/heads/master"
 	p2.Repo.LocalDest = "tmp"
 	GlobalActivePipelines = NewActivePipelines()
 	defer func() { GlobalActivePipelines = nil }()
@@ -138,8 +140,9 @@ func TestUpdateAllPipelinesHundredPipelines(t *testing.T) {
 		Name:   "Gaia",
 	})
 	repo := &gaia.GitRepo{
-		URL:       "https://github.com/gaia-pipeline/pipeline-test",
-		LocalDest: "tmp",
+		URL:            "https://github.com/gaia-pipeline/pipeline-test",
+		LocalDest:      "tmp",
+		SelectedBranch: "refs/heads/master",
 	}
 	// always ensure that tmp folder is cleaned up
 	defer os.RemoveAll("tmp")
@@ -153,7 +156,7 @@ func TestUpdateAllPipelinesHundredPipelines(t *testing.T) {
 		p := new(gaia.Pipeline)
 		name := strconv.Itoa(i)
 		p.Name = "main" + name
-		p.Repo.SelectedBranch = "master"
+		p.Repo.SelectedBranch = "refs/heads/master"
 		p.Repo.LocalDest = "tmp"
 		GlobalActivePipelines.Append(*p)
 	}
@@ -192,6 +195,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 			Username: "username",
 			Password: "password",
 		},
+		SelectedBranch: "refs/heads/master",
 	}
 	_, err := getAuthInfo(repoWithValidPrivateKey)
 	if err != nil {
@@ -206,6 +210,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 			Username: "username",
 			Password: "password",
 		},
+		SelectedBranch: "refs/heads/master",
 	}
 	auth, _ := getAuthInfo(repoWithInvalidPrivateKey)
 	if auth != nil {
@@ -288,7 +293,8 @@ func TestCreateGithubWebhook(t *testing.T) {
 
 	t.Run("successfully create webhook", func(t *testing.T) {
 		repo := gaia.GitRepo{
-			URL: "https://github.com/gaia-pipeline/gaia",
+			URL:            "https://github.com/gaia-pipeline/gaia",
+			SelectedBranch: "refs/heads/master",
 		}
 
 		mock := new(MockGithubRepositoryService)
@@ -321,7 +327,8 @@ func TestCreateGithubWebhook(t *testing.T) {
 
 	t.Run("error while creating webhook", func(t *testing.T) {
 		repo := gaia.GitRepo{
-			URL: "https://github.com/gaia-pipeline/gaia",
+			URL:            "https://github.com/gaia-pipeline/gaia",
+			SelectedBranch: "refs/heads/master",
 		}
 
 		mock := new(MockGithubRepositoryService)
@@ -348,7 +355,8 @@ func TestCreateGithubWebhook(t *testing.T) {
 		v.Remove("GITHUB_WEBHOOK_SECRET")
 		v.SaveSecrets()
 		repo := gaia.GitRepo{
-			URL: "https://github.com/gaia-pipeline/gaia",
+			URL:            "https://github.com/gaia-pipeline/gaia",
+			SelectedBranch: "refs/heads/master",
 		}
 
 		mock := new(MockGithubRepositoryService)
@@ -383,7 +391,8 @@ func TestCreateGithubWebhook(t *testing.T) {
 		v.Add("GITHUB_WEBHOOK_SECRET", []byte("superawesomesecretgithubpassword"))
 		v.SaveSecrets()
 		repo := gaia.GitRepo{
-			URL: "https://github.com/gaia-pipeline/gaia",
+			URL:            "https://github.com/gaia-pipeline/gaia",
+			SelectedBranch: "refs/heads/master",
 		}
 
 		mock := new(MockGithubRepositoryService)
@@ -445,7 +454,8 @@ func TestMultipleGithubWebHookURLTypes(t *testing.T) {
 
 	t.Run("https url", func(t *testing.T) {
 		repo := gaia.GitRepo{
-			URL: "https://github.com/gaia-pipeline/gaia",
+			URL:            "https://github.com/gaia-pipeline/gaia",
+			SelectedBranch: "refs/heads/master",
 		}
 
 		mock := new(MockGithubRepositoryService)
@@ -469,7 +479,8 @@ func TestMultipleGithubWebHookURLTypes(t *testing.T) {
 
 	t.Run("ssh url", func(t *testing.T) {
 		repo := gaia.GitRepo{
-			URL: "git@github.com:gaia-pipeline/gaia.git",
+			URL:            "git@github.com:gaia-pipeline/gaia.git",
+			SelectedBranch: "refs/heads/master",
 		}
 
 		mock := new(MockGithubRepositoryService)
@@ -493,7 +504,8 @@ func TestMultipleGithubWebHookURLTypes(t *testing.T) {
 
 	t.Run("simple http with git extension", func(t *testing.T) {
 		repo := gaia.GitRepo{
-			URL: "https://github.com/gaia-pipeline/gaia.git",
+			URL:            "https://github.com/gaia-pipeline/gaia.git",
+			SelectedBranch: "refs/heads/master",
 		}
 
 		mock := new(MockGithubRepositoryService)
@@ -517,7 +529,8 @@ func TestMultipleGithubWebHookURLTypes(t *testing.T) {
 
 	t.Run("failed extracting repo owner", func(t *testing.T) {
 		repo := gaia.GitRepo{
-			URL: "https://invalid-giturl.com",
+			URL:            "https://invalid-giturl.com",
+			SelectedBranch: "refs/heads/master",
 		}
 
 		mock := new(MockGithubRepositoryService)

@@ -72,6 +72,10 @@ func parse(secret []byte, req *http.Request) (Hook, error) {
 		return Hook{}, errors.New("no event")
 	}
 
+	if h.Event != "push" {
+		return Hook{}, errors.New("invalid event")
+	}
+
 	if h.ID = req.Header.Get("x-github-delivery"); len(h.ID) == 0 {
 		return Hook{}, errors.New("no event id")
 	}

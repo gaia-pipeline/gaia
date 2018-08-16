@@ -116,8 +116,13 @@ func InitHandlers(e *echo.Echo) error {
 // TODO: Role based access
 func authBarrier(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// Login and static resources are open
-		if strings.Contains(c.Path(), "/login") || c.Path() == "/" || strings.Contains(c.Path(), "/assets/") || c.Path() == "/favicon.ico" {
+		// Login, WebHook callback and static resources are open
+		// The webhook callback has it's own authentication method
+		if strings.Contains(c.Path(), "/login") ||
+			c.Path() == "/" ||
+			strings.Contains(c.Path(), "/assets/") ||
+			c.Path() == "/favicon.ico" ||
+			strings.Contains(c.Path(), "pipeline/githook") {
 			return next(c)
 		}
 

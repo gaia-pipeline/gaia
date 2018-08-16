@@ -111,13 +111,32 @@ func TestHookReceive(t *testing.T) {
 		if string(body) != want {
 			t.Fatalf("want body: %s, got: %s", want, string(body))
 		}
+	})
 
-		value, err := v.Get("GITHUB_WEBHOOK_SECRET")
-		if err != nil {
-			t.Fatal("did not expect error to happen. got: ", err.Error())
+	t.Run("only push events are accepted", func(t *testing.T) {
+		payload, _ := ioutil.ReadFile(filepath.Join("fixtures", "hook_basic_push_payload.json"))
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/githook", bytes.NewBuffer(payload))
+		req.Header.Set("Content-Type", "application/json")
+		// Use https://www.freeformatter.com/hmac-generator.html#ad-output for example
+		// to calculate a new sha if the fixture would change.
+		req.Header.Set("x-hub-signature", "sha1=940e53f44518a6cf9ba002c29c8ace7799af2b13")
+		req.Header.Set("x-github-event", "pull")
+		req.Header.Set("X-github-delivery", "1234asdf")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		GitWebHook(c)
+
+		// Expected failure because repository does not exist
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("want response code %v got %v", http.StatusBadRequest, rec.Code)
 		}
-		if bytes.Compare(value, []byte("superawesomesecretgithubpassword")) != 0 {
-			t.Fatal("wanted value 'superawesomesecretgithubpassword', got: ", string(value))
+
+		// Checking body to make sure it's the failure we want
+		body, _ := ioutil.ReadAll(rec.Body)
+		want := "invalid event"
+		if string(body) != want {
+			t.Fatalf("want body: %s, got: %s", want, string(body))
 		}
 	})
 }
