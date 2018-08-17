@@ -14,7 +14,7 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-const (
+var (
 	pythonBinaryName = "python"
 )
 

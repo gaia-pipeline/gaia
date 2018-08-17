@@ -112,6 +112,9 @@ func checkActivePipelines() {
 						// Let us try again to start the plugin and receive all implemented jobs
 						schedulerService.SetPipelineJobs(p)
 
+						// Set new pipeline hash
+						p.SHA256Sum = checksum
+
 						// Replace pipeline
 						if ok := GlobalActivePipelines.Replace(*p); !ok {
 							gaia.Cfg.Logger.Debug("cannot replace pipeline in global pipeline list", "pipeline", p)

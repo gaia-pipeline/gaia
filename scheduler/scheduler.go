@@ -502,9 +502,9 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 					}
 				}
 
-				if allWLDone {
-					close(executeScheduler)
+				if allWLDone && !finalize {
 					close(done)
+					close(executeScheduler)
 					close(triggerSave)
 					finished <- true
 					finalize = true
