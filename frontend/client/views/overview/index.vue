@@ -9,7 +9,7 @@
           <div class="outer-box">
             <router-link :to="{ path: '/pipeline/detail', query: { pipelineid: pipeline.p.id }}" class="hoveraction">
               <div class="outer-box-icon-image">
-                <img :src="getImagePath(pipeline.p.type)" class="outer-box-image">
+                <img :src="getImagePath(pipeline.p.type)" class="outer-box-image" v-bind:class="{ 'outer-box-image-python': pipeline.p.type === 'python', 'outer-box-image': pipeline.p.type !== 'python' }">
               </div>
               <div>
                 <span class="subtitle">{{ pipeline.p.name }}</span>
@@ -239,6 +239,15 @@ export default {
   width: 50px;
   height: 50px;
   top: 70%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.outer-box-image-python {
+  position: absolute;
+  width: 50px;
+  height: 40px;
+  top: 53%;
   left: 50%;
   transform: translate(-50%, -50%);
 }

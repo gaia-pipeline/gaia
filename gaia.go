@@ -31,6 +31,9 @@ const (
 	// PTypeJava java plugin type
 	PTypeJava PipelineType = "java"
 
+	// PTypePython python plugin type
+	PTypePython PipelineType = "python"
+
 	// CreatePipelineFailed status
 	CreatePipelineFailed CreatePipelineType = "failed"
 
@@ -72,6 +75,15 @@ const (
 
 	// LogsFileName represents the file name of the logs output
 	LogsFileName = "output.log"
+
+	// TmpFolder is the temp folder for temporary files
+	TmpFolder = "tmp"
+
+	// TmpPythonFolder is the name of the python temporary folder
+	TmpPythonFolder = "python"
+
+	// TmpGoFolder is the name of the golang temporary folder
+	TmpGoFolder = "golang"
 )
 
 // User is the user object

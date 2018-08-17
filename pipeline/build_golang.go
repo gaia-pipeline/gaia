@@ -14,7 +14,6 @@ import (
 
 const (
 	golangBinaryName = "go"
-	golangFolder     = "golang"
 )
 
 // BuildPipelineGolang is the real implementation of BuildPipeline for golang
@@ -28,7 +27,7 @@ func (b *BuildPipelineGolang) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	uuid := uuid.Must(uuid.NewV4(), nil)
 
 	// Create local temp folder for clone
-	goPath := filepath.Join(gaia.Cfg.HomePath, tmpFolder, golangFolder)
+	goPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpGoFolder)
 	cloneFolder := filepath.Join(goPath, srcFolder, uuid.String())
 	err := os.MkdirAll(cloneFolder, 0700)
 	if err != nil {
@@ -49,7 +48,7 @@ func (b *BuildPipelineGolang) ExecuteBuild(p *gaia.CreatePipeline) error {
 		gaia.Cfg.Logger.Debug("cannot find go executeable", "error", err.Error())
 		return err
 	}
-	goPath := filepath.Join(gaia.Cfg.HomePath, tmpFolder, golangFolder)
+	goPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpGoFolder)
 
 	// Set command args for get dependencies
 	args := []string{

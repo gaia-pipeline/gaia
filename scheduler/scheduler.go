@@ -37,6 +37,9 @@ var (
 
 	// Java executeable name
 	javaExecuteableName = "java"
+
+	// Python executeable name
+	pythonExecuteableName = "python"
 )
 
 // Plugin represents the plugin implementation which is used
@@ -504,6 +507,7 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 					close(done)
 					close(triggerSave)
 					finished <- true
+					finalize = true
 				}
 
 				// Close go-routine which was waiting for this job.
@@ -611,7 +615,7 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 	case gaia.PTypeGolang:
 		c.Path = p.ExecPath
 	case gaia.PTypeJava:
-		// Look for golang executeable
+		// Look for java executeable
 		path, err := exec.LookPath(javaExecuteableName)
 		if err != nil {
 			gaia.Cfg.Logger.Debug("cannot find java executeable", "error", err.Error())
@@ -625,6 +629,15 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 			"-jar",
 			p.ExecPath,
 		}
+	case gaia.PTypePython:
+		// Build start command
+		c.Path = "/bin/sh"
+		c.Args = []string{
+			"/bin/sh",
+			"-c",
+			"source bin/activate; exec python -c \"import pipeline; pipeline.main()\"",
+		}
+		c.Dir = filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder, p.Name)
 	default:
 		c = nil
 	}
