@@ -2,11 +2,21 @@ package pipeline
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 
 	"github.com/gaia-pipeline/gaia"
+)
+
+var (
+	// virtualEnvName is the binary name of virtual environment app.
+	virtualEnvName = "virtualenv"
+
+	// pythonPipInstallCmd is the command used to install the python distribution
+	// package.
+	pythonPipInstallCmd = "source bin/activate; python -m pip install %s.tar.gz"
 )
 
 // updatePipeline executes update steps dependent on the pipeline type.
@@ -19,7 +29,7 @@ func updatePipeline(p *gaia.Pipeline) error {
 		os.RemoveAll(virtualEnvPath)
 
 		// Create virtual environment
-		path, err := exec.LookPath("virtualenv")
+		path, err := exec.LookPath(virtualEnvName)
 		if err != nil {
 			return errors.New("cannot find virtualenv executeable")
 		}
@@ -36,7 +46,7 @@ func updatePipeline(p *gaia.Pipeline) error {
 		}
 
 		// install plugin in this environment
-		cmd = exec.Command("/bin/sh", "-c", "source bin/activate; python -m pip install "+filepath.Join(virtualEnvPath, p.Name+".tar.gz"))
+		cmd = exec.Command("/bin/sh", "-c", fmt.Sprintf(pythonPipInstallCmd, filepath.Join(virtualEnvPath, p.Name)))
 		cmd.Dir = virtualEnvPath
 		if err := cmd.Run(); err != nil {
 			return err
