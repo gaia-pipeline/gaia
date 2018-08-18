@@ -103,8 +103,17 @@ func checkActivePipelines() {
 
 					// Pipeline has been changed?
 					if bytes.Compare(p.SHA256Sum, checksum) != 0 {
+						// update pipeline if needed
+						if err = updatePipeline(p); err != nil {
+							gaia.Cfg.Logger.Debug("cannot update pipeline", "error", err.Error(), "pipeline", p)
+							continue
+						}
+
 						// Let us try again to start the plugin and receive all implemented jobs
 						schedulerService.SetPipelineJobs(p)
+
+						// Set new pipeline hash
+						p.SHA256Sum = checksum
 
 						// Replace pipeline
 						if ok := GlobalActivePipelines.Replace(*p); !ok {
@@ -139,10 +148,19 @@ func checkActivePipelines() {
 
 			// We calculate a SHA256 Checksum and store it.
 			// We use this to estimate if a pipeline has been changed.
-			pipeline.SHA256Sum, err = getSHA256Sum(pipeline.ExecPath)
+			pipelineCheckSum, err := getSHA256Sum(pipeline.ExecPath)
 			if err != nil {
 				gaia.Cfg.Logger.Debug("cannot calculate sha256 checksum for pipeline", "error", err.Error(), "pipeline", pipeline)
 				continue
+			}
+
+			// update pipeline if needed
+			if bytes.Compare(pipeline.SHA256Sum, pipelineCheckSum) != 0 {
+				pipeline.SHA256Sum = pipelineCheckSum
+				if err = updatePipeline(pipeline); err != nil {
+					gaia.Cfg.Logger.Error("cannot update pipeline", "error", err.Error(), "pipeline", pipeline)
+					continue
+				}
 			}
 
 			// Let us try to start the plugin and receive all implemented jobs
@@ -181,6 +199,8 @@ func getPipelineType(n string) (gaia.PipelineType, error) {
 		return gaia.PTypeGolang, nil
 	case gaia.PTypeJava.String():
 		return gaia.PTypeJava, nil
+	case gaia.PTypePython.String():
+		return gaia.PTypePython, nil
 	}
 
 	return gaia.PTypeUnknown, errMissingType

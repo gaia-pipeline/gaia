@@ -33,7 +33,7 @@ func (b *BuildPipelineJava) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	uuid := uuid.Must(uuid.NewV4(), nil)
 
 	// Create local temp folder for clone
-	rootPath := filepath.Join(gaia.Cfg.HomePath, tmpFolder, javaFolder)
+	rootPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, javaFolder)
 	cloneFolder := filepath.Join(rootPath, srcFolder, uuid.String())
 	err := os.MkdirAll(cloneFolder, 0700)
 	if err != nil {
