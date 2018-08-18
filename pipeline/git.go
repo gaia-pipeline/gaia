@@ -88,12 +88,12 @@ func UpdateRepository(pipe *gaia.Pipeline) error {
 		gaia.Cfg.Logger.Error("error while opening repo: ", pipe.Repo.LocalDest, err.Error())
 		return err
 	}
-	gaia.Cfg.Logger.Debug("checking pipeline: ", pipe.Name)
-	gaia.Cfg.Logger.Debug("selected branch : ", pipe.Repo.SelectedBranch)
+	gaia.Cfg.Logger.Debug("checking pipeline: ", "message", pipe.Name)
+	gaia.Cfg.Logger.Debug("selected branch: ", "message", pipe.Repo.SelectedBranch)
 	auth, err := getAuthInfo(&pipe.Repo)
 	if err != nil {
 		// It's also an error if the repo is already up to date so we just move on.
-		gaia.Cfg.Logger.Error("error getting auth info while doing a pull request : ", err.Error())
+		gaia.Cfg.Logger.Error("error getting auth info while doing a pull request: ", "error", err.Error())
 		return err
 	}
 	tree, _ := r.Worktree()
@@ -105,18 +105,17 @@ func UpdateRepository(pipe *gaia.Pipeline) error {
 	})
 	if err != nil {
 		// It's also an error if the repo is already up to date so we just move on.
-		message := "error while doing a pull request: " + err.Error()
-		gaia.Cfg.Logger.Error(message)
+		gaia.Cfg.Logger.Error("error while doing a pull request: ", "error", err.Error())
 		return err
 	}
 
-	gaia.Cfg.Logger.Debug("updating pipeline: ", pipe.Name)
+	gaia.Cfg.Logger.Debug("updating pipeline: ", "message", pipe.Name)
 	b := newBuildPipeline(pipe.Type)
 	createPipeline := &gaia.CreatePipeline{}
 	createPipeline.Pipeline = *pipe
 	b.ExecuteBuild(createPipeline)
 	b.CopyBinary(createPipeline)
-	gaia.Cfg.Logger.Debug("successfully updated: ", pipe.Name)
+	gaia.Cfg.Logger.Debug("successfully updated: ", "message", pipe.Name)
 	return nil
 }
 
@@ -197,13 +196,13 @@ func NewGithubClient(httpClient *gohttp.Client, repoMock GithubRepoService) Gith
 func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoService) error {
 	vault, err := services.VaultService(nil)
 	if err != nil {
-		gaia.Cfg.Logger.Error("unable to initialize vault: " + err.Error())
+		gaia.Cfg.Logger.Error("unable to initialize vault: ", "error", err.Error())
 		return err
 	}
 
 	err = vault.LoadSecrets()
 	if err != nil {
-		gaia.Cfg.Logger.Error("unable to open vault: " + err.Error())
+		gaia.Cfg.Logger.Error("unable to open vault: ", "error", err.Error())
 		return err
 	}
 
@@ -247,7 +246,7 @@ func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoSer
 		return err
 	}
 	gaia.Cfg.Logger.Info("hook created: ", github.Stringify(hook.Name), resp.Status)
-	gaia.Cfg.Logger.Info("hook url: ", hook.GetURL())
+	gaia.Cfg.Logger.Info("hook url: ", "url", hook.GetURL())
 	return nil
 }
 
