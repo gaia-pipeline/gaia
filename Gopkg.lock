@@ -2,26 +2,6 @@
 
 
 [[projects]]
-  name = "cloud.google.com/go"
-  packages = [
-    "compute/metadata",
-    "iam",
-    "internal",
-    "internal/optional",
-    "internal/trace",
-    "internal/version",
-    "storage"
-  ]
-  revision = "64a2037ec6be8a4b0c1d1f706ed35b428b989239"
-  version = "v0.26.0"
-
-[[projects]]
-  name = "contrib.go.opencensus.io/exporter/stackdriver"
-  packages = ["propagation"]
-  revision = "37aa2801fbf0205003e15636096ebf0373510288"
-  version = "v0.5.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/GeertJohan/go.rice"
   packages = [
@@ -68,38 +48,13 @@
   revision = "7be8a901b55a21397f998640deb72864223424f9"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/golang/glog"
-  packages = ["."]
-  revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
-
-[[projects]]
-  name = "github.com/golang/mock"
-  packages = ["gomock"]
-  revision = "c34cdb4725f4c3844d095133c6e40e448b86589b"
-  version = "v1.1.1"
-
-[[projects]]
   name = "github.com/golang/protobuf"
   packages = [
-    "conformance/internal/conformance_proto",
-    "descriptor",
-    "jsonpb",
-    "jsonpb/jsonpb_test_proto",
     "proto",
-    "proto/proto3_proto",
-    "proto/test_proto",
-    "protoc-gen-go/descriptor",
-    "protoc-gen-go/generator",
-    "protoc-gen-go/generator/internal/remap",
-    "protoc-gen-go/grpc",
-    "protoc-gen-go/plugin",
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
-    "ptypes/struct",
-    "ptypes/timestamp",
-    "ptypes/wrappers"
+    "ptypes/timestamp"
   ]
   revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
   version = "v1.1.0"
@@ -192,18 +147,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/michelvocks/gosdk"
-  packages = ["."]
-  revision = "090544df4a09cf99a924cb592060c33766c3f9c8"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/michelvocks/protobuf"
-  packages = ["."]
-  revision = "72c5e607afe159f8e940379ab4af470613334c1b"
-
-[[projects]]
-  branch = "master"
   name = "github.com/mitchellh/go-homedir"
   packages = ["."]
   revision = "58046073cbffe2f25d425fe1331102f55cf719de"
@@ -225,12 +168,6 @@
   packages = ["."]
   revision = "c37440a7cf42ac63b919c752ca73a85067e05992"
   version = "v0.2.0"
-
-[[projects]]
-  name = "github.com/pkg/errors"
-  packages = ["."]
-  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
-  version = "v0.8.0"
 
 [[projects]]
   name = "github.com/satori/go.uuid"
@@ -274,37 +211,6 @@
   version = "v0.2.0"
 
 [[projects]]
-  name = "go.opencensus.io"
-  packages = [
-    ".",
-    "internal",
-    "internal/tagencoding",
-    "plugin/ochttp",
-    "plugin/ochttp/propagation/b3",
-    "stats",
-    "stats/internal",
-    "stats/view",
-    "tag",
-    "trace",
-    "trace/internal",
-    "trace/propagation"
-  ]
-  revision = "e262766cd0d230a1bb7c37281e345e465f19b41b"
-  version = "v0.14.0"
-
-[[projects]]
-  branch = "master"
-  name = "go4.org"
-  packages = ["syncutil/singleflight"]
-  revision = "417644f6feb5ed3a356ca5d6d8e3a3fac7dfd33f"
-
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/build"
-  packages = ["autocertcache"]
-  revision = "69da2ad2cb16ec1ac421d45b72afc98807f4952c"
-
-[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
@@ -327,8 +233,7 @@
     "poly1305",
     "ssh",
     "ssh/agent",
-    "ssh/knownhosts",
-    "ssh/terminal"
+    "ssh/knownhosts"
   ]
   revision = "de0752318171da717af4ce24d0a2e8626afaeb11"
 
@@ -337,38 +242,14 @@
   name = "golang.org/x/net"
   packages = [
     "context",
-    "context/ctxhttp",
-    "dns/dnsmessage",
     "http/httpguts",
-    "http/httpproxy",
     "http2",
     "http2/hpack",
     "idna",
-    "internal/nettest",
-    "internal/socks",
-    "internal/sockstest",
     "internal/timeseries",
     "trace"
   ]
   revision = "c39426892332e1bb5ec0a434a079bf82f5d30c54"
-
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/oauth2"
-  packages = [
-    ".",
-    "google",
-    "internal",
-    "jws",
-    "jwt"
-  ]
-  revision = "3d292e4d0cdc3a0113e6d207bb137145ef1de42f"
-
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/sync"
-  packages = ["errgroup"]
-  revision = "1d60e4601c6fd243af51cc01ddf169918a5407ca"
 
 [[projects]]
   branch = "master"
@@ -383,116 +264,29 @@
   branch = "master"
   name = "golang.org/x/text"
   packages = [
-    "cmd/gotext/examples/extract_http/pkg",
     "collate",
     "collate/build",
-    "encoding",
-    "encoding/charmap",
-    "encoding/ianaindex",
-    "encoding/internal",
-    "encoding/internal/identifier",
-    "encoding/japanese",
-    "encoding/korean",
-    "encoding/simplifiedchinese",
-    "encoding/traditionalchinese",
-    "encoding/unicode",
-    "feature/plural",
-    "internal",
-    "internal/catmsg",
-    "internal/cldrtree",
     "internal/colltab",
-    "internal/format",
     "internal/gen",
-    "internal/gen/bitfield",
     "internal/language",
     "internal/language/compact",
-    "internal/number",
-    "internal/stringset",
     "internal/tag",
-    "internal/testtext",
     "internal/triegen",
     "internal/ucd",
-    "internal/utf8internal",
     "language",
-    "message",
-    "message/catalog",
-    "message/pipeline",
-    "number",
-    "runes",
     "secure/bidirule",
     "transform",
     "unicode/bidi",
     "unicode/cldr",
     "unicode/norm",
-    "unicode/rangetable",
-    "unicode/runenames"
+    "unicode/rangetable"
   ]
   revision = "6e3c4e7365ddcc329f090f96e4348398f6310088"
 
 [[projects]]
   branch = "master"
-  name = "golang.org/x/tools"
-  packages = [
-    "go/ast/astutil",
-    "go/buildutil",
-    "go/callgraph",
-    "go/callgraph/cha",
-    "go/gcexportdata",
-    "go/internal/cgo",
-    "go/internal/gcimporter",
-    "go/loader",
-    "go/packages",
-    "go/ssa",
-    "go/ssa/ssautil",
-    "go/types/typeutil"
-  ]
-  revision = "27709f6afec43b6c6d899bd199bf0f39c731216c"
-
-[[projects]]
-  branch = "master"
-  name = "google.golang.org/api"
-  packages = [
-    "compute/v1",
-    "gensupport",
-    "googleapi",
-    "googleapi/internal/uritemplates",
-    "googleapi/transport",
-    "internal",
-    "iterator",
-    "option",
-    "storage/v1",
-    "transport/http"
-  ]
-  revision = "0aa0a1f2c0c4478587971a63e931e711086a5271"
-
-[[projects]]
-  name = "google.golang.org/appengine"
-  packages = [
-    ".",
-    "internal",
-    "internal/app_identity",
-    "internal/base",
-    "internal/datastore",
-    "internal/log",
-    "internal/modules",
-    "internal/remote_api",
-    "internal/urlfetch",
-    "urlfetch"
-  ]
-  revision = "b1f26356af11148e710935ed1ac8a7f5702c7612"
-  version = "v1.1.0"
-
-[[projects]]
-  branch = "master"
   name = "google.golang.org/genproto"
-  packages = [
-    "googleapis/api/annotations",
-    "googleapis/iam/v1",
-    "googleapis/rpc/code",
-    "googleapis/rpc/errdetails",
-    "googleapis/rpc/status",
-    "protobuf/field_mask"
-  ]
+  packages = ["googleapis/rpc/status"]
   revision = "383e8b2c3b9e36c4076b235b32537292176bae20"
 
 [[projects]]
@@ -501,35 +295,13 @@
     ".",
     "balancer",
     "balancer/base",
-    "balancer/grpclb",
-    "balancer/grpclb/grpc_lb_v1",
     "balancer/roundrobin",
-    "benchmark",
-    "benchmark/grpc_testing",
-    "benchmark/latency",
-    "benchmark/stats",
-    "channelz/grpc_channelz_v1",
     "codes",
     "connectivity",
     "credentials",
-    "credentials/alts",
-    "credentials/alts/core",
-    "credentials/alts/core/authinfo",
-    "credentials/alts/core/conn",
-    "credentials/alts/core/handshaker",
-    "credentials/alts/core/handshaker/service",
-    "credentials/alts/core/proto/grpc_gcp",
-    "credentials/alts/core/testutil",
-    "credentials/oauth",
     "encoding",
-    "encoding/gzip",
     "encoding/proto",
-    "examples/helloworld/helloworld",
-    "examples/helloworld/mock_helloworld",
-    "examples/route_guide/mock_routeguide",
-    "examples/route_guide/routeguide",
     "grpclog",
-    "grpclog/glogger",
     "health",
     "health/grpc_health_v1",
     "internal",
@@ -537,29 +309,17 @@
     "internal/channelz",
     "internal/envconfig",
     "internal/grpcrand",
-    "internal/leakcheck",
-    "internal/syscall",
     "internal/transport",
-    "interop",
-    "interop/grpc_testing",
     "keepalive",
     "metadata",
     "naming",
     "peer",
-    "reflection",
-    "reflection/grpc_reflection_v1alpha",
     "resolver",
     "resolver/dns",
-    "resolver/manual",
     "resolver/passthrough",
     "stats",
     "status",
-    "stress/grpc_testing",
-    "tap",
-    "test/bufconn",
-    "test/codec_perf",
-    "test/grpc_testing",
-    "testdata"
+    "tap"
   ]
   revision = "32fb0ac620c32ba40a4626ddf94d90d12cce3455"
   version = "v1.14.0"
@@ -632,6 +392,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "533b34873026d0319a9452ccdf8552ec8da1ee8b9d1bb306bf1b43f470517f80"
+  inputs-digest = "057f8c4cea5fcdfd6e209e780a2d60feae661c7e5378a907656ab3537461a178"
   solver-name = "gps-cdcl"
   solver-version = 1

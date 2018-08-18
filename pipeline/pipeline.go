@@ -43,9 +43,6 @@ type ActivePipelines struct {
 }
 
 const (
-	// Temp folder where we store our temp files during build pipeline.
-	tmpFolder = "tmp"
-
 	// Max minutes until the build process will be interrupted and marked as failed
 	maxTimeoutMinutes = 60
 
@@ -82,6 +79,10 @@ func newBuildPipeline(t gaia.PipelineType) BuildPipeline {
 		}
 	case gaia.PTypeJava:
 		bP = &BuildPipelineJava{
+			Type: t,
+		}
+	case gaia.PTypePython:
+		bP = &BuildPipelinePython{
 			Type: t,
 		}
 	}

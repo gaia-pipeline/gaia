@@ -150,10 +150,21 @@ func (p *Plugin) Connect(command *exec.Cmd, logPath *string) error {
 // Execute triggers the execution of one single job
 // for the given plugin.
 func (p *Plugin) Execute(j *gaia.Job) error {
-	// Create new proto job object and just set the id.
-	// The rest is currently not important.
+	// Transform arguments
+	args := []*proto.Argument{}
+	for _, arg := range j.Args {
+		a := &proto.Argument{
+			Key:   arg.Key,
+			Value: arg.Value,
+		}
+
+		args = append(args, a)
+	}
+
+	// Create new proto job object.
 	job := &proto.Job{
 		UniqueId: j.ID,
+		Args:     args,
 	}
 
 	// Execute the job
@@ -190,6 +201,18 @@ func (p *Plugin) GetJobs() ([]gaia.Job, error) {
 			return nil, err
 		}
 
+		// Transform arguments
+		args := []gaia.Argument{}
+		for _, arg := range job.Args {
+			a := gaia.Argument{
+				Description: arg.Description,
+				Key:         arg.Key,
+				Type:        arg.Type,
+			}
+
+			args = append(args, a)
+		}
+
 		// add proto object to separate list to rebuild dep later.
 		pList = append(pList, job)
 
@@ -199,6 +222,7 @@ func (p *Plugin) GetJobs() ([]gaia.Job, error) {
 			Title:       job.Title,
 			Description: job.Description,
 			Status:      gaia.JobWaitingExec,
+			Args:        args,
 		}
 		l = append(l, j)
 	}

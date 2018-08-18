@@ -72,8 +72,8 @@
               <div class="pipelinetype" title="Java" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-on:click="createPipeline.pipeline.type = 'java'" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'java' }" data-tippy-hideOnClick="false">
                 <img src="~assets/java.png" class="typeimage">
               </div>
-              <div class="pipelinetype" title="Python (not yet supported)" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'python' }" data-tippy-hideOnClick="false">
-                <img src="~assets/python.png" class="typeimage typeimagenotyetsupported">
+              <div class="pipelinetype" title="Python" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-on:click="createPipeline.pipeline.type = 'python'" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'python' }" data-tippy-hideOnClick="false">
+                <img src="~assets/python.png" class="typeimage">
               </div>
             </div>
             <div class="content" style="display: flex;">

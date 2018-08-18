@@ -235,10 +235,16 @@ func PipelineDelete(c echo.Context) error {
 }
 
 // PipelineStart starts a pipeline by the given id.
+// It accepts arguments for the given pipeline.
 // Afterwards it returns the created/scheduled pipeline run.
 func PipelineStart(c echo.Context) error {
 	schedulerService, _ := services.SchedulerService()
 	pipelineIDStr := c.Param("pipelineid")
+
+	// Look for arguments.
+	// We do not check for errors here cause arguments are optional.
+	args := []gaia.Argument{}
+	c.Bind(&args)
 
 	// Convert string to int because id is int
 	pipelineID, err := strconv.Atoi(pipelineIDStr)
@@ -255,7 +261,7 @@ func PipelineStart(c echo.Context) error {
 	}
 
 	if foundPipeline.Name != "" {
-		pipelineRun, err := schedulerService.SchedulePipeline(&foundPipeline)
+		pipelineRun, err := schedulerService.SchedulePipeline(&foundPipeline, args)
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		} else if pipelineRun != nil {

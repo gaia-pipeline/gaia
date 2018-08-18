@@ -31,6 +31,15 @@ func (c *CAFake) GenerateTLSConfig(certPath, keyPath string) (*tls.Config, error
 func (c *CAFake) CleanupCerts(crt, key string) error                              { return nil }
 func (c *CAFake) GetCACertPath() (string, string)                                 { return "", "" }
 
+type VaultFake struct{}
+
+func (v *VaultFake) LoadSecrets() error             { return nil }
+func (v *VaultFake) GetAll() []string               { return []string{} }
+func (v *VaultFake) SaveSecrets() error             { return nil }
+func (v *VaultFake) Add(key string, value []byte)   {}
+func (v *VaultFake) Remove(key string)              {}
+func (v *VaultFake) Get(key string) ([]byte, error) { return []byte{}, nil }
+
 func TestInit(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
 	storeInstance := store.NewBoltStore()
@@ -47,9 +56,7 @@ func TestInit(t *testing.T) {
 	if err := storeInstance.Init(); err != nil {
 		t.Fatal(err)
 	}
-	var ca security.CAAPI
-	ca = &CAFake{}
-	s := NewScheduler(storeInstance, &PluginFake{}, ca)
+	s := NewScheduler(storeInstance, &PluginFake{}, &CAFake{}, &VaultFake{})
 	err := s.Init()
 	if err != nil {
 		t.Fatal(err)
@@ -82,7 +89,7 @@ func TestPrepareAndExecFail(t *testing.T) {
 	}
 	p, r := prepareTestData()
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFakeFailed{}, &CAFake{})
+	s := NewScheduler(storeInstance, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
 	s.prepareAndExec(r)
 
 	// get pipeline run from store
@@ -121,9 +128,7 @@ func TestPrepareAndExecInvalidType(t *testing.T) {
 	p, r := prepareTestData()
 	p.Type = gaia.PTypeUnknown
 	storeInstance.PipelinePut(&p)
-	var ca security.CAAPI
-	ca = &CAFake{}
-	s := NewScheduler(storeInstance, &PluginFake{}, ca)
+	s := NewScheduler(storeInstance, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
 	s.prepareAndExec(r)
 
 	// get pipeline run from store
@@ -158,7 +163,51 @@ func TestPrepareAndExecJavaType(t *testing.T) {
 	javaExecuteableName = "go"
 	p.Type = gaia.PTypeJava
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFake{}, &CAFake{})
+	s := NewScheduler(storeInstance, &PluginFake{}, &CAFake{}, &VaultFake{})
+	s.prepareAndExec(r)
+
+	// get pipeline run from store
+	run, err := storeInstance.PipelineGetRunByPipelineIDAndID(p.ID, r.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// jobs should be existent
+	if len(run.Jobs) == 0 {
+		t.Fatal("No jobs in pipeline run found.")
+	}
+
+	// Iterate jobs
+	for _, job := range run.Jobs {
+		if job.Status != gaia.JobSuccess {
+			t.Fatalf("job status should be success but was %s", string(job.Status))
+		} else {
+			t.Logf("Job %s has been executed...", job.Title)
+		}
+	}
+}
+
+func TestPrepareAndExecPythonType(t *testing.T) {
+	gaia.Cfg = &gaia.Config{}
+	storeInstance := store.NewBoltStore()
+	tmp, _ := ioutil.TempDir("", "TestPrepareAndExecPythonType")
+	gaia.Cfg.DataPath = tmp
+	gaia.Cfg.WorkspacePath = filepath.Join(tmp, "tmp")
+	gaia.Cfg.Bolt.Mode = 0600
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: hclog.DefaultOutput,
+		Name:   "Gaia",
+	})
+
+	if err := storeInstance.Init(); err != nil {
+		t.Fatal(err)
+	}
+	p, r := prepareTestData()
+	pythonExecuteableName = "go"
+	p.Type = gaia.PTypePython
+	storeInstance.PipelinePut(&p)
+	s := NewScheduler(storeInstance, &PluginFake{}, &CAFake{}, &VaultFake{})
 	s.prepareAndExec(r)
 
 	// get pipeline run from store
@@ -200,14 +249,12 @@ func TestSchedulePipeline(t *testing.T) {
 	}
 	p, _ := prepareTestData()
 	storeInstance.PipelinePut(&p)
-	var ca security.CAAPI
-	ca = &CAFake{}
-	s := NewScheduler(storeInstance, &PluginFake{}, ca)
+	s := NewScheduler(storeInstance, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
 	err := s.Init()
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.SchedulePipeline(&p)
+	_, err = s.SchedulePipeline(&p, prepareArgs())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,10 +278,8 @@ func TestSchedule(t *testing.T) {
 	}
 	p, _ := prepareTestData()
 	storeInstance.PipelinePut(&p)
-	var ca security.CAAPI
-	ca = &CAFake{}
-	s := NewScheduler(storeInstance, &PluginFake{}, ca)
-	_, err := s.SchedulePipeline(&p)
+	s := NewScheduler(storeInstance, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
+	_, err := s.SchedulePipeline(&p, prepareArgs())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -265,9 +310,7 @@ func TestSetPipelineJobs(t *testing.T) {
 	}
 	p, _ := prepareTestData()
 	p.Jobs = nil
-	var ca security.CAAPI
-	ca = &CAFake{}
-	s := NewScheduler(storeInstance, &PluginFake{}, ca)
+	s := NewScheduler(storeInstance, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
 	err := s.SetPipelineJobs(&p)
 	if err != nil {
 		t.Fatal(err)
@@ -277,12 +320,27 @@ func TestSetPipelineJobs(t *testing.T) {
 	}
 }
 
+func prepareArgs() []gaia.Argument {
+	arg1 := gaia.Argument{
+		Description: "First Arg",
+		Key:         "firstarg",
+		Type:        "textfield",
+	}
+	arg2 := gaia.Argument{
+		Description: "Second Arg",
+		Key:         "secondarg",
+		Type:        "textarea",
+	}
+	return []gaia.Argument{arg1, arg2}
+}
+
 func prepareJobs() []gaia.Job {
 	job1 := gaia.Job{
 		ID:        hash("Job1"),
 		Title:     "Job1",
 		DependsOn: []*gaia.Job{},
 		Status:    gaia.JobWaitingExec,
+		Args:      prepareArgs(),
 	}
 	job2 := gaia.Job{
 		ID:        hash("Job2"),
@@ -323,6 +381,7 @@ func prepareTestData() (pipeline gaia.Pipeline, pipelineRun gaia.PipelineRun) {
 		PipelineID: 1,
 		Status:     gaia.RunNotScheduled,
 		UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
+		Jobs:       pipeline.Jobs,
 	}
 	return
 }

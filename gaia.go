@@ -31,6 +31,9 @@ const (
 	// PTypeJava java plugin type
 	PTypeJava PipelineType = "java"
 
+	// PTypePython python plugin type
+	PTypePython PipelineType = "python"
+
 	// CreatePipelineFailed status
 	CreatePipelineFailed CreatePipelineType = "failed"
 
@@ -75,6 +78,15 @@ const (
 
 	// APIVersion represents the current API version
 	APIVersion = "v1"
+
+	// TmpFolder is the temp folder for temporary files
+	TmpFolder = "tmp"
+
+	// TmpPythonFolder is the name of the python temporary folder
+	TmpPythonFolder = "python"
+
+	// TmpGoFolder is the name of the golang temporary folder
+	TmpGoFolder = "golang"
 )
 
 // User is the user object
@@ -113,11 +125,20 @@ type GitRepo struct {
 
 // Job represents a single job of a pipeline
 type Job struct {
-	ID          uint32    `json:"id,omitempty"`
-	Title       string    `json:"title,omitempty"`
-	Description string    `json:"desc,omitempty"`
-	DependsOn   []*Job    `json:"dependson,omitempty"`
-	Status      JobStatus `json:"status,omitempty"`
+	ID          uint32     `json:"id,omitempty"`
+	Title       string     `json:"title,omitempty"`
+	Description string     `json:"desc,omitempty"`
+	DependsOn   []*Job     `json:"dependson,omitempty"`
+	Status      JobStatus  `json:"status,omitempty"`
+	Args        []Argument `json:"args,omitempty"`
+}
+
+// Argument represents a single argument of a job
+type Argument struct {
+	Description string `json:"desc,omitempty"`
+	Type        string `json:"type,omitempty"`
+	Key         string `json:"key,omitempty"`
+	Value       string `json:"value,omitempty"`
 }
 
 // CreatePipeline represents a pipeline which is not yet

@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/asn1"
 	"encoding/pem"
 	"errors"
 	"io/ioutil"
@@ -138,7 +137,7 @@ func (c *CA) generateCA() error {
 	}
 
 	// Write out key file in PKCS#8 format
-	privateKey, err := marshalPKCS8PrivateKey(key)
+	privateKey, err := x509.MarshalPKCS8PrivateKey(key)
 	if err != nil {
 		return err
 	}
@@ -204,7 +203,7 @@ func (c *CA) CreateSignedCert() (string, string, error) {
 	}
 
 	// Write out key file in PKCS#8 format
-	privateKey, err := marshalPKCS8PrivateKey(priv)
+	privateKey, err := x509.MarshalPKCS8PrivateKey(priv)
 	if err != nil {
 		return "", "", err
 	}
@@ -255,21 +254,4 @@ func (c *CA) CleanupCerts(crt, key string) error {
 // GetCACertPath returns the path to the cert and key from the root CA.
 func (c *CA) GetCACertPath() (string, string) {
 	return c.caCertPath, c.caKeyPath
-}
-
-// PKCS#8 structure
-type pKCS8Key struct {
-	Version             int
-	PrivateKeyAlgorithm []asn1.ObjectIdentifier
-	PrivateKey          []byte
-}
-
-// MarshalPKCS8PrivateKey generates an PKCS#8 format private key
-func marshalPKCS8PrivateKey(key *rsa.PrivateKey) ([]byte, error) {
-	var pkey pKCS8Key
-	pkey.Version = 0
-	pkey.PrivateKeyAlgorithm = make([]asn1.ObjectIdentifier, 1)
-	pkey.PrivateKeyAlgorithm[0] = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 1}
-	pkey.PrivateKey = x509.MarshalPKCS1PrivateKey(key)
-	return asn1.Marshal(pkey)
 }

@@ -147,6 +147,18 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initiating Vault
+	// Check Vault path
+	if gaia.Cfg.VaultPath == "" {
+		// Set default to data folder
+		gaia.Cfg.VaultPath = gaia.Cfg.DataPath
+	}
+	_, err = services.VaultService(nil)
+	if err != nil {
+		gaia.Cfg.Logger.Error("error initiating vault")
+		os.Exit(1)
+	}
+
 	// Initialize scheduler
 	_, err = services.SchedulerService()
 	if err != nil {
@@ -157,18 +169,6 @@ func main() {
 	err = handlers.InitHandlers(echoInstance)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
-		os.Exit(1)
-	}
-
-	// Initiating Vault
-	// Check Vault path
-	if gaia.Cfg.VaultPath == "" {
-		// Set default to data folder
-		gaia.Cfg.VaultPath = gaia.Cfg.DataPath
-	}
-	_, err = services.VaultService(nil)
-	if err != nil {
-		gaia.Cfg.Logger.Error("error initiating vault")
 		os.Exit(1)
 	}
 

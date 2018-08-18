@@ -345,3 +345,18 @@ func TestGetExecPath(t *testing.T) {
 		t.Fatalf("expected execpath to be %s. got %s", expectedPath, execPath)
 	}
 }
+
+func TestNewBuildPipeline(t *testing.T) {
+	goBuildPipeline := newBuildPipeline(gaia.PTypeGolang)
+	if goBuildPipeline == nil {
+		t.Errorf("should be of type %s but is nil\n", gaia.PTypeGolang)
+	}
+	javaBuildPipeline := newBuildPipeline(gaia.PTypeJava)
+	if javaBuildPipeline == nil {
+		t.Errorf("should be of type %s but is nil\n", gaia.PTypeJava)
+	}
+	pythonBuildPipeline := newBuildPipeline(gaia.PTypePython)
+	if pythonBuildPipeline == nil {
+		t.Errorf("should be of type %s but is nil\n", gaia.PTypePython)
+	}
+}

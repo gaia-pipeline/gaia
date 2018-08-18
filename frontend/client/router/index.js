@@ -23,6 +23,11 @@ export default new Router({
       name: 'Pipeline Logs',
       path: '/pipeline/log',
       component: lazyLoading('pipeline/log')
+    },
+    {
+      name: 'Pipeline Parameters',
+      path: '/pipeline/params',
+      component: lazyLoading('pipeline/params')
     }
   ]
 })
