@@ -72,12 +72,6 @@
   revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
 
 [[projects]]
-  name = "github.com/googleapis/gax-go"
-  packages = ["."]
-  revision = "317e0006254c44a0ac427cc52a0e083ff0b9622f"
-  version = "v2.0.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/hashicorp/go-hclog"
   packages = ["."]
@@ -242,6 +236,7 @@
   name = "golang.org/x/net"
   packages = [
     "context",
+    "context/ctxhttp",
     "http/httpguts",
     "http2",
     "http2/hpack",
@@ -250,6 +245,15 @@
     "trace"
   ]
   revision = "c39426892332e1bb5ec0a434a079bf82f5d30c54"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/oauth2"
+  packages = [
+    ".",
+    "internal"
+  ]
+  revision = "3d292e4d0cdc3a0113e6d207bb137145ef1de42f"
 
 [[projects]]
   branch = "master"
@@ -282,6 +286,20 @@
     "unicode/rangetable"
   ]
   revision = "6e3c4e7365ddcc329f090f96e4348398f6310088"
+
+[[projects]]
+  name = "google.golang.org/appengine"
+  packages = [
+    "internal",
+    "internal/base",
+    "internal/datastore",
+    "internal/log",
+    "internal/remote_api",
+    "internal/urlfetch",
+    "urlfetch"
+  ]
+  revision = "b1f26356af11148e710935ed1ac8a7f5702c7612"
+  version = "v1.1.0"
 
 [[projects]]
   branch = "master"
@@ -392,6 +410,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "057f8c4cea5fcdfd6e209e780a2d60feae661c7e5378a907656ab3537461a178"
+  inputs-digest = "6cb46c9ba813e95f32267a9b75c0631b1f73389c233a678b761ee6ef8c73d006"
   solver-name = "gps-cdcl"
   solver-version = 1

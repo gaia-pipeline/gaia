@@ -8,7 +8,6 @@ package github
 import (
 	"context"
 	"fmt"
-	"strings"
 )
 
 // ProjectsService provides access to the projects functions in the
@@ -27,7 +26,6 @@ type Project struct {
 	Number    *int       `json:"number,omitempty"`
 	CreatedAt *Timestamp `json:"created_at,omitempty"`
 	UpdatedAt *Timestamp `json:"updated_at,omitempty"`
-	NodeID    *string    `json:"node_id,omitempty"`
 
 	// The User object that generated the project.
 	Creator *User `json:"creator,omitempty"`
@@ -47,9 +45,8 @@ func (s *ProjectsService) GetProject(ctx context.Context, id int64) (*Project, *
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
-	acceptHeaders := []string{mediaTypeProjectsPreview, mediaTypeGraphQLNodeIDPreview}
-	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
+	// TODO: remove custom Accept header when this API fully launches.
+	req.Header.Set("Accept", mediaTypeProjectsPreview)
 
 	project := &Project{}
 	resp, err := s.client.Do(ctx, req, project)
@@ -86,9 +83,8 @@ func (s *ProjectsService) UpdateProject(ctx context.Context, id int64, opt *Proj
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
-	acceptHeaders := []string{mediaTypeProjectsPreview, mediaTypeGraphQLNodeIDPreview}
-	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
+	// TODO: remove custom Accept header when this API fully launches.
+	req.Header.Set("Accept", mediaTypeProjectsPreview)
 
 	project := &Project{}
 	resp, err := s.client.Do(ctx, req, project)
@@ -124,7 +120,6 @@ type ProjectColumn struct {
 	ProjectURL *string    `json:"project_url,omitempty"`
 	CreatedAt  *Timestamp `json:"created_at,omitempty"`
 	UpdatedAt  *Timestamp `json:"updated_at,omitempty"`
-	NodeID     *string    `json:"node_id,omitempty"`
 }
 
 // ListProjectColumns lists the columns of a GitHub Project for a repo.
@@ -142,9 +137,8 @@ func (s *ProjectsService) ListProjectColumns(ctx context.Context, projectID int6
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
-	acceptHeaders := []string{mediaTypeProjectsPreview, mediaTypeGraphQLNodeIDPreview}
-	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
+	// TODO: remove custom Accept header when this API fully launches.
+	req.Header.Set("Accept", mediaTypeProjectsPreview)
 
 	columns := []*ProjectColumn{}
 	resp, err := s.client.Do(ctx, req, &columns)
@@ -165,9 +159,8 @@ func (s *ProjectsService) GetProjectColumn(ctx context.Context, id int64) (*Proj
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
-	acceptHeaders := []string{mediaTypeProjectsPreview, mediaTypeGraphQLNodeIDPreview}
-	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
+	// TODO: remove custom Accept header when this API fully launches.
+	req.Header.Set("Accept", mediaTypeProjectsPreview)
 
 	column := &ProjectColumn{}
 	resp, err := s.client.Do(ctx, req, column)
@@ -196,9 +189,8 @@ func (s *ProjectsService) CreateProjectColumn(ctx context.Context, projectID int
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
-	acceptHeaders := []string{mediaTypeProjectsPreview, mediaTypeGraphQLNodeIDPreview}
-	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
+	// TODO: remove custom Accept header when this API fully launches.
+	req.Header.Set("Accept", mediaTypeProjectsPreview)
 
 	column := &ProjectColumn{}
 	resp, err := s.client.Do(ctx, req, column)
@@ -219,9 +211,8 @@ func (s *ProjectsService) UpdateProjectColumn(ctx context.Context, columnID int6
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
-	acceptHeaders := []string{mediaTypeProjectsPreview, mediaTypeGraphQLNodeIDPreview}
-	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
+	// TODO: remove custom Accept header when this API fully launches.
+	req.Header.Set("Accept", mediaTypeProjectsPreview)
 
 	column := &ProjectColumn{}
 	resp, err := s.client.Do(ctx, req, column)
@@ -284,7 +275,6 @@ type ProjectCard struct {
 	Creator    *User      `json:"creator,omitempty"`
 	CreatedAt  *Timestamp `json:"created_at,omitempty"`
 	UpdatedAt  *Timestamp `json:"updated_at,omitempty"`
-	NodeID     *string    `json:"node_id,omitempty"`
 
 	// The following fields are only populated by Webhook events.
 	ColumnID *int64 `json:"column_id,omitempty"`
@@ -305,9 +295,8 @@ func (s *ProjectsService) ListProjectCards(ctx context.Context, columnID int64, 
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
-	acceptHeaders := []string{mediaTypeProjectsPreview, mediaTypeGraphQLNodeIDPreview}
-	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
+	// TODO: remove custom Accept header when this API fully launches.
+	req.Header.Set("Accept", mediaTypeProjectsPreview)
 
 	cards := []*ProjectCard{}
 	resp, err := s.client.Do(ctx, req, &cards)
@@ -328,9 +317,8 @@ func (s *ProjectsService) GetProjectCard(ctx context.Context, columnID int64) (*
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
-	acceptHeaders := []string{mediaTypeProjectsPreview, mediaTypeGraphQLNodeIDPreview}
-	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
+	// TODO: remove custom Accept header when this API fully launches.
+	req.Header.Set("Accept", mediaTypeProjectsPreview)
 
 	card := &ProjectCard{}
 	resp, err := s.client.Do(ctx, req, card)
@@ -364,9 +352,8 @@ func (s *ProjectsService) CreateProjectCard(ctx context.Context, columnID int64,
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
-	acceptHeaders := []string{mediaTypeProjectsPreview, mediaTypeGraphQLNodeIDPreview}
-	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
+	// TODO: remove custom Accept header when this API fully launches.
+	req.Header.Set("Accept", mediaTypeProjectsPreview)
 
 	card := &ProjectCard{}
 	resp, err := s.client.Do(ctx, req, card)
@@ -387,9 +374,8 @@ func (s *ProjectsService) UpdateProjectCard(ctx context.Context, cardID int64, o
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
-	acceptHeaders := []string{mediaTypeProjectsPreview, mediaTypeGraphQLNodeIDPreview}
-	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
+	// TODO: remove custom Accept header when this API fully launches.
+	req.Header.Set("Accept", mediaTypeProjectsPreview)
 
 	card := &ProjectCard{}
 	resp, err := s.client.Do(ctx, req, card)

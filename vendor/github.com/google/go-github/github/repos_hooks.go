@@ -136,13 +136,9 @@ func (s *RepositoriesService) GetHook(ctx context.Context, owner, repo string, i
 	if err != nil {
 		return nil, nil, err
 	}
-	h := new(Hook)
-	resp, err := s.client.Do(ctx, req, h)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return h, resp, nil
+	hook := new(Hook)
+	resp, err := s.client.Do(ctx, req, hook)
+	return hook, resp, err
 }
 
 // EditHook updates a specified Hook.
@@ -156,11 +152,7 @@ func (s *RepositoriesService) EditHook(ctx context.Context, owner, repo string, 
 	}
 	h := new(Hook)
 	resp, err := s.client.Do(ctx, req, h)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return h, resp, nil
+	return h, resp, err
 }
 
 // DeleteHook deletes a specified Hook.
