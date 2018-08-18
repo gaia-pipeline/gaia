@@ -45,7 +45,7 @@ func TestUserLoginHMACKey(t *testing.T) {
 		"password": "admin",
 	}
 	bodyBytes, _ := json.Marshal(body)
-	req := httptest.NewRequest(echo.POST, "/api/"+apiVersion+"/login", bytes.NewBuffer(bodyBytes))
+	req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/login", bytes.NewBuffer(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
@@ -98,7 +98,7 @@ func TestUserLoginRSAKey(t *testing.T) {
 		"password": "admin",
 	}
 	bodyBytes, _ := json.Marshal(body)
-	req := httptest.NewRequest(echo.POST, "/api/"+apiVersion+"/login", bytes.NewBuffer(bodyBytes))
+	req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/login", bytes.NewBuffer(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	e.ServeHTTP(rec, req)

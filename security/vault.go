@@ -160,7 +160,7 @@ func (fvs *FileVaultStorer) Init() error {
 		gaia.Cfg.Logger.Info("vault file doesn't exist. creating...")
 		_, err := os.Create(vaultPath)
 		if err != nil {
-			gaia.Cfg.Logger.Error("failed creating vault file: ", err.Error())
+			gaia.Cfg.Logger.Error("failed creating vault file: ", "error", err.Error())
 			return err
 		}
 	}

@@ -66,6 +66,10 @@
   name = "golang.org/x/net"
 
 [[constraint]]
+  name = "github.com/google/go-github"
+  version = "15.0.0"
+
+[[constraint]]
   name = "google.golang.org/grpc"
   version = "1.13.0"
 

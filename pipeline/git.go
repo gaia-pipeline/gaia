@@ -1,12 +1,24 @@
 package pipeline
 
 import (
+	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"errors"
+	"log"
+	gohttp "net/http"
+	"path"
+	"regexp"
 	"strings"
 	"sync"
 
+	"github.com/gaia-pipeline/gaia/services"
+
+	"golang.org/x/oauth2"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/google/go-github/github"
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/client"
@@ -69,38 +81,41 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 // it by pulling in new code if it's available.
 func UpdateRepository(pipe *gaia.Pipeline) error {
 	r, err := git.PlainOpen(pipe.Repo.LocalDest)
+	log.Println(pipe.Repo.LocalDest)
 	if err != nil {
 		// We don't stop gaia working because of an automated update failed.
 		// So we just move on.
 		gaia.Cfg.Logger.Error("error while opening repo: ", pipe.Repo.LocalDest, err.Error())
 		return err
 	}
-	gaia.Cfg.Logger.Debug("checking pipeline: ", pipe.Name)
-	gaia.Cfg.Logger.Debug("selected branch : ", pipe.Repo.SelectedBranch)
+	gaia.Cfg.Logger.Debug("checking pipeline: ", "message", pipe.Name)
+	gaia.Cfg.Logger.Debug("selected branch: ", "message", pipe.Repo.SelectedBranch)
 	auth, err := getAuthInfo(&pipe.Repo)
 	if err != nil {
 		// It's also an error if the repo is already up to date so we just move on.
-		gaia.Cfg.Logger.Error("error getting auth info while doing a pull request : ", err.Error())
+		gaia.Cfg.Logger.Error("error getting auth info while doing a pull request: ", "error", err.Error())
 		return err
 	}
 	tree, _ := r.Worktree()
 	err = tree.Pull(&git.PullOptions{
-		RemoteName: "origin",
-		Auth:       auth,
+		ReferenceName: plumbing.ReferenceName(pipe.Repo.SelectedBranch),
+		SingleBranch:  true,
+		RemoteName:    "origin",
+		Auth:          auth,
 	})
 	if err != nil {
 		// It's also an error if the repo is already up to date so we just move on.
-		gaia.Cfg.Logger.Error("error while doing a pull request : ", err.Error())
+		gaia.Cfg.Logger.Error("error while doing a pull request: ", "error", err.Error())
 		return err
 	}
 
-	gaia.Cfg.Logger.Debug("updating pipeline: ", pipe.Name)
+	gaia.Cfg.Logger.Debug("updating pipeline: ", "message", pipe.Name)
 	b := newBuildPipeline(pipe.Type)
 	createPipeline := &gaia.CreatePipeline{}
 	createPipeline.Pipeline = *pipe
 	b.ExecuteBuild(createPipeline)
 	b.CopyBinary(createPipeline)
-	gaia.Cfg.Logger.Debug("successfully updated: ", pipe.Name)
+	gaia.Cfg.Logger.Debug("successfully updated: ", "message", pipe.Name)
 	return nil
 }
 
@@ -146,6 +161,100 @@ func updateAllCurrentPipelines() {
 		}(p)
 	}
 	wg.Wait()
+}
+
+// GithubRepoService is an interface defining the Wrapper Interface
+// needed to test the github client.
+type GithubRepoService interface {
+	CreateHook(ctx context.Context, owner, repo string, hook *github.Hook) (*github.Hook, *github.Response, error)
+}
+
+// GithubClient is a client that has the ability to replace the actual
+// git client.
+type GithubClient struct {
+	Repositories GithubRepoService
+	*github.Client
+}
+
+// NewGithubClient creates a wrapper around the github client. This is
+// needed in order to decouple gaia from github client to be
+// able to unit test createGithubWebhook and ultimately have
+// the ability to replace github with anything else.
+func NewGithubClient(httpClient *gohttp.Client, repoMock GithubRepoService) GithubClient {
+	if repoMock != nil {
+		return GithubClient{
+			Repositories: repoMock,
+		}
+	}
+	client := github.NewClient(httpClient)
+
+	return GithubClient{
+		Repositories: client.Repositories,
+	}
+}
+
+func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoService) error {
+	vault, err := services.VaultService(nil)
+	if err != nil {
+		gaia.Cfg.Logger.Error("unable to initialize vault: ", "error", err.Error())
+		return err
+	}
+
+	err = vault.LoadSecrets()
+	if err != nil {
+		gaia.Cfg.Logger.Error("unable to open vault: ", "error", err.Error())
+		return err
+	}
+
+	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: token},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+	config := make(map[string]interface{})
+	config["url"] = gaia.Cfg.Hostname + "/api/" + gaia.APIVersion + "/pipeline/githook"
+	secret, err := vault.Get("GITHUB_WEBHOOK_SECRET")
+	if err != nil {
+		secret = []byte(generateWebhookSecret())
+		vault.Add("GITHUB_WEBHOOK_SECRET", secret)
+		err = vault.SaveSecrets()
+		if err != nil {
+			return err
+		}
+	}
+	config["secret"] = string(secret)
+	config["content_type"] = "json"
+
+	client := NewGithubClient(tc, gitRepo)
+	repoName := path.Base(repo.URL)
+	repoName = strings.TrimSuffix(repoName, ".git")
+	// var repoLocation string
+	re := regexp.MustCompile("^(https|git)(:\\/\\/|@)([^\\/:]+)[\\/:]([^\\/:]+)\\/(.+)$")
+	m := re.FindAllStringSubmatch(repo.URL, -1)
+	if m == nil {
+		return errors.New("failed to extract url parameters from git url")
+	}
+	repoUser := m[0][4]
+	hook, resp, err := client.Repositories.CreateHook(context.Background(), repoUser, repoName, &github.Hook{
+		Events: []string{"push"},
+		Name:   github.String("web"),
+		Active: github.Bool(true),
+		Config: config,
+	})
+	if err != nil {
+		gaia.Cfg.Logger.Error("error while trying to create webhook: ", "error", err.Error())
+		return err
+	}
+	gaia.Cfg.Logger.Info("hook created: ", github.Stringify(hook.Name), resp.Status)
+	gaia.Cfg.Logger.Info("hook url: ", "url", hook.GetURL())
+	return nil
+}
+
+func generateWebhookSecret() string {
+	secret := make([]byte, 16)
+	rand.Read(secret)
+	based := base64.URLEncoding.EncodeToString(secret)
+	return strings.TrimSuffix(based, "==")
 }
 
 func getAuthInfo(repo *gaia.GitRepo) (transport.AuthMethod, error) {

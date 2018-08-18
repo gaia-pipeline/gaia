@@ -76,6 +76,9 @@ const (
 	// LogsFileName represents the file name of the logs output
 	LogsFileName = "output.log"
 
+	// APIVersion represents the current API version
+	APIVersion = "v1"
+
 	// TmpFolder is the temp folder for temporary files
 	TmpFolder = "tmp"
 
@@ -141,12 +144,13 @@ type Argument struct {
 // CreatePipeline represents a pipeline which is not yet
 // compiled.
 type CreatePipeline struct {
-	ID         string             `json:"id,omitempty"`
-	Pipeline   Pipeline           `json:"pipeline,omitempty"`
-	Status     int                `json:"status,omitempty"`
-	StatusType CreatePipelineType `json:"statustype,omitempty"`
-	Output     string             `json:"output,omitempty"`
-	Created    time.Time          `json:"created,omitempty"`
+	ID          string             `json:"id,omitempty"`
+	Pipeline    Pipeline           `json:"pipeline,omitempty"`
+	Status      int                `json:"status,omitempty"`
+	StatusType  CreatePipelineType `json:"statustype,omitempty"`
+	Output      string             `json:"output,omitempty"`
+	Created     time.Time          `json:"created,omitempty"`
+	GitHubToken string             `json:"githubtoken,omitempty"`
 }
 
 // PrivateKey represents a pem encoded private key
@@ -179,6 +183,7 @@ type Config struct {
 	PVal              int
 	ListenPort        string
 	HomePath          string
+	Hostname          string
 	VaultPath         string
 	DataPath          string
 	PipelinePath      string

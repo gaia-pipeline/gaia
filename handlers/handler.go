@@ -16,11 +16,6 @@ import (
 	"github.com/labstack/echo/middleware"
 )
 
-const (
-	// apiVersion represents the current API version
-	apiVersion = "v1"
-)
-
 var (
 	// errNotAuthorized is thrown when user wants to access resource which is protected
 	errNotAuthorized = errors.New("no or invalid jwt token provided. You are not authorized")
@@ -50,7 +45,7 @@ var (
 // InitHandlers initializes(registers) all handlers
 func InitHandlers(e *echo.Echo) error {
 	// Define prefix
-	p := "/api/" + apiVersion + "/"
+	p := "/api/" + gaia.APIVersion + "/"
 
 	// --- Register handlers at echo instance ---
 
@@ -72,6 +67,7 @@ func InitHandlers(e *echo.Echo) error {
 	e.DELETE(p+"pipeline/:pipelineid", PipelineDelete)
 	e.POST(p+"pipeline/:pipelineid/start", PipelineStart)
 	e.GET(p+"pipeline/latest", PipelineGetAllWithLatestRun)
+	e.POST(p+"pipeline/githook", GitWebHook)
 
 	// PipelineRun
 	e.GET(p+"pipelinerun/:pipelineid/:runid", PipelineRunGet)
@@ -120,8 +116,13 @@ func InitHandlers(e *echo.Echo) error {
 // TODO: Role based access
 func authBarrier(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// Login and static resources are open
-		if strings.Contains(c.Path(), "/login") || c.Path() == "/" || strings.Contains(c.Path(), "/assets/") || c.Path() == "/favicon.ico" {
+		// Login, WebHook callback and static resources are open
+		// The webhook callback has it's own authentication method
+		if strings.Contains(c.Path(), "/login") ||
+			c.Path() == "/" ||
+			strings.Contains(c.Path(), "/assets/") ||
+			c.Path() == "/favicon.ico" ||
+			strings.Contains(c.Path(), "pipeline/githook") {
 			return next(c)
 		}
 

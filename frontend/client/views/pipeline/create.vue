@@ -32,6 +32,12 @@
                   </span>
                   <span>Add credentials</span>
                 </a>
+                <a class="button is-primary" v-on:click="showGitHubWebHookModal">
+                  <span class="icon">
+                    <i class="fa fa-wrench"></i>
+                  </span>
+                  <span>Add GitHub WebHook</span>
+                </a>
               </p>
               <hr class="dotted-line">
               <label class="label">Type the name of your pipeline here.</label>
@@ -179,6 +185,35 @@
       </div>
     </modal>
 
+    <!-- GitHub WebHook modal -->
+    <modal :visible="gitWebHookModal" class="modal-z-index" @close="close">
+      <div class="box credentials-modal">
+        <div class="block credentials-modal-content">
+          <collapse accordion is-fullwidth>
+            <collapse-item title="GitHub Token" selected>
+              <div class="credentials-modal-content">
+                <label class="label" style="text-align: left;">Add GitHub token with repo permissions:</label>
+                <p class="control has-icons-left" style="padding-bottom: 5px;">
+                  <input class="input is-medium input-bar" v-focus type="text" v-model="createPipeline.githubtoken" placeholder="Token">
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-code-branch"></i>
+                  </span>
+                </p>
+              </div>
+            </collapse-item>
+          </collapse>
+          <div class="modal-footer">
+            <div style="float: left;">
+              <button class="button is-primary" v-on:click="close">Add Token</button>
+            </div>
+            <div style="float: right;">
+              <button class="button is-danger" v-on:click="cancel">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </modal>
+
     <!-- status output modal -->
     <modal :visible="statusOutputModal" class="modal-z-index" @close="closeStatusModal">
       <div class="box statusModal">
@@ -214,6 +249,7 @@ export default {
       gitErrorMsg: '',
       gitSuccess: false,
       gitCredentialsModal: false,
+      gitWebHookModal: false,
       gitBranches: [],
       giturl: '',
       pipelinename: '',
@@ -224,6 +260,7 @@ export default {
         output: '',
         status: 0,
         created: new Date(),
+        githubtoken: '',
         pipeline: {
           name: '',
           type: 'golang',
@@ -425,6 +462,7 @@ export default {
     close () {
       this.checkGitRepo()
       this.gitCredentialsModal = false
+      this.gitWebHookModal = false
       this.$emit('close')
     },
 
@@ -441,6 +479,10 @@ export default {
 
     showCredentialsModal () {
       this.gitCredentialsModal = true
+    },
+
+    showGitHubWebHookModal () {
+      this.gitWebHookModal = true
     },
 
     showStatusOutputModal (msg) {

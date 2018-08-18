@@ -47,7 +47,7 @@ func TestPipelineGitLSRemote(t *testing.T) {
 	InitHandlers(e)
 
 	t.Run("fails with invalid data", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/api/"+apiVersion+"/pipeline/gitlsremote", nil)
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/gitlsremote", nil)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -67,7 +67,7 @@ func TestPipelineGitLSRemote(t *testing.T) {
 			"password": "admin",
 		}
 		bodyBytes, _ := json.Marshal(body)
-		req := httptest.NewRequest(echo.POST, "/api/"+apiVersion+"/pipeline/gitlsremote", bytes.NewBuffer(bodyBytes))
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/gitlsremote", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -87,7 +87,7 @@ func TestPipelineGitLSRemote(t *testing.T) {
 			"password": "admin",
 		}
 		bodyBytes, _ := json.Marshal(body)
-		req := httptest.NewRequest(echo.POST, "/api/"+apiVersion+"/pipeline/gitlsremote", bytes.NewBuffer(bodyBytes))
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/gitlsremote", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -156,7 +156,7 @@ func TestPipelineUpdate(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		c.SetPath("/api/" + apiVersion + "/pipeline/:pipelineid")
+		c.SetPath("/api/" + gaia.APIVersion + "/pipeline/:pipelineid")
 		c.SetParamNames("pipelineid")
 		c.SetParamValues("2")
 
@@ -173,7 +173,7 @@ func TestPipelineUpdate(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		c.SetPath("/api/" + apiVersion + "/pipeline/:pipelineid")
+		c.SetPath("/api/" + gaia.APIVersion + "/pipeline/:pipelineid")
 		c.SetParamNames("pipelineid")
 		c.SetParamValues("1")
 
@@ -237,7 +237,7 @@ func TestPipelineDelete(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		c.SetPath("/api/" + apiVersion + "/pipeline/:pipelineid")
+		c.SetPath("/api/" + gaia.APIVersion + "/pipeline/:pipelineid")
 		c.SetParamNames("pipelineid")
 		c.SetParamValues("2")
 
@@ -253,7 +253,7 @@ func TestPipelineDelete(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		c.SetPath("/api/" + apiVersion + "/pipeline/:pipelineid")
+		c.SetPath("/api/" + gaia.APIVersion + "/pipeline/:pipelineid")
 		c.SetParamNames("pipelineid")
 		c.SetParamValues("1")
 
@@ -294,7 +294,7 @@ func TestPipelineStart(t *testing.T) {
 	ap.Append(p)
 
 	t.Run("can start a pipeline", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/api/"+apiVersion+"/pipeline/:pipelineid/start", nil)
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", nil)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -321,7 +321,7 @@ func TestPipelineStart(t *testing.T) {
 	})
 
 	t.Run("fails when scheduler throws error", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/api/"+apiVersion+"/pipeline/:pipelineid/start", nil)
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", nil)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -343,7 +343,7 @@ func TestPipelineStart(t *testing.T) {
 	})
 
 	t.Run("fails when scheduler doesn't find the pipeline but does not return error", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/api/"+apiVersion+"/pipeline/:pipelineid/start", nil)
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", nil)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
