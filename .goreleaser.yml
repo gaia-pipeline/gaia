@@ -25,5 +25,25 @@ dockers:
     extra_files:
     - docker/docker-entrypoint.sh
     tag_templates:
-    - "{{ .Tag }}-go"
     - latest
+  - image: gaiapipeline/gaia
+    skip_push: false
+    dockerfile: docker/Dockerfile.golang
+    extra_files:
+    - docker/docker-entrypoint.sh
+    tag_templates:
+    - "{{ .Tag }}-go"
+  - image: gaiapipeline/gaia
+    skip_push: false
+    dockerfile: docker/Dockerfile.java
+    extra_files:
+    - docker/docker-entrypoint.sh
+    tag_templates:
+    - "{{ .Tag }}-java"
+  - image: gaiapipeline/gaia
+    skip_push: false
+    dockerfile: docker/Dockerfile.python
+    extra_files:
+    - docker/docker-entrypoint.sh
+    tag_templates:
+    - "{{ .Tag }}-python"

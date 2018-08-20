@@ -635,7 +635,7 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 		c.Args = []string{
 			"/bin/sh",
 			"-c",
-			"source bin/activate; exec python -c \"import pipeline; pipeline.main()\"",
+			". bin/activate; exec python -c \"import pipeline; pipeline.main()\"",
 		}
 		c.Dir = filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder, p.Name)
 	default:

@@ -105,6 +105,7 @@ func checkActivePipelines() {
 					if bytes.Compare(p.SHA256Sum, checksum) != 0 {
 						// update pipeline if needed
 						if err = updatePipeline(p); err != nil {
+							storeService.PipelinePut(p)
 							gaia.Cfg.Logger.Debug("cannot update pipeline", "error", err.Error(), "pipeline", p)
 							continue
 						}
@@ -158,6 +159,7 @@ func checkActivePipelines() {
 			if bytes.Compare(pipeline.SHA256Sum, pipelineCheckSum) != 0 {
 				pipeline.SHA256Sum = pipelineCheckSum
 				if err = updatePipeline(pipeline); err != nil {
+					storeService.PipelinePut(pipeline)
 					gaia.Cfg.Logger.Error("cannot update pipeline", "error", err.Error(), "pipeline", pipeline)
 					continue
 				}
