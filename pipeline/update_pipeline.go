@@ -16,7 +16,7 @@ var (
 
 	// pythonPipInstallCmd is the command used to install the python distribution
 	// package.
-	pythonPipInstallCmd = "source bin/activate; python -m pip install %s.tar.gz"
+	pythonPipInstallCmd = ". bin/activate; python -m pip install %s.tar.gz"
 )
 
 // updatePipeline executes update steps dependent on the pipeline type.
