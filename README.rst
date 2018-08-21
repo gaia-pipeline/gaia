@@ -6,7 +6,7 @@
 
 Gaia is an open source automation platform which makes it easy and fun to build powerful pipelines in any programming language. Based on `HashiCorp's go-plugin`_ and `gRPC`_, gaia is efficient, fast, lightweight and developer friendly. Gaia is currently alpha! `Do not use it for mission critical jobs yet!`_
 
-Develop powerful `pipelines <What is a pipeline?_>`_ with the help of `SDKs <Why do I need an SDK?_>`_ (currently only Go) and simply check-in your code into a git repository. Gaia automatically clones your code repository, compiles your code to a binary and executes it on-demand. All results are streamed back and formatted to a user-friendly graphical output.
+Develop powerful `pipelines <What is a pipeline?_>`_ with the help of `SDKs <Why do I need an SDK?_>`_ and simply check-in your code into a git repository. Gaia automatically clones your code repository, compiles your code to a binary and executes it on-demand. All results are streamed back and formatted to a user-friendly graphical output.
 
 Motivation
 ==========
@@ -26,15 +26,17 @@ How does it work?
 
 .. begin-architecture
 
-Gaia is based on `HashiCorp's go-plugin`_. It's a plugin system that uses `gRPC`_ to communicate over `HTTP/2`_. HashiCorp developed this tool initially for `Packer`_ but it's now heavily used by `Terraform`_, `Nomad`_, and `Vault`_ too.
+Gaia is based on `HashiCorp's go-plugin`_. It's a `plugin system`_ that uses `gRPC`_ to communicate over `HTTP/2`_. HashiCorp developed this tool initially for `Packer`_ but it's now heavily used by `Terraform`_, `Nomad`_, and `Vault`_ too.
 
-Plugins, which we named pipelines, are applications which can be written in any programming language as long as `gRPC`_ is supported. All functions, which we call Jobs, are exposed to Gaia and can form up a dependency graph which describes the order of execution.
+Plugins, which we named `pipelines <What is a pipeline?_>`_, are applications which can be written in any programming language as long as `gRPC`_ is supported. All functions, which we call `jobs <What is a job?>`_, are exposed to Gaia and can form up a dependency graph which describes the order of execution.
 
-Pipelines can be compiled locally or simply over the build system. Gaia clones the git repository and automatically builds the included pipeline. If a change (`git push`_) happened, Gaia will automatically rebuild the pipeline for you.
+Pipelines can be compiled locally or simply over the build system. Gaia clones the git repository and automatically builds the included pipeline. If a change (`git push`_) happened, Gaia will automatically rebuild the pipeline for you*.
 
 After a pipeline has been started, all log output are returned back to Gaia and displayed in a detailed overview with their final result status.
 
 Gaia uses `boltDB` for storage. This makes the installation step super easy. No external database is currently required.
+
+\* *This requires polling or webhook to be activated.*
 
 Screenshots
 ===========
@@ -68,13 +70,15 @@ The following command starts gaia as a daemon process and mounts all data to the
 
     docker run -d -p 8080:8080 -v $PWD:/data gaiapipeline/gaia:latest
 
+This uses the image with the *latest* tag which includes all required libraries and compilers for all supported languages. If you prefer a smaller image suited for your prefered language, have a look at the `available docker image tags`_.
+
 Manually
 ~~~~~~~~
 
-It is possible to install gaia directly on the host system.
+It is possible to install Gaia directly on the host system.
 This can be achieved by downloading the binary from the `releases page`_.
 
-gaia will automatically detect the folder of the binary and will place all data next to it. You can change the data directory with the startup parameter *--homepath* if you want.
+Gaia will automatically detect the folder of the binary and will place all data next to it. You can change the data directory with the startup parameter *--homepath* if you want.
 
 Usage
 -----
@@ -82,8 +86,6 @@ Usage
 Go
 ~~~
 Writing a pipeline is easy as importing a library, defining a function which will be the job to execute and serving the gRPC-Server via one command.
-
-Here is an example:
 
 .. code:: go
 
@@ -96,7 +98,7 @@ Here is an example:
     )
 
     // This is one job. Add more if you want.
-    func DoSomethingAwesome() error {
+    func DoSomethingAwesome(args sdk.Arguments) error {
         log.Println("This output will be streamed back to gaia and will be displayed in the pipeline logs.")
 
 	// An error occured? Return it back so gaia knows that this job failed.
@@ -110,8 +112,8 @@ Here is an example:
 	        Title:       "DoSomethingAwesome",
 		Description: "This job does something awesome.",
 
-                // Increase the priority if this job should be executed later than other jobs.
-		Priority: 0,
+                // This job depends on something? Define the dependency here with the title of other jobs.
+		DependsOn: []string{""},
 	    },
 	}
 
@@ -121,16 +123,68 @@ Here is an example:
 	}
     }
 
-As you can see, pipelines are defined by jobs, and functions usually represent jobs. You can define as many jobs in your pipeline as you want.
+Python
+~~~~~~~
 
-At the end, we define a jobs array that populates all jobs to gaia. We also add some information like a title, a description and the priority.
+.. code:: python
 
-The priority is really important and should always be used. If, for example, job A has a higher priority (decimal number) than job B, A will be executed **after** B. Priority defines therefore the order of execution. If two or more jobs have the same priority, those will be executed simultanously. You can compare it with the `Unix nice level`_.
+    from gaiasdk import sdk
+    import logging
 
-That's it! Put this code into a git repository and create a new pipeline via the gaia UI.
-Gaia will compile it and add it to it's store for later execution.
+    def MyAwesomeJob(args):
+        logging.info("This output will be streamed back to gaia and will be displayed in the pipeline logs.")
+        # Just raise an exception to tell Gaia if a job failed.
+        # raise Exception("Oh no, this job failed!")
 
-Please find a bit more sophisticated example in our `go-example repo`_.
+    def main():
+        logging.basicConfig(level=logging.INFO)
+        myjob = sdk.Job("MyAwesomeJob", "Do something awesome", MyAwesomeJob)
+        sdk.serve([myjob])
+
+Java
+~~~~
+
+.. code:: java
+
+    package io.gaiapipeline;
+
+    import io.gaiapipeline.javasdk.*;
+
+    import java.util.ArrayList;
+    import java.util.Arrays;
+    import java.util.logging.Logger;
+
+    public class Pipeline
+    {
+        private static final Logger LOGGER = Logger.getLogger(Pipeline.class.getName());
+
+        private static Handler MyAwesomeJob = (gaiaArgs) -> {
+            LOGGER.info("This output will be streamed back to gaia and will be displayed in the pipeline logs.");
+        };
+
+        public static void main( String[] args )
+        {
+            PipelineJob myjob = new PipelineJob();
+            myjob.setTitle("MyAwesomeJob");
+            myjob.setDescription("Do something awesome.");
+            myjob.setHandler(MyAwesomeJob);
+
+            Javasdk sdk = new Javasdk();
+            try {
+                sdk.Serve(new ArrayList<>(Arrays.asList(myjob)));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
+Pipelines are defined by jobs and a function usually represents a job. You can define as many jobs in your pipeline as you want.
+
+Every function accepts arguments. Those arguments can be requested from the pipeline itself and the values passed back in from the UI. 
+
+Some pipeline jobs need a specific order of execution. `DependsOn` allows you to declare dependencies for every job.
+
+You can find real examples and more information on `how to develop a pipeline`_ in the docs.
 
 Security
 ========
@@ -153,7 +207,7 @@ Gaia is the first platform which does not limit the user and provides full suppo
 
 What is a **pipeline**?
 ~~~~~~~~~~~~~~~~~~~~~~~
-A pipeline is a real application with at least one function (we call it Job). Every programming language can be used as long as gRPC is supported. We offer SDKs (currently only Go but others are already in development) to support the development.
+A pipeline is a real application with at least one function (we call it Job). Every programming language can be used as long as gRPC is supported. We offer SDKs to support the development.
 
 What is a **job**?
 ~~~~~~~~~~~~~~~~~~
@@ -163,6 +217,10 @@ Why do I need an **SDK**?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 The SDK implements the Gaia plugin gRPC interface and offers helper functions like serving the gRPC-Server. This helps you to focus on the real problem instead of doing the boring stuff.
 
+Which programming languages are supported?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We currently fully support Golang, Java and Python.
+
 When do you support programming language **XYZ**?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 We are working hard to support as much programming languages as possible but our resources are limited and we are also mostly no experts in all programming languages. If you are willing to contribute, feel free to open an issue and start working.
@@ -170,7 +228,7 @@ We are working hard to support as much programming languages as possible but our
 Roadmap
 =======
 
-Gaia is currently in alpha version available. We extremely recommend to not use gaia for mission critical jobs and for production usage. Things will change in the future and essential features may break.
+Gaia is currently in alpha version available. We extremely recommend to not use it for mission critical jobs and for production usage yet. Things will change in the future and essential features may break.
 
 One of the main issues currently is the lack of unit- and integration tests. This is on our to-do list and we are working on this topic with high priority.
 
@@ -213,6 +271,9 @@ If you have any questions feel free to contact us on `slack`_.
 .. _`git push`: https://git-scm.com/docs/git-push
 .. _`HTTP/2`: https://http2.github.io/
 .. _`security-docs`: https://github.com/gaia-pipeline/gaia/blob/master/security/README.md
+.. _`plugin system`: https://en.wikipedia.org/wiki/Plug-in_(computing)
+.. _`available docker image tags`: https://hub.docker.com/r/gaiapipeline/gaia/tags/
+.. _`how to develop a pipeline`: https://docs.gaia-pipeline.io/develop-pipelines/
 
 .. |build-status| image:: https://circleci.com/gh/gaia-pipeline/gaia/tree/master.svg?style=shield&circle-token=c0e15edfb08f8076076cbbb55558af6cfecb89b8
     :alt: Build Status
