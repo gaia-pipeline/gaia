@@ -238,7 +238,25 @@ import ProgressBar from 'vue-bulma-progress-bar'
 import VueTippy from 'vue-tippy'
 import VueGoodTable from 'vue-good-table'
 import moment from 'moment'
+import Notification from 'vue-bulma-notification-fixed'
 import Message from 'vue-bulma-message-html'
+
+const NotificationComponent = Vue.extend(Notification)
+const openNotification = (
+  propsData = {
+    title: '',
+    message: '',
+    type: '',
+    direction: '',
+    duration: 4500,
+    container: '.notifications'
+  }
+) => {
+  return new NotificationComponent({
+    el: document.createElement('div'),
+    propsData
+  })
+}
 
 Vue.use(VueGoodTable)
 Vue.use(VueTippy)
@@ -447,6 +465,11 @@ export default {
       this.$http
         .post('/api/v1/pipeline', this.createPipeline)
         .then(response => {
+          openNotification({
+            title: 'Pipeline created',
+            message: `Pipeline "${this.createPipeline.pipeline.name}" has been created successfully.`,
+            type: 'success'
+          })
           // Run fetchData to see the pipeline in our history table
           this.fetchData()
         })
