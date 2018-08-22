@@ -522,6 +522,17 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 				// Send done signal to all resolvers
 				close(done)
 
+				// read all jobs which are waiting to be executed to free the channel
+				var channelClean = false
+				for !channelClean {
+					select {
+					case <-executeScheduler:
+						// just read from the channel
+					default:
+						channelClean = true
+					}
+				}
+
 				// Close executeScheduler. No new jobs should be scheduled.
 				close(executeScheduler)
 
