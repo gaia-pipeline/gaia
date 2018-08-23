@@ -111,9 +111,6 @@ Writing a pipeline is easy as importing a library, defining a function which wil
                 Handler:     DoSomethingAwesome,
 	        Title:       "DoSomethingAwesome",
 		Description: "This job does something awesome.",
-
-                // This job depends on something? Define the dependency here with the title of other jobs.
-		DependsOn: []string{""},
 	    },
 	}
 
