@@ -96,7 +96,7 @@
               :rows="historyRows"
               :paginate="true"
               :global-search="true"
-              :defaultSortBy="{field: 'status', type: 'asc'}"
+              :defaultSortBy="{field: 'created', type: 'desc'}"
               globalSearchPlaceholder="Search ..."
               styleClass="table table-own-bordered">
               <template slot="table-row" slot-scope="props">
