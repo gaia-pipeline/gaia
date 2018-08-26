@@ -83,6 +83,48 @@ Gaia will automatically detect the folder of the binary and will place all data 
 Usage
 -----
 
+Run-time Arguments
+~~~~~~~~~~~~~~~~~~
+
+It is possible to define run-time arguments in three ways.
+
+1. As command-line arguments
+
+For example:
+
+.. code:: bash
+
+    ./cmd/gaia/main -homepath=${PWD}/tmp -dev=true
+
+2. Environment Properties
+
+Environment variables can be used to overwrite any configuration settings / defaults that are already defined in Gaia.
+
+All Environment variables must be pre-fixed with **GAIA_** in order to avoid collision with other variables.
+
+For example:
+
+.. code:: bash
+
+    export GAIA_PORT=9999
+    ./cmd/gaia/main -homepath=${PWD}/tmp -dev=true
+    # will start gaia with port 9999
+    ⇨ http server started on [::]:9999
+
+3. Configuration file
+
+Alternatively a configuration file can be used with all the properties that gaia defines, called `.gaia_config`.
+
+If this file is present it will be used to set things up. For example:
+
+.. code:: bash
+
+    ❯ cat .gaia_config
+    port=9994
+    ./cmd/gaia/main -homepath=${PWD}/tmp -dev=true
+    ⇨ http server started on [::]:9994
+
+
 Go
 ~~~
 Writing a pipeline is easy as importing a library, defining a function which will be the job to execute and serving the gRPC-Server via one command.
@@ -177,7 +219,7 @@ Java
 
 Pipelines are defined by jobs and a function usually represents a job. You can define as many jobs in your pipeline as you want.
 
-Every function accepts arguments. Those arguments can be requested from the pipeline itself and the values passed back in from the UI. 
+Every function accepts arguments. Those arguments can be requested from the pipeline itself and the values passed back in from the UI.
 
 Some pipeline jobs need a specific order of execution. `DependsOn` allows you to declare dependencies for every job.
 

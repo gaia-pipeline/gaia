@@ -2,13 +2,13 @@ package main
 
 import (
 	"crypto/rand"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"io/ioutil"
 
+	"github.com/Skarlso/flag"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
@@ -31,21 +31,31 @@ const (
 	workspaceFolder = "workspace"
 )
 
+var fs *flag.FlagSet
+
 func init() {
 	gaia.Cfg = &gaia.Config{}
 
+	// set configuration file name for run-time arguments
+
+	// set a prefix for environment properties so they are destinct to Gaia
+	fs = flag.NewFlagSetWithEnvPrefix(os.Args[0], "GAIA", 0)
+
+	// set the configuration filename
+	fs.String("config", ".gaia_config", "this describes the name of the config file to use")
+
 	// command line arguments
-	flag.StringVar(&gaia.Cfg.ListenPort, "port", "8080", "Listen port for gaia")
-	flag.StringVar(&gaia.Cfg.HomePath, "homepath", "", "Path to the gaia home folder")
-	flag.StringVar(&gaia.Cfg.Hostname, "hostname", "https://localhost", "The host's name under which gaia is deployed at e.g.: https://gaia-pipeline.com")
-	flag.StringVar(&gaia.Cfg.VaultPath, "vaultpath", "", "Path to the gaia vault folder")
-	flag.StringVar(&gaia.Cfg.Worker, "worker", "2", "Number of worker gaia will use to execute pipelines in parallel")
-	flag.StringVar(&gaia.Cfg.JwtPrivateKeyPath, "jwtPrivateKeyPath", "", "A RSA private key used to sign JWT tokens")
-	flag.StringVar(&gaia.Cfg.CAPath, "capath", "", "Folder path where the generated CA certificate files will be saved")
-	flag.BoolVar(&gaia.Cfg.DevMode, "dev", false, "If true, gaia will be started in development mode. Don't use this in production!")
-	flag.BoolVar(&gaia.Cfg.VersionSwitch, "version", false, "If true, will print the version and immediately exit")
-	flag.BoolVar(&gaia.Cfg.Poll, "poll", false, "Instead of using a Webhook, keep polling git for changes on pipelines")
-	flag.IntVar(&gaia.Cfg.PVal, "pval", 1, "The interval in minutes in which to poll vcs for changes")
+	fs.StringVar(&gaia.Cfg.ListenPort, "port", "8080", "Listen port for gaia")
+	fs.StringVar(&gaia.Cfg.HomePath, "homepath", "", "Path to the gaia home folder")
+	fs.StringVar(&gaia.Cfg.Hostname, "hostname", "https://localhost", "The host's name under which gaia is deployed at e.g.: https://gaia-pipeline.com")
+	fs.StringVar(&gaia.Cfg.VaultPath, "vaultpath", "", "Path to the gaia vault folder")
+	fs.StringVar(&gaia.Cfg.Worker, "worker", "2", "Number of worker gaia will use to execute pipelines in parallel")
+	fs.StringVar(&gaia.Cfg.JwtPrivateKeyPath, "jwtPrivateKeyPath", "", "A RSA private key used to sign JWT tokens")
+	fs.StringVar(&gaia.Cfg.CAPath, "capath", "", "Folder path where the generated CA certificate files will be saved")
+	fs.BoolVar(&gaia.Cfg.DevMode, "dev", false, "If true, gaia will be started in development mode. Don't use this in production!")
+	fs.BoolVar(&gaia.Cfg.VersionSwitch, "version", false, "If true, will print the version and immediately exit")
+	fs.BoolVar(&gaia.Cfg.Poll, "poll", false, "Instead of using a Webhook, keep polling git for changes on pipelines")
+	fs.IntVar(&gaia.Cfg.PVal, "pval", 1, "The interval in minutes in which to poll vcs for changes")
 
 	// Default values
 	gaia.Cfg.Bolt.Mode = 0600
@@ -53,7 +63,7 @@ func init() {
 
 func main() {
 	// Parse command line flgs
-	flag.Parse()
+	fs.Parse(os.Args[1:])
 
 	// Check version switch
 	if gaia.Cfg.VersionSwitch {

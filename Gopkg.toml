@@ -80,3 +80,7 @@
 [prune]
   go-tests = true
   unused-packages = true
+
+[[constraint]]
+  name = "github.com/Skarlso/flag"
+  version = "1.7.4-pre"
