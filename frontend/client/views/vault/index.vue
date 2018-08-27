@@ -1,50 +1,46 @@
 <template>
   <div class="tile is-ancestor">
     <div class="tile is-vertical">
-      <tabs type="boxed" :is-fullwidth="true" alignment="centered" size="large">
-        <tab-pane label="Manage Secrets" icon="fa fa-user-circle">
-          <div class="tile is-ancestor">
-            <div class="tile is-vertical">
-              <div class="tile is-parent">
-                <a class="button is-primary" v-on:click="addSecretModal" style="margin-bottom: -10px;">
-                  <span class="icon">
-                    <i class="fa fa-user-plus"></i>
-                  </span>
-                  <span>Add Secrets</span>
-                </a>
-              </div>
-              <div class="tile is-parent">
-                <article class="tile is-child notification content-article box">
-                  <vue-good-table
-                    :columns="keyColumns"
-                    :rows="keyRows"
-                    :paginate="true"
-                    :global-search="true"
-                    :defaultSortBy="{field: 'key', type: 'desc'}"
-                    globalSearchPlaceholder="Search ..."
-                    styleClass="table table-own-bordered">
-                    <template slot="table-row" slot-scope="props">
-                      <td>
-                        <span>{{ props.row.key }}</span>
-                      </td>
-                      <td v-tippy="{ arrow : true,  animation : 'shift-away'}">
-                        <span>*****</span>
-                      </td>
-                      <td>
-                        <a v-on:click="editSecretModal(props.row)"><i class="fa fa-edit" style="color: whitesmoke;"></i></a>
-                        <a v-on:click="deleteSecretModal(props.row)"><i class="fa fa-trash" style="color: whitesmoke;"></i></a>
-                      </td>
-                    </template>
-                    <div slot="emptystate" class="empty-table-text">
-                      No secrets found.
-                    </div>
-                  </vue-good-table>
-                </article>
-              </div>
-            </div>
+      <div class="tile is-ancestor">
+        <div class="tile is-vertical">
+          <div class="tile is-parent">
+            <a class="button is-primary" v-on:click="addSecretModal" style="margin-bottom: -10px;margin-top: 10px;">
+              <span class="icon">
+                <i class="fa fa-user-plus"></i>
+              </span>
+              <span>Add Secrets</span>
+            </a>
           </div>
-        </tab-pane>
-      </tabs>
+          <div class="tile is-parent">
+            <article class="tile is-child notification content-article box">
+              <vue-good-table
+                :columns="keyColumns"
+                :rows="keyRows"
+                :paginate="true"
+                :global-search="true"
+                :defaultSortBy="{field: 'key', type: 'desc'}"
+                globalSearchPlaceholder="Search ..."
+                styleClass="table table-own-bordered">
+                <template slot="table-row" slot-scope="props">
+                  <td>
+                    <span>{{ props.row.key }}</span>
+                  </td>
+                  <td v-tippy="{ arrow : true,  animation : 'shift-away'}">
+                    <span>*****</span>
+                  </td>
+                  <td>
+                    <a v-on:click="editSecretModal(props.row)"><i class="fa fa-edit" style="color: whitesmoke;"></i></a>
+                    <a v-on:click="deleteSecretModal(props.row)"><i class="fa fa-trash" style="color: whitesmoke;"></i></a>
+                  </td>
+                </template>
+                <div slot="emptystate" class="empty-table-text">
+                  No secrets found.
+                </div>
+              </vue-good-table>
+            </article>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- edit secret modal -->
@@ -149,7 +145,6 @@
 
 <script>
 import Vue from 'vue'
-import { Tabs, TabPane } from 'vue-bulma-tabs'
 import { Modal } from 'vue-bulma-modal'
 import { Collapse, Item as CollapseItem } from 'vue-bulma-collapse'
 import VueGoodTable from 'vue-good-table'
@@ -180,8 +175,6 @@ Vue.use(VueTippy)
 
 export default {
   components: {
-    Tabs,
-    TabPane,
     Modal,
     Collapse,
     CollapseItem
