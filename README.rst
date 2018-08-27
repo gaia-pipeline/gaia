@@ -263,7 +263,7 @@ If you have any questions feel free to contact us on `slack`_.
 .. _`Go installed`: https://golang.org/doc/install
 .. _`nodeJS`: https://nodejs.org/
 .. _`go-example repo`: https://github.com/gaia-pipeline/go-example
-.. _`slack`: https://gaia-slack-invite.herokuapp.com/
+.. _`slack`: https://slack.gaia-pipeline.io/
 .. _`Kubernetes deployment with vault integration`: https://docs.gaia-pipeline.io/tutorials/kube-vault-deploy/
 .. _`git push`: https://git-scm.com/docs/git-push
 .. _`HTTP/2`: https://http2.github.io/
