@@ -177,7 +177,7 @@ Java
 
 Pipelines are defined by jobs and a function usually represents a job. You can define as many jobs in your pipeline as you want.
 
-Every function accepts arguments. Those arguments can be requested from the pipeline itself and the values passed back in from the UI. 
+Every function accepts arguments. Those arguments can be requested from the pipeline itself and the values passed back in from the UI.
 
 Some pipeline jobs need a specific order of execution. `DependsOn` allows you to declare dependencies for every job.
 
