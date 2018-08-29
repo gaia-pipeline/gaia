@@ -12,7 +12,10 @@ const (
 	pipelineCloneStatus = 25
 
 	// Percent of pipeline creation progress after compile process done
-	pipelineCompileStatus = 75
+	pipelineCompileStatus = 50
+
+	// Percent of pipeline creation progress after validation binary copy
+	pipelineCopyStatus = 75
 
 	// Completed percent progress
 	pipelineCompleteStatus = 100
@@ -82,6 +85,32 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot copy compiled binary: %s", err.Error())
+		storeService.CreatePipelinePut(p)
+		return
+	}
+
+	// Update status of our pipeline build
+	p.Status = pipelineCopyStatus
+	err = storeService.CreatePipelinePut(p)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
+		return
+	}
+
+	// Run update if needed
+	err = updatePipeline(&p.Pipeline)
+	if err != nil {
+		p.StatusType = gaia.CreatePipelineFailed
+		p.Output = fmt.Sprintf("cannot update pipeline: %s", err.Error())
+		storeService.CreatePipelinePut(p)
+		return
+	}
+
+	// Try to get pipeline jobs to check if this pipeline is valid.
+	schedulerService, _ := services.SchedulerService()
+	if err = schedulerService.SetPipelineJobs(&p.Pipeline); err != nil {
+		p.StatusType = gaia.CreatePipelineFailed
+		p.Output = fmt.Sprintf("cannot validate pipeline: %s", err.Error())
 		storeService.CreatePipelinePut(p)
 		return
 	}

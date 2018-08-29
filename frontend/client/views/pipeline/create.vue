@@ -216,7 +216,7 @@
 
     <!-- status output modal -->
     <modal :visible="statusOutputModal" class="modal-z-index" @close="closeStatusModal">
-      <div class="box statusModal">
+      <div class="box statusModal" style="width: 400px;">
         <div>
           <message :direction="'down'" :message="statusOutputMsg" :duration="0"></message>
         </div>
@@ -369,9 +369,14 @@ export default {
                   this.historyRows[i].output += 'Starting build process. This may take some time...\n'
                 }
 
-                if (this.historyRows[i].status >= 75) {
+                if (this.historyRows[i].status >= 50) {
                   this.historyRows[i].output += 'Pipeline has been successfully compiled.\n'
                   this.historyRows[i].output += 'Copy binary to pipelines folder...\n'
+                }
+
+                if (this.historyRows[i].status >= 75) {
+                  this.historyRows[i].output += 'Pipeline binary has been copied to pipelines folder.\n'
+                  this.historyRows[i].output += 'Starting pipeline now and run integrity check...\n'
                 }
 
                 if (this.historyRows[i].status === 100) {
