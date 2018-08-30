@@ -34,6 +34,9 @@ const (
 	// PTypePython python plugin type
 	PTypePython PipelineType = "python"
 
+	// PTypePython python plugin type
+	PTypeCrystal PipelineType = "crystal"
+
 	// CreatePipelineFailed status
 	CreatePipelineFailed CreatePipelineType = "failed"
 
@@ -84,6 +87,9 @@ const (
 
 	// TmpPythonFolder is the name of the python temporary folder
 	TmpPythonFolder = "python"
+
+	// TmpPythonFolder is the name of the python temporary folder
+	TmpCrystalFolder = "crystal"
 
 	// TmpGoFolder is the name of the golang temporary folder
 	TmpGoFolder = "golang"
