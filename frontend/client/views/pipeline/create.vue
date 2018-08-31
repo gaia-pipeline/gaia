@@ -216,7 +216,7 @@
 
     <!-- status output modal -->
     <modal :visible="statusOutputModal" class="modal-z-index" @close="closeStatusModal">
-      <div class="box statusModal" style="width: 400px;">
+      <div class="box statusModal">
         <div>
           <message :direction="'down'" :message="statusOutputMsg" :duration="0"></message>
         </div>
@@ -376,7 +376,7 @@ export default {
 
                 if (this.historyRows[i].status >= 75) {
                   this.historyRows[i].output += 'Pipeline binary has been copied to pipelines folder.\n'
-                  this.historyRows[i].output += 'Starting pipeline now and run integrity check...\n'
+                  this.historyRows[i].output += 'Starting integrity check...\n'
                 }
 
                 if (this.historyRows[i].status === 100) {

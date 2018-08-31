@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
@@ -98,11 +99,15 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	}
 
 	// Run update if needed
+	p.Pipeline.ExecPath = filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
 	err = updatePipeline(&p.Pipeline)
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot update pipeline: %s", err.Error())
 		storeService.CreatePipelinePut(p)
+
+		// Creation failed. Remove broken pipeline.
+		DeleteBinary(p.Pipeline)
 		return
 	}
 
@@ -112,6 +117,9 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot validate pipeline: %s", err.Error())
 		storeService.CreatePipelinePut(p)
+
+		// Creation failed. Remove broken pipeline.
+		DeleteBinary(p.Pipeline)
 		return
 	}
 

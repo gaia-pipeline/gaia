@@ -608,7 +608,6 @@ func (s *Scheduler) SetPipelineJobs(p *gaia.Pipeline) error {
 	// Get jobs
 	jobs, err := s.getPipelineJobs(p)
 	if err != nil {
-		gaia.Cfg.Logger.Debug("cannot get jobs from pipeline", "error", err.Error(), "pipeline", p)
 		return err
 	}
 	p.Jobs = jobs

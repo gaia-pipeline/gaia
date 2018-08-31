@@ -111,7 +111,10 @@ func checkActivePipelines() {
 						}
 
 						// Let us try again to start the plugin and receive all implemented jobs
-						schedulerService.SetPipelineJobs(p)
+						if err = schedulerService.SetPipelineJobs(p); err != nil {
+							// Mark that this pipeline is broken.
+							p.IsNotValid = true
+						}
 
 						// Replace pipeline
 						if ok := GlobalActivePipelines.Replace(*p); !ok {
@@ -163,7 +166,10 @@ func checkActivePipelines() {
 			}
 
 			// Let us try to start the plugin and receive all implemented jobs
-			schedulerService.SetPipelineJobs(pipeline)
+			if err = schedulerService.SetPipelineJobs(pipeline); err != nil {
+				// Mark that this pipeline is broken.
+				pipeline.IsNotValid = true
+			}
 
 			// We encountered a drop-in pipeline previously. Now is the time to save it.
 			if shouldStore {
