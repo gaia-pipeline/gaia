@@ -2,7 +2,9 @@ package plugin
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -46,8 +48,9 @@ type Plugin struct {
 	// Log file where all output is stored.
 	logFile *os.File
 
-	// Writer used to write logs from execution to file
+	// Writer used to write logs from execution to file or buffer
 	writer *bufio.Writer
+	buffer *bytes.Buffer
 
 	// CA instance used to handle certificates
 	ca security.CAAPI
@@ -85,10 +88,14 @@ func (p *Plugin) Connect(command *exec.Cmd, logPath *string) error {
 		if err != nil {
 			return err
 		}
-	}
 
-	// Create new writer
-	p.writer = bufio.NewWriter(p.logFile)
+		// Create new writer
+		p.writer = bufio.NewWriter(p.logFile)
+	} else {
+		// If no path is provided, write output to buffer
+		p.buffer = new(bytes.Buffer)
+		p.writer = bufio.NewWriter(p.buffer)
+	}
 
 	// Create and sign a new pair of certificates for the server
 	var err error
@@ -129,7 +136,8 @@ func (p *Plugin) Connect(command *exec.Cmd, logPath *string) error {
 	// Connect via gRPC
 	gRPCClient, err := p.client.Client()
 	if err != nil {
-		return err
+		p.writer.Flush()
+		return fmt.Errorf("%s\n\n--- output ---\n%s", err.Error(), p.buffer.String())
 	}
 
 	// Request the plugin

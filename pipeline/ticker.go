@@ -111,10 +111,10 @@ func checkActivePipelines() {
 						}
 
 						// Let us try again to start the plugin and receive all implemented jobs
-						schedulerService.SetPipelineJobs(p)
-
-						// Set new pipeline hash
-						p.SHA256Sum = checksum
+						if err = schedulerService.SetPipelineJobs(p); err != nil {
+							// Mark that this pipeline is broken.
+							p.IsNotValid = true
+						}
 
 						// Replace pipeline
 						if ok := GlobalActivePipelines.Replace(*p); !ok {
@@ -157,16 +157,19 @@ func checkActivePipelines() {
 
 			// update pipeline if needed
 			if bytes.Compare(pipeline.SHA256Sum, pipelineCheckSum) != 0 {
-				pipeline.SHA256Sum = pipelineCheckSum
 				if err = updatePipeline(pipeline); err != nil {
 					storeService.PipelinePut(pipeline)
 					gaia.Cfg.Logger.Error("cannot update pipeline", "error", err.Error(), "pipeline", pipeline)
 					continue
 				}
+				storeService.PipelinePut(pipeline)
 			}
 
 			// Let us try to start the plugin and receive all implemented jobs
-			schedulerService.SetPipelineJobs(pipeline)
+			if err = schedulerService.SetPipelineJobs(pipeline); err != nil {
+				// Mark that this pipeline is broken.
+				pipeline.IsNotValid = true
+			}
 
 			// We encountered a drop-in pipeline previously. Now is the time to save it.
 			if shouldStore {

@@ -52,5 +52,13 @@ func updatePipeline(p *gaia.Pipeline) error {
 			return err
 		}
 	}
+
+	// Update checksum
+	checksum, err := getSHA256Sum(p.ExecPath)
+	if err != nil {
+		return err
+	}
+	p.SHA256Sum = checksum
+
 	return nil
 }

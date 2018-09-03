@@ -4,13 +4,12 @@ import (
 	"bytes"
 	"errors"
 	"io/ioutil"
+	"strings"
 	"testing"
 
-	"github.com/gaia-pipeline/gaia/services"
-
-	"github.com/gaia-pipeline/gaia/store"
-
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/services"
+	"github.com/gaia-pipeline/gaia/store"
 	"github.com/hashicorp/go-hclog"
 )
 
@@ -27,6 +26,16 @@ func (mcp *mockCreatePipelineStore) CreatePipelinePut(p *gaia.CreatePipeline) er
 func (mcp *mockCreatePipelineStore) PipelinePut(p *gaia.Pipeline) error {
 	return mcp.Error
 }
+
+type mockScheduler struct {
+	Error error
+}
+
+func (ms *mockScheduler) Init() error { return nil }
+func (ms *mockScheduler) SchedulePipeline(p *gaia.Pipeline, args []gaia.Argument) (*gaia.PipelineRun, error) {
+	return nil, nil
+}
+func (ms *mockScheduler) SetPipelineJobs(p *gaia.Pipeline) error { return ms.Error }
 
 func TestCreatePipelineUnknownType(t *testing.T) {
 	tmp, _ := ioutil.TempDir("", "TestCreatePipelineUnknownType")
@@ -101,6 +110,7 @@ func TestCreatePipeline(t *testing.T) {
 	tmp, _ := ioutil.TempDir("", "TestCreatePipeline")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
+	gaia.Cfg.PipelinePath = tmp
 	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -110,11 +120,43 @@ func TestCreatePipeline(t *testing.T) {
 	mcp := new(mockCreatePipelineStore)
 	services.MockStorageService(mcp)
 	defer func() { services.MockStorageService(nil) }()
+	ms := new(mockScheduler)
+	services.MockSchedulerService(ms)
+	defer func() { services.MockSchedulerService(nil) }()
 	cp := new(gaia.CreatePipeline)
+	cp.Pipeline.Name = "test"
 	cp.Pipeline.Type = gaia.PTypeGolang
 	cp.Pipeline.Repo.URL = "https://github.com/gaia-pipeline/pipeline-test"
 	CreatePipeline(cp)
 	if cp.StatusType != gaia.CreatePipelineSuccess {
 		t.Fatal("pipeline status was not success. was: ", cp.StatusType)
+	}
+}
+
+func TestCreatePipelineSetPipelineJobsFail(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestCreatePipelineSetPipelineJobsFail")
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.HomePath = tmp
+	gaia.Cfg.PipelinePath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
+	mcp := new(mockCreatePipelineStore)
+	services.MockStorageService(mcp)
+	defer func() { services.MockStorageService(nil) }()
+	ms := new(mockScheduler)
+	ms.Error = errors.New("error")
+	services.MockSchedulerService(ms)
+	defer func() { services.MockSchedulerService(nil) }()
+	cp := new(gaia.CreatePipeline)
+	cp.Pipeline.Name = "test"
+	cp.Pipeline.Type = gaia.PTypeGolang
+	cp.Pipeline.Repo.URL = "https://github.com/gaia-pipeline/pipeline-test"
+	CreatePipeline(cp)
+	if !strings.Contains(cp.Output, "cannot validate pipeline") {
+		t.Fatalf("error thrown should contain 'cannot validate pipeline' but its %s", cp.Output)
 	}
 }

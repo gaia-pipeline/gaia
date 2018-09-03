@@ -1,7 +1,7 @@
 <template>
   <div class="columns is-multiline">
     <template v-for="(pipeline, index) in pipelines">
-      <div class="column is-one-third" :key="index">
+      <div class="column is-one-third" :key="index" v-if="!pipeline.p.notvalid">
         <div class="pipeline-box notification content-article">
           <div class="status-display-success" v-if="pipeline.r.status === 'success'"></div>
           <div class="status-display-fail" v-else-if="pipeline.r.status === 'failed'"></div>
