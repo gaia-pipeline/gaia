@@ -333,7 +333,6 @@ func executeJob(j gaia.Job, pS Plugin, triggerSave chan gaia.Job) {
 	// Execute job
 	if err := pS.Execute(&j); err != nil {
 		gaia.Cfg.Logger.Debug("error during job execution", "error", err.Error(), "job", j)
-		return
 	}
 }
 
