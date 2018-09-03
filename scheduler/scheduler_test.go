@@ -18,11 +18,15 @@ import (
 
 type PluginFake struct{}
 
-func (p *PluginFake) NewPlugin(ca security.CAAPI) Plugin           { return &PluginFake{} }
-func (p *PluginFake) Connect(cmd *exec.Cmd, logPath *string) error { return nil }
-func (p *PluginFake) Execute(j *gaia.Job) error                    { return nil }
-func (p *PluginFake) GetJobs() ([]gaia.Job, error)                 { return prepareJobs(), nil }
-func (p *PluginFake) Close()                                       {}
+func (p *PluginFake) NewPlugin(ca security.CAAPI) Plugin        { return &PluginFake{} }
+func (p *PluginFake) Init(cmd *exec.Cmd, logPath *string) error { return nil }
+func (p *PluginFake) Validate() error                           { return nil }
+func (p *PluginFake) Execute(j *gaia.Job) error {
+	j.Status = gaia.JobSuccess
+	return nil
+}
+func (p *PluginFake) GetJobs() ([]gaia.Job, error) { return prepareJobs(), nil }
+func (p *PluginFake) Close()                       {}
 
 type CAFake struct{}
 
@@ -65,11 +69,12 @@ func TestInit(t *testing.T) {
 
 type PluginFakeFailed struct{}
 
-func (p *PluginFakeFailed) NewPlugin(ca security.CAAPI) Plugin           { return &PluginFakeFailed{} }
-func (p *PluginFakeFailed) Connect(cmd *exec.Cmd, logPath *string) error { return nil }
-func (p *PluginFakeFailed) Execute(j *gaia.Job) error                    { return errors.New("job failed") }
-func (p *PluginFakeFailed) GetJobs() ([]gaia.Job, error)                 { return prepareJobs(), nil }
-func (p *PluginFakeFailed) Close()                                       {}
+func (p *PluginFakeFailed) NewPlugin(ca security.CAAPI) Plugin        { return &PluginFakeFailed{} }
+func (p *PluginFakeFailed) Init(cmd *exec.Cmd, logPath *string) error { return nil }
+func (p *PluginFakeFailed) Validate() error                           { return nil }
+func (p *PluginFakeFailed) Execute(j *gaia.Job) error                 { return errors.New("job failed") }
+func (p *PluginFakeFailed) GetJobs() ([]gaia.Job, error)              { return prepareJobs(), nil }
+func (p *PluginFakeFailed) Close()                                    {}
 
 func TestPrepareAndExecFail(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}

@@ -48,9 +48,12 @@ type Plugin interface {
 	// NewPlugin creates a new instance of plugin
 	NewPlugin(ca security.CAAPI) Plugin
 
-	// Connect initializes the connection with the execution command
-	// and the log path wbere the logs should be stored.
-	Connect(command *exec.Cmd, logPath *string) error
+	// Init initializes the go-plugin client and generates a
+	// new certificate pair for gaia and the plugin/pipeline.
+	Init(command *exec.Cmd, logPath *string) error
+
+	// Validate validates the plugin interface.
+	Validate() error
 
 	// Execute executes one job of a pipeline.
 	Execute(j *gaia.Job) error
@@ -198,9 +201,16 @@ func (s *Scheduler) prepareAndExec(r gaia.PipelineRun) {
 	// Create new plugin instance
 	pS := s.pluginSystem.NewPlugin(s.ca)
 
-	// Connect to plugin(pipeline)
+	// Init the plugin
 	path = filepath.Join(path, gaia.LogsFileName)
-	if err := pS.Connect(c, &path); err != nil {
+	if err := pS.Init(c, &path); err != nil {
+		gaia.Cfg.Logger.Debug("cannot initialize the plugin", "error", err.Error(), "pipeline", pipeline)
+		s.finishPipelineRun(&r, gaia.RunFailed)
+		return
+	}
+
+	// Connect to plugin(pipeline)
+	if err := pS.Validate(); err != nil {
 		gaia.Cfg.Logger.Debug("cannot connect to pipeline", "error", err.Error(), "pipeline", pipeline)
 		s.finishPipelineRun(&r, gaia.RunFailed)
 		return
@@ -322,14 +332,9 @@ func executeJob(j gaia.Job, pS Plugin, triggerSave chan gaia.Job) {
 
 	// Execute job
 	if err := pS.Execute(&j); err != nil {
-		// TODO: Show it to user
 		gaia.Cfg.Logger.Debug("error during job execution", "error", err.Error(), "job", j)
-		j.Status = gaia.JobFailed
 		return
 	}
-
-	// If we are here, the job execution was ok
-	j.Status = gaia.JobSuccess
 }
 
 // checkCircularDep checks for circular dependencies.
@@ -592,8 +597,14 @@ func (s *Scheduler) getPipelineJobs(p *gaia.Pipeline) ([]gaia.Job, error) {
 	// Create new Plugin instance
 	pS := s.pluginSystem.NewPlugin(s.ca)
 
+	// Init the go-plugin
+	if err := pS.Init(c, nil); err != nil {
+		gaia.Cfg.Logger.Debug("cannot initialize the pipeline", "error", err.Error(), "pipeline", p)
+		return nil, err
+	}
+
 	// Connect to plugin(pipeline)
-	if err := pS.Connect(c, nil); err != nil {
+	if err := pS.Validate(); err != nil {
 		gaia.Cfg.Logger.Debug("cannot connect to pipeline", "error", err.Error(), "pipeline", p)
 		return nil, err
 	}
