@@ -82,5 +82,5 @@
   unused-packages = true
 
 [[constraint]]
-  name = "github.com/Skarlso/flag"
+  name = "github.com/gaia-pipeline/flag"
   version = "1.7.4-pre"
