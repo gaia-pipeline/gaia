@@ -14,7 +14,7 @@
 
 [[projects]]
   digest = "1:6221a3a452964b1ff30efdc22209b124d54d04373e5993264d3fa9b13da0659d"
-  name = "github.com/Skarlso/flag"
+  name = "github.com/gaia-pipeline/flag"
   packages = ["."]
   pruneopts = "UT"
   revision = "71ceffbeb0ba60fccc853971bb3ed4d7d90bfd04"
@@ -500,7 +500,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/GeertJohan/go.rice",
-    "github.com/Skarlso/flag",
+    "github.com/gaia-pipeline/flag",
     "github.com/coreos/bbolt",
     "github.com/dgrijalva/jwt-go",
     "github.com/gaia-pipeline/protobuf",
