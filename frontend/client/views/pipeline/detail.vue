@@ -233,6 +233,11 @@ export default {
         jobs = pipeline.jobs
       }
 
+      // check if this pipeline has jobs
+      if (!jobs) {
+        return
+      }
+
       // Check if something has changed
       if (this.nodes) {
         var redraw = false
@@ -360,11 +365,13 @@ export default {
 
     checkPipelineArgs () {
       // check if this pipeline has args
-      for (let x = 0, y = this.pipeline.jobs.length; x < y; x++) {
-        if (this.pipeline.jobs[x].args && this.pipeline.jobs[x].args.type !== 'vault') {
-          // we found args. Redirect user to params view.
-          this.$router.push({path: '/pipeline/params', query: { pipelineid: this.pipeline.id }})
-          return
+      if (this.pipeline.jobs) {
+        for (let x = 0, y = this.pipeline.jobs.length; x < y; x++) {
+          if (this.pipeline.jobs[x].args && this.pipeline.jobs[x].args.type !== 'vault') {
+            // we found args. Redirect user to params view.
+            this.$router.push({path: '/pipeline/params', query: { pipelineid: this.pipeline.id }})
+            return
+          }
         }
       }
 
