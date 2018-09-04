@@ -8,8 +8,8 @@ import (
 
 	"io/ioutil"
 
-	"github.com/Skarlso/flag"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gaia-pipeline/flag"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
 	"github.com/gaia-pipeline/gaia/pipeline"
