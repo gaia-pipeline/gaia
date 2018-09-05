@@ -209,9 +209,9 @@ func (s *Scheduler) prepareAndExec(r gaia.PipelineRun) {
 		return
 	}
 
-	// Connect to plugin(pipeline)
+	// Validate the plugin(pipeline)
 	if err := pS.Validate(); err != nil {
-		gaia.Cfg.Logger.Debug("cannot connect to pipeline", "error", err.Error(), "pipeline", pipeline)
+		gaia.Cfg.Logger.Debug("cannot validate pipeline", "error", err.Error(), "pipeline", pipeline)
 		s.finishPipelineRun(&r, gaia.RunFailed)
 		return
 	}
@@ -602,9 +602,9 @@ func (s *Scheduler) getPipelineJobs(p *gaia.Pipeline) ([]gaia.Job, error) {
 		return nil, err
 	}
 
-	// Connect to plugin(pipeline)
+	// Validate the plugin(pipeline)
 	if err := pS.Validate(); err != nil {
-		gaia.Cfg.Logger.Debug("cannot connect to pipeline", "error", err.Error(), "pipeline", p)
+		gaia.Cfg.Logger.Debug("cannot validate pipeline", "error", err.Error(), "pipeline", p)
 		return nil, err
 	}
 	defer pS.Close()
