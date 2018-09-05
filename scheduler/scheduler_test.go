@@ -168,7 +168,7 @@ func TestPrepareAndExecJavaType(t *testing.T) {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
-	javaExecuteableName = "go"
+	javaExecName = "go"
 	p.Type = gaia.PTypeJava
 	storeInstance.PipelinePut(&p)
 	s := NewScheduler(storeInstance, &PluginFake{}, &CAFake{}, &VaultFake{})
@@ -212,7 +212,7 @@ func TestPrepareAndExecPythonType(t *testing.T) {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
-	pythonExecuteableName = "go"
+	pythonExecName = "go"
 	p.Type = gaia.PTypePython
 	storeInstance.PipelinePut(&p)
 	s := NewScheduler(storeInstance, &PluginFake{}, &CAFake{}, &VaultFake{})

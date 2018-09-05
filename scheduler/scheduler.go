@@ -36,10 +36,10 @@ var (
 	errCreateCMDForPipeline = errors.New("could not create execute command for plugin")
 
 	// Java executeable name
-	javaExecuteableName = "java"
+	javaExecName = "java"
 
 	// Python executeable name
-	pythonExecuteableName = "python"
+	pythonExecName = "python"
 )
 
 // Plugin represents the plugin implementation which is used
@@ -636,7 +636,7 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 		c.Path = p.ExecPath
 	case gaia.PTypeJava:
 		// Look for java executeable
-		path, err := exec.LookPath(javaExecuteableName)
+		path, err := exec.LookPath(javaExecName)
 		if err != nil {
 			gaia.Cfg.Logger.Debug("cannot find java executeable", "error", err.Error())
 			return nil
@@ -655,7 +655,7 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 		c.Args = []string{
 			"/bin/sh",
 			"-c",
-			". bin/activate; exec python -c \"import pipeline; pipeline.main()\"",
+			". bin/activate; exec " + pythonExecName + " -c \"import pipeline; pipeline.main()\"",
 		}
 		c.Dir = filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder, p.Name)
 	default:
