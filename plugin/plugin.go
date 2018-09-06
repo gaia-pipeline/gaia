@@ -188,11 +188,16 @@ func (p *Plugin) Execute(j *gaia.Job) error {
 	resultObj, err := p.pluginConn.ExecuteJob(job)
 
 	// Check and set job status
-	if resultObj.Failed || err != nil {
+	if resultObj != nil && resultObj.ExitPipeline {
 		j.Status = gaia.JobFailed
-		if resultObj.ExitPipeline {
-			err = fmt.Errorf("Job '%s' threw an error: %s", j.Title, resultObj.Message)
-		}
+
+		// Generate error message and attach it to logs.
+		p.writer.WriteString(fmt.Sprintf("Job '%s' threw an error: %s\n", j.Title, resultObj.Message))
+	} else if err != nil {
+		j.Status = gaia.JobFailed
+
+		// Generate error message and attach it to logs.
+		p.writer.WriteString(fmt.Sprintf("Job '%s' threw an error: %s\n", j.Title, err.Error()))
 	} else {
 		j.Status = gaia.JobSuccess
 	}
@@ -200,7 +205,7 @@ func (p *Plugin) Execute(j *gaia.Job) error {
 	// Flush logs
 	p.writer.Flush()
 
-	return err
+	return nil
 }
 
 // GetJobs receives all implemented jobs from the given plugin.
