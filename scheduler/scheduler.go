@@ -519,7 +519,7 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 			}
 
 			// Dependent of the status output, decide what should happen next.
-			if !finalize && j.Status == gaia.JobFailed {
+			if !finalize && j.FailPipeline {
 				// we are entering the finalize phase
 				finalize = true
 
