@@ -74,6 +74,7 @@ func (p *PluginFakeFailed) Init(cmd *exec.Cmd, logPath *string) error { return n
 func (p *PluginFakeFailed) Validate() error                           { return nil }
 func (p *PluginFakeFailed) Execute(j *gaia.Job) error {
 	j.Status = gaia.JobFailed
+	j.FailPipeline = true
 	return errors.New("job failed")
 }
 func (p *PluginFakeFailed) GetJobs() ([]gaia.Job, error) { return prepareJobs(), nil }
