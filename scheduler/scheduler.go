@@ -546,7 +546,7 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 					for {
 						var notFinishedWL *workload
 						for singleWL := range mw.Iter() {
-							if singleWL.started && !singleWL.done {
+							if singleWL.started && !singleWL.done && singleWL.job.Status == gaia.JobRunning {
 								notFinishedWL = &singleWL
 							}
 						}
@@ -560,7 +560,6 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 					}
 
 					finished <- true
-					close(triggerSave)
 				}()
 			}
 		case j, ok := <-executeScheduler:

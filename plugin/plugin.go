@@ -196,7 +196,7 @@ func (p *Plugin) Execute(j *gaia.Job) error {
 		p.writer.WriteString(fmt.Sprintf("Job '%s' threw an error: %s\n", j.Title, resultObj.Message))
 	} else if err != nil {
 		j.Status = gaia.JobFailed
-		j.FailPipeline = true
+
 		// Generate error message and attach it to logs.
 		p.writer.WriteString(fmt.Sprintf("Job '%s' threw an error: %s\n", j.Title, err.Error()))
 	} else {
