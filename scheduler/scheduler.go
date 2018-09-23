@@ -429,7 +429,7 @@ func (s *Scheduler) executeScheduledJobs(r gaia.PipelineRun, pS Plugin) {
 	// Run finished. Set pipeline status.
 	var runFail bool
 	for _, job := range r.Jobs {
-		if job.Status != gaia.JobSuccess {
+		if job.Status != gaia.JobSuccess && job.FailPipeline == true {
 			runFail = true
 		}
 	}
@@ -484,6 +484,7 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 			for id, job := range r.Jobs {
 				if job.ID == j.ID {
 					r.Jobs[id].Status = j.Status
+					r.Jobs[id].FailPipeline = j.FailPipeline
 					break
 				}
 			}
@@ -519,7 +520,7 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 			}
 
 			// Dependent of the status output, decide what should happen next.
-			if !finalize && j.FailPipeline {
+			if !finalize && j.Status == gaia.JobFailed {
 				// we are entering the finalize phase
 				finalize = true
 
@@ -544,22 +545,23 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 				go func() {
 					// We might have still running jobs. Wait until all jobs are finished.
 					for {
-						var notFinishedWL *workload
+						var notFinishedWorkloadChan chan bool
 						for singleWL := range mw.Iter() {
-							if singleWL.started && !singleWL.done && singleWL.job.Status == gaia.JobRunning {
-								notFinishedWL = &singleWL
+							if singleWL.started && !singleWL.done {
+								notFinishedWorkloadChan = singleWL.finishedSig
 							}
 						}
 
-						if notFinishedWL == nil {
+						if notFinishedWorkloadChan == nil {
 							break
 						}
 
 						// wait until finished
-						<-notFinishedWL.finishedSig
+						<-notFinishedWorkloadChan
 					}
 
 					finished <- true
+					close(triggerSave)
 				}()
 			}
 		case j, ok := <-executeScheduler:

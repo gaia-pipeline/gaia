@@ -188,13 +188,21 @@ func (p *Plugin) Execute(j *gaia.Job) error {
 	resultObj, err := p.pluginConn.ExecuteJob(job)
 
 	// Check and set job status
-	if resultObj != nil && resultObj.Failed {
+	if resultObj != nil && resultObj.ExitPipeline {
+		// ExitPipeline is true that indicates that the job failed.
 		j.Status = gaia.JobFailed
-		j.FailPipeline = true
+
+		// Failed was set so the pipeline will now be marked as failed.
+		if resultObj.Failed {
+			j.FailPipeline = true
+		}
 
 		// Generate error message and attach it to logs.
 		p.writer.WriteString(fmt.Sprintf("Job '%s' threw an error: %s\n", j.Title, resultObj.Message))
 	} else if err != nil {
+		// An error occured during the send or somewhere else.
+		// The job itself usually does not return an error here.
+		// We mark the job as failed.
 		j.Status = gaia.JobFailed
 
 		// Generate error message and attach it to logs.
