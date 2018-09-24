@@ -243,15 +243,43 @@ func (s *Scheduler) schedule() {
 	}
 }
 
+var schedulerRunningSemaphore = make(chan bool, 0)
+var schedulerRunning = false
+
 // SchedulePipeline schedules a pipeline. We create a new schedule object
 // and save it in our store. The scheduler will later pick this up and will continue the work.
 func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []gaia.Argument) (*gaia.PipelineRun, error) {
+
+	// Introduce a semaphore locking here because this function can be called
+	// in parallel if multiple users happen to trigger a pipeline run at the same time.
+	// (or someone is just simply eager and presses (Start Pipeline) in quick successions).
+	// This means that one of the calls will take slightly longer (a couple of nanoseconds)
+	// while the other finishes to save the pipelinerun.
+	// This is to ensure that the highest ID for the next pipeline is calculated properly.
+	if schedulerRunning {
+		for schedulerRunning {
+			<-schedulerRunningSemaphore
+			schedulerRunning = false
+		}
+	}
+	schedulerRunning = true
+	defer func() {
+		select {
+		case schedulerRunningSemaphore <- true:
+		default:
+		}
+		schedulerRunning = false
+	}()
+
 	// Get highest public id used for this pipeline
 	highestID, err := s.storeService.PipelineGetRunHighestID(p)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot find highest pipeline run id", "error", err.Error())
 		return nil, err
 	}
+
+	// increment by one
+	highestID++
 
 	// Get jobs
 	jobs, err := s.getPipelineJobs(p)
