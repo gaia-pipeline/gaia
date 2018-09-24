@@ -28,6 +28,9 @@ const (
 
 	// argTypeVault is the argument type vault.
 	argTypeVault = "vault"
+
+	// logFlushInterval defines the interval where logs will be flushed to disk.
+	logFlushInterval = 2
 )
 
 var (
@@ -60,6 +63,9 @@ type Plugin interface {
 
 	// GetJobs returns all real jobs from the pipeline.
 	GetJobs() ([]gaia.Job, error)
+
+	// FlushLogs flushes the logs.
+	FlushLogs() error
 
 	// Close closes the connection and cleansup open file writes.
 	Close()
@@ -465,6 +471,22 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 		go s.resolveDependencies(job, mw, executeScheduler, done)
 	}
 
+	// Create a new ticker (scheduled go routine) which periodically
+	// flushes the logs buffer.
+	ticker := time.NewTicker(logFlushInterval * time.Second)
+	pipelineFinished := make(chan bool)
+	go func() {
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				pS.FlushLogs()
+			case <-pipelineFinished:
+				return
+			}
+		}
+	}()
+
 	// Separate channel to save updates about the status of job executions.
 	triggerSave := make(chan gaia.Job)
 
@@ -474,6 +496,7 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 	for {
 		select {
 		case <-finished:
+			pipelineFinished <- true
 			return
 		case j, ok := <-triggerSave:
 			if !ok {
