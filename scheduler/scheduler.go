@@ -253,9 +253,6 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []gaia.Argument) (*g
 		return nil, err
 	}
 
-	// increment by one
-	highestID++
-
 	// Get jobs
 	jobs, err := s.getPipelineJobs(p)
 	if err != nil {

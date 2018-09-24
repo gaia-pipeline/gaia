@@ -320,7 +320,7 @@ func TestPipelineGetRunHighestID(t *testing.T) {
 	}
 
 	pipelineRun1 := &gaia.PipelineRun{
-		ID:         1,
+		ID:         0,
 		PipelineID: 1,
 		Status:     gaia.RunRunning,
 		UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
@@ -332,7 +332,7 @@ func TestPipelineGetRunHighestID(t *testing.T) {
 	}
 
 	pipelineRun2 := &gaia.PipelineRun{
-		ID:         2,
+		ID:         1,
 		PipelineID: 1,
 		Status:     gaia.RunRunning,
 		UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),

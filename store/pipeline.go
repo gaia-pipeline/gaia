@@ -141,31 +141,15 @@ func (s *BoltStore) PipelineGetByName(n string) (*gaia.Pipeline, error) {
 func (s *BoltStore) PipelineGetRunHighestID(p *gaia.Pipeline) (int, error) {
 	var highestID int
 
-	return highestID, s.db.View(func(tx *bolt.Tx) error {
+	return highestID, s.db.Update(func(tx *bolt.Tx) error {
 		// Get Bucket
 		b := tx.Bucket(pipelineRunBucket)
-
-		// Iterate all pipeline runs.
-		return b.ForEach(func(k, v []byte) error {
-			// create single run object
-			r := &gaia.PipelineRun{}
-
-			// Unmarshal
-			err := json.Unmarshal(v, r)
-			if err != nil {
-				return err
-			}
-
-			// Is this a run from our pipeline?
-			if r.PipelineID == p.ID {
-				// Check if the id is higher than what we found before?
-				if r.ID > highestID {
-					highestID = r.ID
-				}
-			}
-
-			return nil
-		})
+		id, err := b.NextSequence()
+		if err != nil {
+			return err
+		}
+		highestID = int(id)
+		return nil
 	})
 }
 
