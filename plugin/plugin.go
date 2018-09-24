@@ -39,8 +39,11 @@ var pluginMap = map[string]plugin.Plugin{
 // Plugin represents a single plugin instance which uses gRPC
 // to connect to exactly one plugin.
 type Plugin struct {
-	// Client instance used to open gRPC connections.
+	// Client is an instance of the go-plugin client.
 	client *plugin.Client
+
+	// Client protocol instance used to open gRPC connections.
+	clientProtocol plugin.ClientProtocol
 
 	// Interface to the connected plugin.
 	pluginConn PluginGRPC
@@ -68,14 +71,15 @@ func (p *Plugin) NewPlugin(ca security.CAAPI) scheduler.Plugin {
 	return &Plugin{ca: ca}
 }
 
-// Connect prepares the log path, starts the plugin, initiates the
-// gRPC connection and looks up the plugin.
-// It's up to the caller to call plugin.Close to shutdown the plugin
-// and close the gRPC connection.
+// Init prepares the log path, set's up new certificates for both gaia and
+// plugin, and prepares the go-plugin client.
 //
 // It expects the start command for the plugin and the path where
 // the log file should be stored.
-func (p *Plugin) Connect(command *exec.Cmd, logPath *string) error {
+//
+// It's up to the caller to call plugin.Close to shutdown the plugin
+// and close the gRPC connection.
+func (p *Plugin) Init(command *exec.Cmd, logPath *string) error {
 	// Create log file and open it.
 	// We will close this file in the close method.
 	if logPath != nil {
@@ -134,14 +138,19 @@ func (p *Plugin) Connect(command *exec.Cmd, logPath *string) error {
 	})
 
 	// Connect via gRPC
-	gRPCClient, err := p.client.Client()
+	p.clientProtocol, err = p.client.Client()
 	if err != nil {
 		p.writer.Flush()
 		return fmt.Errorf("%s\n\n--- output ---\n%s", err.Error(), p.buffer.String())
 	}
 
+	return nil
+}
+
+// Validate validates the interface of the plugin.
+func (p *Plugin) Validate() error {
 	// Request the plugin
-	raw, err := gRPCClient.Dispense(pluginMapKey)
+	raw, err := p.clientProtocol.Dispense(pluginMapKey)
 	if err != nil {
 		return err
 	}
@@ -176,12 +185,34 @@ func (p *Plugin) Execute(j *gaia.Job) error {
 	}
 
 	// Execute the job
-	_, err := p.pluginConn.ExecuteJob(job)
+	resultObj, err := p.pluginConn.ExecuteJob(job)
+
+	// Check and set job status
+	if resultObj != nil && resultObj.ExitPipeline {
+		// ExitPipeline is true that indicates that the job failed.
+		j.Status = gaia.JobFailed
+
+		// Failed was set so the pipeline will now be marked as failed.
+		if resultObj.Failed {
+			j.FailPipeline = true
+		}
+
+		// Generate error message and attach it to logs.
+		p.writer.WriteString(fmt.Sprintf("Job '%s' threw an error: %s\n", j.Title, resultObj.Message))
+	} else if err != nil {
+		// An error occured during the send or somewhere else.
+		// The job itself usually does not return an error here.
+		// We mark the job as failed.
+		j.Status = gaia.JobFailed
+
+		// Generate error message and attach it to logs.
+		p.writer.WriteString(fmt.Sprintf("Job '%s' threw an error: %s\n", j.Title, err.Error()))
+	} else {
+		j.Status = gaia.JobSuccess
+	}
 
 	// Flush logs
-	p.writer.Flush()
-
-	return err
+	return p.writer.Flush()
 }
 
 // GetJobs receives all implemented jobs from the given plugin.

@@ -36,10 +36,10 @@ var (
 	errCreateCMDForPipeline = errors.New("could not create execute command for plugin")
 
 	// Java executeable name
-	javaExecuteableName = "java"
+	javaExecName = "java"
 
 	// Python executeable name
-	pythonExecuteableName = "python"
+	pythonExecName = "python"
 )
 
 // Plugin represents the plugin implementation which is used
@@ -48,9 +48,12 @@ type Plugin interface {
 	// NewPlugin creates a new instance of plugin
 	NewPlugin(ca security.CAAPI) Plugin
 
-	// Connect initializes the connection with the execution command
-	// and the log path wbere the logs should be stored.
-	Connect(command *exec.Cmd, logPath *string) error
+	// Init initializes the go-plugin client and generates a
+	// new certificate pair for gaia and the plugin/pipeline.
+	Init(command *exec.Cmd, logPath *string) error
+
+	// Validate validates the plugin interface.
+	Validate() error
 
 	// Execute executes one job of a pipeline.
 	Execute(j *gaia.Job) error
@@ -198,10 +201,17 @@ func (s *Scheduler) prepareAndExec(r gaia.PipelineRun) {
 	// Create new plugin instance
 	pS := s.pluginSystem.NewPlugin(s.ca)
 
-	// Connect to plugin(pipeline)
+	// Init the plugin
 	path = filepath.Join(path, gaia.LogsFileName)
-	if err := pS.Connect(c, &path); err != nil {
-		gaia.Cfg.Logger.Debug("cannot connect to pipeline", "error", err.Error(), "pipeline", pipeline)
+	if err := pS.Init(c, &path); err != nil {
+		gaia.Cfg.Logger.Debug("cannot initialize the plugin", "error", err.Error(), "pipeline", pipeline)
+		s.finishPipelineRun(&r, gaia.RunFailed)
+		return
+	}
+
+	// Validate the plugin(pipeline)
+	if err := pS.Validate(); err != nil {
+		gaia.Cfg.Logger.Debug("cannot validate pipeline", "error", err.Error(), "pipeline", pipeline)
 		s.finishPipelineRun(&r, gaia.RunFailed)
 		return
 	}
@@ -322,14 +332,8 @@ func executeJob(j gaia.Job, pS Plugin, triggerSave chan gaia.Job) {
 
 	// Execute job
 	if err := pS.Execute(&j); err != nil {
-		// TODO: Show it to user
 		gaia.Cfg.Logger.Debug("error during job execution", "error", err.Error(), "job", j)
-		j.Status = gaia.JobFailed
-		return
 	}
-
-	// If we are here, the job execution was ok
-	j.Status = gaia.JobSuccess
 }
 
 // checkCircularDep checks for circular dependencies.
@@ -425,7 +429,7 @@ func (s *Scheduler) executeScheduledJobs(r gaia.PipelineRun, pS Plugin) {
 	// Run finished. Set pipeline status.
 	var runFail bool
 	for _, job := range r.Jobs {
-		if job.Status != gaia.JobSuccess {
+		if job.Status != gaia.JobSuccess && job.FailPipeline == true {
 			runFail = true
 		}
 	}
@@ -480,6 +484,7 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 			for id, job := range r.Jobs {
 				if job.ID == j.ID {
 					r.Jobs[id].Status = j.Status
+					r.Jobs[id].FailPipeline = j.FailPipeline
 					break
 				}
 			}
@@ -540,19 +545,19 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 				go func() {
 					// We might have still running jobs. Wait until all jobs are finished.
 					for {
-						var notFinishedWL *workload
+						var notFinishedWorkloadChan chan bool
 						for singleWL := range mw.Iter() {
 							if singleWL.started && !singleWL.done {
-								notFinishedWL = &singleWL
+								notFinishedWorkloadChan = singleWL.finishedSig
 							}
 						}
 
-						if notFinishedWL == nil {
+						if notFinishedWorkloadChan == nil {
 							break
 						}
 
 						// wait until finished
-						<-notFinishedWL.finishedSig
+						<-notFinishedWorkloadChan
 					}
 
 					finished <- true
@@ -592,9 +597,15 @@ func (s *Scheduler) getPipelineJobs(p *gaia.Pipeline) ([]gaia.Job, error) {
 	// Create new Plugin instance
 	pS := s.pluginSystem.NewPlugin(s.ca)
 
-	// Connect to plugin(pipeline)
-	if err := pS.Connect(c, nil); err != nil {
-		gaia.Cfg.Logger.Debug("cannot connect to pipeline", "error", err.Error(), "pipeline", p)
+	// Init the go-plugin
+	if err := pS.Init(c, nil); err != nil {
+		gaia.Cfg.Logger.Debug("cannot initialize the pipeline", "error", err.Error(), "pipeline", p)
+		return nil, err
+	}
+
+	// Validate the plugin(pipeline)
+	if err := pS.Validate(); err != nil {
+		gaia.Cfg.Logger.Debug("cannot validate pipeline", "error", err.Error(), "pipeline", p)
 		return nil, err
 	}
 	defer pS.Close()
@@ -626,7 +637,7 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 		c.Path = p.ExecPath
 	case gaia.PTypeJava:
 		// Look for java executeable
-		path, err := exec.LookPath(javaExecuteableName)
+		path, err := exec.LookPath(javaExecName)
 		if err != nil {
 			gaia.Cfg.Logger.Debug("cannot find java executeable", "error", err.Error())
 			return nil
@@ -645,7 +656,7 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 		c.Args = []string{
 			"/bin/sh",
 			"-c",
-			". bin/activate; exec python -c \"import pipeline; pipeline.main()\"",
+			". bin/activate; exec " + pythonExecName + " -c \"import pipeline; pipeline.main()\"",
 		}
 		c.Dir = filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder, p.Name)
 	default:
