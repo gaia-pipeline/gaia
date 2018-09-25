@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
@@ -243,8 +244,7 @@ func (s *Scheduler) schedule() {
 	}
 }
 
-var schedulerRunningSemaphore = make(chan bool, 0)
-var schedulerRunning = false
+var schedulerLock = sync.RWMutex{}
 
 // SchedulePipeline schedules a pipeline. We create a new schedule object
 // and save it in our store. The scheduler will later pick this up and will continue the work.
@@ -256,20 +256,8 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []gaia.Argument) (*g
 	// This means that one of the calls will take slightly longer (a couple of nanoseconds)
 	// while the other finishes to save the pipelinerun.
 	// This is to ensure that the highest ID for the next pipeline is calculated properly.
-	if schedulerRunning {
-		for schedulerRunning {
-			<-schedulerRunningSemaphore
-			schedulerRunning = false
-		}
-	}
-	schedulerRunning = true
-	defer func() {
-		select {
-		case schedulerRunningSemaphore <- true:
-		default:
-		}
-		schedulerRunning = false
-	}()
+	schedulerLock.Lock()
+	defer schedulerLock.Unlock()
 
 	// Get highest public id used for this pipeline
 	highestID, err := s.storeService.PipelineGetRunHighestID(p)
