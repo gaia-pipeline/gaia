@@ -30,7 +30,7 @@ const (
 	argTypeVault = "vault"
 
 	// logFlushInterval defines the interval where logs will be flushed to disk.
-	logFlushInterval = 2
+	logFlushInterval = 1
 )
 
 var (
@@ -496,7 +496,7 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 	for {
 		select {
 		case <-finished:
-			pipelineFinished <- true
+			close(pipelineFinished)
 			return
 		case j, ok := <-triggerSave:
 			if !ok {

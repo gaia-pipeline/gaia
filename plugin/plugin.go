@@ -38,7 +38,7 @@ var pluginMap = map[string]plugin.Plugin{
 }
 
 // timeFormat is the logging time format.
-const timeFormat = "2006-01-02T15:04:05.000Z0700"
+const timeFormat = "2006/01/02 15:04:05"
 
 // Plugin represents a single plugin instance which uses gRPC
 // to connect to exactly one plugin.

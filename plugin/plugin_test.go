@@ -160,3 +160,21 @@ func TestClose(t *testing.T) {
 	p.Init(exec.Command("echo", "world"), &logpath)
 	p.Close()
 }
+
+func TestFlushLogs(t *testing.T) {
+	gaia.Cfg = &gaia.Config{}
+	tmp, _ := ioutil.TempDir("", "TestInit")
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: hclog.DefaultOutput,
+		Name:   "Gaia",
+	})
+	emptyPlugin := &Plugin{}
+	p := emptyPlugin.NewPlugin(new(fakeCAAPI))
+	logpath := filepath.Join(tmp, "test")
+	p.Init(exec.Command("echo", "world"), &logpath)
+	err := p.FlushLogs()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
