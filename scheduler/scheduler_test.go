@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/gaia-pipeline/gaia"
@@ -266,6 +267,59 @@ func TestSchedulePipeline(t *testing.T) {
 	_, err = s.SchedulePipeline(&p, prepareArgs())
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestSchedulePipelineParallel(t *testing.T) {
+	gaia.Cfg = &gaia.Config{}
+	storeInstance := store.NewBoltStore()
+	tmp, _ := ioutil.TempDir("", "TestSchedulePipeline")
+	gaia.Cfg.DataPath = tmp
+	gaia.Cfg.WorkspacePath = filepath.Join(tmp, "tmp")
+	gaia.Cfg.Bolt.Mode = 0600
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: hclog.DefaultOutput,
+		Name:   "Gaia",
+	})
+	gaia.Cfg.Worker = "2"
+	if err := storeInstance.Init(); err != nil {
+		t.Fatal(err)
+	}
+	p1 := gaia.Pipeline{
+		ID:   0,
+		Name: "Test Pipeline 1",
+		Type: gaia.PTypeGolang,
+		Jobs: prepareJobs(),
+	}
+	p2 := gaia.Pipeline{
+		ID:   1,
+		Name: "Test Pipeline 2",
+		Type: gaia.PTypeGolang,
+		Jobs: prepareJobs(),
+	}
+	storeInstance.PipelinePut(&p1)
+	storeInstance.PipelinePut(&p2)
+	s := NewScheduler(storeInstance, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
+	err := s.Init()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var run1 *gaia.PipelineRun
+	var run2 *gaia.PipelineRun
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		run1, _ = s.SchedulePipeline(&p1, prepareArgs())
+		wg.Done()
+	}()
+	go func() {
+		run2, _ = s.SchedulePipeline(&p2, prepareArgs())
+		wg.Done()
+	}()
+	wg.Wait()
+	if run1.ID == run2.ID {
+		t.Fatal("the two run jobs id should not have equalled. was: ", run1.ID, run2.ID)
 	}
 }
 

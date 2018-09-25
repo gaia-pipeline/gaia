@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
@@ -253,9 +254,21 @@ func (s *Scheduler) schedule() {
 	}
 }
 
+var schedulerLock = sync.RWMutex{}
+
 // SchedulePipeline schedules a pipeline. We create a new schedule object
 // and save it in our store. The scheduler will later pick this up and will continue the work.
 func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []gaia.Argument) (*gaia.PipelineRun, error) {
+
+	// Introduce a semaphore locking here because this function can be called
+	// in parallel if multiple users happen to trigger a pipeline run at the same time.
+	// (or someone is just simply eager and presses (Start Pipeline) in quick successions).
+	// This means that one of the calls will take slightly longer (a couple of nanoseconds)
+	// while the other finishes to save the pipelinerun.
+	// This is to ensure that the highest ID for the next pipeline is calculated properly.
+	schedulerLock.Lock()
+	defer schedulerLock.Unlock()
+
 	// Get highest public id used for this pipeline
 	highestID, err := s.storeService.PipelineGetRunHighestID(p)
 	if err != nil {
