@@ -217,7 +217,6 @@ func (p *Plugin) Execute(j *gaia.Job) error {
 		j.Status = gaia.JobSuccess
 	}
 
-	// Flush logs
 	return nil
 }
 
