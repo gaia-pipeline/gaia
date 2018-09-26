@@ -403,8 +403,10 @@ func (s *Scheduler) resolveDependencies(j gaia.Job, mw *managedWorkloads, execut
 	// Queue used to signal that the work should be finished soon.
 	// We do not block here because this is just a pre-validation step.
 	select {
-	case <-done:
-		return
+	case _, ok := <-done:
+		if !ok {
+			return
+		}
 	default:
 	}
 
@@ -481,8 +483,10 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 			select {
 			case <-ticker.C:
 				pS.FlushLogs()
-			case <-pipelineFinished:
-				return
+			case _, ok := <-pipelineFinished:
+				if !ok {
+					return
+				}
 			}
 		}
 	}()
@@ -495,9 +499,11 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 	finished := make(chan bool, 1)
 	for {
 		select {
-		case <-finished:
-			close(pipelineFinished)
-			return
+		case _, ok := <-finished:
+			if !ok {
+				close(pipelineFinished)
+				return
+			}
 		case j, ok := <-triggerSave:
 			if !ok {
 				break
