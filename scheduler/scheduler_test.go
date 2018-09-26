@@ -342,7 +342,12 @@ func prepareArgs() []gaia.Argument {
 		Key:         "secondarg",
 		Type:        "textarea",
 	}
-	return []gaia.Argument{arg1, arg2}
+	arg3 := gaia.Argument{
+		Description: "Vault Arg",
+		Key:         "vaultarg",
+		Type:        "vault",
+	}
+	return []gaia.Argument{arg1, arg2, arg3}
 }
 
 func prepareJobs() []gaia.Job {
