@@ -27,6 +27,7 @@ func (p *PluginFake) Execute(j *gaia.Job) error {
 	return nil
 }
 func (p *PluginFake) GetJobs() ([]gaia.Job, error) { return prepareJobs(), nil }
+func (p *PluginFake) FlushLogs() error             { return nil }
 func (p *PluginFake) Close()                       {}
 
 type CAFake struct{}
@@ -79,6 +80,7 @@ func (p *PluginFakeFailed) Execute(j *gaia.Job) error {
 	return errors.New("job failed")
 }
 func (p *PluginFakeFailed) GetJobs() ([]gaia.Job, error) { return prepareJobs(), nil }
+func (p *PluginFakeFailed) FlushLogs() error             { return nil }
 func (p *PluginFakeFailed) Close()                       {}
 
 func TestPrepareAndExecFail(t *testing.T) {
@@ -394,7 +396,12 @@ func prepareArgs() []gaia.Argument {
 		Key:         "secondarg",
 		Type:        "textarea",
 	}
-	return []gaia.Argument{arg1, arg2}
+	arg3 := gaia.Argument{
+		Description: "Vault Arg",
+		Key:         "vaultarg",
+		Type:        "vault",
+	}
+	return []gaia.Argument{arg1, arg2, arg3}
 }
 
 func prepareJobs() []gaia.Job {

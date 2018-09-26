@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/scheduler"
@@ -35,6 +36,9 @@ var handshake = plugin.HandshakeConfig{
 var pluginMap = map[string]plugin.Plugin{
 	pluginMapKey: &PluginGRPCImpl{},
 }
+
+// timeFormat is the logging time format.
+const timeFormat = "2006/01/02 15:04:05"
 
 // Plugin represents a single plugin instance which uses gRPC
 // to connect to exactly one plugin.
@@ -198,7 +202,8 @@ func (p *Plugin) Execute(j *gaia.Job) error {
 		}
 
 		// Generate error message and attach it to logs.
-		p.writer.WriteString(fmt.Sprintf("Job '%s' threw an error: %s\n", j.Title, resultObj.Message))
+		timeString := time.Now().Format(timeFormat)
+		p.writer.WriteString(fmt.Sprintf("%s Job '%s' threw an error: %s\n", timeString, j.Title, resultObj.Message))
 	} else if err != nil {
 		// An error occured during the send or somewhere else.
 		// The job itself usually does not return an error here.
@@ -206,13 +211,13 @@ func (p *Plugin) Execute(j *gaia.Job) error {
 		j.Status = gaia.JobFailed
 
 		// Generate error message and attach it to logs.
-		p.writer.WriteString(fmt.Sprintf("Job '%s' threw an error: %s\n", j.Title, err.Error()))
+		timeString := time.Now().Format(timeFormat)
+		p.writer.WriteString(fmt.Sprintf("%s Job '%s' threw an error: %s\n", timeString, j.Title, err.Error()))
 	} else {
 		j.Status = gaia.JobSuccess
 	}
 
-	// Flush logs
-	return p.writer.Flush()
+	return nil
 }
 
 // GetJobs receives all implemented jobs from the given plugin.
@@ -277,6 +282,11 @@ func (p *Plugin) GetJobs() ([]gaia.Job, error) {
 
 	// return list
 	return l, nil
+}
+
+// FlushLogs flushes the logs.
+func (p *Plugin) FlushLogs() error {
+	return p.writer.Flush()
 }
 
 // rebuildDepTree resolves related depenendencies and returns
