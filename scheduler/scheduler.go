@@ -499,11 +499,9 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 	finished := make(chan bool, 1)
 	for {
 		select {
-		case _, ok := <-finished:
-			if !ok {
-				close(pipelineFinished)
-				return
-			}
+		case <-finished:
+			close(pipelineFinished)
+			return
 		case j, ok := <-triggerSave:
 			if !ok {
 				break
