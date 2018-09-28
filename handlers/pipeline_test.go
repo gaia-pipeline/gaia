@@ -11,12 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gaia-pipeline/gaia/scheduler"
-
-	"github.com/gaia-pipeline/gaia/services"
-
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
+	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
-	"github.com/gaia-pipeline/gaia/workers/services"
 	"github.com/labstack/echo"
 	uuid "github.com/satori/go.uuid"
 )
