@@ -13,8 +13,8 @@ import (
 
 	"github.com/gaia-pipeline/gaia"
 
-	"github.com/gaia-pipeline/gaia/pipeline"
-	"github.com/gaia-pipeline/gaia/services"
+	"github.com/gaia-pipeline/gaia/workers/pipeline"
+	"github.com/gaia-pipeline/gaia/workers/services"
 
 	"github.com/labstack/echo"
 )

@@ -13,14 +13,6 @@
   revision = "c02ca9a983da5807ddf7d796784928f5be4afd09"
 
 [[projects]]
-  digest = "1:6221a3a452964b1ff30efdc22209b124d54d04373e5993264d3fa9b13da0659d"
-  name = "github.com/gaia-pipeline/flag"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "71ceffbeb0ba60fccc853971bb3ed4d7d90bfd04"
-  version = "v1.7.4-pre"
-
-[[projects]]
   digest = "1:c28625428387b63dd7154eb857f51e700465cfbf7c06f619e71f2da33cefe47e"
   name = "github.com/coreos/bbolt"
   packages = ["."]
@@ -58,6 +50,14 @@
   pruneopts = "UT"
   revision = "f6c17b524822278a87e3b3bd809fec33b51f5b46"
   version = "v1.9.0"
+
+[[projects]]
+  digest = "1:6221a3a452964b1ff30efdc22209b124d54d04373e5993264d3fa9b13da0659d"
+  name = "github.com/gaia-pipeline/flag"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "71ceffbeb0ba60fccc853971bb3ed4d7d90bfd04"
+  version = "v1.7.4-pre"
 
 [[projects]]
   branch = "master"
@@ -500,9 +500,9 @@
   analyzer-version = 1
   input-imports = [
     "github.com/GeertJohan/go.rice",
-    "github.com/gaia-pipeline/flag",
     "github.com/coreos/bbolt",
     "github.com/dgrijalva/jwt-go",
+    "github.com/gaia-pipeline/flag",
     "github.com/gaia-pipeline/protobuf",
     "github.com/google/go-github/github",
     "github.com/hashicorp/go-hclog",
@@ -513,6 +513,7 @@
     "golang.org/x/crypto/bcrypt",
     "golang.org/x/oauth2",
     "google.golang.org/grpc",
+    "google.golang.org/grpc/metadata",
     "gopkg.in/src-d/go-git.v4",
     "gopkg.in/src-d/go-git.v4/plumbing",
     "gopkg.in/src-d/go-git.v4/plumbing/transport",
