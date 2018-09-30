@@ -5,9 +5,9 @@ import (
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/plugin"
-	"github.com/gaia-pipeline/gaia/scheduler"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
+	"github.com/gaia-pipeline/gaia/workers/scheduler"
 )
 
 // storeService is an instance of store.

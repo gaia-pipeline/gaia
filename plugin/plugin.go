@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/scheduler"
 	"github.com/gaia-pipeline/gaia/security"
+	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	"github.com/gaia-pipeline/protobuf"
 	plugin "github.com/hashicorp/go-plugin"
 )
