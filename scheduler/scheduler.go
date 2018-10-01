@@ -77,6 +77,7 @@ type GaiaScheduler interface {
 	Init() error
 	SchedulePipeline(p *gaia.Pipeline, args []gaia.Argument) (*gaia.PipelineRun, error)
 	SetPipelineJobs(p *gaia.Pipeline) error
+	StopPipelineRun(p *gaia.Pipeline, runID int) error
 }
 
 var _ GaiaScheduler = (*Scheduler)(nil)
@@ -258,6 +259,37 @@ func (s *Scheduler) schedule() {
 			gaia.Cfg.Logger.Debug("could not put pipeline run into store", "error", err.Error())
 		}
 	}
+}
+
+// StopPipelineRun will prematurely cancel a pipeline run by killing all of its
+// jobs and running processes immediately.
+func (s *Scheduler) StopPipelineRun(p *gaia.Pipeline, runID int) error {
+
+	// 1. Get all running Jobs
+	// 2. Set state to failed and send a finish signal
+	// 3. Store the result
+
+	// Get jobs
+	// jobs, err := s.getPipelineJobs(p)
+	// if err != nil {
+	// 	gaia.Cfg.Logger.Error("cannot get pipeline jobs during schedule", "error", err.Error(), "pipeline", p)
+	// 	return err
+	// }
+
+	pr, err := s.storeService.PipelineGetRunByPipelineIDAndID(p.ID, runID)
+	if err != nil {
+		return err
+	}
+	if pr.Status != gaia.RunRunning {
+		return errors.New("pipeline is not in running state")
+	}
+	for _, job := range pr.Jobs {
+		if job.Status == gaia.JobRunning || job.Status == gaia.JobWaitingExec {
+			job.Status = gaia.JobFailed
+			job.FailPipeline = true
+		}
+	}
+	return nil
 }
 
 var schedulerLock = sync.RWMutex{}

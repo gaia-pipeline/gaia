@@ -273,6 +273,47 @@ func PipelineStart(c echo.Context) error {
 	return c.String(http.StatusNotFound, errPipelineNotFound.Error())
 }
 
+// PipelineStop stops a running pipeline.
+func PipelineStop(c echo.Context) error {
+	schedulerService, _ := services.SchedulerService()
+	pipelineIDStr := c.Param("pipelineid")
+
+	// Look for arguments.
+	// We do not check for errors here cause arguments are optional.
+	args := []gaia.Argument{}
+	c.Bind(&args)
+
+	// Convert string to int because id is int
+	pipelineID, err := strconv.Atoi(pipelineIDStr)
+	if err != nil {
+		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
+	}
+
+	// Convert string to int because id is int
+	runID, err := strconv.Atoi(c.Param("runid"))
+	if err != nil {
+		return c.String(http.StatusBadRequest, errPipelineRunNotFound.Error())
+	}
+
+	// Look up pipeline for the given id
+	var foundPipeline gaia.Pipeline
+	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+		if pipeline.ID == pipelineID {
+			foundPipeline = pipeline
+		}
+	}
+
+	if foundPipeline.Name != "" {
+		err = schedulerService.StopPipelineRun(&foundPipeline, runID)
+		if err != nil {
+			c.String(http.StatusBadRequest, err.Error())
+		}
+	}
+
+	// Pipeline not found
+	return c.String(http.StatusNotFound, errPipelineNotFound.Error())
+}
+
 type getAllWithLatestRun struct {
 	Pipeline    gaia.Pipeline    `json:"p"`
 	PipelineRun gaia.PipelineRun `json:"r"`
