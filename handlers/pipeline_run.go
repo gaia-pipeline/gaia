@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/pipeline"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/labstack/echo"
 )
@@ -49,6 +50,45 @@ func PipelineRunGet(c echo.Context) error {
 
 	// Return pipeline run
 	return c.JSON(http.StatusOK, pipelineRun)
+}
+
+// PipelineStop stops a running pipeline.
+func PipelineStop(c echo.Context) error {
+	schedulerService, _ := services.SchedulerService()
+	// Get parameters and validate
+	pipelineID := c.Param("pipelineid")
+	pipelineRunID := c.Param("runid")
+
+	// Transform pipelineid to int
+	p, err := strconv.Atoi(pipelineID)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "invalid pipeline id given")
+	}
+
+	// Transform pipelinerunid to int
+	r, err := strconv.Atoi(pipelineRunID)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "invalid pipeline run id given")
+	}
+
+	// Look up pipeline for the given id
+	var foundPipeline gaia.Pipeline
+	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+		if pipeline.ID == p {
+			foundPipeline = pipeline
+		}
+	}
+
+	if foundPipeline.Name != "" {
+		err = schedulerService.StopPipelineRun(&foundPipeline, r)
+		if err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+		return c.String(http.StatusOK, "pipeline successfully stopped")
+	}
+
+	// Pipeline not found
+	return c.String(http.StatusNotFound, errPipelineNotFound.Error())
 }
 
 // PipelineGetAllRuns returns all runs about the given pipeline.

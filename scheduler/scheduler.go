@@ -269,13 +269,6 @@ func (s *Scheduler) StopPipelineRun(p *gaia.Pipeline, runID int) error {
 	// 2. Set state to failed and send a finish signal
 	// 3. Store the result
 
-	// Get jobs
-	// jobs, err := s.getPipelineJobs(p)
-	// if err != nil {
-	// 	gaia.Cfg.Logger.Error("cannot get pipeline jobs during schedule", "error", err.Error(), "pipeline", p)
-	// 	return err
-	// }
-
 	pr, err := s.storeService.PipelineGetRunByPipelineIDAndID(p.ID, runID)
 	if err != nil {
 		return err
@@ -289,7 +282,7 @@ func (s *Scheduler) StopPipelineRun(p *gaia.Pipeline, runID int) error {
 			job.FailPipeline = true
 		}
 	}
-	return nil
+	return s.storeService.PipelinePutRun(pr)
 }
 
 var schedulerLock = sync.RWMutex{}
