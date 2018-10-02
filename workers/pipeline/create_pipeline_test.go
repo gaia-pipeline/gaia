@@ -35,7 +35,8 @@ func (ms *mockScheduler) Init() error { return nil }
 func (ms *mockScheduler) SchedulePipeline(p *gaia.Pipeline, args []gaia.Argument) (*gaia.PipelineRun, error) {
 	return nil, nil
 }
-func (ms *mockScheduler) SetPipelineJobs(p *gaia.Pipeline) error { return ms.Error }
+func (ms *mockScheduler) SetPipelineJobs(p *gaia.Pipeline) error            { return ms.Error }
+func (ms *mockScheduler) StopPipelineRun(p *gaia.Pipeline, runid int) error { return ms.Error }
 
 func TestCreatePipelineUnknownType(t *testing.T) {
 	tmp, _ := ioutil.TempDir("", "TestCreatePipelineUnknownType")
