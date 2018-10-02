@@ -261,14 +261,11 @@ func (s *Scheduler) schedule() {
 	}
 }
 
+var killedPipelineRun = make(chan *gaia.PipelineRun, 1)
+
 // StopPipelineRun will prematurely cancel a pipeline run by killing all of its
 // jobs and running processes immediately.
 func (s *Scheduler) StopPipelineRun(p *gaia.Pipeline, runID int) error {
-
-	// 1. Get all running Jobs
-	// 2. Set state to failed and send a finish signal
-	// 3. Store the result
-
 	pr, err := s.storeService.PipelineGetRunByPipelineIDAndID(p.ID, runID)
 	if err != nil {
 		return err
@@ -276,13 +273,11 @@ func (s *Scheduler) StopPipelineRun(p *gaia.Pipeline, runID int) error {
 	if pr.Status != gaia.RunRunning {
 		return errors.New("pipeline is not in running state")
 	}
-	for _, job := range pr.Jobs {
-		if job.Status == gaia.JobRunning || job.Status == gaia.JobWaitingExec {
-			job.Status = gaia.JobFailed
-			job.FailPipeline = true
-		}
-	}
-	return s.storeService.PipelinePutRun(pr)
+
+	pr.Status = gaia.RunCancelled
+	killedPipelineRun <- pr
+
+	return nil
 }
 
 var schedulerLock = sync.RWMutex{}
@@ -482,6 +477,8 @@ func (s *Scheduler) executeScheduledJobs(r gaia.PipelineRun, pS Plugin) {
 
 	if runFail {
 		s.finishPipelineRun(&r, gaia.RunFailed)
+	} else if r.Status == gaia.RunCancelled {
+		s.finishPipelineRun(&r, gaia.RunCancelled)
 	} else {
 		s.finishPipelineRun(&r, gaia.RunSuccess)
 	}
@@ -537,6 +534,24 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 	finished := make(chan bool, 1)
 	for {
 		select {
+		case pr, ok := <-killedPipelineRun:
+			if ok {
+				if pr.ID == r.ID {
+					for _, job := range r.Jobs {
+						if job.Status == gaia.JobRunning || job.Status == gaia.JobWaitingExec {
+							job.Status = gaia.JobFailed
+							job.FailPipeline = true
+						}
+					}
+					r.Status = gaia.RunCancelled
+					s.storeService.PipelinePutRun(r)
+					close(done)
+					close(executeScheduler)
+					finished <- true
+					finalize = true
+					return
+				}
+			}
 		case <-finished:
 			close(pipelineFinished)
 			return

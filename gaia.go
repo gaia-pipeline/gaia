@@ -58,6 +58,9 @@ const (
 	// RunRunning status
 	RunRunning PipelineRunStatus = "running"
 
+	// RunCancelled status
+	RunCancelled PipelineRunStatus = "cancelled"
+
 	// JobWaitingExec status
 	JobWaitingExec JobStatus = "waiting for execution"
 
