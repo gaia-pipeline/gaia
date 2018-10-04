@@ -261,7 +261,9 @@ func (s *Scheduler) schedule() {
 	}
 }
 
-var killedPipelineRun = make(chan *gaia.PipelineRun, 1)
+// killedPipelineRun is used to signal the scheduler to abort a pipeline run.
+// to have guaranteed delivery this channel musn't be buffered.
+var killedPipelineRun = make(chan *gaia.PipelineRun, 0)
 
 // StopPipelineRun will prematurely cancel a pipeline run by killing all of its
 // jobs and running processes immediately.
