@@ -48,7 +48,7 @@
                 </td>
                 <td>{{ calculateDuration(props.row.startdate, props.row.finishdate) }}</td>
                 <td>
-                  <a v-on:click="stopPipelineModal(pipelineID, props.row.id)"><i class="fa fa-trash" style="color: whitesmoke;"></i></a>
+                  <a v-on:click="stopPipelineModal(pipelineID, props.row.id)"><i class="fa fa-ban" style="color: whitesmoke;"></i></a>
                 </td>
               </template>
               <div slot="emptystate" class="empty-table-text">
@@ -59,12 +59,12 @@
 
         <!-- stop pipeline run modal -->
         <modal :visible="showStopPipelineModal" class="modal-z-index" @close="close">
-          <div class="box secret-modal">
+          <div class="box stop-pipeline-modal">
             <article class="media">
               <div class="media-content">
                 <div class="content">
                   <p>
-                    <span style="color: black;">Do you really want to cancel this run?</span>
+                    <span style="color: white;">Do you really want to cancel this run?</span>
                   </p>
                 </div>
                 <div class="modal-footer">
@@ -460,9 +460,13 @@ export default {
 
 <style lang="scss">
 
-#pipeline-detail {
-  width: 100%;
-  height: 400px;
-}
+  #pipeline-detail {
+    width: 100%;
+    height: 400px;
+  }
+  .stop-pipeline-modal {
+    text-align: center;
+    background-color: #2a2735;
+  }
 
 </style>

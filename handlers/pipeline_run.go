@@ -159,7 +159,7 @@ func GetJobLogs(c echo.Context) error {
 	jL := jobLogs{}
 
 	// Determine if job has been finished
-	if run.Status == gaia.RunFailed || run.Status == gaia.RunSuccess {
+	if run.Status == gaia.RunFailed || run.Status == gaia.RunSuccess || run.Status == gaia.RunCancelled {
 		jL.Finished = true
 	}
 
