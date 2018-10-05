@@ -49,7 +49,7 @@ func (s *BoltStore) UserAuth(u *gaia.User, updateLastLogin bool) (*gaia.User, er
 	// Look up user
 	user, err := s.UserGet(u.Username)
 
-	// Error occured and/or user not found
+	// Error occurred and/or user not found
 	if err != nil || user == nil {
 		return nil, err
 	}
