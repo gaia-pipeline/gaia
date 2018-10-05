@@ -385,6 +385,46 @@ func TestSetPipelineJobs(t *testing.T) {
 	}
 }
 
+func TestStopPipelineRunFailIfPipelineNotInRunningState(t *testing.T) {
+	gaia.Cfg = &gaia.Config{}
+	storeInstance := store.NewBoltStore()
+	tmp, _ := ioutil.TempDir("", "TestStopPipelineRun")
+	gaia.Cfg.DataPath = tmp
+	gaia.Cfg.WorkspacePath = filepath.Join(tmp, "tmp")
+	gaia.Cfg.Bolt.Mode = 0600
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: hclog.DefaultOutput,
+		Name:   "Gaia",
+	})
+	gaia.Cfg.Worker = "2"
+	if err := storeInstance.Init(); err != nil {
+		t.Fatal(err)
+	}
+	p, _ := prepareTestData()
+	storeInstance.PipelinePut(&p)
+	s := NewScheduler(storeInstance, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
+	_, err := s.SchedulePipeline(&p, prepareArgs())
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.schedule()
+	r, err := storeInstance.PipelineGetRunByPipelineIDAndID(p.ID, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.Status != gaia.RunScheduled {
+		t.Fatalf("run has status %s but should be %s\n", r.Status, string(gaia.RunScheduled))
+	}
+	err = s.StopPipelineRun(&p, 1)
+	if err == nil {
+		t.Fatal("error was nil. should have failed")
+	}
+	if err.Error() != "pipeline is not in running state" {
+		t.Fatal("error was not what was expected 'pipeline is not in running state'. got: ", err.Error())
+	}
+}
+
 func prepareArgs() []gaia.Argument {
 	arg1 := gaia.Argument{
 		Description: "First Arg",
