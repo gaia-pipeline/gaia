@@ -190,6 +190,7 @@ func (v *Vault) encrypt(data []byte) (string, error) {
 		// User has deleted all the secrets. the file will be empty.
 		return "", nil
 	}
+	data = append(data, []byte("\nGAIA_CHECK=!CHECK_ME!")...)
 	paddedPassword := v.pad(v.cert)
 	ci := base64.URLEncoding.EncodeToString(paddedPassword)
 	block, err := aes.NewCipher([]byte(ci[:aes.BlockSize]))
@@ -241,6 +242,10 @@ func (v *Vault) decrypt(data []byte) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
+
+	if !bytes.Contains(unpadMsg, []byte("!CHECK_ME!")) {
+		return []byte{}, errors.New("possible mistyped password")
+	}
 	return unpadMsg, nil
 }
 
@@ -253,11 +258,8 @@ func (v *Vault) parseToMap(data []byte) error {
 	row := bytes.Split(data, []byte("\n"))
 	for _, r := range row {
 		d := bytes.Split(r, []byte("="))
-		if len(d) < 2 {
-			// It is possible that if there is a password failure it's not caught
-			// by the padding process. Here it will be caught because we can't
-			// marshal the data into proper k/v pairs.
-			return errors.New("possible mistyped password")
+		if bytes.Equal(d[0], []byte("GAIA_CHECK")) {
+			continue
 		}
 		v.data[string(d[0])] = d[1]
 	}
