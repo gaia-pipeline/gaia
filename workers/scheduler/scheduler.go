@@ -277,6 +277,10 @@ func (s *Scheduler) StopPipelineRun(p *gaia.Pipeline, runID int) error {
 	}
 
 	pr.Status = gaia.RunCancelled
+	err = s.storeService.PipelinePutRun(pr)
+	if err != nil {
+		return err
+	}
 	killedPipelineRun <- pr
 
 	return nil
