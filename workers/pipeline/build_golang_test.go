@@ -11,9 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gaia-pipeline/gaia/services"
-
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
 )

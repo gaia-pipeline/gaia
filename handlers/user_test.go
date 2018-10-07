@@ -1,17 +1,14 @@
 package handlers
 
 import (
-	"testing"
-
 	"bytes"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
-
-	"io/ioutil"
-
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"

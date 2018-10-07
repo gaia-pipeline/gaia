@@ -1,19 +1,14 @@
 package handlers
 
 import (
-	"testing"
-
-	"net/http/httptest"
-
-	"net/http"
-
+	"crypto/rand"
 	"crypto/rsa"
-	"time"
-
 	"fmt"
 	"io/ioutil"
-
-	"crypto/rand"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"

@@ -1,15 +1,13 @@
 package handlers
 
 import (
+	"crypto/rsa"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/GeertJohan/go.rice"
-
-	"crypto/rsa"
-
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/labstack/echo"

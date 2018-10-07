@@ -3,10 +3,9 @@ package main
 import (
 	"crypto/rand"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
-
-	"io/ioutil"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/flag"

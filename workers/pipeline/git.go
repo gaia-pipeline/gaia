@@ -12,14 +12,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/gaia-pipeline/gaia/services"
-
-	"golang.org/x/oauth2"
-	"gopkg.in/src-d/go-git.v4/plumbing"
-
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/services"
 	"github.com/google/go-github/github"
+	"golang.org/x/oauth2"
 	git "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/client"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"

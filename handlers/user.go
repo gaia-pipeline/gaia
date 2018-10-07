@@ -1,16 +1,14 @@
 package handlers
 
 import (
+	"crypto/rsa"
 	"net/http"
 	"time"
-
-	"github.com/labstack/echo"
-
-	"crypto/rsa"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
+	"github.com/labstack/echo"
 )
 
 // jwtExpiry defines how long the produced jwt tokens
