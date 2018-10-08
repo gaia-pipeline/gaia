@@ -18,7 +18,9 @@ import (
 )
 
 const (
-	vaultName = ".gaia_vault"
+	vaultName        = ".gaia_vault"
+	secretCheckKey   = "GAIA_CHECK_SECRET"
+	secretCheckValue = "!CHECK_ME!"
 )
 
 // VaultAPI defines a set of apis that a Vault must provide in order to be a Gaia Vault.
@@ -190,6 +192,8 @@ func (v *Vault) encrypt(data []byte) (string, error) {
 		// User has deleted all the secrets. the file will be empty.
 		return "", nil
 	}
+	secretCheck := fmt.Sprintf("\n%s=%s", secretCheckKey, secretCheckValue)
+	data = append(data, []byte(secretCheck)...)
 	paddedPassword := v.pad(v.cert)
 	ci := base64.URLEncoding.EncodeToString(paddedPassword)
 	block, err := aes.NewCipher([]byte(ci[:aes.BlockSize]))
@@ -241,6 +245,10 @@ func (v *Vault) decrypt(data []byte) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
+
+	if !bytes.Contains(unpadMsg, []byte(secretCheckValue)) {
+		return []byte{}, errors.New("possible mistyped password")
+	}
 	return unpadMsg, nil
 }
 
@@ -253,11 +261,8 @@ func (v *Vault) parseToMap(data []byte) error {
 	row := bytes.Split(data, []byte("\n"))
 	for _, r := range row {
 		d := bytes.Split(r, []byte("="))
-		if len(d) < 2 {
-			// It is possible that if there is a password failure it's not caught
-			// by the padding process. Here it will be caught because we can't
-			// marshal the data into proper k/v pairs.
-			return errors.New("possible mistyped password")
+		if bytes.Equal(d[0], []byte(secretCheckKey)) {
+			continue
 		}
 		v.data[string(d[0])] = d[1]
 	}

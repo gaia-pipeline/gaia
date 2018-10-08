@@ -138,7 +138,7 @@ func TestCloseLoadSecretsWithInvalidPassword(t *testing.T) {
 		t.Fatal(err)
 	}
 	v.data = make(map[string][]byte, 0)
-	v.cert = []byte("invalid")
+	v.cert = []byte("tset")
 	err = v.LoadSecrets()
 	if err == nil {
 		t.Fatal("error should not have been nil.")
