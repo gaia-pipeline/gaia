@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gaia-pipeline/gaia/services"
-
 	"github.com/labstack/echo"
 )
 

@@ -6,11 +6,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gaia-pipeline/gaia/security"
-	"github.com/gaia-pipeline/gaia/workers/scheduler"
-
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
+	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	hclog "github.com/hashicorp/go-hclog"
 )
 
