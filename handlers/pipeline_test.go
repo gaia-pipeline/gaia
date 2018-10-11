@@ -39,6 +39,7 @@ func TestPipelineGitLSRemote(t *testing.T) {
 	gaia.Cfg = &gaia.Config{
 		Logger:   hclog.NewNullLogger(),
 		DataPath: dataDir,
+		BasePath:  "/",
 	}
 
 	e := echo.New()
@@ -107,6 +108,7 @@ func TestPipelineUpdate(t *testing.T) {
 		DataPath:     dataDir,
 		HomePath:     dataDir,
 		PipelinePath: dataDir,
+		BasePath:  "/",
 	}
 
 	// Initialize store
@@ -193,6 +195,7 @@ func TestPipelineDelete(t *testing.T) {
 		HomePath:     dataDir,
 		DataPath:     dataDir,
 		PipelinePath: dataDir,
+		BasePath:  "/",
 	}
 
 	// Initialize store
@@ -271,6 +274,7 @@ func TestPipelineStart(t *testing.T) {
 		HomePath:     tmp,
 		DataPath:     tmp,
 		PipelinePath: tmp,
+		BasePath:  "/",
 	}
 
 	// Initialize global active pipelines

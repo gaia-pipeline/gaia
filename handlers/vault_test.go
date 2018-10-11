@@ -26,6 +26,7 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 		DataPath:  dataDir,
 		CAPath:    dataDir,
 		VaultPath: dataDir,
+		BasePath:  "/",
 	}
 
 	_, err := services.CertificateService()
