@@ -186,6 +186,7 @@ type Config struct {
 	ListenPort        string
 	HomePath          string
 	Hostname          string
+	BasePath          string
 	VaultPath         string
 	DataPath          string
 	PipelinePath      string

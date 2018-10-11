@@ -3,7 +3,8 @@ FROM python:2.7-stretch
 # Version and other variables which can be changed.
 ENV GAIA_PORT=8080 \
     GAIA_WORKER=2 \
-    GAIA_HOMEPATH=/data
+    GAIA_HOMEPATH=/data \
+    GAIA_BASEPATH=/
 
 # --------------- Start Go Part ---------------
 # gcc for cgo

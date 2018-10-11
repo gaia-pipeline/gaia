@@ -3,7 +3,8 @@ FROM maven:3-jdk-8
 # Version and other variables which can be changed.
 ENV GAIA_PORT=8080 \
     GAIA_WORKER=2 \
-    GAIA_HOMEPATH=/data
+    GAIA_HOMEPATH=/data \
+    GAIA_BASEPATH=/
 
 # Directory for the binary
 WORKDIR /app
