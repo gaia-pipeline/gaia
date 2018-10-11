@@ -102,7 +102,7 @@ func InitHandlers(e *echo.Echo) error {
 		e.GET(gaia.Cfg.BasePath+"favicon.ico", echo.WrapHandler(http.StripPrefix(gaia.Cfg.BasePath, assetHandler)))
 		e.GET(gaia.Cfg.BasePath+"assets/css/*", echo.WrapHandler(http.StripPrefix(gaia.Cfg.BasePath, assetHandler)))
 		e.GET(gaia.Cfg.BasePath+"assets/js/*", echo.WrapHandler(http.StripPrefix(gaia.Cfg.BasePath, assetHandler)))
-		e.GET(gaia.Cfg.BasePath+"assets/fonts/*", echo.WrapHandler(http.StripPrefix(gaia.Cfg.BasePath, assetHandler)))
+		e.GET(gaia.Cfg.BasePath+"assets/css/assets/fonts/*", echo.WrapHandler(http.StripPrefix(gaia.Cfg.BasePath+"assets/css/", assetHandler)))
 		e.GET(gaia.Cfg.BasePath+"assets/img/*", echo.WrapHandler(http.StripPrefix(gaia.Cfg.BasePath, assetHandler)))
 	}
 

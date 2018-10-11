@@ -13,7 +13,7 @@ import lodash from 'lodash'
 import VueLodash from 'vue-lodash'
 
 const axiosInstance = axios.create({
-  baseURL: '/pipeline/'
+  baseURL: './'
 })
 
 Vue.prototype.$http = axiosInstance
