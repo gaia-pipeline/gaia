@@ -262,8 +262,9 @@ export default {
 
       // Iterate all jobs of the pipeline
       for (let i = 0, l = jobs.length; i < l; i++) {
-        // Choose the image for this node
+        // Choose the image for this node and border color
         var nodeImage = require('assets/questionmark.png')
+        var borderColor = '#222222'
         if (jobs[i].status) {
           switch (jobs[i].status) {
             case 'success':
@@ -271,6 +272,10 @@ export default {
               break
             case 'failed':
               nodeImage = require('assets/fail.png')
+              break
+            case 'running':
+              nodeImage = require('assets/inprogress.png')
+              borderColor = '#e8720b'
               break
           }
         }
@@ -285,6 +290,9 @@ export default {
           label: jobs[i].title,
           font: {
             color: '#eeeeee'
+          },
+          color: {
+            border: borderColor
           }
         }
 
