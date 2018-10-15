@@ -68,6 +68,7 @@ func InitHandlers(e *echo.Echo) error {
 	e.POST(p+"pipeline/githook", GitWebHook)
 
 	// PipelineRun
+	e.POST(p+"pipelinerun/:pipelineid/:runid/stop", PipelineStop)
 	e.GET(p+"pipelinerun/:pipelineid/:runid", PipelineRunGet)
 	e.GET(p+"pipelinerun/:pipelineid", PipelineGetAllRuns)
 	e.GET(p+"pipelinerun/:pipelineid/latest", PipelineGetLatestRun)

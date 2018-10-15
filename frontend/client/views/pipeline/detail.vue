@@ -47,13 +47,40 @@
                   <span v-else>{{ props.row.status }}</span>
                 </td>
                 <td>{{ calculateDuration(props.row.startdate, props.row.finishdate) }}</td>
+                <td>
+                  <a v-on:click="stopPipelineModal(pipelineID, props.row.id)"><i class="fa fa-ban" style="color: whitesmoke;"></i></a>
+                </td>
               </template>
               <div slot="emptystate" class="empty-table-text">
                 No pipeline runs found in database.
               </div>
             </vue-good-table>
         </article>
+
+        <!-- stop pipeline run modal -->
+        <modal :visible="showStopPipelineModal" class="modal-z-index" @close="close">
+          <div class="box stop-pipeline-modal">
+            <article class="media">
+              <div class="media-content">
+                <div class="content">
+                  <p>
+                    <span style="color: white;">Do you really want to cancel this run?</span>
+                  </p>
+                </div>
+                <div class="modal-footer">
+                  <div style="float: left;">
+                    <button class="button is-primary" v-on:click="stopPipeline" style="width:150px;">Yes</button>
+                  </div>
+                  <div style="float: right;">
+                    <button class="button is-danger" v-on:click="close" style="width:130px;">No</button>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </modal>
       </div>
+
     </div>
   </div>
 </template>
@@ -61,15 +88,20 @@
 <script>
 import Vue from 'vue'
 import Vis from 'vis'
+import { Modal } from 'vue-bulma-modal'
 import VueGoodTable from 'vue-good-table'
 import moment from 'moment'
 
 Vue.use(VueGoodTable)
 
 export default {
+  components: {
+    Modal
+  },
 
   data () {
     return {
+      showStopPipelineModal: false,
       pipelineID: null,
       runID: null,
       nodes: null,
@@ -87,6 +119,9 @@ export default {
         },
         {
           label: 'Duration'
+        },
+        {
+          label: 'Actions'
         }
       ],
       runsRows: [],
@@ -218,6 +253,32 @@ export default {
 
     getPipelineRun (pipelineID, runID) {
       return this.$http.get('/api/v1/pipelinerun/' + pipelineID + '/' + runID, { showProgressBar: false })
+    },
+
+    stopPipeline () {
+      this.close()
+      this.$http
+        .post('/api/v1/pipelinerun/' + this.pipelineID + '/' + this.runID + '/stop', { showProgressBar: false })
+        .then(response => {
+          if (response.data) {
+            this.$router.push({path: '/pipeline/detail', query: { pipelineid: this.pipeline.id, runid: response.data.id }})
+          }
+        })
+        .catch((error) => {
+          this.$store.commit('clearIntervals')
+          this.$onError(error)
+        })
+    },
+
+    stopPipelineModal (pipelineID, runID) {
+      this.pipelineID = pipelineID
+      this.runID = runID
+      this.showStopPipelineModal = true
+    },
+
+    close () {
+      this.showStopPipelineModal = false
+      this.$emit('close')
     },
 
     getPipelineRuns (pipelineID) {
@@ -407,9 +468,13 @@ export default {
 
 <style lang="scss">
 
-#pipeline-detail {
-  width: 100%;
-  height: 400px;
-}
+  #pipeline-detail {
+    width: 100%;
+    height: 400px;
+  }
+  .stop-pipeline-modal {
+    text-align: center;
+    background-color: #2a2735;
+  }
 
 </style>

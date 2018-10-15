@@ -77,6 +77,7 @@ type GaiaScheduler interface {
 	Init() error
 	SchedulePipeline(p *gaia.Pipeline, args []gaia.Argument) (*gaia.PipelineRun, error)
 	SetPipelineJobs(p *gaia.Pipeline) error
+	StopPipelineRun(p *gaia.Pipeline, runID int) error
 }
 
 var _ GaiaScheduler = (*Scheduler)(nil)
@@ -258,6 +259,31 @@ func (s *Scheduler) schedule() {
 			gaia.Cfg.Logger.Debug("could not put pipeline run into store", "error", err.Error())
 		}
 	}
+}
+
+// killedPipelineRun is used to signal the scheduler to abort a pipeline run.
+// This has the size one for delayed guarantee of signal delivery.
+var killedPipelineRun = make(chan *gaia.PipelineRun, 1)
+
+// StopPipelineRun will prematurely cancel a pipeline run by killing all of its
+// jobs and running processes immediately.
+func (s *Scheduler) StopPipelineRun(p *gaia.Pipeline, runID int) error {
+	pr, err := s.storeService.PipelineGetRunByPipelineIDAndID(p.ID, runID)
+	if err != nil {
+		return err
+	}
+	if pr.Status != gaia.RunRunning {
+		return errors.New("pipeline is not in running state")
+	}
+
+	pr.Status = gaia.RunCancelled
+	err = s.storeService.PipelinePutRun(pr)
+	if err != nil {
+		return err
+	}
+	killedPipelineRun <- pr
+
+	return nil
 }
 
 var schedulerLock = sync.RWMutex{}
@@ -457,6 +483,8 @@ func (s *Scheduler) executeScheduledJobs(r gaia.PipelineRun, pS Plugin) {
 
 	if runFail {
 		s.finishPipelineRun(&r, gaia.RunFailed)
+	} else if r.Status == gaia.RunCancelled {
+		s.finishPipelineRun(&r, gaia.RunCancelled)
 	} else {
 		s.finishPipelineRun(&r, gaia.RunSuccess)
 	}
@@ -512,6 +540,24 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 	finished := make(chan bool, 1)
 	for {
 		select {
+		case pr, ok := <-killedPipelineRun:
+			if ok {
+				if pr.ID == r.ID {
+					for _, job := range r.Jobs {
+						if job.Status == gaia.JobRunning || job.Status == gaia.JobWaitingExec {
+							job.Status = gaia.JobFailed
+							job.FailPipeline = true
+						}
+					}
+					r.Status = gaia.RunCancelled
+					s.storeService.PipelinePutRun(r)
+					close(done)
+					close(executeScheduler)
+					finished <- true
+					finalize = true
+					return
+				}
+			}
 		case <-finished:
 			close(pipelineFinished)
 			return
