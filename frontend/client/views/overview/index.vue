@@ -1,8 +1,8 @@
 <template>
-  <div class="columns is-multiline">
+  <div class="columns is-1 is-multiline">
     <template v-for="(pipeline, index) in pipelines">
       <div class="column is-one-third" :key="index" v-if="!pipeline.p.notvalid">
-        <div class="pipeline-box notification content-article">
+        <div class="notification pipeline-box content-article">
           <div class="status-display-success" v-if="pipeline.r.status === 'success'"></div>
           <div class="status-display-fail" v-else-if="pipeline.r.status === 'failed'"></div>
           <div class="status-display-unknown" v-else></div>
@@ -14,9 +14,9 @@
               <div>
                 <span class="subtitle">{{ pipeline.p.name }}</span>
               </div>
-            </router-link>            
+            </router-link>
             <hr class="pipeline-hr">
-            <div class="pipeline-info">
+            <div>
               <i class="fa fa-hourglass"></i>
               <span style="color: #b1adad;"> 
                 Duration: 
@@ -38,7 +38,7 @@
                 unknown
               </span><br />
               <div class="pipelinegrid-footer">
-                <a class="button is-primary" @click="checkPipelineArgs(pipeline.p)" style="width: 250px;">
+                <a class="button is-primary" @click="checkPipelineArgs(pipeline.p)" style="width: 100%;">
                   <span class="icon">
                     <i class="fa fa-play-circle"></i>
                   </span>
@@ -52,7 +52,7 @@
     </template>
     <div v-if="pipelines.length == 0" class="no-pipelines-div">
       <span class="no-pipelines-text">No pipelines are available. Please create a pipeline first.</span>
-    </div>    
+    </div>
   </div>
 </template>
 
@@ -188,7 +188,7 @@ export default {
 
 .status-display-success {
   @include status-display();
-  background-color: rgb(49, 196, 49);  
+  background-color: rgb(49, 196, 49);
 }
 
 .status-display-folder {
@@ -207,11 +207,11 @@ export default {
 }
 
 .pipeline-box {
-  width: 377px;
+  padding-right: 20px;
 }
 
 .outer-box {
-  padding-left: 40px; 
+  padding-left: 40px;
   min-height: 170px;
   width: 100%;
 }
@@ -263,10 +263,6 @@ export default {
 }
 
 .pipeline-hr {
-  position: absolute;
-  width: 325px;
-  margin-left: -13px;
-  margin-top: 18px;
   background-image: linear-gradient(
     to right,
     black 33%,
@@ -277,13 +273,7 @@ export default {
   background-repeat: repeat-x;
 }
 
-.pipeline-info {
-  padding-top: 33px;
-}
-
 .pipelinegrid-footer {
-  margin: auto;
-  width: 82%;
   padding-top: 20px;
 }
 
