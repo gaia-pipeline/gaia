@@ -1,0 +1,23 @@
+{{ if .Values.ingress.enabled }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    service: {{ .Release.Name }}
+    app: service
+  annotations:
+    kubernetes.io/ingress.class: service
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          serviceName: {{ .Release.Name }}
+          servicePort: 8080
+        path: /
+    host: {{ .Values.ingress.host }}
+{{ end }}
