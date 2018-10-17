@@ -1,7 +1,7 @@
 <template>
-  <div class="columns is-1 is-multiline">
+  <div class="grid-container">
     <template v-for="(pipeline, index) in pipelines">
-      <div class="column is-one-third" :key="index" v-if="!pipeline.p.notvalid">
+      <div :key="index" v-if="!pipeline.p.notvalid">
         <div class="notification pipeline-box content-article">
           <div class="status-display-success" v-if="pipeline.r.status === 'success'"></div>
           <div class="status-display-fail" v-else-if="pipeline.r.status === 'failed'"></div>
@@ -163,7 +163,14 @@ export default {
 
 <style lang="scss">
 
-.no-pipelines-div {
+  .grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 400px));
+    grid-row-gap: 10px;
+    grid-column-gap: 10px;
+  }
+
+  .no-pipelines-div {
   width: 100%;
   text-align: center;
   margin-top: 50px;
