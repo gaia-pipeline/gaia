@@ -165,7 +165,7 @@ export default {
 
   .grid-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(400px, 400px));
+    grid-template-columns: repeat(auto-fill, 400px);
     grid-row-gap: 10px;
     grid-column-gap: 10px;
   }
