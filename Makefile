@@ -33,5 +33,5 @@ test-cover:
 
 release: compile_frontend static_assets compile_backend
 
-deploy:
+deploy-kube:
 	helm upgrade --install ${RELEASE_NAME} ${HELM_DIR} --namespace ${NAMESPACE}
