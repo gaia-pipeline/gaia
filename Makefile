@@ -37,4 +37,4 @@ deploy-kube:
 	helm upgrade --install ${RELEASE_NAME} ${HELM_DIR} --namespace ${NAMESPACE}
 
 kube-ingress-lb:
-	kubectl -R -f ${HELM_DIR}/_system
+	kubectl apply -R -f ${HELM_DIR}/_system

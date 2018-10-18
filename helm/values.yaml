@@ -24,5 +24,6 @@ readinessProbe:
   failureThreshold: 3
 
 ingress:
-  enabled: true
-  host: gaia.k8s.dev
+  gaia:
+    enabled: true
+    host: gaia.k8s.dev

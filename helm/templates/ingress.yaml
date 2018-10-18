@@ -1,4 +1,4 @@
-{{ if .Values.ingress.enabled }}
+{{ if .Values.ingress.gaia.enabled }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -19,5 +19,5 @@ spec:
           serviceName: {{ .Release.Name }}
           servicePort: 8080
         path: /
-    host: {{ .Values.ingress.host }}
+    host: {{ .Values.ingress.gaia.host }}
 {{ end }}

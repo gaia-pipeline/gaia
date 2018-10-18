@@ -64,11 +64,17 @@ The installation of gaia is simple and often takes a few minutes.
 Using helm
 ~~~~~~~~~~
 
-If you haven't ingress controller setuped on your cluster yet, use
+If you haven't got an ingress controller pod yet, run this command to set it up.
 
 .. code:: sh
 
     make kube-ingress
+
+To init helm:
+
+.. code:: sh
+
+    helm init
 
 To deploy gaia:
 
