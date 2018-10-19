@@ -33,6 +33,7 @@ spec:
         - --ingress-class=service
         - --default-backend-service=$(POD_NAMESPACE)/default-http-backend
         - --configmap=$(POD_NAMESPACE)/nginx-ingress-lb
+        - --tcp-services-configmap=$(POD_NAMESPACE)/nginx-ingress-tcp
         env:
         - name: POD_NAME
           valueFrom:
