@@ -1,0 +1,29 @@
+replicas: 1
+rollingUpdate:
+  maxSurge: 50%
+  maxUnavailable: 20%
+minReadySeconds: 3
+revisionHistoryLimit: 3
+imageTag: latest
+imagePullPolicy: Always
+preStop:
+  sleep: 3
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 50Mi
+  limits:
+    cpu: 500m
+    memory: 500Mi
+
+readinessProbe:
+  initialDelaySeconds: 3
+  timeoutSeconds: 3
+  successThreshold: 1
+  failureThreshold: 3
+
+ingress:
+  gaia:
+    enabled: true
+    host: gaia.k8s.dev

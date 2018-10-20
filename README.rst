@@ -61,6 +61,27 @@ Installation
 
 The installation of gaia is simple and often takes a few minutes.
 
+Using helm
+~~~~~~~~~~
+
+If you haven't got an ingress controller pod yet, make sure that you have `kube-dns` or `coredns` enabled, run this command to set it up.
+
+.. code:: sh
+
+    make kube-ingress
+
+To init helm:
+
+.. code:: sh
+
+    helm init
+
+To deploy gaia:
+
+.. code:: sh
+
+    make deploy-kube
+
 Using docker
 ~~~~~~~~~~~~
 

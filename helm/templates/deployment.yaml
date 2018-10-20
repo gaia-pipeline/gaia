@@ -1,0 +1,48 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    service: {{ .Release.Name }}
+    app: service
+spec:
+  replicas: {{ .Values.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.rollingUpdate.maxUnavailable }}
+  minReadySeconds: {{ .Values.minReadySeconds }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  template:
+    metadata:
+      labels:
+        service: {{ .Release.Name }}
+        app: service
+    spec:
+      containers:
+      - name: service
+        image: gaiapipeline/gaia:{{ .Values.imageTag }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        lifecycle:
+          # @see https://github.com/kubernetes/contrib/issues/1140
+          preStop:
+            exec:
+              command: ["sleep", "{{ .Values.preStop.sleep }}"]
+        env:
+        - name: GAIA_PORT
+          value: "8080"
+        - name: GAIA_HOSTNAME
+          value: http:0.0.0.0
+        ports:
+        - containerPort: 8080
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}

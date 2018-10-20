@@ -1,5 +1,8 @@
 NAME=gaia
 GO_LDFLAGS_STATIC=-ldflags "-s -w -extldflags -static"
+NAMESPACE=${NAME}
+RELEASE_NAME=${NAME}
+HELM_DIR=$(shell pwd)/helm
 
 default: dev
 
@@ -29,3 +32,9 @@ test-cover:
 	go test -v ./... --coverprofile=cover.out
 
 release: compile_frontend static_assets compile_backend
+
+deploy-kube:
+	helm upgrade --install ${RELEASE_NAME} ${HELM_DIR} --namespace ${NAMESPACE}
+
+kube-ingress-lb:
+	kubectl apply -R -f ${HELM_DIR}/_system

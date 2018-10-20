@@ -1,0 +1,64 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  labels:
+    name: nginx-ingress-lb
+  name: nginx-ingress-lb
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      name: nginx-ingress-lb
+  template:
+    metadata:
+      labels:
+        name: nginx-ingress-lb
+      annotations:
+        pod.beta.kubernetes.io/init-containers: '[
+          {
+          "name": "sysctl",
+            "image": "busybox",
+            "imagePullPolicy": "IfNotPresent",
+            "command": ["sh", "-c", "sysctl -w net.core.somaxconn=32768; sysctl -w net.ipv4.ip_local_port_range=\"1024 65535\""],
+            "securityContext": {
+              "privileged": true
+            }
+          }
+        ]'
+    spec:
+      hostNetwork: true
+      containers:
+      - args:
+        - /nginx-ingress-controller
+        - --ingress-class=service
+        - --default-backend-service=$(POD_NAMESPACE)/default-http-backend
+        - --configmap=$(POD_NAMESPACE)/nginx-ingress-lb
+        - --tcp-services-configmap=$(POD_NAMESPACE)/nginx-ingress-tcp
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.9.0
+        imagePullPolicy: Always
+        name: nginx-ingress-lb
+        ports:
+        - name: web
+          containerPort: 80
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 10254
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+
