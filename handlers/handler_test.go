@@ -28,10 +28,6 @@ func makeAuthBarrierRouter() *echo.Echo {
 }
 
 func TestAuthBarrierNoToken(t *testing.T) {
-	gaia.Cfg = &gaia.Config{
-		BasePath: "/",
-	}
-	
 	e := makeAuthBarrierRouter()
 
 	req := httptest.NewRequest(echo.GET, "/auth", nil)

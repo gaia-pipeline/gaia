@@ -53,7 +53,6 @@ func TestHookReceive(t *testing.T) {
 		CAPath:    dataDir,
 		VaultPath: dataDir,
 		HomePath:  dataDir,
-		BasePath:  "/",
 	}
 	_, err = services.CertificateService()
 	if err != nil {

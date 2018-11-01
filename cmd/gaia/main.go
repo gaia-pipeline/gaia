@@ -47,7 +47,6 @@ func init() {
 	fs.StringVar(&gaia.Cfg.ListenPort, "port", "8080", "Listen port for gaia")
 	fs.StringVar(&gaia.Cfg.HomePath, "homepath", "", "Path to the gaia home folder")
 	fs.StringVar(&gaia.Cfg.Hostname, "hostname", "https://localhost", "The host's name under which gaia is deployed at e.g.: https://gaia-pipeline.com")
-	fs.StringVar(&gaia.Cfg.BasePath, "basepath", "/", "The root path html assets are served from")
 	fs.StringVar(&gaia.Cfg.VaultPath, "vaultpath", "", "Path to the gaia vault folder")
 	fs.StringVar(&gaia.Cfg.Worker, "worker", "2", "Number of worker gaia will use to execute pipelines in parallel")
 	fs.StringVar(&gaia.Cfg.JwtPrivateKeyPath, "jwtPrivateKeyPath", "", "A RSA private key used to sign JWT tokens")

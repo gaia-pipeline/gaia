@@ -43,7 +43,7 @@ var (
 // InitHandlers initializes(registers) all handlers
 func InitHandlers(e *echo.Echo) error {
 	// Define prefix
-	p := gaia.Cfg.BasePath + "api/" + gaia.APIVersion + "/"
+	p := "/api/" + gaia.APIVersion + "/"
 
 	// --- Register handlers at echo instance ---
 
@@ -98,12 +98,12 @@ func InitHandlers(e *echo.Echo) error {
 
 		// Register handler for static assets
 		assetHandler := http.FileServer(staticAssets.HTTPBox())
-		e.GET(gaia.Cfg.BasePath, echo.WrapHandler(http.StripPrefix(gaia.Cfg.BasePath, assetHandler)))
-		e.GET(gaia.Cfg.BasePath+"favicon.ico", echo.WrapHandler(http.StripPrefix(gaia.Cfg.BasePath, assetHandler)))
-		e.GET(gaia.Cfg.BasePath+"assets/css/*", echo.WrapHandler(http.StripPrefix(gaia.Cfg.BasePath, assetHandler)))
-		e.GET(gaia.Cfg.BasePath+"assets/js/*", echo.WrapHandler(http.StripPrefix(gaia.Cfg.BasePath, assetHandler)))
-		e.GET(gaia.Cfg.BasePath+"assets/css/assets/fonts/*", echo.WrapHandler(http.StripPrefix(gaia.Cfg.BasePath+"assets/css/", assetHandler)))
-		e.GET(gaia.Cfg.BasePath+"assets/img/*", echo.WrapHandler(http.StripPrefix(gaia.Cfg.BasePath, assetHandler)))
+		e.GET("/", echo.WrapHandler(assetHandler))
+		e.GET("/favicon.ico", echo.WrapHandler(assetHandler))
+		e.GET("/assets/css/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
+		e.GET("/assets/js/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
+		e.GET("/assets/css/assets/fonts/*", echo.WrapHandler(http.StripPrefix("/assets/css/", assetHandler)))
+		e.GET("/assets/img/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
 	}
 
 	return nil
@@ -117,10 +117,10 @@ func authBarrier(next echo.HandlerFunc) echo.HandlerFunc {
 		// Login, WebHook callback and static resources are open
 		// The webhook callback has it's own authentication method
 		if strings.Contains(c.Path(), "/login") ||
-			c.Path() == gaia.Cfg.BasePath ||
-			strings.Contains(c.Path(), gaia.Cfg.BasePath+"assets/") ||
-			c.Path() == gaia.Cfg.BasePath+"favicon.ico" ||
-			strings.Contains(c.Path(), gaia.Cfg.BasePath+"pipeline/githook") {
+			c.Path() == "/" ||
+			strings.Contains(c.Path(), "/assets/") ||
+			c.Path() == "/favicon.ico" ||
+			strings.Contains(c.Path(), "pipeline/githook") {
 			return next(c)
 		}
 

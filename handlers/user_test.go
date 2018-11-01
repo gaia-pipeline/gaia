@@ -32,7 +32,6 @@ func TestUserLoginHMACKey(t *testing.T) {
 			Name:   "Gaia",
 		}),
 		DataPath: dataDir,
-		BasePath:  "/",
 	}
 
 	e := echo.New()
@@ -86,7 +85,6 @@ func TestUserLoginRSAKey(t *testing.T) {
 			Name:   "Gaia",
 		}),
 		DataPath: dataDir,
-		BasePath:  "/",
 	}
 
 	e := echo.New()
