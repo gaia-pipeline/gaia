@@ -103,7 +103,7 @@ func InitHandlers(e *echo.Echo) error {
 		e.GET("/favicon.ico", echo.WrapHandler(assetHandler))
 		e.GET("/assets/css/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
 		e.GET("/assets/js/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
-		e.GET("/assets/fonts/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
+		e.GET("/assets/css/assets/fonts/*", echo.WrapHandler(http.StripPrefix("/assets/css/", assetHandler)))
 		e.GET("/assets/img/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
 	}
 

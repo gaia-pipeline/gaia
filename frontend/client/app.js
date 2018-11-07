@@ -12,21 +12,24 @@ import auth from './auth'
 import lodash from 'lodash'
 import VueLodash from 'vue-lodash'
 
-Vue.prototype.$http = axios
-Vue.axios = axios
+const axiosInstance = axios.create({
+  baseURL: './'
+})
+
+Vue.prototype.$http = axiosInstance
+Vue.axios = axiosInstance
 Vue.router = router
 Vue.use(NProgress)
 Vue.use(VueLodash, lodash)
 
 // Auth interceptors
-axios.interceptors.request.use(function (request) {
+axiosInstance.interceptors.request.use(function (request) {
   request.headers['Authorization'] = 'Bearer ' + auth.getToken()
   return request
 })
 
 // Enable devtools
 Vue.config.devtools = true
-
 sync(store, router)
 
 const nprogress = new NProgress({ parent: '.nprogress-container' })

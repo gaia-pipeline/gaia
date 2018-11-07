@@ -208,9 +208,12 @@ export default {
         this.runID = runID
 
         // Run ID specified. Do concurrent request
-        this.$http.all([this.getPipeline(pipelineID), this.getPipelineRun(pipelineID, runID), this.getPipelineRuns(pipelineID)])
-          .then(this.$http.spread(function (pipeline, pipelineRun, pipelineRuns) {
+        Promise.all([this.getPipeline(pipelineID), this.getPipelineRun(pipelineID, runID), this.getPipelineRuns(pipelineID)])
+          .then(values => {
             // We only redraw the pipeline if pipeline is running
+            var pipeline = values[0]
+            var pipelineRun = values[1]
+            var pipelineRuns = values[2]
             if (pipelineRun.data.status !== 'running' && !this.lastRedraw) {
               this.drawPipelineDetail(pipeline.data, pipelineRun.data)
               this.lastRedraw = true
@@ -220,15 +223,17 @@ export default {
             }
             this.runsRows = pipelineRuns.data
             this.pipeline = pipeline.data
-          }.bind(this)))
+          })
           .catch((error) => {
             this.$store.commit('clearIntervals')
             this.$onError(error)
           })
       } else {
         // Do concurrent request
-        this.$http.all([this.getPipeline(pipelineID), this.getPipelineRuns(pipelineID)])
-          .then(this.$http.spread(function (pipeline, pipelineRuns) {
+        Promise.all([this.getPipeline(pipelineID), this.getPipelineRuns(pipelineID)])
+          .then(values => {
+            var pipeline = values[0]
+            var pipelineRuns = values[1]
             if (!this.lastRedraw) {
               this.drawPipelineDetail(pipeline.data, null)
               this.lastRedraw = true
@@ -239,7 +244,7 @@ export default {
               this.runsRows = pipelineRuns.data
             }
             this.pipeline = pipeline.data
-          }.bind(this)))
+          })
           .catch((error) => {
             this.$store.commit('clearIntervals')
             this.$onError(error)
