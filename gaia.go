@@ -34,6 +34,9 @@ const (
 	// PTypePython python plugin type
 	PTypePython PipelineType = "python"
 
+	// PTypeCpp C++ plugin type
+	PTypeCpp PipelineType = "cpp"
+
 	// CreatePipelineFailed status
 	CreatePipelineFailed CreatePipelineType = "failed"
 

@@ -77,8 +77,8 @@
               </div>
             </div>
             <div class="content" style="display: flex;">
-              <div class="pipelinetype" title="C++ (not yet supported)" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'cplusplus' }" data-tippy-hideOnClick="false">
-                <img src="~assets/cplusplus.png" class="typeimage typeimagenotyetsupported">
+              <div class="pipelinetype" title="C++" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'cpp' }" data-tippy-hideOnClick="false">
+                <img src="~assets/cpp.png" class="typeimage typeimagenotyetsupported">
               </div>
               <div class="pipelinetype" title="Node.js (not yet supported)" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'nodejs' }" data-tippy-hideOnClick="false">
                 <img src="~assets/nodejs.png" class="typeimage typeimagenotyetsupported">

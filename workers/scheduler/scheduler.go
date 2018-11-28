@@ -722,10 +722,10 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 	case gaia.PTypeGolang:
 		c.Path = p.ExecPath
 	case gaia.PTypeJava:
-		// Look for java executeable
+		// Look for java executable
 		path, err := exec.LookPath(javaExecName)
 		if err != nil {
-			gaia.Cfg.Logger.Debug("cannot find java executeable", "error", err.Error())
+			gaia.Cfg.Logger.Debug("cannot find java executable", "error", err.Error())
 			return nil
 		}
 
@@ -745,6 +745,8 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 			". bin/activate; exec " + pythonExecName + " -c \"import pipeline; pipeline.main()\"",
 		}
 		c.Dir = filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder, p.Name)
+	case gaia.PTypeCpp:
+		c.Path = p.ExecPath
 	default:
 		c = nil
 	}
