@@ -13,22 +13,21 @@ import (
 )
 
 const (
-	golangBinaryName = "go"
+	cppBinaryName = "make"
 )
 
-// BuildPipelineGolang is the real implementation of BuildPipeline for golang
-type BuildPipelineGolang struct {
+// BuildPipelineCpp is the real implementation of BuildPipeline for C++
+type BuildPipelineCpp struct {
 	Type gaia.PipelineType
 }
 
 // PrepareEnvironment prepares the environment before we start the build process.
-func (b *BuildPipelineGolang) PrepareEnvironment(p *gaia.CreatePipeline) error {
+func (b *BuildPipelineCpp) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	// create uuid for destination folder
 	uuid := uuid.Must(uuid.NewV4(), nil)
 
 	// Create local temp folder for clone
-	goPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpGoFolder)
-	cloneFolder := filepath.Join(goPath, srcFolder, uuid.String())
+	cloneFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpCppFolder, srcFolder, uuid.String())
 	err := os.MkdirAll(cloneFolder, 0700)
 	if err != nil {
 		return err
@@ -40,42 +39,20 @@ func (b *BuildPipelineGolang) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	return err
 }
 
-// ExecuteBuild executes the golang build process
-func (b *BuildPipelineGolang) ExecuteBuild(p *gaia.CreatePipeline) error {
-	// Look for golang executable
-	path, err := exec.LookPath(golangBinaryName)
+// ExecuteBuild executes the c++ build process
+func (b *BuildPipelineCpp) ExecuteBuild(p *gaia.CreatePipeline) error {
+	// Look for c++ binary executable
+	path, err := exec.LookPath(cppBinaryName)
 	if err != nil {
-		gaia.Cfg.Logger.Debug("cannot find go executable", "error", err.Error())
-		return err
-	}
-	goPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpGoFolder)
-
-	// Set command args for get dependencies
-	args := []string{
-		"get",
-		"-d",
-		"./...",
-	}
-
-	env := append(os.Environ(), "GOPATH="+goPath)
-
-	// Execute and wait until finish or timeout
-	output, err := executeCmd(path, args, env, p.Pipeline.Repo.LocalDest)
-	if err != nil {
-		gaia.Cfg.Logger.Debug("cannot get dependencies", "error", err.Error(), "output", string(output))
-		p.Output = string(output)
+		gaia.Cfg.Logger.Debug("cannot find c++ binary executable", "error", err.Error())
 		return err
 	}
 
 	// Set command args for build
-	args = []string{
-		"build",
-		"-o",
-		appendTypeToName(p.Pipeline.Name, p.Pipeline.Type),
-	}
+	args := []string{}
 
 	// Execute and wait until finish or timeout
-	output, err = executeCmd(path, args, env, p.Pipeline.Repo.LocalDest)
+	output, err := executeCmd(path, args, os.Environ(), p.Pipeline.Repo.LocalDest)
 	p.Output = string(output)
 	if err != nil {
 		gaia.Cfg.Logger.Debug("cannot build pipeline", "error", err.Error(), "output", string(output))
@@ -85,9 +62,9 @@ func (b *BuildPipelineGolang) ExecuteBuild(p *gaia.CreatePipeline) error {
 	return nil
 }
 
-// CopyBinary copies the final compiled archive to the
+// CopyBinary copies the final compiled binary to the
 // destination folder.
-func (b *BuildPipelineGolang) CopyBinary(p *gaia.CreatePipeline) error {
+func (b *BuildPipelineCpp) CopyBinary(p *gaia.CreatePipeline) error {
 	// Define src and destination
 	src := filepath.Join(p.Pipeline.Repo.LocalDest, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
 	dest := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
@@ -102,11 +79,11 @@ func (b *BuildPipelineGolang) CopyBinary(p *gaia.CreatePipeline) error {
 }
 
 // SavePipeline saves the current pipeline configuration.
-func (b *BuildPipelineGolang) SavePipeline(p *gaia.Pipeline) error {
+func (b *BuildPipelineCpp) SavePipeline(p *gaia.Pipeline) error {
 	dest := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
 	p.ExecPath = dest
-	p.Type = gaia.PTypeGolang
-	p.Name = strings.TrimSuffix(filepath.Base(dest), typeDelimiter+gaia.PTypeGolang.String())
+	p.Type = gaia.PTypeCpp
+	p.Name = strings.TrimSuffix(filepath.Base(dest), typeDelimiter+gaia.PTypeCpp.String())
 	p.Created = time.Now()
 	// Our pipeline is finished constructing. Save it.
 	storeService, _ := services.StorageService()

@@ -85,6 +85,10 @@ func newBuildPipeline(t gaia.PipelineType) BuildPipeline {
 		bP = &BuildPipelinePython{
 			Type: t,
 		}
+	case gaia.PTypeCpp:
+		bP = &BuildPipelineCpp{
+			Type: t,
+		}
 	}
 
 	return bP
