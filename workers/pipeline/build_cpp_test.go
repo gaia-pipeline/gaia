@@ -134,7 +134,7 @@ func TestCopyBinaryCpp(t *testing.T) {
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = gaia.PTypeCpp
 	p.Pipeline.Repo.LocalDest = tmp
-	src := filepath.Join(tmp, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
+	src := filepath.Join(tmp, cppFinalBinaryName)
 	dst := appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
 	f, _ := os.Create(src)
 	defer f.Close()
@@ -173,7 +173,7 @@ func TestCopyBinarySrcDoesNotExistCpp(t *testing.T) {
 	if err == nil {
 		t.Fatal("error was expected when copying binary but none occurred ")
 	}
-	if err.Error() != "open /noneexistent/main_cpp: no such file or directory" {
+	if err.Error() != "open /noneexistent/"+cppFinalBinaryName+": no such file or directory" {
 		t.Fatal("a different error occurred then expected: ", err)
 	}
 }
