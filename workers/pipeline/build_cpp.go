@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	cppBinaryName = "make"
+	cppBinaryName      = "make"
+	cppFinalBinaryName = "pipeline.out"
 )
 
 // BuildPipelineCpp is the real implementation of BuildPipeline for C++
@@ -66,7 +67,7 @@ func (b *BuildPipelineCpp) ExecuteBuild(p *gaia.CreatePipeline) error {
 // destination folder.
 func (b *BuildPipelineCpp) CopyBinary(p *gaia.CreatePipeline) error {
 	// Define src and destination
-	src := filepath.Join(p.Pipeline.Repo.LocalDest, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
+	src := filepath.Join(p.Pipeline.Repo.LocalDest, cppFinalBinaryName)
 	dest := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
 
 	// Copy binary

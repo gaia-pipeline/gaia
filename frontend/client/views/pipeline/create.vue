@@ -108,7 +108,7 @@
                   <div v-else-if="props.row.statustype === 'success'" style="color: green;">{{ props.row.statustype }}</div>
                   <div v-else style="color: red;">{{ props.row.statustype }}</div>
                 </td>
-                <td>{{ props.row.pipeline.type }}</td>
+                <td>{{ prettifyPipelineType(props.row.pipeline.type) }}</td>
                 <td :title="props.row.created" v-tippy="{ arrow : true,  animation : 'shift-away'}">{{ convertTime(props.row.created) }}</td>
                 <td>
                   <a class="button is-green-button is-small" @click="showStatusOutputModal(props.row.output)">
@@ -529,6 +529,13 @@ export default {
       this.statusOutputModal = false
       this.statusOutputMsg = ''
       this.$emit('close')
+    },
+
+    prettifyPipelineType (type) {
+      if (type === 'cpp') {
+        return 'C++'
+      }
+      return type
     }
   }
 }

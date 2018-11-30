@@ -9,7 +9,7 @@
           <div class="outer-box">
             <router-link :to="{ path: '/pipeline/detail', query: { pipelineid: pipeline.p.id }}" class="hoveraction">
               <div class="outer-box-icon-image">
-                <img :src="getImagePath(pipeline.p.type)" class="outer-box-image" v-bind:class="{ 'outer-box-image-python': pipeline.p.type === 'python', 'outer-box-image': pipeline.p.type !== 'python' }">
+                <img :src="getImagePath(pipeline.p.type)" v-bind:class="pipelineImageClass(pipeline.p.type)">
               </div>
               <div>
                 <span class="subtitle">{{ pipeline.p.name }}</span>
@@ -101,6 +101,14 @@ export default {
           this.$store.commit('clearIntervals')
           this.$onError(error)
         })
+    },
+
+    pipelineImageClass (type) {
+      return {
+        'outer-box-image-python': type === 'python',
+        'outer-box-image-cpp': type === 'cpp',
+        'outer-box-image': type !== 'python' && type !== 'cpp'
+      }
     },
 
     checkPipelineArgs (pipeline) {
@@ -255,6 +263,15 @@ export default {
   width: 50px;
   height: 40px;
   top: 53%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.outer-box-image-cpp {
+  position: absolute;
+  width: 27px;
+  height: 27px;
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
 }
