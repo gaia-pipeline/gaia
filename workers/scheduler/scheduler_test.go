@@ -243,6 +243,49 @@ func TestPrepareAndExecPythonType(t *testing.T) {
 	}
 }
 
+func TestPrepareAndExecCppType(t *testing.T) {
+	gaia.Cfg = &gaia.Config{}
+	storeInstance := store.NewBoltStore()
+	tmp, _ := ioutil.TempDir("", "TestPrepareAndExecCppType")
+	gaia.Cfg.DataPath = tmp
+	gaia.Cfg.WorkspacePath = filepath.Join(tmp, "tmp")
+	gaia.Cfg.Bolt.Mode = 0600
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: hclog.DefaultOutput,
+		Name:   "Gaia",
+	})
+
+	if err := storeInstance.Init(); err != nil {
+		t.Fatal(err)
+	}
+	p, r := prepareTestData()
+	p.Type = gaia.PTypeCpp
+	storeInstance.PipelinePut(&p)
+	s := NewScheduler(storeInstance, &PluginFake{}, &CAFake{}, &VaultFake{})
+	s.prepareAndExec(r)
+
+	// get pipeline run from store
+	run, err := storeInstance.PipelineGetRunByPipelineIDAndID(p.ID, r.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// jobs should be existent
+	if len(run.Jobs) == 0 {
+		t.Fatal("No jobs in pipeline run found.")
+	}
+
+	// Iterate jobs
+	for _, job := range run.Jobs {
+		if job.Status != gaia.JobSuccess {
+			t.Fatalf("job status should be success but was %s", string(job.Status))
+		} else {
+			t.Logf("Job %s has been executed...", job.Title)
+		}
+	}
+}
+
 func TestSchedulePipeline(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
 	storeInstance := store.NewBoltStore()
