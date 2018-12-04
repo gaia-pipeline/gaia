@@ -80,7 +80,7 @@ RUN ln -svT "/usr/lib/jvm/java-8-openjdk-$(dpkg --print-architecture)" /docker-j
 ENV JAVA_HOME /docker-java-home
 
 ENV JAVA_VERSION 8u181
-ENV JAVA_DEBIAN_VERSION 8u181-b13-1~deb9u1
+ENV JAVA_DEBIAN_VERSION 8u181-b13-2~deb9u1
 
 # see https://bugs.debian.org/775775
 # and https://github.com/docker-library/java/issues/19#issuecomment-70546872
@@ -130,6 +130,26 @@ ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
 
 COPY settings-docker.xml /usr/share/maven/ref/
 # --------------- End Maven Part ---------------
+
+# --------------- Start C++ Part ---------------
+RUN apt-get update && apt-get install -y \
+            build-essential autoconf git pkg-config \
+            automake libtool curl make g++ unzip \
+            && apt-get clean
+
+# install protobuf first, then grpc
+ENV GRPC_RELEASE_TAG v1.16.x
+RUN git clone -b ${GRPC_RELEASE_TAG} https://github.com/grpc/grpc /var/local/git/grpc && \
+                  cd /var/local/git/grpc && \
+    git submodule update --init && \
+    echo "--- installing protobuf ---" && \
+    cd third_party/protobuf && \
+    ./autogen.sh && ./configure --enable-shared && \
+    make -j$(nproc) && make install && make clean && ldconfig && \
+    echo "--- installing grpc ---" && \
+    cd /var/local/git/grpc && \
+    make -j$(nproc) && make install && make clean && ldconfig
+# --------------- Start C++ Part ---------------
 
 # install additional deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
