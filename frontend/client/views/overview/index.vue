@@ -270,7 +270,7 @@ export default {
 .outer-box-image-cpp {
   position: absolute;
   width: 27px;
-  height: 27px;
+  height: 30px;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
