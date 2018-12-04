@@ -196,6 +196,37 @@ Java
         }
     }
 
+C++
+~~~~
+
+.. code:: cpp
+
+   #include "cppsdk/sdk.h"
+   #include <list>
+   #include <iostream>
+
+   void DoSomethingAwesome(std::list<gaia::argument> args) throw(std::string) {
+      std::cerr << "This output will be streamed back to gaia and will be displayed in the pipeline logs." << std::endl;
+
+      // An error occured? Return it back so gaia knows that this job failed.
+      // throw "Uhh something badly happened!"
+   }
+
+   int main() {
+      std::list<gaia::job> jobs;
+      gaia::job awesomejob;
+      awesomejob.handler = &DoSomethingAwesome;
+      awesomejob.title = "DoSomethingAwesome";
+      awesomejob.description = "This job does something awesome.";
+      jobs.push_back(awesomejob);
+
+      try {
+         gaia::Serve(jobs);
+      } catch (string e) {
+         std::cerr << "Error: " << e << std::endl;
+      }
+   }
+
 Pipelines are defined by jobs and a function usually represents a job. You can define as many jobs in your pipeline as you want.
 
 Every function accepts arguments. Those arguments can be requested from the pipeline itself and the values passed back in from the UI.
