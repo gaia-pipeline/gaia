@@ -15,8 +15,8 @@ const (
 	// Percent of pipeline creation progress after compile process done
 	pipelineCompileStatus = 50
 
-	// Percent of pipeline creation progress after validation binary copy
-	pipelineCopyStatus = 75
+	// Percent of pipeline creation progress after validation
+	pipelineValidateStatus = 75
 
 	// Completed percent progress
 	pipelineCompleteStatus = 100
@@ -81,33 +81,15 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 		return
 	}
 
-	// Copy compiled binary to plugins folder
-	err = bP.CopyBinary(p)
-	if err != nil {
-		p.StatusType = gaia.CreatePipelineFailed
-		p.Output = fmt.Sprintf("cannot copy compiled binary: %s", err.Error())
-		storeService.CreatePipelinePut(p)
-		return
-	}
-
-	// Update status of our pipeline build
-	p.Status = pipelineCopyStatus
-	err = storeService.CreatePipelinePut(p)
-	if err != nil {
-		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
-		return
-	}
+	// Set location of binary to temp folder until we have verified this pipeline.
+	p.Pipeline.ExecPath = filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
 
 	// Run update if needed
-	p.Pipeline.ExecPath = filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
 	err = updatePipeline(&p.Pipeline)
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot update pipeline: %s", err.Error())
 		storeService.CreatePipelinePut(p)
-
-		// Creation failed. Remove broken pipeline.
-		DeleteBinary(p.Pipeline)
 		return
 	}
 
@@ -117,9 +99,14 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot validate pipeline: %s", err.Error())
 		storeService.CreatePipelinePut(p)
+		return
+	}
 
-		// Creation failed. Remove broken pipeline.
-		DeleteBinary(p.Pipeline)
+	// Update status of our pipeline build
+	p.Status = pipelineValidateStatus
+	err = storeService.CreatePipelinePut(p)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
 		return
 	}
 
@@ -128,6 +115,15 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("failed to save the created pipeline: %s", err.Error())
+		storeService.CreatePipelinePut(p)
+		return
+	}
+
+	// Copy compiled binary to plugins folder which is the final step
+	err = bP.CopyBinary(p)
+	if err != nil {
+		p.StatusType = gaia.CreatePipelineFailed
+		p.Output = fmt.Sprintf("cannot copy compiled binary: %s", err.Error())
 		storeService.CreatePipelinePut(p)
 		return
 	}
