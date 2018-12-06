@@ -77,8 +77,8 @@
               </div>
             </div>
             <div class="content" style="display: flex;">
-              <div class="pipelinetype" title="C++ (not yet supported)" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'cplusplus' }" data-tippy-hideOnClick="false">
-                <img src="~assets/cplusplus.png" class="typeimage typeimagenotyetsupported">
+              <div class="pipelinetype" title="C++" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-on:click="createPipeline.pipeline.type = 'cpp'" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'cpp' }" data-tippy-hideOnClick="false">
+                <img src="~assets/cpp.png" class="typeimage">
               </div>
               <div class="pipelinetype" title="Node.js (not yet supported)" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'nodejs' }" data-tippy-hideOnClick="false">
                 <img src="~assets/nodejs.png" class="typeimage typeimagenotyetsupported">
@@ -108,7 +108,7 @@
                   <div v-else-if="props.row.statustype === 'success'" style="color: green;">{{ props.row.statustype }}</div>
                   <div v-else style="color: red;">{{ props.row.statustype }}</div>
                 </td>
-                <td>{{ props.row.pipeline.type }}</td>
+                <td>{{ prettifyPipelineType(props.row.pipeline.type) }}</td>
                 <td :title="props.row.created" v-tippy="{ arrow : true,  animation : 'shift-away'}">{{ convertTime(props.row.created) }}</td>
                 <td>
                   <a class="button is-green-button is-small" @click="showStatusOutputModal(props.row.output)">
@@ -529,6 +529,13 @@ export default {
       this.statusOutputModal = false
       this.statusOutputMsg = ''
       this.$emit('close')
+    },
+
+    prettifyPipelineType (type) {
+      if (type === 'cpp') {
+        return 'C++'
+      }
+      return type
     }
   }
 }

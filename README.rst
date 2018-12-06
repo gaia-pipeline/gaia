@@ -61,6 +61,25 @@ Installation
 
 The installation of gaia is simple and often takes a few minutes.
 
+Using docker
+~~~~~~~~~~~~
+
+The following command starts gaia as a daemon process and mounts all data to the current folder. Afterwards, gaia will be available on the host system on port 8080. Use the standard user **admin** and password **admin** as initial login. It is recommended to change the password afterwards.
+
+.. code:: sh
+
+    docker run -d -p 8080:8080 -v $PWD:/data gaiapipeline/gaia:latest
+
+This uses the image with the *latest* tag which includes all required libraries and compilers for all supported languages. If you prefer a smaller image suited for your prefered language, have a look at the `available docker image tags`_.
+
+Manually
+~~~~~~~~
+
+It is possible to install Gaia directly on the host system.
+This can be achieved by downloading the binary from the `releases page`_.
+
+Gaia will automatically detect the folder of the binary and will place all data next to it. You can change the data directory with the startup parameter *--homepath* if you want.
+
 Using helm
 ~~~~~~~~~~
 
@@ -81,25 +100,6 @@ To deploy gaia:
 .. code:: sh
 
     make deploy-kube
-
-Using docker
-~~~~~~~~~~~~
-
-The following command starts gaia as a daemon process and mounts all data to the current folder. Afterwards, gaia will be available on the host system on port 8080. Use the standard user **admin** and password **admin** as initial login. It is recommended to change the password afterwards.
-
-.. code:: sh
-
-    docker run -d -p 8080:8080 -v $PWD:/data gaiapipeline/gaia:latest
-
-This uses the image with the *latest* tag which includes all required libraries and compilers for all supported languages. If you prefer a smaller image suited for your prefered language, have a look at the `available docker image tags`_.
-
-Manually
-~~~~~~~~
-
-It is possible to install Gaia directly on the host system.
-This can be achieved by downloading the binary from the `releases page`_.
-
-Gaia will automatically detect the folder of the binary and will place all data next to it. You can change the data directory with the startup parameter *--homepath* if you want.
 
 Usage
 -----
@@ -196,6 +196,37 @@ Java
         }
     }
 
+C++
+~~~~
+
+.. code:: cpp
+
+   #include "cppsdk/sdk.h"
+   #include <list>
+   #include <iostream>
+
+   void DoSomethingAwesome(std::list<gaia::argument> args) throw(std::string) {
+      std::cerr << "This output will be streamed back to gaia and will be displayed in the pipeline logs." << std::endl;
+
+      // An error occured? Return it back so gaia knows that this job failed.
+      // throw "Uhh something badly happened!"
+   }
+
+   int main() {
+      std::list<gaia::job> jobs;
+      gaia::job awesomejob;
+      awesomejob.handler = &DoSomethingAwesome;
+      awesomejob.title = "DoSomethingAwesome";
+      awesomejob.description = "This job does something awesome.";
+      jobs.push_back(awesomejob);
+
+      try {
+         gaia::Serve(jobs);
+      } catch (string e) {
+         std::cerr << "Error: " << e << std::endl;
+      }
+   }
+
 Pipelines are defined by jobs and a function usually represents a job. You can define as many jobs in your pipeline as you want.
 
 Every function accepts arguments. Those arguments can be requested from the pipeline itself and the values passed back in from the UI.
@@ -237,7 +268,7 @@ The SDK implements the Gaia plugin gRPC interface and offers helper functions li
 
 Which programming languages are supported?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We currently fully support Golang, Java and Python.
+We currently fully support Golang, Java, Python and C++.
 
 When do you support programming language **XYZ**?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

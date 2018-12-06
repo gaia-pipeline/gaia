@@ -31,7 +31,7 @@ func updatePipeline(p *gaia.Pipeline) error {
 		// Create virtual environment
 		path, err := exec.LookPath(virtualEnvName)
 		if err != nil {
-			return errors.New("cannot find virtualenv executeable")
+			return errors.New("cannot find virtualenv executable")
 		}
 		cmd := exec.Command(path, virtualEnvPath)
 		if err := cmd.Run(); err != nil {

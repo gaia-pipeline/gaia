@@ -34,6 +34,9 @@ const (
 	// PTypePython python plugin type
 	PTypePython PipelineType = "python"
 
+	// PTypeCpp C++ plugin type
+	PTypeCpp PipelineType = "cpp"
+
 	// CreatePipelineFailed status
 	CreatePipelineFailed CreatePipelineType = "failed"
 
@@ -90,6 +93,9 @@ const (
 
 	// TmpGoFolder is the name of the golang temporary folder
 	TmpGoFolder = "golang"
+
+	// TmpCppFolder is the name of the c++ temporary folder
+	TmpCppFolder = "cpp"
 )
 
 // User is the user object

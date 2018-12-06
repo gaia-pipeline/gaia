@@ -42,10 +42,10 @@ func (b *BuildPipelineGolang) PrepareEnvironment(p *gaia.CreatePipeline) error {
 
 // ExecuteBuild executes the golang build process
 func (b *BuildPipelineGolang) ExecuteBuild(p *gaia.CreatePipeline) error {
-	// Look for golang executeable
+	// Look for golang executable
 	path, err := exec.LookPath(golangBinaryName)
 	if err != nil {
-		gaia.Cfg.Logger.Debug("cannot find go executeable", "error", err.Error())
+		gaia.Cfg.Logger.Debug("cannot find go executable", "error", err.Error())
 		return err
 	}
 	goPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpGoFolder)

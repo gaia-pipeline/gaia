@@ -33,7 +33,7 @@ func UserLogin(c echo.Context) error {
 	// Authenticate user
 	user, err := storeService.UserAuth(u, true)
 	if err != nil || user == nil {
-		gaia.Cfg.Logger.Error("invalid credentials provided", "message", err.Error())
+		gaia.Cfg.Logger.Info("invalid credentials provided", "username", u.Username)
 		return c.String(http.StatusForbidden, "invalid username and/or password")
 	}
 

@@ -169,6 +169,7 @@ func checkActivePipelines() {
 			if err = schedulerService.SetPipelineJobs(pipeline); err != nil {
 				// Mark that this pipeline is broken.
 				pipeline.IsNotValid = true
+				gaia.Cfg.Logger.Error("cannot get pipeline jobs", "error", err.Error(), "pipeline", pipeline)
 			}
 
 			// We encountered a drop-in pipeline previously. Now is the time to save it.
@@ -206,6 +207,8 @@ func getPipelineType(n string) (gaia.PipelineType, error) {
 		return gaia.PTypeJava, nil
 	case gaia.PTypePython.String():
 		return gaia.PTypePython, nil
+	case gaia.PTypeCpp.String():
+		return gaia.PTypeCpp, nil
 	}
 
 	return gaia.PTypeUnknown, errMissingType
