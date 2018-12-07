@@ -2,7 +2,6 @@ package pipeline
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
@@ -80,9 +79,6 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
 		return
 	}
-
-	// Set location of binary to temp folder until we have verified this pipeline.
-	p.Pipeline.ExecPath = filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
 
 	// Run update if needed
 	err = updatePipeline(&p.Pipeline)
