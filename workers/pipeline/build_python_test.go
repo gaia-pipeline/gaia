@@ -51,13 +51,22 @@ func TestExecuteBuildPython(t *testing.T) {
 	tmp, _ := ioutil.TempDir("", "TestExecuteBuildPython")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
-	b := new(BuildPipelinePython)
 	p := new(gaia.CreatePipeline)
+	p.Pipeline.Name = "main"
+	p.Pipeline.Type = gaia.PTypePython
+	p.Pipeline.Repo.LocalDest = tmp
+	os.Mkdir(filepath.Join(tmp, "dist"), 0744)
+	src := filepath.Join(tmp, "dist", p.Pipeline.Name+".tar.gz")
+	f, _ := os.Create(src)
+	defer os.RemoveAll(tmp)
+	defer f.Close()
+	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	b := new(BuildPipelinePython)
 	// go must be existent, python maybe not.
 	pythonBinaryName = "go"
 	err := b.ExecuteBuild(p)
 	if err != nil {
-		t.Fatal("error while running executebuild. none was expected")
+		t.Fatalf("error while running executebuild. none was expected but got %s", err.Error())
 	}
 	expectedBuildArgs := "setup.py,sdist"
 	actualArgs := os.Getenv("CMD_ARGS")
