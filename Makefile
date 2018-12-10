@@ -34,7 +34,7 @@ test-cover:
 	go test -v ./... --coverprofile=cover.out
 
 test-acc:
-	GAIA_RUN_ACC=true go test -v $(TEST) -timeout=$(TEST_TIMEOUT)
+	GAIA_RUN_ACC=true GAIA_DEV=true go test -v $(TEST) -timeout=$(TEST_TIMEOUT)
 
 release: compile_frontend static_assets compile_backend
 
