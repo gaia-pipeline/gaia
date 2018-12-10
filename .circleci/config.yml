@@ -1,14 +1,14 @@
 version: 2
 
 jobs:
-  integration_tests:
+  test_and_coverage:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
       - image: circleci/golang:1.10.3-browsers
     steps:
       - checkout
       - run:
-          name: Run integration tests
+          name: Run unit tests
           command: |
             set -e
             echo "" > coverage.txt
@@ -28,6 +28,17 @@ jobs:
           command: |
             make compile_backend
             ./gaia-linux-amd64 --version
+  acceptance_tests:
+    working_directory: /go/src/github.com/gaia-pipeline/gaia
+    docker:
+        - image: gaiapipeline/circleci:0.0.1
+    steps:
+      - checkout
+      - run:
+          name: Run acceptance tests
+          command: |
+            set -e
+            make test-acc
   compile:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
@@ -56,5 +67,6 @@ workflows:
   version: 2
   test_and_compile:
     jobs:
-      - integration_tests
+      - test_and_coverage
+      - acceptance_tests
       - compile

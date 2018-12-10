@@ -20,6 +20,7 @@ var schedulerService scheduler.GaiaScheduler
 // certificateService is the singleton holding the certificate manager.
 var certificateService security.CAAPI
 
+// vaultService is an instance of the internal Vault.
 var vaultService security.VaultAPI
 
 // StorageService initializes and keeps track of a storage service.

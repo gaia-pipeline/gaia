@@ -33,8 +33,6 @@ const (
 var fs *flag.FlagSet
 
 func init() {
-	gaia.Cfg = &gaia.Config{}
-
 	// set configuration file name for run-time arguments
 
 	// set a prefix for environment properties so they are destinct to Gaia
