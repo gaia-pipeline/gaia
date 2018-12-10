@@ -3,7 +3,7 @@ GO_LDFLAGS_STATIC=-ldflags "-s -w -extldflags -static"
 NAMESPACE=${NAME}
 RELEASE_NAME=${NAME}
 HELM_DIR=$(shell pwd)/helm
-TEST=$$(go list ./... | grep -v /vendor/)
+TEST=$$(go list ./... | grep -v /vendor/ | grep /testacc)
 TEST_TIMEOUT?=20m
 
 default: dev
