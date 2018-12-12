@@ -60,6 +60,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	p.Status = pipelineCloneStatus
 	err = storeService.CreatePipelinePut(p)
 	if err != nil {
+		p.StatusType = gaia.CreatePipelineFailed
 		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
 		return
 	}
@@ -76,6 +77,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	p.Status = pipelineCompileStatus
 	err = storeService.CreatePipelinePut(p)
 	if err != nil {
+		p.StatusType = gaia.CreatePipelineFailed
 		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
 		return
 	}
@@ -129,6 +131,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	p.StatusType = gaia.CreatePipelineSuccess
 	err = storeService.CreatePipelinePut(p)
 	if err != nil {
+		p.StatusType = gaia.CreatePipelineFailed
 		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
 		return
 	}

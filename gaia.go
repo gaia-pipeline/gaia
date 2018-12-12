@@ -184,7 +184,7 @@ type PipelineRun struct {
 }
 
 // Cfg represents the global config instance
-var Cfg *Config
+var Cfg = &Config{}
 
 // Config holds all config options
 type Config struct {

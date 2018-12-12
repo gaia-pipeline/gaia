@@ -3,6 +3,8 @@ GO_LDFLAGS_STATIC=-ldflags "-s -w -extldflags -static"
 NAMESPACE=${NAME}
 RELEASE_NAME=${NAME}
 HELM_DIR=$(shell pwd)/helm
+TEST=$$(go list ./... | grep -v /vendor/ | grep /testacc)
+TEST_TIMEOUT?=20m
 
 default: dev
 
@@ -30,6 +32,9 @@ test:
 
 test-cover:
 	go test -v ./... --coverprofile=cover.out
+
+test-acc:
+	GAIA_RUN_ACC=true GAIA_DEV=true go test -v $(TEST) -timeout=$(TEST_TIMEOUT)
 
 release: compile_frontend static_assets compile_backend
 
