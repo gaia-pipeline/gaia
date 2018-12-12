@@ -371,12 +371,12 @@ export default {
 
                 if (this.historyRows[i].status >= 50) {
                   this.historyRows[i].output += 'Pipeline has been successfully compiled.\n'
-                  this.historyRows[i].output += 'Copy binary to pipelines folder...\n'
+                  this.historyRows[i].output += 'Verifying pipeline...\n'
                 }
 
                 if (this.historyRows[i].status >= 75) {
-                  this.historyRows[i].output += 'Pipeline binary has been copied to pipelines folder.\n'
-                  this.historyRows[i].output += 'Starting integrity check...\n'
+                  this.historyRows[i].output += 'Pipeline has been verified.\n'
+                  this.historyRows[i].output += 'Finalizing creation process...\n'
                 }
 
                 if (this.historyRows[i].status === 100) {

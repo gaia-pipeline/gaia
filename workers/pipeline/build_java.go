@@ -71,6 +71,10 @@ func (b *BuildPipelineJava) ExecuteBuild(p *gaia.CreatePipeline) error {
 		return err
 	}
 
+	// Build has been finished. Set execution path to the build result archive.
+	// This will be used during pipeline verification phase which will happen after this step.
+	p.Pipeline.ExecPath = filepath.Join(p.Pipeline.Repo.LocalDest, mavenTargetFolder, javaFinalJarName)
+
 	return nil
 }
 

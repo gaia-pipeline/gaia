@@ -65,17 +65,25 @@ func (b *BuildPipelinePython) ExecuteBuild(p *gaia.CreatePipeline) error {
 		return err
 	}
 
+	// Build has been finished. Set execution path to the build result archive.
+	// This will be used during pipeline verification phase which will happen after this step.
+	p.Pipeline.ExecPath, err = findPythonArchivePath(p)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-// CopyBinary copies the final compiled archive to the
-// destination folder.
-func (b *BuildPipelinePython) CopyBinary(p *gaia.CreatePipeline) error {
+// findPythonArchivePath filters the archives in the generated dist folder
+// and looks for the final archive. It will return an error if less or more
+// than one file(s) are found otherwise the full path to the file.
+func findPythonArchivePath(p *gaia.CreatePipeline) (src string, err error) {
 	// find all files in dist folder
 	distFolder := filepath.Join(p.Pipeline.Repo.LocalDest, "dist")
 	files, err := ioutil.ReadDir(distFolder)
 	if err != nil {
-		return err
+		return
 	}
 
 	// filter for archives
@@ -88,12 +96,24 @@ func (b *BuildPipelinePython) CopyBinary(p *gaia.CreatePipeline) error {
 
 	// if we found more or less than one archive we have a problem
 	if len(archive) != 1 {
-		gaia.Cfg.Logger.Debug("cannot copy python package", "foundPackages", len(archive), "archives", files)
-		return errors.New("cannot copy python package: not found")
+		gaia.Cfg.Logger.Debug("cannot find python package", "foundPackages", len(archive), "archives", files)
+		err = errors.New("cannot find python package")
+		return
 	}
 
+	// Return full path
+	src = filepath.Join(distFolder, archive[0].Name())
+	return
+}
+
+// CopyBinary copies the final compiled archive to the
+// destination folder.
+func (b *BuildPipelinePython) CopyBinary(p *gaia.CreatePipeline) error {
 	// Define src and destination
-	src := filepath.Join(distFolder, archive[0].Name())
+	src, err := findPythonArchivePath(p)
+	if err != nil {
+		return err
+	}
 	dest := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
 
 	// Copy binary
