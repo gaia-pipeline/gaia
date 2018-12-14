@@ -46,9 +46,9 @@ Screenshots
 |sh-login|
 |sh-overview|
 |sh-create-pipeline|
-|sh-create-pipeline-history|
 |sh-pipeline-detailed|
 |sh-pipeline-logs|
+|sh-vault|
 |sh-settings|
 
 Getting Started
@@ -348,31 +348,31 @@ If you have any questions feel free to contact us on `slack`_.
 .. |codecov| image:: https://codecov.io/gh/gaia-pipeline/gaia/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/gaia-pipeline/gaia
 
-.. |sh-login| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/142a2969c4d27d4135ef8f96213bb166009fda1e/login.png
+.. |sh-login| image:: https://github.com/gaia-pipeline/gaia/blob/master/screenshots/login.png
     :alt: gaia login screenshot
     :width: 650px
 
-.. |sh-overview| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/142a2969c4d27d4135ef8f96213bb166009fda1e/overview.png
+.. |sh-overview| image:: https://github.com/gaia-pipeline/gaia/blob/master/screenshots/overview.png
     :alt: gaia overview screenshot
     :width: 650px
 
-.. |sh-create-pipeline| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/ea6d76ad0cd9b30820149fb2e0fbdcdb101e1484/create_pipeline.png
+.. |sh-create-pipeline| image:: https://github.com/gaia-pipeline/gaia/blob/master/screenshots/create-pipeline.png
     :alt: gaia create pipeline screenshot
     :width: 650px
 
-.. |sh-create-pipeline-history| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/142a2969c4d27d4135ef8f96213bb166009fda1e/create_pipeline_history.png
-    :alt: gaia create pipeline history screenshot
+.. |sh-vault| image:: https://github.com/gaia-pipeline/gaia/blob/master/screenshots/vault.png
+    :alt: gaia Vault screenshot
     :width: 650px
 
-.. |sh-pipeline-detailed| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/51b4d6cbc3d86b1fe9531250db5456595423d9ec/pipeline_detailed.png
+.. |sh-pipeline-detailed| image:: https://github.com/gaia-pipeline/gaia/blob/master/screenshots/detail-pipeline.png
     :alt: gaia pipeline detailed screenshot
     :width: 650px
 
-.. |sh-pipeline-logs| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/51b4d6cbc3d86b1fe9531250db5456595423d9ec/pipeline_logs.png
+.. |sh-pipeline-logs| image:: https://github.com/gaia-pipeline/gaia/blob/master/screenshots/logs-pipeline.png
     :alt: gaia pipeline logs screenshot
     :width: 650px
 
-.. |sh-settings| image:: https://cdn.rawgit.com/michelvocks/6868118d0da06a422e69e453497eb30d/raw/142a2969c4d27d4135ef8f96213bb166009fda1e/settings.png
+.. |sh-settings| image:: https://github.com/gaia-pipeline/gaia/blob/master/screenshots/settings.png
     :alt: gaia settings screenshot
     :width: 650px
 
