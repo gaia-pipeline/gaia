@@ -46,9 +46,9 @@ Screenshots
 |sh-login|
 |sh-overview|
 |sh-create-pipeline|
-|sh-vault|
 |sh-pipeline-detailed|
 |sh-pipeline-logs|
+|sh-vault|
 |sh-settings|
 
 Getting Started
@@ -348,31 +348,31 @@ If you have any questions feel free to contact us on `slack`_.
 .. |codecov| image:: https://codecov.io/gh/gaia-pipeline/gaia/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/gaia-pipeline/gaia
 
-.. |sh-login| image:: https://github.com/michelvocks/gaia/blob/screenshots_update/screenshots/login.png
+.. |sh-login| image:: https://github.com/gaia-pipeline/gaia/blob/master/screenshots/login.png
     :alt: gaia login screenshot
     :width: 650px
 
-.. |sh-overview| image:: https://github.com/michelvocks/gaia/blob/screenshots_update/screenshots/overview.png
+.. |sh-overview| image:: https://github.com/gaia-pipeline/gaia/blob/master/screenshots/overview.png
     :alt: gaia overview screenshot
     :width: 650px
 
-.. |sh-create-pipeline| image:: https://github.com/michelvocks/gaia/blob/screenshots_update/screenshots/create-pipeline.png
+.. |sh-create-pipeline| image:: https://github.com/gaia-pipeline/gaia/blob/master/screenshots/create-pipeline.png
     :alt: gaia create pipeline screenshot
     :width: 650px
 
-.. |sh-vault| image:: https://github.com/michelvocks/gaia/blob/screenshots_update/screenshots/vault.png
+.. |sh-vault| image:: https://github.com/gaia-pipeline/gaia/blob/master/screenshots/vault.png
     :alt: gaia Vault screenshot
     :width: 650px
 
-.. |sh-pipeline-detailed| image:: https://github.com/michelvocks/gaia/blob/screenshots_update/screenshots/detail-pipeline.png
+.. |sh-pipeline-detailed| image:: https://github.com/gaia-pipeline/gaia/blob/master/screenshots/detail-pipeline.png
     :alt: gaia pipeline detailed screenshot
     :width: 650px
 
-.. |sh-pipeline-logs| image:: https://github.com/michelvocks/gaia/blob/screenshots_update/screenshots/logs-pipeline.png
+.. |sh-pipeline-logs| image:: https://github.com/gaia-pipeline/gaia/blob/master/screenshots/logs-pipeline.png
     :alt: gaia pipeline logs screenshot
     :width: 650px
 
-.. |sh-settings| image:: https://github.com/michelvocks/gaia/blob/screenshots_update/screenshots/settings.png
+.. |sh-settings| image:: https://github.com/gaia-pipeline/gaia/blob/master/screenshots/settings.png
     :alt: gaia settings screenshot
     :width: 650px
 
