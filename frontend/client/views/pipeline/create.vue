@@ -30,7 +30,7 @@
                   <span class="icon">
                     <i class="fa fa-certificate"></i>
                   </span>
-                  <span>Add credentials</span>
+                  <span>Add Credentials</span>
                 </a>
                 <a class="button is-primary" v-on:click="showGitHubWebHookModal">
                   <span class="icon">
@@ -39,7 +39,25 @@
                   <span>Add GitHub WebHook</span>
                 </a>
               </p>
-              <hr class="dotted-line">
+            </div>
+          </article>
+
+          <article class="tile is-child notification content-article">
+            <div class="content">
+              <p class="control"> 
+                <label class="label">Define custom pipeline options here.</label>
+                <a class="button is-primary" v-on:click="showPeriodicalPipelineScheduleModal">
+                  <span class="icon">
+                    <i class="fa fa-calendar"></i>
+                  </span>
+                  <span>Add Pipeline Trigger</span>
+                </a>
+              </p>
+            </div>
+          </article>
+
+          <article class="tile is-child notification content-article">
+            <div class="content">
               <label class="label">Type the name of your pipeline here.</label>
               <p class="control has-icons-left" v-bind:class="{ 'has-icons-right': pipelineNameSuccess }">
                 <input class="input is-medium input-bar" v-model="pipelinename" v-on:input="checkPipelineNameAvailableDebounce" type="text" placeholder="Pipeline name ...">
@@ -51,13 +69,6 @@
                 </span>
               </p>
               <span style="color: red" v-if="pipelineErrorMsg">Pipeline Name incorrect: {{ pipelineErrorMsg }}</span>
-              <hr class="dotted-line">
-              <a class="button is-green-button" v-on:click="startCreatePipeline" v-bind:class="{ 'is-disabled': !gitSuccess || !pipelineNameSuccess }">
-                <span class="icon">
-                  <i class="fa fa-plus"></i>
-                </span>
-                <span>Create Pipeline</span>
-              </a>
             </div>
           </article>
         </div>
@@ -86,6 +97,17 @@
             </div>
           </article>
         </div>
+      </div>
+
+      <div class="tile is-parent">
+        <article class="is-child notification content-article">
+          <a class="button is-green-button" style="margin-left: 13px;" v-on:click="startCreatePipeline" v-bind:class="{ 'is-disabled': !gitSuccess || !pipelineNameSuccess }">
+            <span class="icon">
+              <i class="fa fa-plus"></i>
+            </span>
+            <span>Create Pipeline</span>
+          </a>
+        </article>
       </div>
 
       <div class="tile is-parent is-10">
@@ -214,6 +236,32 @@
       </div>
     </modal>
 
+    <!-- periodical pipeline schedule modal -->
+    <modal :visible="periodicalPipelineScheduleModal" class="modal-z-index" @close="close">
+      <div class="box credentials-modal">
+        <div class="block credentials-modal-content">
+          <collapse accordion is-fullwidth>
+            <collapse-item title="Start pipeline periodically:" selected>
+              <div class="credentials-modal-content">
+                <label class="label" style="text-align: left;">Start pipeline periodically:</label>
+                <p class="control">
+                  <textarea class="textarea input-bar" v-model="periodicSchedules"></textarea>
+                </p>
+              </div>
+            </collapse-item>
+          </collapse>
+          <div class="modal-footer">
+            <div style="float: left;">
+              <button class="button is-primary" v-on:click="addPeriodicalSchedules">Confirm</button>
+            </div>
+            <div style="float: right;">
+              <button class="button is-danger" v-on:click="cancel">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </modal>
+
     <!-- status output modal -->
     <modal :visible="statusOutputModal" class="modal-z-index" @close="closeStatusModal">
       <div class="box statusModal">
@@ -268,11 +316,13 @@ export default {
       gitSuccess: false,
       gitCredentialsModal: false,
       gitWebHookModal: false,
+      periodicalPipelineScheduleModal: false,
       gitBranches: [],
       giturl: '',
       pipelinename: '',
       pipelineNameSuccess: false,
       pipelineErrorMsg: '',
+      periodicSchedules: '',
       createPipeline: {
         id: '',
         output: '',
@@ -282,6 +332,7 @@ export default {
         pipeline: {
           name: '',
           type: 'golang',
+          perodicSchedules: [],
           repo: {
             url: '',
             user: '',
@@ -491,6 +542,7 @@ export default {
       this.checkGitRepo()
       this.gitCredentialsModal = false
       this.gitWebHookModal = false
+      this.periodicalPipelineScheduleModal = false
       this.$emit('close')
     },
 
@@ -501,6 +553,7 @@ export default {
       this.createPipeline.pipeline.repo.privatekey.key = ''
       this.createPipeline.pipeline.repo.privatekey.username = ''
       this.createPipeline.pipeline.repo.privatekey.password = ''
+      this.periodicSchedules = ''
 
       this.close()
     },
@@ -511,6 +564,16 @@ export default {
 
     showGitHubWebHookModal () {
       this.gitWebHookModal = true
+    },
+
+    showPeriodicalPipelineScheduleModal () {
+      this.periodicalPipelineScheduleModal = true
+    },
+
+    addPeriodicalSchedules () {
+      // Split string by line breaks.
+      this.createPipeline.periodicSchedules = this.periodicSchedules.split('\n')
+      this.close()
     },
 
     showStatusOutputModal (msg) {
