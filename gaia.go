@@ -110,16 +110,17 @@ type User struct {
 
 // Pipeline represents a single pipeline
 type Pipeline struct {
-	ID         int          `json:"id,omitempty"`
-	Name       string       `json:"name,omitempty"`
-	Repo       GitRepo      `json:"repo,omitempty"`
-	Type       PipelineType `json:"type,omitempty"`
-	ExecPath   string       `json:"execpath,omitempty"`
-	SHA256Sum  []byte       `json:"sha256sum,omitempty"`
-	Jobs       []Job        `json:"jobs,omitempty"`
-	Created    time.Time    `json:"created,omitempty"`
-	UUID       string       `json:"uuid,omitempty"`
-	IsNotValid bool         `json:"notvalid,omitempty"`
+	ID                int          `json:"id,omitempty"`
+	Name              string       `json:"name,omitempty"`
+	Repo              GitRepo      `json:"repo,omitempty"`
+	Type              PipelineType `json:"type,omitempty"`
+	ExecPath          string       `json:"execpath,omitempty"`
+	SHA256Sum         []byte       `json:"sha256sum,omitempty"`
+	Jobs              []Job        `json:"jobs,omitempty"`
+	Created           time.Time    `json:"created,omitempty"`
+	UUID              string       `json:"uuid,omitempty"`
+	IsNotValid        bool         `json:"notvalid,omitempty"`
+	PeriodicSchedules []string     `json:"periodicschedules"`
 }
 
 // GitRepo represents a single git repository

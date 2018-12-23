@@ -53,6 +53,7 @@
                   <span>Add Pipeline Trigger</span>
                 </a>
               </p>
+              <span style="color: red" v-if="periodicSchedulesErr">Periodic schedules invalid: {{ periodicSchedulesErrMsg }}</span>
             </div>
           </article>
 
@@ -243,11 +244,15 @@
           <collapse accordion is-fullwidth>
             <collapse-item title="Start pipeline periodically:" selected>
               <div class="credentials-modal-content">
-                <label class="label" style="text-align: left;">Start pipeline periodically:</label>
                 <p class="control">
                   <textarea class="textarea input-bar" v-model="periodicSchedules"></textarea>
                 </p>
               </div>
+              <label class="label" style="test-align: left;">
+                Use the standard cron syntax. For example to start the pipeline every half hour: 
+                <br />0 30 * * * *<br />
+                Please see <a href="https://godoc.org/github.com/robfig/cron" target="_blank">here</a> for more information.
+              </label>
             </collapse-item>
           </collapse>
           <div class="modal-footer">
@@ -323,6 +328,8 @@ export default {
       pipelineNameSuccess: false,
       pipelineErrorMsg: '',
       periodicSchedules: '',
+      periodicSchedulesErrMsg: '',
+      periodicSchedulesErr: false,
       createPipeline: {
         id: '',
         output: '',
@@ -332,7 +339,7 @@ export default {
         pipeline: {
           name: '',
           type: 'golang',
-          perodicSchedules: [],
+          perodicschedules: [],
           repo: {
             url: '',
             user: '',
@@ -572,7 +579,23 @@ export default {
 
     addPeriodicalSchedules () {
       // Split string by line breaks.
-      this.createPipeline.periodicSchedules = this.periodicSchedules.split('\n')
+      this.createPipeline.periodicschedules = this.periodicSchedules.split('\n')
+
+      // Check if periodic schedule entries are valid.
+      this.$http
+        .post('/api/v1/pipeline/periodicschedules', this.createPipeline.periodicschedules)
+        .then(response => {
+          openNotification({
+            title: 'Periodic schedules valid',
+            message: `All defined periodic schedules are valid!`,
+            type: 'success'
+          })
+        })
+        .catch((error) => {
+          this.periodicSchedulesErr = true
+          this.periodicSchedulesErrMsg = error.response.data
+        })
+
       this.close()
     },
 

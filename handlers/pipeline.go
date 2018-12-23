@@ -10,6 +10,7 @@ import (
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"github.com/labstack/echo"
+	"github.com/robfig/cron"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -309,4 +310,25 @@ func PipelineGetAllWithLatestRun(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, pipelinesWithLatestRun)
+}
+
+// PipelineCheckPeriodicSchedules validates the added periodic schedules.
+func PipelineCheckPeriodicSchedules(c echo.Context) error {
+	pSchedules := []string{}
+	if err := c.Bind(&pSchedules); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	// Create new test cron spec parser.
+	cr := cron.New()
+
+	// Check every cron entry.
+	for _, entry := range pSchedules {
+		if err := cr.AddFunc(entry, func() {}); err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+	}
+
+	// All entries are valid.
+	return nil
 }
