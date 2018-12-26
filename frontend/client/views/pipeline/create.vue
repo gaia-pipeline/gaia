@@ -102,7 +102,7 @@
 
       <div class="tile is-parent">
         <article class="is-child notification content-article">
-          <a class="button is-green-button" style="margin-left: 13px;" v-on:click="startCreatePipeline" v-bind:class="{ 'is-disabled': !gitSuccess || !pipelineNameSuccess }">
+          <a class="button is-green-button" style="margin-left: 13px;" v-on:click="startCreatePipeline" v-bind:class="{ 'is-disabled': !gitSuccess || !pipelineNameSuccess || periodicSchedulesErr }">
             <span class="icon">
               <i class="fa fa-plus"></i>
             </span>
@@ -578,12 +578,15 @@ export default {
     },
 
     addPeriodicalSchedules () {
+      // Reset previous errors if there were some.
+      this.periodicSchedulesErr = false
+
       // Split string by line breaks.
-      this.createPipeline.periodicschedules = this.periodicSchedules.split('\n')
+      this.createPipeline.pipeline.periodicschedules = this.periodicSchedules.split('\n')
 
       // Check if periodic schedule entries are valid.
       this.$http
-        .post('/api/v1/pipeline/periodicschedules', this.createPipeline.periodicschedules)
+        .post('/api/v1/pipeline/periodicschedules', this.createPipeline.pipeline.periodicschedules)
         .then(response => {
           openNotification({
             title: 'Periodic schedules valid',

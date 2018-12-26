@@ -217,10 +217,22 @@
                 </p>
               </div>
             </collapse-item>
+            <collapse-item title="Change Periodic Schedule">
+              <div class="pipeline-modal-content">
+                <p class="control">
+                  <textarea class="textarea input-bar" v-model="pipelinePeriodicSchedules"></textarea>
+                </p>
+                <label class="label" style="test-align: left;">
+                  Use the standard cron syntax. For example to start the pipeline every half hour:
+                  <br />0 30 * * * *<br />
+                  Please see <a href="https://godoc.org/github.com/robfig/cron" target="_blank">here</a> for more information.
+                </label>
+              </div>
+            </collapse-item> 
           </collapse>
           <div class="modal-footer">
             <div style="float: left;">
-              <button class="button is-primary" v-on:click="changePipelineName">Change Name</button>
+              <button class="button is-primary" v-on:click="changePipeline">Accept changes</button>
             </div>
             <div style="float: right;">
               <button class="button is-danger" v-on:click="close">Cancel</button>
@@ -333,7 +345,8 @@ export default {
       showDeleteUserModal: false,
       showAddUserModal: false,
       showEditPipelineModal: false,
-      showDeletePipelineModal: false
+      showDeletePipelineModal: false,
+      pipelinePeriodicSchedules: ''
     }
   },
 
@@ -394,6 +407,11 @@ export default {
     },
 
     editPipelineModal (pipeline) {
+      // Check if periodic schedules is given.
+      if (pipeline.periodicschedules) {
+        this.pipelinePeriodicSchedules = pipeline.periodicschedules.join('\n')
+      }
+
       this.selectPipeline = pipeline
       this.showEditPipelineModal = true
     },
@@ -411,6 +429,7 @@ export default {
       this.showEditPipelineModal = false
       this.showDeletePipelineModal = false
       this.selectPipeline = {}
+      this.pipelinePeriodicSchedules = ''
       this.$emit('close')
     },
 
@@ -518,7 +537,10 @@ export default {
       this.$router.push('/pipeline/create')
     },
 
-    changePipelineName () {
+    changePipeline () {
+      // Convert periodic schedules into list.
+      this.selectPipeline.periodicschedules = this.pipelinePeriodicSchedules.split('\n')
+
       this.$http
         .put('/api/v1/pipeline/' + this.selectPipeline.id, this.selectPipeline)
         .then(response => {

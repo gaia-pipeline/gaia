@@ -5,6 +5,7 @@ import (
 	"time"
 
 	hclog "github.com/hashicorp/go-hclog"
+	"github.com/robfig/cron"
 )
 
 // PipelineType represents supported plugin types
@@ -120,7 +121,8 @@ type Pipeline struct {
 	Created           time.Time    `json:"created,omitempty"`
 	UUID              string       `json:"uuid,omitempty"`
 	IsNotValid        bool         `json:"notvalid,omitempty"`
-	PeriodicSchedules []string     `json:"periodicschedules"`
+	PeriodicSchedules []string     `json:"periodicschedules,omitempty"`
+	CronInst          *cron.Cron   `json:"-"`
 }
 
 // GitRepo represents a single git repository
@@ -131,7 +133,7 @@ type GitRepo struct {
 	PrivateKey     PrivateKey `json:"privatekey,omitempty"`
 	SelectedBranch string     `json:"selectedbranch,omitempty"`
 	Branches       []string   `json:"branches,omitempty"`
-	LocalDest      string
+	LocalDest      string     `json:"-"`
 }
 
 // Job represents a single job of a pipeline

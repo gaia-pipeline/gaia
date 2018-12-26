@@ -13,6 +13,7 @@ import (
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
+	"github.com/robfig/cron"
 )
 
 const (
@@ -170,6 +171,33 @@ func checkActivePipelines() {
 				// Mark that this pipeline is broken.
 				pipeline.IsNotValid = true
 				gaia.Cfg.Logger.Error("cannot get pipeline jobs", "error", err.Error(), "pipeline", pipeline)
+			}
+
+			// Set up periodic schedules of this pipeline.
+			if !pipeline.IsNotValid && len(pipeline.PeriodicSchedules) > 0 {
+				// We prevent side effects here and make sure
+				// that no scheduling is already running.
+				if pipeline.CronInst != nil {
+					pipeline.CronInst.Stop()
+				}
+				pipeline.CronInst = cron.New()
+
+				// Iterate over all cron schedules.
+				for _, cron := range pipeline.PeriodicSchedules {
+					pipeline.CronInst.AddFunc(cron, func() {
+						_, err := schedulerService.SchedulePipeline(pipeline, []gaia.Argument{})
+						if err != nil {
+							gaia.Cfg.Logger.Error("cannot schedule pipeline from periodic schedule", "error", err, "pipeline", pipeline)
+							return
+						}
+
+						// Log scheduling information
+						gaia.Cfg.Logger.Info("pipeline has been automatically scheduled by periodic scheduling:", "name", pipeline.Name)
+					})
+				}
+
+				// Start schedule process.
+				pipeline.CronInst.Start()
 			}
 
 			// We encountered a drop-in pipeline previously. Now is the time to save it.
