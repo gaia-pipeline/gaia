@@ -122,10 +122,11 @@ func TestPipelineUpdate(t *testing.T) {
 	InitHandlers(e)
 
 	pipeline1 := gaia.Pipeline{
-		ID:      1,
-		Name:    "Pipeline A",
-		Type:    gaia.PTypeGolang,
-		Created: time.Now(),
+		ID:                1,
+		Name:              "Pipeline A",
+		Type:              gaia.PTypeGolang,
+		Created:           time.Now(),
+		PeriodicSchedules: []string{"0 30 * * * *"},
 	}
 
 	pipeline2 := gaia.Pipeline{
@@ -178,10 +179,57 @@ func TestPipelineUpdate(t *testing.T) {
 		PipelineUpdate(c)
 
 		if rec.Code != http.StatusOK {
-			t.Fatalf("expected response code %v got %v", http.StatusNotFound, rec.Code)
+			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
 		}
 	})
 
+	t.Run("update periodic schedules success", func(t *testing.T) {
+		pipeline1.PeriodicSchedules[0] = "0 */1 * * * *"
+		bodyBytes, _ := json.Marshal(pipeline1)
+		req := httptest.NewRequest(echo.PUT, "/", bytes.NewBuffer(bodyBytes))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/api/" + gaia.APIVersion + "/pipeline/:pipelineid")
+		c.SetParamNames("pipelineid")
+		c.SetParamValues("1")
+
+		ms := new(mockScheduleService)
+		pRun := new(gaia.PipelineRun)
+		pRun.ID = 999
+		ms.pipelineRun = pRun
+		services.MockSchedulerService(ms)
+
+		PipelineUpdate(c)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
+		}
+	})
+
+	t.Run("update periodic schedules failed", func(t *testing.T) {
+		pipeline1.PeriodicSchedules[0] = "0 */1 50 * * *"
+		bodyBytes, _ := json.Marshal(pipeline1)
+		req := httptest.NewRequest(echo.PUT, "/", bytes.NewBuffer(bodyBytes))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/api/" + gaia.APIVersion + "/pipeline/:pipelineid")
+		c.SetParamNames("pipelineid")
+		c.SetParamValues("1")
+
+		ms := new(mockScheduleService)
+		pRun := new(gaia.PipelineRun)
+		pRun.ID = 999
+		ms.pipelineRun = pRun
+		services.MockSchedulerService(ms)
+
+		PipelineUpdate(c)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
+		}
+	})
 }
 
 func TestPipelineDelete(t *testing.T) {
@@ -355,6 +403,60 @@ func TestPipelineStart(t *testing.T) {
 
 		if rec.Code != http.StatusNotFound {
 			t.Fatalf("expected response code %v got %v", http.StatusNotFound, rec.Code)
+		}
+	})
+}
+
+func TestPipelineCheckPeriodicSchedules(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestPipelineCheckPeriodicSchedules")
+	gaia.Cfg = &gaia.Config{
+		Logger:       hclog.NewNullLogger(),
+		HomePath:     tmp,
+		DataPath:     tmp,
+		PipelinePath: tmp,
+	}
+
+	// Initialize global active pipelines
+	ap := pipeline.NewActivePipelines()
+	pipeline.GlobalActivePipelines = ap
+
+	// Initialize echo
+	e := echo.New()
+	InitHandlers(e)
+
+	t.Run("invalid cron added", func(t *testing.T) {
+		body := []string{
+			"* * * * * * *",
+			"*/1 * * 200 *",
+		}
+		bodyBytes, _ := json.Marshal(body)
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/periodicschedules", bytes.NewBuffer(bodyBytes))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		PipelineCheckPeriodicSchedules(c)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
+		}
+	})
+
+	t.Run("valid cron added", func(t *testing.T) {
+		body := []string{
+			"0 30 * * * *",
+			"0 */5 * * * *",
+		}
+		bodyBytes, _ := json.Marshal(body)
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/periodicschedules", bytes.NewBuffer(bodyBytes))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		PipelineCheckPeriodicSchedules(c)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
 		}
 	})
 }

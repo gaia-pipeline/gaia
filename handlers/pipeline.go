@@ -197,7 +197,7 @@ func PipelineUpdate(c echo.Context) error {
 
 		// Iterate over all cron schedules.
 		for _, cron := range p.PeriodicSchedules {
-			foundPipeline.CronInst.AddFunc(cron, func() {
+			err := foundPipeline.CronInst.AddFunc(cron, func() {
 				_, err := schedulerService.SchedulePipeline(&foundPipeline, []gaia.Argument{})
 				if err != nil {
 					gaia.Cfg.Logger.Error("cannot schedule pipeline from periodic schedule", "error", err, "pipeline", foundPipeline)
@@ -207,6 +207,10 @@ func PipelineUpdate(c echo.Context) error {
 				// Log scheduling information
 				gaia.Cfg.Logger.Info("pipeline has been automatically scheduled by periodic scheduling:", "name", foundPipeline.Name)
 			})
+
+			if err != nil {
+				return c.String(http.StatusBadRequest, err.Error())
+			}
 		}
 
 		// Update pipeline in store
