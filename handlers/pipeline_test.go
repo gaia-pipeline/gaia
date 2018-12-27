@@ -184,8 +184,12 @@ func TestPipelineUpdate(t *testing.T) {
 	})
 
 	t.Run("update periodic schedules success", func(t *testing.T) {
-		pipeline1.PeriodicSchedules[0] = "0 */1 * * * *"
-		bodyBytes, _ := json.Marshal(pipeline1)
+		p := gaia.Pipeline{
+			ID:                1,
+			Name:              "newname",
+			PeriodicSchedules: []string{"0 */1 * * * *"},
+		}
+		bodyBytes, _ := json.Marshal(p)
 		req := httptest.NewRequest(echo.PUT, "/", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
@@ -208,8 +212,12 @@ func TestPipelineUpdate(t *testing.T) {
 	})
 
 	t.Run("update periodic schedules failed", func(t *testing.T) {
-		pipeline1.PeriodicSchedules[0] = "0 */1 50 * * *"
-		bodyBytes, _ := json.Marshal(pipeline1)
+		p := gaia.Pipeline{
+			ID:                1,
+			Name:              "newname",
+			PeriodicSchedules: []string{"0 */1 * * * * *"},
+		}
+		bodyBytes, _ := json.Marshal(p)
 		req := httptest.NewRequest(echo.PUT, "/", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
