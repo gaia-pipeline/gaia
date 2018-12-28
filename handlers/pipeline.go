@@ -10,6 +10,7 @@ import (
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"github.com/labstack/echo"
+	"github.com/robfig/cron"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -142,6 +143,7 @@ func PipelineGet(c echo.Context) error {
 // PipelineUpdate updates the given pipeline.
 func PipelineUpdate(c echo.Context) error {
 	storeService, _ := services.StorageService()
+	schedulerService, _ := services.SchedulerService()
 	p := gaia.Pipeline{}
 	if err := c.Bind(&p); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
@@ -159,10 +161,9 @@ func PipelineUpdate(c echo.Context) error {
 		return c.String(http.StatusNotFound, errPipelineNotFound.Error())
 	}
 
-	// We're only handling pipeline name updates for now.
+	// Check if the pipeline name was changed.
 	if foundPipeline.Name != p.Name {
 		// Pipeline name has been changed
-
 		currentName := foundPipeline.Name
 
 		// Rename binary
@@ -183,10 +184,64 @@ func PipelineUpdate(c echo.Context) error {
 
 		// Update active pipelines
 		pipeline.GlobalActivePipelines.ReplaceByName(currentName, foundPipeline)
+	}
 
+	// Check if the periodic scheduling has been changed.
+	if !stringSliceEqual(foundPipeline.PeriodicSchedules, p.PeriodicSchedules) {
+		// We prevent side effects here and make sure
+		// that no scheduling is already running.
+		if foundPipeline.CronInst != nil {
+			foundPipeline.CronInst.Stop()
+		}
+		foundPipeline.CronInst = cron.New()
+
+		// Iterate over all cron schedules.
+		for _, cron := range p.PeriodicSchedules {
+			err := foundPipeline.CronInst.AddFunc(cron, func() {
+				_, err := schedulerService.SchedulePipeline(&foundPipeline, []gaia.Argument{})
+				if err != nil {
+					gaia.Cfg.Logger.Error("cannot schedule pipeline from periodic schedule", "error", err, "pipeline", foundPipeline)
+					return
+				}
+
+				// Log scheduling information
+				gaia.Cfg.Logger.Info("pipeline has been automatically scheduled by periodic scheduling:", "name", foundPipeline.Name)
+			})
+
+			if err != nil {
+				return c.String(http.StatusBadRequest, err.Error())
+			}
+		}
+
+		// Update pipeline in store
+		err := storeService.PipelinePut(&foundPipeline)
+		if err != nil {
+			return c.String(http.StatusInternalServerError, err.Error())
+		}
+
+		// Start schedule process.
+		foundPipeline.CronInst.Start()
+
+		// Update active pipelines
+		pipeline.GlobalActivePipelines.Replace(foundPipeline)
 	}
 
 	return c.String(http.StatusOK, "Pipeline has been updated")
+}
+
+// stringSliceEqual is a small helper function
+// which determines if two string slices are equal.
+func stringSliceEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // PipelineDelete accepts a pipeline id and deletes it from the
@@ -309,4 +364,25 @@ func PipelineGetAllWithLatestRun(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, pipelinesWithLatestRun)
+}
+
+// PipelineCheckPeriodicSchedules validates the added periodic schedules.
+func PipelineCheckPeriodicSchedules(c echo.Context) error {
+	pSchedules := []string{}
+	if err := c.Bind(&pSchedules); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	// Create new test cron spec parser.
+	cr := cron.New()
+
+	// Check every cron entry.
+	for _, entry := range pSchedules {
+		if err := cr.AddFunc(entry, func() {}); err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+	}
+
+	// All entries are valid.
+	return nil
 }

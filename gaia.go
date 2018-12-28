@@ -5,6 +5,7 @@ import (
 	"time"
 
 	hclog "github.com/hashicorp/go-hclog"
+	"github.com/robfig/cron"
 )
 
 // PipelineType represents supported plugin types
@@ -110,16 +111,18 @@ type User struct {
 
 // Pipeline represents a single pipeline
 type Pipeline struct {
-	ID         int          `json:"id,omitempty"`
-	Name       string       `json:"name,omitempty"`
-	Repo       GitRepo      `json:"repo,omitempty"`
-	Type       PipelineType `json:"type,omitempty"`
-	ExecPath   string       `json:"execpath,omitempty"`
-	SHA256Sum  []byte       `json:"sha256sum,omitempty"`
-	Jobs       []Job        `json:"jobs,omitempty"`
-	Created    time.Time    `json:"created,omitempty"`
-	UUID       string       `json:"uuid,omitempty"`
-	IsNotValid bool         `json:"notvalid,omitempty"`
+	ID                int          `json:"id,omitempty"`
+	Name              string       `json:"name,omitempty"`
+	Repo              GitRepo      `json:"repo,omitempty"`
+	Type              PipelineType `json:"type,omitempty"`
+	ExecPath          string       `json:"execpath,omitempty"`
+	SHA256Sum         []byte       `json:"sha256sum,omitempty"`
+	Jobs              []Job        `json:"jobs,omitempty"`
+	Created           time.Time    `json:"created,omitempty"`
+	UUID              string       `json:"uuid,omitempty"`
+	IsNotValid        bool         `json:"notvalid,omitempty"`
+	PeriodicSchedules []string     `json:"periodicschedules,omitempty"`
+	CronInst          *cron.Cron   `json:"-"`
 }
 
 // GitRepo represents a single git repository
@@ -130,7 +133,7 @@ type GitRepo struct {
 	PrivateKey     PrivateKey `json:"privatekey,omitempty"`
 	SelectedBranch string     `json:"selectedbranch,omitempty"`
 	Branches       []string   `json:"branches,omitempty"`
-	LocalDest      string
+	LocalDest      string     `json:"-"`
 }
 
 // Job represents a single job of a pipeline
