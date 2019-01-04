@@ -4,9 +4,9 @@
 
 |build-status| |go-report| |go-doc| |apache2| |chat| |codecov|
 
-Gaia is an open source automation platform which makes it easy and fun to build powerful pipelines in any programming language. Based on `HashiCorp's go-plugin`_ and `gRPC`_, gaia is efficient, fast, lightweight and developer friendly. Gaia is currently alpha! `Do not use it for mission critical jobs yet!`_
+Gaia is an open source automation platform which makes it easy and fun to build powerful pipelines in any programming language. Based on `HashiCorp's go-plugin`_ and `gRPC`_, gaia is efficient, fast, lightweight, and developer friendly. Gaia is currently alpha! `Do not use it for mission critical jobs yet!`_
 
-Develop powerful `pipelines <What is a pipeline?_>`_ with the help of `SDKs <Why do I need an SDK?_>`_ and simply check-in your code into a git repository. Gaia automatically clones your code repository, compiles your code to a binary and executes it on-demand. All results are streamed back and formatted to a user-friendly graphical output.
+Develop powerful `pipelines <What is a pipeline?_>`_ with the help of `SDKs <Why do I need an SDK?_>`_ and simply check-in your code into a git repository. Gaia automatically clones your code repository, compiles your code to a binary, and executes it on-demand. All results are streamed back and formatted as a user-friendly graphical output.
 
 Motivation
 ==========
@@ -19,20 +19,20 @@ The majority of tech people are not motivated to take up this work and they are 
 
 One of the main reasons for this is the abstraction and poor execution of many automation tools. They come with their own configuration (`YAML`_ syntax) specification or limit the user to one specific programming language. Testing is nearly impossible because most automation tools lack the ability to mock services and subsystems. Even tiny things, for example parsing a JSON file, are sometimes really painful because external, outdated libraries were used and not included in the standard framework.
 
-We believe it's time to remove all these abstractions and come back to our roots. Are you tired of writing endless lines of YAML-code? Are you sick of spending days forced to write in a language that does not suit you and is not fun at all? Do you enjoy programming in a language you like? Then Gaia is for you.
+We believe it's time to remove all those abstractions and come back to our roots. Are you tired of writing endless lines of YAML-code? Are you sick of spending days forced to write in a language that does not suit you and is not fun at all? Do you enjoy programming in a language you like? Then Gaia is for you.
 
 How does it work?
 =================
 
 .. begin-architecture
 
-Gaia is based on `HashiCorp's go-plugin`_. It's a `plugin system`_ that uses `gRPC`_ to communicate over `HTTP/2`_. HashiCorp developed this tool initially for `Packer`_ but it's now heavily used by `Terraform`_, `Nomad`_, and `Vault`_ too.
+Gaia is based on `HashiCorp's go-plugin`_. It's a `plugin system`_ that uses `gRPC`_ to communicate over `HTTP/2`_. Initially, HashiCorp developed this tool for `Packer`_ but now it's heavily used by `Terraform`_, `Nomad`_, and `Vault`_ too.
 
-Plugins, which we named `pipelines <What is a pipeline?_>`_, are applications which can be written in any programming language as long as `gRPC`_ is supported. All functions, which we call `jobs <What is a job?>`_, are exposed to Gaia and can form up a dependency graph which describes the order of execution.
+Plugins, which we named `pipelines <What is a pipeline?_>`_, are applications which can be written in any programming language, as long as `gRPC`_ is supported. All functions, which we call `jobs <What is a job?>`_, are exposed to Gaia and can form up a dependency graph which describes the order of execution.
 
 Pipelines can be compiled locally or simply over the build system. Gaia clones the git repository and automatically builds the included pipeline. If a change (`git push`_) happened, Gaia will automatically rebuild the pipeline for you*.
 
-After a pipeline has been started, all log output are returned back to Gaia and displayed in a detailed overview with their final result status.
+After a pipeline has been started, all log output is returned back to Gaia and displayed in a detailed overview with their final result status.
 
 Gaia uses `boltDB` for storage. This makes the installation step super easy. No external database is currently required.
 
@@ -106,7 +106,7 @@ Usage
 
 Go
 ~~~
-Writing a pipeline is easy as importing a library, defining a function which will be the job to execute and serving the gRPC-Server via one command.
+Writing a pipeline is as easy as importing a library, defining a function which will be the job to execute, and serving the gRPC-Server via a single command.
 
 .. code:: go
 
@@ -256,7 +256,7 @@ Gaia is the first platform which does not limit the user and provides full suppo
 
 What is a **pipeline**?
 ~~~~~~~~~~~~~~~~~~~~~~~
-A pipeline is a real application with at least one function (we call it Job). Every programming language can be used as long as gRPC is supported. We offer SDKs to support the development.
+A pipeline is a real application with at least one function (we call it a Job). Every programming language can be used as long as gRPC is supported. We offer SDKs to support the development.
 
 What is a **job**?
 ~~~~~~~~~~~~~~~~~~
@@ -277,11 +277,11 @@ We are working hard to support as much programming languages as possible but our
 Roadmap
 =======
 
-Gaia is currently in alpha version available. We extremely recommend to not use it for mission critical jobs and for production usage yet. Things will change in the future and essential features may break.
+Gaia is currently available as alpha version. We extremely recommend to not use it for mission critical jobs and for production yet. Things will change in the future and essential features may break.
 
 One of the main issues currently is the lack of unit- and integration tests. This is on our to-do list and we are working on this topic with high priority.
 
-It is planned that other programming languages should be supported in the next few month. It is up to the community which languages will be supported next.
+It is planned that other programming languages should be supported in the next few months. It is up to the community which languages will be supported next.
 
 Contributing
 ============
@@ -290,9 +290,9 @@ Gaia can only evolve and become a great product with the help of contributors. I
 
 If you think you found a good first issue, please consider this list as a short guide:
 
-* If the issue is clear and you have no questions, please leave a short comment that you start working on this. The issue will be usually blocked for two weeks to solve it.
-* If something is not clear or you are unsure what to do, please leave a comment so we can add further discription.
-* Make sure that your development environment is configured and setup. You need `Go installed`_ on your machine and also `nodeJS`_ for the frontend. Clone this repository and run the **make** command inside the cloned folder. This will start the backend. To start the frontend you have to open a new terminal window and go into the frontend folder. There you run **npm install** and then **npm run dev**. This should automatically open a new browser window.
+* If the issue is clear and you have no questions, please leave a short comment that you started working on this. The issue will be usually blocked for two weeks for you to solve it.
+* If something is not clear or you are unsure what to do, please leave a comment so we can add more detailed description.
+* Make sure your development environment is configured and set up. You need `Go installed`_ on your machine and also `nodeJS`_ for the frontend. Clone this repository and run the **make** command inside the cloned folder. This will start the backend. To start the frontend you have to open a new terminal window and go into the frontend folder. There you run **npm install** and then **npm run dev**. This should automatically open a new browser window.
 * Before you start your work, you should fork this repository and push changes to your fork. Afterwards, send a merge request back to upstream.
 
 Contact
