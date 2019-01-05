@@ -8,6 +8,8 @@ Gaia is an open source automation platform which makes it easy and fun to build 
 
 Develop powerful `pipelines <What is a pipeline?_>`_ with the help of `SDKs <Why do I need an SDK?_>`_ and simply check-in your code into a git repository. Gaia automatically clones your code repository, compiles your code to a binary, and executes it on-demand. All results are streamed back and formatted as a user-friendly graphical output.
 
+Check out `gaia-pipeline.io`_ to learn more.
+
 Motivation
 ==========
 
@@ -323,6 +325,7 @@ If you have any questions feel free to contact us on `slack`_.
 .. _`plugin system`: https://en.wikipedia.org/wiki/Plug-in_(computing)
 .. _`available docker image tags`: https://hub.docker.com/r/gaiapipeline/gaia/tags/
 .. _`how to develop a pipeline`: https://docs.gaia-pipeline.io/develop-pipelines/
+.. _`gaia-pipeline.io`: https://gaia-pipeline.io/
 
 .. |build-status| image:: https://circleci.com/gh/gaia-pipeline/gaia/tree/master.svg?style=shield&circle-token=c0e15edfb08f8076076cbbb55558af6cfecb89b8
     :alt: Build Status
