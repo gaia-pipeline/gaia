@@ -8,7 +8,7 @@ Gaia is an open source automation platform which makes it easy and fun to build 
 
 Develop powerful `pipelines <What is a pipeline?_>`_ with the help of `SDKs <Why do I need an SDK?_>`_ and simply check-in your code into a git repository. Gaia automatically clones your code repository, compiles your code to a binary, and executes it on-demand. All results are streamed back and formatted as a user-friendly graphical output.
 
-Check out `gaia-pipeline.io` to learn more.
+Check out `gaia-pipeline.io`_ to learn more.
 
 Motivation
 ==========
