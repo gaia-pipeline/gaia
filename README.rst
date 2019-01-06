@@ -72,7 +72,7 @@ The following command starts gaia as a daemon process and mounts all data to the
 
     docker run -d -p 8080:8080 -v $PWD:/data gaiapipeline/gaia:latest
 
-This uses the image with the *latest* tag which includes all required libraries and compilers for all supported languages. If you prefer a smaller image suited for your prefered language, have a look at the `available docker image tags`_.
+This uses the image with the *latest* tag which includes all required libraries and compilers for all supported languages. If you prefer a smaller image suited for your preferred language, have a look at the `available docker image tags`_.
 
 Manually
 ~~~~~~~~
@@ -124,7 +124,7 @@ Writing a pipeline is as easy as importing a library, defining a function which 
     func DoSomethingAwesome(args sdk.Arguments) error {
         log.Println("This output will be streamed back to gaia and will be displayed in the pipeline logs.")
 
-	// An error occured? Return it back so gaia knows that this job failed.
+	// An error occurred? Return it back so gaia knows that this job failed.
 	return nil
     }
 
@@ -210,7 +210,7 @@ C++
    void DoSomethingAwesome(std::list<gaia::argument> args) throw(std::string) {
       std::cerr << "This output will be streamed back to gaia and will be displayed in the pipeline logs." << std::endl;
 
-      // An error occured? Return it back so gaia knows that this job failed.
+      // An error occurred? Return it back so gaia knows that this job failed.
       // throw "Uhh something badly happened!"
    }
 
