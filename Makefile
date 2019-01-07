@@ -27,6 +27,12 @@ static_assets:
 compile_backend:
 	env GOOS=linux GOARCH=amd64 go build $(GO_LDFLAGS_STATIC) -o $(NAME)-linux-amd64 ./cmd/gaia/main.go
 
+download:
+	go mod download
+
+get:
+	go get ./...
+
 test:
 	go test -v ./...
 

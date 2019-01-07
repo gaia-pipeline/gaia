@@ -4,7 +4,9 @@ jobs:
   test_and_coverage:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
-      - image: circleci/golang:1.10.3-browsers
+      - image: circleci/golang:1.11.4
+        environment:
+          GO111MODULE: "on"
     steps:
       - checkout
       - run:
@@ -26,23 +28,29 @@ jobs:
       - run:
           name: Build binary without frontend
           command: |
+            make download
             make compile_backend
             ./gaia-linux-amd64 --version
   acceptance_tests:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
-        - image: gaiapipeline/circleci:0.0.1
+        - image: gaiapipeline/circleci:0.0.2
+          environment:
+            GO111MODULE: "on"
     steps:
       - checkout
       - run:
           name: Run acceptance tests
           command: |
             set -e
+            make download
             make test-acc
   compile:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
-      - image: circleci/golang:1.10.3-browsers
+      - image: circleci/golang:1.11.4
+        environment:
+          GO111MODULE: "on"
     steps:
       - checkout
       - run:
@@ -59,6 +67,7 @@ jobs:
             nvm install v10.5.0
             npm cache clean --force
             cd ..
+            make download
             make release
       - store_artifacts:
           path: gaia-linux-amd64
