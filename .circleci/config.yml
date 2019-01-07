@@ -4,7 +4,9 @@ jobs:
   test_and_coverage:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
-      - image: circleci/golang:1.10.3-browsers
+      - image: circleci/golang:1.11
+        environment:
+          GO111MODULE: "ON"
     steps:
       - checkout
       - run:
@@ -42,7 +44,9 @@ jobs:
   compile:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
-      - image: circleci/golang:1.10.3-browsers
+      - image: circleci/golang:1.11
+        environment:
+          GO111MODULE: "ON"
     steps:
       - checkout
       - run:
