@@ -28,7 +28,7 @@ jobs:
       - run:
           name: Build binary without frontend
           command: |
-            make get
+            make download
             make compile_backend
             ./gaia-linux-amd64 --version
   acceptance_tests:
@@ -43,7 +43,7 @@ jobs:
           name: Run acceptance tests
           command: |
             set -e
-            make get
+            make download
             make test-acc
   compile:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
@@ -67,7 +67,7 @@ jobs:
             nvm install v10.5.0
             npm cache clean --force
             cd ..
-            make get
+            make download
             make release
       - store_artifacts:
           path: gaia-linux-amd64
