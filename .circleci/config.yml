@@ -6,7 +6,7 @@ jobs:
     docker:
       - image: circleci/golang:1.11
         environment:
-          GO111MODULE: "ON"
+          GO111MODULE: "on"
     steps:
       - checkout
       - run:
@@ -36,7 +36,7 @@ jobs:
     docker:
         - image: gaiapipeline/circleci:0.0.1
           environment:
-            GO111MODULE: "ON"
+            GO111MODULE: "on"
     steps:
       - checkout
       - run:
@@ -50,7 +50,7 @@ jobs:
     docker:
       - image: circleci/golang:1.11
         environment:
-          GO111MODULE: "ON"
+          GO111MODULE: "on"
     steps:
       - checkout
       - run:
