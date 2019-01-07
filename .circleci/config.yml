@@ -1,6 +1,17 @@
 version: 2
 
 jobs:
+  setup:
+    working_directory: /go/src/github.com/gaia-pipeline/gaia
+    docker:
+      - image: circleci/golang:1.11
+        environment:
+          GO111MODULE: "ON"
+    steps:
+      - checkout
+      - run:
+          name: Setup Environment
+          command: make get
   test_and_coverage:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
@@ -73,6 +84,13 @@ workflows:
   version: 2
   test_and_compile:
     jobs:
-      - test_and_coverage
-      - acceptance_tests
-      - compile
+      - setup
+      - test_and_coverage:
+        requires:
+          - setup
+      - acceptance_tests:
+        requires:
+          - setup
+      - compile:
+        requires:
+          - setup
