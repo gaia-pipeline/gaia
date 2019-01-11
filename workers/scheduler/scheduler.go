@@ -39,11 +39,14 @@ var (
 	// a plugin.
 	errCreateCMDForPipeline = errors.New("could not create execute command for plugin")
 
-	// Java executeable name
+	// Java executable name
 	javaExecName = "java"
 
-	// Python executeable name
+	// Python executable name
 	pythonExecName = "python"
+
+	// Ruby executable name
+	rubyExecName = "ruby"
 )
 
 // Plugin represents the plugin implementation which is used
@@ -725,7 +728,7 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 		// Look for java executable
 		path, err := exec.LookPath(javaExecName)
 		if err != nil {
-			gaia.Cfg.Logger.Debug("cannot find java executable", "error", err.Error())
+			gaia.Cfg.Logger.Error("cannot find java executable", "error", err.Error())
 			return nil
 		}
 
@@ -747,6 +750,21 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 		c.Dir = filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder, p.Name)
 	case gaia.PTypeCpp:
 		c.Path = p.ExecPath
+	case gaia.PTypeRuby:
+		// Look for ruby executable
+		path, err := exec.LookPath(rubyExecName)
+		if err != nil {
+			gaia.Cfg.Logger.Error("cannot find ruby executable", "error", err.Error())
+			return nil
+		}
+
+		// Build start command
+		c.Path = path
+		c.Args = []string{
+			path,
+			"-Ilib",
+			p.ExecPath,
+		}
 	default:
 		c = nil
 	}

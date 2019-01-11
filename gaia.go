@@ -38,6 +38,9 @@ const (
 	// PTypeCpp C++ plugin type
 	PTypeCpp PipelineType = "cpp"
 
+	// PTypeRuby ruby plugin type
+	PTypeRuby PipelineType = "ruby"
+
 	// CreatePipelineFailed status
 	CreatePipelineFailed CreatePipelineType = "failed"
 
