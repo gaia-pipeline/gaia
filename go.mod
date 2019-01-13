@@ -43,4 +43,5 @@ require (
 	gopkg.in/src-d/go-billy.v4 v4.2.0
 	gopkg.in/src-d/go-git.v4 v4.5.0
 	gopkg.in/warnings.v0 v0.1.2
+	gopkg.in/yaml.v2 v2.2.2
 )

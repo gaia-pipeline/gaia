@@ -14,6 +14,7 @@ import (
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
 	uuid "github.com/satori/go.uuid"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -47,6 +48,9 @@ var (
 
 	// Ruby executable name
 	rubyExecName = "ruby"
+
+	// Ruby gem binary name.
+	rubyGemName = "gem"
 )
 
 // Plugin represents the plugin implementation which is used
@@ -758,12 +762,21 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 			return nil
 		}
 
+		// Get the gem name from the gem file.
+		gemName, err := findRubyGemName(p.ExecPath)
+		if err != nil {
+			gaia.Cfg.Logger.Error("cannot find the gem name from the gem file", "error", err.Error())
+			return nil
+		}
+
 		// Build start command
 		c.Path = path
 		c.Args = []string{
 			path,
-			"-Ilib",
-			p.ExecPath,
+			"-r",
+			gemName,
+			"-e",
+			"'Main.main'",
 		}
 	default:
 		c = nil
@@ -785,4 +798,34 @@ func (s *Scheduler) finishPipelineRun(r *gaia.PipelineRun, status gaia.PipelineR
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot store finished pipeline", "error", err.Error())
 	}
+}
+
+// findRubyGemName finds the gem name of a ruby gem file.
+func findRubyGemName(execPath string) (name string, err error) {
+	// Find the gem binary path.
+	path, err := exec.LookPath(rubyGemName)
+	if err != nil {
+		return
+	}
+
+	// Get the gem specification in YAML format.
+	cmd := exec.Command(path, "specification", "--yaml", execPath)
+	output, err := cmd.Output()
+	if err != nil {
+		return
+	}
+
+	// Struct helper to filter for what we need.
+	type gemSpecOutput struct {
+		Name string
+	}
+
+	// Transform and filter the gem specification.
+	gemSpec := gemSpecOutput{}
+	err = yaml.Unmarshal(output, &gemSpec)
+	if err != nil {
+		return
+	}
+	name = gemSpec.Name
+	return
 }

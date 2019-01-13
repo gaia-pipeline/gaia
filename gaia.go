@@ -100,6 +100,9 @@ const (
 
 	// TmpCppFolder is the name of the c++ temporary folder
 	TmpCppFolder = "cpp"
+
+	// TmpRubyFolder is the name of the ruby temporary folder
+	TmpRubyFolder = "ruby"
 )
 
 // User is the user object

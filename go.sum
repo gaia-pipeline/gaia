@@ -74,9 +74,12 @@ google.golang.org/genproto v0.0.0-20180808183934-383e8b2c3b9e h1:8mImbC+7codRhTI
 google.golang.org/genproto v0.0.0-20180808183934-383e8b2c3b9e/go.mod h1:JiN7NxoALGmiZfu7CAH4rXhgtRTLTxftemlI0sWmxmc=
 google.golang.org/grpc v1.14.0 h1:ArxJuB1NWfPY6r9Gp9gqwplT0Ge7nqv9msgu03lHLmo=
 google.golang.org/grpc v1.14.0/go.mod h1:yo6s7OP7yaDglbqo1J04qKzAhqBH6lvTonzMVmEdcZw=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/src-d/go-billy.v4 v4.2.0 h1:VGbrP1EsYxtvVPEiHui+4//imr4E5MGEFLx66bQtusg=
 gopkg.in/src-d/go-billy.v4 v4.2.0/go.mod h1:ZHSF0JP+7oD97194otDUCD7Ofbk63+xFcfWP5bT6h+Q=
 gopkg.in/src-d/go-git.v4 v4.5.0 h1:6VjUh+5ATbfmlCAhV/Fb+1uQ7GnwLIuBPkwcRtxHZkk=
 gopkg.in/src-d/go-git.v4 v4.5.0/go.mod h1:CzbUWqMn4pvmvndg3gnh5iZFmSsbhyhUWdI0IQ60AQo=
 gopkg.in/warnings.v0 v0.1.2 h1:wFXVbFY8DY5/xOe1ECiWdKCzZlxgshcYVNkBHstARME=
 gopkg.in/warnings.v0 v0.1.2/go.mod h1:jksf8JmL6Qr/oQM2OXTHunEvvTAsrWBLb6OOjuVWRNI=
+gopkg.in/yaml.v2 v2.2.2 h1:ZCJp+EgiOT7lHqUV2J862kp8Qj64Jo6az82+3Td9dZw=
+gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
