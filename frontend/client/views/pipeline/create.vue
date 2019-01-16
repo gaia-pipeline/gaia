@@ -92,6 +92,9 @@
               <div class="pipelinetype" title="C++" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-on:click="createPipeline.pipeline.type = 'cpp'" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'cpp' }" data-tippy-hideOnClick="false">
                 <img src="~assets/cpp.png" class="typeimage">
               </div>
+              <div class="pipelinetype" title="Ruby" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-on:click="createPipeline.pipeline.type = 'ruby'" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'ruby' }" data-tippy-hideOnClick="false">
+                <img src="~assets/ruby.png" class="typeimage">
+              </div>
               <div class="pipelinetype" title="Node.js (not yet supported)" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'nodejs' }" data-tippy-hideOnClick="false">
                 <img src="~assets/nodejs.png" class="typeimage typeimagenotyetsupported">
               </div>

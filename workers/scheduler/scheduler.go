@@ -14,7 +14,7 @@ import (
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
 	uuid "github.com/satori/go.uuid"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (
@@ -776,7 +776,7 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 			"-r",
 			gemName,
 			"-e",
-			"'Main.main'",
+			"Main.main",
 		}
 	default:
 		c = nil
