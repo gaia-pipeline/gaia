@@ -14,7 +14,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-const (
+var (
 	gemBinaryName = "gem"
 )
 

@@ -17,26 +17,26 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 )
 
-func TestPrepareEnvironmentCpp(t *testing.T) {
-	tmp, _ := ioutil.TempDir("", "TestPrepareEnvironmentGo")
+func TestPrepareEnvironmentRuby(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestPrepareEnvironmentRuby")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
-	b := new(BuildPipelineCpp)
+	b := new(BuildPipelineRuby)
 	p := new(gaia.CreatePipeline)
 	err := b.PrepareEnvironment(p)
 	if err != nil {
 		t.Fatal("error was not expected when preparing environment: ", err)
 	}
-	var expectedDest = regexp.MustCompile(`^/.*/tmp/cpp/src/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
+	var expectedDest = regexp.MustCompile(`^/.*/tmp/ruby/src/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 	if !expectedDest.MatchString(p.Pipeline.Repo.LocalDest) {
 		t.Fatalf("expected destination is '%s', but was '%s'", expectedDest, p.Pipeline.Repo.LocalDest)
 	}
 }
 
-func TestPrepareEnvironmentInvalidPathForMkdirCpp(t *testing.T) {
+func TestPrepareEnvironmentInvalidPathForMkdirRuby(t *testing.T) {
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = "/notexists"
-	b := new(BuildPipelineCpp)
+	b := new(BuildPipelineRuby)
 	p := new(gaia.CreatePipeline)
 	err := b.PrepareEnvironment(p)
 	if err == nil {
@@ -44,19 +44,31 @@ func TestPrepareEnvironmentInvalidPathForMkdirCpp(t *testing.T) {
 	}
 }
 
-func TestExecuteBuildCpp(t *testing.T) {
+func TestExecuteBuildRuby(t *testing.T) {
 	execCommandContext = fakeExecCommandContext
 	defer func() {
 		execCommandContext = exec.CommandContext
 	}()
-	tmp, _ := ioutil.TempDir("", "TestExecuteBuildCpp")
+	tmp, _ := ioutil.TempDir("", "TestExecuteBuildRuby")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
-	b := new(BuildPipelineCpp)
+	b := new(BuildPipelineRuby)
 	p := new(gaia.CreatePipeline)
+	p.Pipeline.Name = "main"
+	p.Pipeline.Type = gaia.PTypeRuby
+	p.Pipeline.Repo.LocalDest = tmp
+	src := filepath.Join(tmp, p.Pipeline.Name+".gemspec")
+	f, _ := os.Create(src)
+	defer os.RemoveAll(tmp)
+	defer f.Close()
+	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	dst := filepath.Join(tmp, p.Pipeline.Name+".gem")
+	resultFile, _ := os.Create(dst)
+	defer resultFile.Close()
+	ioutil.WriteFile(dst, []byte("testcontent"), 0666)
 	err := b.ExecuteBuild(p)
 	if err != nil {
-		t.Fatal("error while running executebuild. none was expected")
+		t.Fatalf("error while running executebuild. none was expected: %s", err.Error())
 	}
 	expectedBuildArgs := ""
 	actualArgs := os.Getenv("CMD_ARGS")
@@ -65,25 +77,31 @@ func TestExecuteBuildCpp(t *testing.T) {
 	}
 }
 
-func TestExecuteBuildContextTimeoutCpp(t *testing.T) {
+func TestExecuteBuildContextTimeoutRuby(t *testing.T) {
 	execCommandContext = fakeExecCommandContext
 	buildKillContext = true
 	defer func() {
 		execCommandContext = exec.CommandContext
 		buildKillContext = false
 	}()
-	tmp, _ := ioutil.TempDir("", "TestExecuteBuildContextTimeoutCpp")
+	tmp, _ := ioutil.TempDir("", "TestExecuteBuildContextTimeoutRuby")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
-	// Initialize shared logger
 	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
 		Output: buf,
 		Name:   "Gaia",
 	})
-	b := new(BuildPipelineCpp)
+	b := new(BuildPipelineRuby)
 	p := new(gaia.CreatePipeline)
+	p.Pipeline.Name = "main"
+	p.Pipeline.Type = gaia.PTypeRuby
+	p.Pipeline.Repo.LocalDest = tmp
+	src := filepath.Join(tmp, p.Pipeline.Name+".gemspec")
+	f, _ := os.Create(src)
+	defer os.RemoveAll(tmp)
+	defer f.Close()
 	err := b.ExecuteBuild(p)
 	if err == nil {
 		t.Fatal("no error found while expecting error.")
@@ -93,11 +111,10 @@ func TestExecuteBuildContextTimeoutCpp(t *testing.T) {
 	}
 }
 
-func TestExecuteBuildBinaryNotFoundErrorCpp(t *testing.T) {
-	tmp, _ := ioutil.TempDir("", "TestExecuteBuildBinaryNotFoundErrorCpp")
+func TestExecuteBuildBinaryNotFoundErrorRuby(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestExecuteBuildBinaryNotFoundErrorRuby")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
-	// Initialize shared logger
 	buf := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Trace,
@@ -107,19 +124,19 @@ func TestExecuteBuildBinaryNotFoundErrorCpp(t *testing.T) {
 	currentPath := os.Getenv("PATH")
 	defer func() { os.Setenv("PATH", currentPath) }()
 	os.Setenv("PATH", "")
-	b := new(BuildPipelineCpp)
+	b := new(BuildPipelineRuby)
 	p := new(gaia.CreatePipeline)
 	err := b.ExecuteBuild(p)
 	if err == nil {
 		t.Fatal("no error found while expecting error.")
 	}
-	if err.Error() != "exec: \"make\": executable file not found in $PATH" {
+	if err.Error() != "exec: \"gem\": executable file not found in $PATH" {
 		t.Fatal("the error wasn't what we expected. instead it was: ", err)
 	}
 }
 
-func TestCopyBinaryCpp(t *testing.T) {
-	tmp, _ := ioutil.TempDir("", "TestCopyBinaryCpp")
+func TestCopyBinaryRuby(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestCopyBinaryRuby")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
@@ -129,12 +146,12 @@ func TestCopyBinaryCpp(t *testing.T) {
 		Output: buf,
 		Name:   "Gaia",
 	})
-	b := new(BuildPipelineCpp)
+	b := new(BuildPipelineRuby)
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
-	p.Pipeline.Type = gaia.PTypeCpp
+	p.Pipeline.Type = gaia.PTypeRuby
 	p.Pipeline.Repo.LocalDest = tmp
-	src := filepath.Join(tmp, cppFinalBinaryName)
+	src := filepath.Join(tmp, "test.gem")
 	dst := appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
 	f, _ := os.Create(src)
 	defer f.Close()
@@ -153,8 +170,8 @@ func TestCopyBinaryCpp(t *testing.T) {
 	}
 }
 
-func TestCopyBinarySrcDoesNotExistCpp(t *testing.T) {
-	tmp, _ := ioutil.TempDir("", "TestCopyBinarySrcDoesNotExistCpp")
+func TestCopyBinarySrcDoesNotExistRuby(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestCopyBinarySrcDoesNotExistRuby")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
@@ -164,31 +181,31 @@ func TestCopyBinarySrcDoesNotExistCpp(t *testing.T) {
 		Output: buf,
 		Name:   "Gaia",
 	})
-	b := new(BuildPipelineCpp)
+	b := new(BuildPipelineRuby)
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
-	p.Pipeline.Type = gaia.PTypeCpp
+	p.Pipeline.Type = gaia.PTypeRuby
 	p.Pipeline.Repo.LocalDest = "/noneexistent"
 	err := b.CopyBinary(p)
 	if err == nil {
 		t.Fatal("error was expected when copying binary but none occurred ")
 	}
-	if err.Error() != "open /noneexistent/"+cppFinalBinaryName+": no such file or directory" {
+	if err.Error() != "open /noneexistent: no such file or directory" {
 		t.Fatal("a different error occurred then expected: ", err)
 	}
 }
 
-type cppMockStorer struct {
+type rubyMockStorer struct {
 	store.GaiaStore
 	Error error
 }
 
 // PipelinePut is a Mock implementation for pipelines
-func (m *cppMockStorer) PipelinePut(p *gaia.Pipeline) error {
+func (m *rubyMockStorer) PipelinePut(p *gaia.Pipeline) error {
 	return m.Error
 }
 
-func TestSavePipelineCpp(t *testing.T) {
+func TestSavePipelineRuby(t *testing.T) {
 	defer os.Remove("gaia.db")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = "/tmp"
@@ -196,9 +213,9 @@ func TestSavePipelineCpp(t *testing.T) {
 	// Initialize shared logger
 	p := new(gaia.Pipeline)
 	p.Name = "main"
-	p.Type = gaia.PTypeCpp
-	b := new(BuildPipelineCpp)
-	m := new(cppMockStorer)
+	p.Type = gaia.PTypeRuby
+	b := new(BuildPipelineRuby)
+	m := new(rubyMockStorer)
 	services.MockStorageService(m)
 	err := b.SavePipeline(p)
 	if err != nil {
@@ -207,12 +224,12 @@ func TestSavePipelineCpp(t *testing.T) {
 	if p.Name != "main" {
 		t.Fatal("name of pipeline didn't equal expected 'main'. was instead: ", p.Name)
 	}
-	if p.Type != gaia.PTypeCpp {
-		t.Fatal("type of pipeline was not cpp. instead was: ", p.Type)
+	if p.Type != gaia.PTypeRuby {
+		t.Fatal("type of pipeline was not ruby. instead was: ", p.Type)
 	}
 }
 
-func TestSavePipelineSaveErrorsCpp(t *testing.T) {
+func TestSavePipelineSaveErrorsRuby(t *testing.T) {
 	defer os.Remove("gaia.db")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = "/tmp"
@@ -221,8 +238,8 @@ func TestSavePipelineSaveErrorsCpp(t *testing.T) {
 	p := new(gaia.Pipeline)
 	p.Name = "main"
 	p.Type = gaia.PTypeCpp
-	b := new(BuildPipelineCpp)
-	m := new(cppMockStorer)
+	b := new(BuildPipelineRuby)
+	m := new(rubyMockStorer)
 	m.Error = errors.New("database error")
 	services.MockStorageService(m)
 	err := b.SavePipeline(p)

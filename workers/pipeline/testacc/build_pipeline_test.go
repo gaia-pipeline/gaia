@@ -40,6 +40,7 @@ func TestBuildPipelineAcceptanceTestTearUp(t *testing.T) {
 	t.Run("BuildJavaPluginTest", buildJavaPluginTest)
 	t.Run("BuildPythonPluginTest", buildPythonPluginTest)
 	t.Run("BuildCppPluginTest", buildCppPluginTest)
+	t.Run("BuildRubyPluginTest", buildRubyPluginTest)
 }
 
 func buildGoPluginTest(t *testing.T) {
@@ -119,5 +120,25 @@ func buildCppPluginTest(t *testing.T) {
 	// Check if everything went smoothly.
 	if testPipeline.StatusType == gaia.CreatePipelineFailed {
 		t.Errorf("create cpp pipeline failed: %s", testPipeline.Output)
+	}
+}
+
+func buildRubyPluginTest(t *testing.T) {
+	// Create test pipeline.
+	testPipeline := &gaia.CreatePipeline{
+		ID: uuid.Must(uuid.NewV4(), nil).String(),
+		Pipeline: gaia.Pipeline{
+			Name: "RubyTestPipeline",
+			Type: gaia.PTypeRuby,
+			Repo: gaia.GitRepo{URL: "https://github.com/gaia-pipeline/ruby-example"},
+		},
+	}
+
+	// Build pipeline.
+	pipeline.CreatePipeline(testPipeline)
+
+	// Check if everything went smoothly.
+	if testPipeline.StatusType == gaia.CreatePipelineFailed {
+		t.Errorf("create ruby pipeline failed: %s", testPipeline.Output)
 	}
 }
