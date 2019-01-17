@@ -66,6 +66,7 @@ func TestExecuteBuildRuby(t *testing.T) {
 	resultFile, _ := os.Create(dst)
 	defer resultFile.Close()
 	ioutil.WriteFile(dst, []byte("testcontent"), 0666)
+	gemBinaryName = "go"
 	err := b.ExecuteBuild(p)
 	if err != nil {
 		t.Fatalf("error while running executebuild. none was expected: %s", err.Error())
@@ -108,30 +109,6 @@ func TestExecuteBuildContextTimeoutRuby(t *testing.T) {
 	}
 	if err.Error() != "context deadline exceeded" {
 		t.Fatal("context deadline should have been exceeded. was instead: ", err)
-	}
-}
-
-func TestExecuteBuildBinaryNotFoundErrorRuby(t *testing.T) {
-	tmp, _ := ioutil.TempDir("", "TestExecuteBuildBinaryNotFoundErrorRuby")
-	gaia.Cfg = new(gaia.Config)
-	gaia.Cfg.HomePath = tmp
-	buf := new(bytes.Buffer)
-	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
-		Level:  hclog.Trace,
-		Output: buf,
-		Name:   "Gaia",
-	})
-	currentPath := os.Getenv("PATH")
-	defer func() { os.Setenv("PATH", currentPath) }()
-	os.Setenv("PATH", "")
-	b := new(BuildPipelineRuby)
-	p := new(gaia.CreatePipeline)
-	err := b.ExecuteBuild(p)
-	if err == nil {
-		t.Fatal("no error found while expecting error.")
-	}
-	if err.Error() != "exec: \"gem\": executable file not found in $PATH" {
-		t.Fatal("the error wasn't what we expected. instead it was: ", err)
 	}
 }
 
