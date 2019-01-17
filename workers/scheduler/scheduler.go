@@ -800,6 +800,8 @@ func (s *Scheduler) finishPipelineRun(r *gaia.PipelineRun, status gaia.PipelineR
 	}
 }
 
+var findRubyGemCommands = []string{"specification", "--yaml"}
+
 // findRubyGemName finds the gem name of a ruby gem file.
 func findRubyGemName(execPath string) (name string, err error) {
 	// Find the gem binary path.
@@ -809,7 +811,8 @@ func findRubyGemName(execPath string) (name string, err error) {
 	}
 
 	// Get the gem specification in YAML format.
-	cmd := exec.Command(path, "specification", "--yaml", execPath)
+	findRubyGemCommands = append(findRubyGemCommands, execPath)
+	cmd := exec.Command(path, findRubyGemCommands...)
 	output, err := cmd.Output()
 	if err != nil {
 		return

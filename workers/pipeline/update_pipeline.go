@@ -78,7 +78,7 @@ func updatePipeline(p *gaia.Pipeline) error {
 		// Install gem forcefully.
 		cmd := exec.Command(path, "install", "-f", pipelineCopyPath)
 		if out, err := cmd.CombinedOutput(); err != nil {
-			gaia.Cfg.Logger.Debug("error", string(out[:]))
+			gaia.Cfg.Logger.Error("error", string(out[:]))
 			return err
 		}
 	}
