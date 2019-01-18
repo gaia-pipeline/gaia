@@ -1,7 +1,9 @@
 module github.com/gaia-pipeline/gaia
 
 require (
-	github.com/GeertJohan/go.rice v0.0.0-20170420135705-c02ca9a983da
+	github.com/GeertJohan/go.incremental v0.0.0-20161212213043-1172aab96510 // indirect
+	github.com/GeertJohan/go.rice v0.0.0-20181229193832-0af3f3b09a0a
+	github.com/akavel/rsrc v0.0.0-20170831122431-f6a15ece2cfd // indirect
 	github.com/alecthomas/gometalinter v2.0.12+incompatible // indirect
 	github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf // indirect
 	github.com/coreos/bbolt v1.3.0
@@ -23,6 +25,7 @@ require (
 	github.com/hashicorp/go-plugin v0.0.0-20180331002553-e8d22c780116
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99
+	github.com/jessevdk/go-flags v1.4.0 // indirect
 	github.com/josharian/impl v0.0.0-20180228163738-3d0f908298c4 // indirect
 	github.com/jstemmer/gotags v1.4.1 // indirect
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
@@ -38,6 +41,7 @@ require (
 	github.com/mitchellh/go-homedir v0.0.0-20180801233206-58046073cbff
 	github.com/mitchellh/go-testing-interface v0.0.0-20171004221916-a61a99592b77
 	github.com/nicksnyder/go-i18n v1.10.0 // indirect
+	github.com/nkovacs/streamquote v0.0.0-20170412213628-49af9bddb229 // indirect
 	github.com/oklog/run v1.0.0
 	github.com/pelletier/go-buffruneio v0.2.0
 	github.com/pelletier/go-toml v1.2.0 // indirect
