@@ -30,7 +30,8 @@
     },
     name: 'create-group',
     props: {
-      visible: false
+      visible: Boolean,
+      onSuccess: Function
     },
     data () {
       return {
@@ -43,6 +44,11 @@
     },
     mounted () {
       this.getPermissionOptions()
+    },
+    computed: {
+      isVisible: function () {
+        return this.visible
+      }
     },
     methods: {
       getPermissionOptions () {
@@ -60,13 +66,17 @@
       add () {
         this.$http
           .post('/api/v1/permission/group', this.group)
+          .then(() => {
+            this.close()
+            this.onSuccess()
+          })
           .catch((error) => {
             this.$onError(error)
           })
-        this.close()
       },
       close () {
-        this.visible = false
+        this.group.name = ''
+        this.$emit('exit')
       }
     }
   }

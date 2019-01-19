@@ -45,7 +45,7 @@
           </div>
         </tab-pane>
         <tab-pane label="Manage Permissions" icon="fa fa-users">
-          <manage></manage>
+          <manage-permissions></manage-permissions>
         </tab-pane>
         <tab-pane label="Manage Pipelines" icon="fa fa-wrench">
           <div class="tile is-ancestor">
@@ -280,7 +280,7 @@ import VueTippy from 'vue-tippy'
 import moment from 'moment'
 import Notification from 'vue-bulma-notification-fixed'
 import { mapGetters } from 'vuex'
-import Manage from './permissions/manage'
+import ManagePermissions from './permissions/manage-permissions'
 
 const NotificationComponent = Vue.extend(Notification)
 const openNotification = (propsData = {
@@ -302,7 +302,7 @@ Vue.use(VueTippy)
 
 export default {
   components: {
-    Manage,
+    ManagePermissions,
     Tabs,
     TabPane,
     Modal,

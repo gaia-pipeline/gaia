@@ -65,6 +65,7 @@ type GaiaStore interface {
 	PermissionGroupGet(name string) (*gaia.PermissionGroup, error)
 	PermissionGroupPut(group *gaia.PermissionGroup) error
 	PermissionGroupCreate(group *gaia.PermissionGroup) error
+	PermissionGroupDelete(name string) error
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore

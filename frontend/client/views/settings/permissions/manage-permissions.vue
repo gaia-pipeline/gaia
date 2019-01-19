@@ -1,6 +1,6 @@
 <template>
   <div class="tile is-ancestor">
-    <create-group :visible="showCreateDialog"></create-group>
+    <create-group :visible="showCreateDialog" @exit="showCreateDialog = false" :on-success="fetchData"></create-group>
     <div class="tile is-vertical">
       <div class="tile is-parent">
         <a class="button is-primary" v-on:click="createGroup" style="margin-bottom: -10px;">
@@ -28,7 +28,7 @@
               </td>
               <td>
                 <a v-on:click="editGroup(props.row)"><i class="fa fa-edit" style="color: whitesmoke;"></i></a>
-                <a v-on:click="deleteGroup(props.row)"><i class="fa fa-delete" style="color: whitesmoke;"></i></a>
+                <a v-on:click="deleteGroup(props.row.name)"><i class="fa fa-trash" style="color: whitesmoke;"></i></a>
               </td>
             </template>
             <div slot="emptystate" class="empty-table-text">
@@ -46,7 +46,7 @@
   import CreateGroup from './create-group'
 
 export default {
-    name: 'manage',
+    name: 'manage-permissions',
     components: {CreateGroup, Assign},
     data () {
       return {
@@ -89,7 +89,15 @@ export default {
       },
       editGroup (value) {
       },
-      deleteGroup (value) {
+      deleteGroup (name) {
+        this.$http
+          .delete(`/api/v1/permission/group/${name}`)
+          .then(() => {
+            this.fetchData()
+          })
+          .catch((error) => {
+            this.$onError(error)
+          })
       },
       formatPermissions (perms) {
         return perms.join(', ')

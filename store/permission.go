@@ -98,3 +98,10 @@ func (s *BoltStore) PermissionGroupCreate(group *gaia.PermissionGroup) error {
 		return b.Put([]byte(group.Name), m)
 	})
 }
+
+func (s *BoltStore) PermissionGroupDelete(name string) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(permGroupsBucket)
+		return b.Delete([]byte(name))
+	})
+}

@@ -59,6 +59,7 @@ func InitHandlers(e *echo.Echo) error {
 	perms.GET("", PermissionGetAll)
 	perms.GET("/group", PermissionGroupGetAll)
 	perms.POST("/group", PermissionGroupCreate)
+	perms.DELETE("/group/:name", PermissionGroupDelete)
 
 	// Pipelines
 	e.POST(p+"pipeline", CreatePipeline)

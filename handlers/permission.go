@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/labstack/echo"
@@ -25,7 +26,7 @@ func PermissionGroupCreate(c echo.Context) error {
 	var pg *gaia.PermissionGroup
 
 	if err := c.Bind(&pg); err != nil {
-		return c.String(http.StatusBadRequest, "Invalid permission group provided")
+		return c.String(http.StatusBadRequest, "Invalid Permission Group provided")
 	}
 
 	store, _ := services.PermissionManager()
@@ -35,4 +36,16 @@ func PermissionGroupCreate(c echo.Context) error {
 	}
 
 	return c.String(http.StatusOK, "Permission Group added")
+}
+
+func PermissionGroupDelete(c echo.Context) error {
+	name := c.Param("name")
+
+	store, _ := services.StorageService()
+	err := store.PermissionGroupDelete(name)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.String(http.StatusOK, fmt.Sprintf("Permission Group %s deleted", name))
 }
