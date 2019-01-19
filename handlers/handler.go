@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/GeertJohan/go.rice"
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -53,6 +53,12 @@ func InitHandlers(e *echo.Echo) error {
 	e.POST(p+"user/password", UserChangePassword)
 	e.DELETE(p+"user/:username", UserDelete)
 	e.POST(p+"user", UserAdd)
+
+	// Permissions
+	perms := e.Group(p + "permission")
+	perms.GET("", PermissionGetAll)
+	perms.GET("/group", PermissionGroupGetAll)
+	perms.POST("/group", PermissionGroupCreate)
 
 	// Pipelines
 	e.POST(p+"pipeline", CreatePipeline)

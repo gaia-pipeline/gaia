@@ -1,7 +1,7 @@
 <template>
   <div class="tile is-ancestor">
     <div class="tile is-vertical">
-      <tabs type="boxed" :is-fullwidth="true" alignment="centered" size="large">
+      <tabs type="boxed" :is-fullwidth="false" alignment="centered" size="large">
         <tab-pane label="Manage Users" icon="fa fa-user-circle">
           <div class="tile is-ancestor">
             <div class="tile is-vertical">
@@ -43,6 +43,9 @@
               </div>
             </div>
           </div>
+        </tab-pane>
+        <tab-pane label="Manage Permissions" icon="fa fa-users">
+          <manage></manage>
         </tab-pane>
         <tab-pane label="Manage Pipelines" icon="fa fa-wrench">
           <div class="tile is-ancestor">
@@ -277,6 +280,7 @@ import VueTippy from 'vue-tippy'
 import moment from 'moment'
 import Notification from 'vue-bulma-notification-fixed'
 import { mapGetters } from 'vuex'
+import Manage from './permissions/manage'
 
 const NotificationComponent = Vue.extend(Notification)
 const openNotification = (propsData = {
@@ -298,6 +302,7 @@ Vue.use(VueTippy)
 
 export default {
   components: {
+    Manage,
     Tabs,
     TabPane,
     Modal,

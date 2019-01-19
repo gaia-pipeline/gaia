@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-hclog"
 	"github.com/robfig/cron"
 )
 
@@ -107,6 +107,74 @@ type User struct {
 	Tokenstring string    `json:"tokenstring,omitempty"`
 	JwtExpiry   int64     `json:"jwtexpiry,omitempty"`
 	LastLogin   time.Time `json:"lastlogin,omitempty"`
+	Permissions []string  `json:"permissions,omitempty"`
+}
+
+type PermissionCategory struct {
+	Name        string        `json:"name"`
+	Description string        `json:"description"`
+	Permissions []*Permission `json:"permissions"`
+}
+
+type Permission struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+type PermissionGroup struct {
+	Name        string   `json:"name"`
+	Permissions []string `json:"permissions"`
+}
+
+var (
+	PermissionsCategories = []*PermissionCategory{
+		{
+			Name:        "Pipeline",
+			Description: "Permissions relating to Pipelines.",
+			Permissions: []*Permission{
+				{
+					Name:        "Create",
+					Description: "Create a Gaia pipeline.",
+				},
+				{
+					Name:        "Modify",
+					Description: "Modify a Gaia pipeline.",
+				},
+				{
+					Name:        "Delete",
+					Description: "Delete a Gaia pipeline.",
+				},
+			},
+		},
+		{
+			Name:        "Users",
+			Description: "Permissions relating to Users.",
+			Permissions: []*Permission{
+				{
+					Name:        "Create",
+					Description: "Create a Gaia user.",
+				},
+				{
+					Name:        "Modify",
+					Description: "Modify a Gaia user.",
+				},
+				{
+					Name:        "Delete",
+					Description: "Delete a Gaia user.",
+				},
+			},
+		},
+	}
+	//PermissionGroupDefaults = []*PermissionGroup{
+	//	{
+	//		Name:        "Admin",
+	//		Permissions: GetAllPerms(PermissionsCategories),
+	//	},
+	//}
+)
+
+func (p *Permission) FullName(category string) string {
+	return category + p.Name
 }
 
 // Pipeline represents a single pipeline

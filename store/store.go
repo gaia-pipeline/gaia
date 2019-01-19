@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	bolt "github.com/coreos/bbolt"
+	"github.com/coreos/bbolt"
 	"github.com/gaia-pipeline/gaia"
 )
 
@@ -22,6 +22,8 @@ var (
 
 	// Name of the bucket where we store all pipeline runs.
 	pipelineRunBucket = []byte("PipelineRun")
+
+	permGroupsBucket = []byte("PermissionGroups")
 )
 
 const (
@@ -59,6 +61,10 @@ type GaiaStore interface {
 	UserGet(username string) (*gaia.User, error)
 	UserGetAll() ([]gaia.User, error)
 	UserDelete(u string) error
+	PermissionGroupGetAll() ([]*gaia.PermissionGroup, error)
+	PermissionGroupGet(name string) (*gaia.PermissionGroup, error)
+	PermissionGroupPut(group *gaia.PermissionGroup) error
+	PermissionGroupCreate(group *gaia.PermissionGroup) error
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore
@@ -105,6 +111,11 @@ func (s *BoltStore) setupDatabase() error {
 	// Make sure buckets exist
 	bucketName = userBucket
 	err := s.db.Update(c)
+	if err != nil {
+		return err
+	}
+	bucketName = permGroupsBucket
+	err = s.db.Update(c)
 	if err != nil {
 		return err
 	}
