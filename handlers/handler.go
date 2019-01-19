@@ -52,6 +52,8 @@ func InitHandlers(e *echo.Echo) error {
 	e.GET(p+"users", UserGetAll)
 	e.POST(p+"user/password", UserChangePassword)
 	e.DELETE(p+"user/:username", UserDelete)
+	e.GET(p+"user/:username/permissions", UserGetPermissions)
+	e.PUT(p+"user/:username/permissions", UserPutPermissions)
 	e.POST(p+"user", UserAdd)
 
 	// Permissions

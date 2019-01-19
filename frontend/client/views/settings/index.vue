@@ -32,6 +32,7 @@
                       </td>
                       <td>
                         <a v-on:click="editUserModal(props.row)"><i class="fa fa-edit" style="color: whitesmoke;"></i></a>
+                        <a v-on:click="userPermissionsModal(props.row)"><i class="fa fa-user" style="color: whitesmoke;"></i></a>
                         <a v-on:click="deleteUserModal(props.row)" v-if="props.row.username !== session.username"><i class="fa fa-trash" style="color: whitesmoke;"></i></a>
                       </td>
                     </template>
@@ -267,7 +268,9 @@
         </article>
       </div>
     </modal>
+    <user-permissions :visible="showUserPermissionsModal" :user="selectUser" @close="close" ></user-permissions>
   </div>
+
 </template>
 
 <script>
@@ -281,6 +284,7 @@ import moment from 'moment'
 import Notification from 'vue-bulma-notification-fixed'
 import { mapGetters } from 'vuex'
 import ManagePermissions from './permissions/manage-permissions'
+import UserPermissions from './permissions/user-permissions'
 
 const NotificationComponent = Vue.extend(Notification)
 const openNotification = (propsData = {
@@ -302,6 +306,7 @@ Vue.use(VueTippy)
 
 export default {
   components: {
+    UserPermissions,
     ManagePermissions,
     Tabs,
     TabPane,
@@ -351,6 +356,7 @@ export default {
       showAddUserModal: false,
       showEditPipelineModal: false,
       showDeletePipelineModal: false,
+      showUserPermissionsModal: false,
       pipelinePeriodicSchedules: ''
     }
   },
@@ -435,6 +441,7 @@ export default {
       this.showDeletePipelineModal = false
       this.selectPipeline = {}
       this.pipelinePeriodicSchedules = ''
+      this.showUserPermissionsModal = false
       this.$emit('close')
     },
 
@@ -578,6 +585,11 @@ export default {
         .catch((error) => {
           this.$onError(error)
         })
+    },
+
+    userPermissionsModal (user) {
+      this.selectUser = user
+      this.showUserPermissionsModal = true
     }
   }
 }

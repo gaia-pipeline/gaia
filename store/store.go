@@ -23,7 +23,11 @@ var (
 	// Name of the bucket where we store all pipeline runs.
 	pipelineRunBucket = []byte("PipelineRun")
 
+	// Where we store all the created permission groups
 	permGroupsBucket = []byte("PermissionGroups")
+
+	// Where we store all users permissions
+	userPermsBucket = []byte("UsersPermissions")
 )
 
 const (
@@ -61,6 +65,8 @@ type GaiaStore interface {
 	UserGet(username string) (*gaia.User, error)
 	UserGetAll() ([]gaia.User, error)
 	UserDelete(u string) error
+	UserPermissionsPut(perms *gaia.UserPermissions) error
+	UserPermissionsGet(username string) (*gaia.UserPermissions, error)
 	PermissionGroupGetAll() ([]*gaia.PermissionGroup, error)
 	PermissionGroupGet(name string) (*gaia.PermissionGroup, error)
 	PermissionGroupPut(group *gaia.PermissionGroup) error
@@ -112,6 +118,11 @@ func (s *BoltStore) setupDatabase() error {
 	// Make sure buckets exist
 	bucketName = userBucket
 	err := s.db.Update(c)
+	if err != nil {
+		return err
+	}
+	bucketName = userPermsBucket
+	err = s.db.Update(c)
 	if err != nil {
 		return err
 	}

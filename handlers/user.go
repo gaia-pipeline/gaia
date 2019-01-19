@@ -163,3 +163,26 @@ func UserAdd(c echo.Context) error {
 
 	return c.String(http.StatusCreated, "User has been added")
 }
+
+func UserGetPermissions(c echo.Context) error {
+	u := c.Param("username")
+	storeService, _ := services.StorageService()
+	perms, err := storeService.UserPermissionsGet(u)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, perms)
+}
+
+func UserPutPermissions(c echo.Context) error {
+	var perms *gaia.UserPermissions
+	if err := c.Bind(&perms); err != nil {
+		return c.String(http.StatusBadRequest, "Invalid parameters given for request")
+	}
+	storeService, _ := services.StorageService()
+	err := storeService.UserPermissionsPut(perms)
+	if err != nil {
+		return err
+	}
+	return c.String(http.StatusOK, "Permissions have been updated")
+}

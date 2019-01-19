@@ -107,7 +107,12 @@ type User struct {
 	Tokenstring string    `json:"tokenstring,omitempty"`
 	JwtExpiry   int64     `json:"jwtexpiry,omitempty"`
 	LastLogin   time.Time `json:"lastlogin,omitempty"`
-	Permissions []string  `json:"permissions,omitempty"`
+}
+
+type UserPermissions struct {
+	Username    string   `json:"username"`
+	Permissions []string `json:"permissions"`
+	Groups      []string `json:"groups"`
 }
 
 type PermissionCategory struct {

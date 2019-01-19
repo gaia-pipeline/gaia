@@ -45,11 +45,6 @@
     mounted () {
       this.getPermissionOptions()
     },
-    computed: {
-      isVisible: function () {
-        return this.visible
-      }
-    },
     methods: {
       getPermissionOptions () {
         this.$http

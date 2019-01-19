@@ -6,32 +6,38 @@ import (
 	"github.com/gaia-pipeline/gaia"
 )
 
-//func (s *BoltStore) PermissionGroupHasUser(name, username string) (bool, error) {
-//	hasUser := false
-//	var pg *gaia.PermissionGroup
-//
-//	err := s.db.View(func(tx *bolt.Tx) error {
-//		b := tx.Bucket(permGroupsBucket)
-//
-//		g := b.Get([]byte(name))
-//		if g == nil {
-//			return nil
-//		}
-//
-//		return json.Unmarshal(g, pg)
-//	})
-//	if err != nil {
-//		return false, err
-//	}
-//
-//	for _, u := range pg.Users {
-//		if username == u {
-//			hasUser = true
-//		}
-//	}
-//
-//	return hasUser, err
-//}
+func (s *BoltStore) UserPermissionsGet(username string) (*gaia.UserPermissions, error) {
+	var perms *gaia.UserPermissions
+
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(userPermsBucket)
+
+		g := b.Get([]byte(username))
+		if g == nil {
+			return nil
+		}
+
+		return json.Unmarshal(g, &perms)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return perms, nil
+}
+
+func (s *BoltStore) UserPermissionsPut(perms *gaia.UserPermissions) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(userPermsBucket)
+
+		m, err := json.Marshal(perms)
+		if err != nil {
+			return err
+		}
+
+		return b.Put([]byte(perms.Username), m)
+	})
+}
 
 func (s *BoltStore) PermissionGroupGet(name string) (*gaia.PermissionGroup, error) {
 	var pg *gaia.PermissionGroup
