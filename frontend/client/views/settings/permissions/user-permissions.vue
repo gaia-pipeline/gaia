@@ -2,20 +2,24 @@
   <modal :visible="visible" class="modal-z-index">
     <div class="box user-modal">
       <collapse accordion is-fullwidth>
-        <collapse-item v-for="category in permissionOptions" :key="category.name" :title="category.name" selected>
-          <div class="user-modal-content">
-            <a class="button is-primary is-small" v-on:click="selectAll(category)">
-              <span>Select All</span>
-            </a>
-            <a class="button is-primary is-small" v-on:click="deselectAll(category)">
-              <span>Deselect All</span>
-            </a>
-            <br><br>
-              <div v-for="permission in category.permissions">
-                <input type="checkbox" :id="getFullName(category, permission)" :value="getFullName(category, permission)" v-model="permissions.permissions">
-                <label :for="getFullName(category, permission)">{{permission.name}}</label>
+        <collapse-item :title="'Permissions: ' + user.username" selected>
+          <collapse accordion is-fullwidth>
+            <collapse-item v-for="category in permissionOptions" :key="category.name" :title="category.name" selected>
+              <div class="user-modal-content">
+                <a class="button is-primary is-small" v-on:click="selectAll(category)">
+                  <span>Select All</span>
+                </a>
+                <a class="button is-primary is-small" v-on:click="deselectAll(category)">
+                  <span>Deselect All</span>
+                </a>
+                <br><br>
+                  <div v-for="permission in category.permissions">
+                    <input type="checkbox" :id="getFullName(category, permission)" :value="getFullName(category, permission)" v-model="permissions.permissions">
+                    <label :for="getFullName(category, permission)">{{permission.name}}</label>
+                  </div>
               </div>
-          </div>
+            </collapse-item>
+          </collapse>
         </collapse-item>
       </collapse>
       <div class="block user-modal-content">

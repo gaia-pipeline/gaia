@@ -58,12 +58,8 @@ func InitHandlers(e *echo.Echo) error {
 	e.PUT(p+"user/:username/permissions", UserPutPermissions)
 	e.POST(p+"user", UserAdd)
 
-	// Permissions
 	perms := e.Group(p + "permission")
 	perms.GET("", PermissionGetAll)
-	perms.GET("/group", PermissionGroupGetAll)
-	perms.POST("/group", PermissionGroupCreate)
-	perms.DELETE("/group/:name", PermissionGroupDelete)
 
 	// Pipelines
 	e.POST(p+"pipeline", CreatePipeline)
@@ -148,24 +144,24 @@ func authBarrier(next echo.HandlerFunc) echo.HandlerFunc {
 			username, ok := claims["username"]
 			if ok {
 				ss, _ := services.StorageService()
-				perms, _ := ss.UserPermissionsGet(username.(string))
+				userPerms, _ := ss.UserPermissionsGet(username.(string))
 
-				// For now, if there are no perms just allow everything
-				if perms == nil {
-					return next(c)
-				}
-
-				// Look through the perms until we find that the user has this permission
-				for _, pcs := range gaia.PermissionsCategories {
-					for _, p := range pcs.Permissions {
-						reg := regexp.MustCompile(p.ApiEndpoint.Path)
-						if reg.MatchString(c.Path()) && c.Request().Method == p.ApiEndpoint.Method {
-							for _, up := range perms.Permissions {
-								if up == p.FullName(pcs.Name) {
-									return next(c)
+				if userPerms != nil {
+					// Look through the perms until we find that the user has this permission
+					for _, pcs := range gaia.PermissionsCategories {
+						for _, p := range pcs.Permissions {
+							// See if this endpoint has a permission by using regex to match the permission path to the
+							// path used in the request
+							reg := regexp.MustCompile(p.ApiEndpoint.Path)
+							if reg.MatchString(c.Path()) && c.Request().Method == p.ApiEndpoint.Method {
+								// If we require a permission check if the user has it or error
+								for _, up := range userPerms.Permissions {
+									if up == p.FullName(pcs.Name) {
+										return next(c)
+									}
 								}
+								return c.String(http.StatusForbidden, fmt.Sprintf("User %s does not have the required permission %s", username, p.FullName(pcs.Name)))
 							}
-							return c.String(http.StatusForbidden, fmt.Sprintf("User %s does not have the required permission %s", username, p.FullName(pcs.Name)))
 						}
 					}
 				}

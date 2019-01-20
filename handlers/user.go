@@ -175,7 +175,7 @@ func UserGetPermissions(c echo.Context) error {
 }
 
 func UserPutPermissions(c echo.Context) error {
-	var perms *gaia.UserPermissions
+	var perms *gaia.UserPermission
 	if err := c.Bind(&perms); err != nil {
 		return c.String(http.StatusBadRequest, "Invalid parameters given for request")
 	}

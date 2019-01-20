@@ -108,24 +108,30 @@ type User struct {
 	LastLogin   time.Time `json:"lastlogin,omitempty"`
 }
 
-type UserPermissions struct {
+// User Permission is stored in its own data structure away from the core user. It represents all permission data
+// for a single user.
+type UserPermission struct {
 	Username    string   `json:"username"`
 	Permissions []string `json:"permissions"`
 	Groups      []string `json:"groups"`
 }
 
+// The static Permission structure is build up of PermissionCategory's as the top level.
 type PermissionCategory struct {
 	Name        string        `json:"name"`
 	Description string        `json:"description"`
 	Permissions []*Permission `json:"permissions"`
 }
 
+// Permission represents a single permission within a PermissionCategory.
 type Permission struct {
 	Name        string                 `json:"name"`
 	Description string                 `json:"description"`
 	ApiEndpoint *PermissionApiEndpoint `json:"api_endpoint"`
 }
 
+// PermissionApiEndpoint represents the endpoint & method of the API that should be secured. Is most commonly used by
+// the API middleware to validate permission security.
 type PermissionApiEndpoint struct {
 	Path   string `json:"path"`
 	Method string `json:"method"`
@@ -141,6 +147,7 @@ type PermissionGroup struct {
 }
 
 var (
+	// TODO: Probably load these in via a config file or something.
 	PermissionsCategories = []*PermissionCategory{
 		{
 			Name: "Pipeline",

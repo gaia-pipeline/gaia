@@ -23,8 +23,6 @@ var certificateService security.CAAPI
 // vaultService is an instance of the internal Vault.
 var vaultService security.VaultAPI
 
-var permissionManager security.PermissionManagerIface
-
 // StorageService initializes and keeps track of a storage service.
 // If the internal storage service is a singleton. This function retruns an error
 // but most of the times we don't care about it, because it's only ever
@@ -116,18 +114,4 @@ func VaultService(vaultStore security.VaultStorer) (security.VaultAPI, error) {
 // for the internal vault service manager.
 func MockVaultService(service security.VaultAPI) {
 	vaultService = service
-}
-
-func PermissionManager() (security.PermissionManagerIface, error) {
-	if permissionManager != nil && !reflect.ValueOf(permissionManager).IsNil() {
-		return permissionManager, nil
-	}
-
-	gStore, err := StorageService()
-	if err != nil {
-		return nil, err
-	}
-
-	permissionManager = security.NewPermissionManager(gStore)
-	return permissionManager, nil
 }
