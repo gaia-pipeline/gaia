@@ -72,25 +72,28 @@ function handleError (error) {
     })
     console.log(error.response.data.error)
   } else {
-    if (error.response.status === 404) {
-      openNotification({
-        title: 'Error: 404',
-        message: 'Not found',
-        type: 'danger'
-      })
-    } else if (error.response.status === 403) {
-    // Access denied
-      openNotification({
-        title: 'Error: 403',
-        message: 'Not authorized. Please login first.',
-        type: 'danger'
-      })
-    } else {
-      openNotification({
-        title: 'Error: ' + error.response.status.toString(),
-        message: error.response.data,
-        type: 'danger'
-      })
+    switch (error.response.status) {
+      case 404:
+        openNotification({
+          title: 'Error: 404',
+          message: 'Not found',
+          type: 'danger'
+        })
+        break
+      case 401:
+        openNotification({
+          title: 'Error: 401',
+          message: 'Not authorized. Please login first.',
+          type: 'danger'
+        })
+        break
+      default:
+        openNotification({
+          title: 'Error: ' + error.response.status.toString(),
+          message: error.response.data,
+          type: 'danger'
+        })
+        break
     }
     console.log(error.response.data)
   }

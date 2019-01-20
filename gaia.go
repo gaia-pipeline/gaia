@@ -1,11 +1,10 @@
 package gaia
 
 import (
-	"os"
-	"time"
-
 	"github.com/hashicorp/go-hclog"
 	"github.com/robfig/cron"
+	"os"
+	"time"
 )
 
 // PipelineType represents supported plugin types
@@ -122,8 +121,18 @@ type PermissionCategory struct {
 }
 
 type Permission struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	ApiEndpoint *PermissionApiEndpoint `json:"api_endpoint"`
+}
+
+type PermissionApiEndpoint struct {
+	Path   string `json:"path"`
+	Method string `json:"method"`
+}
+
+func NewPermissionApiEndpoint(path string, method string) *PermissionApiEndpoint {
+	return &PermissionApiEndpoint{Path: path, Method: method}
 }
 
 type PermissionGroup struct {
@@ -134,48 +143,136 @@ type PermissionGroup struct {
 var (
 	PermissionsCategories = []*PermissionCategory{
 		{
-			Name:        "Pipeline",
-			Description: "Permissions relating to Pipelines.",
+			Name: "Pipeline",
 			Permissions: []*Permission{
 				{
 					Name:        "Create",
-					Description: "Create a Gaia pipeline.",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline", "POST"),
 				},
 				{
-					Name:        "Modify",
-					Description: "Modify a Gaia pipeline.",
+					Name:        "GitLSRemote",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/gitlsremote", "POST"),
+				},
+				{
+					Name:        "GetAll",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/created", "GET"),
+				},
+				{
+					Name:        "Get",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*", "GET"),
+				},
+				{
+					Name:        "Update",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*", "PUT"),
 				},
 				{
 					Name:        "Delete",
-					Description: "Delete a Gaia pipeline.",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*", "DELETE"),
+				},
+				{
+					Name:        "Start",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*/start", "POST"),
+				},
+				{
+					Name:        "GetAllWithLatestRun",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/latest", "GET"),
+				},
+				{
+					Name:        "GitHook",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/githook", "POST"),
+				},
+				{
+					Name:        "CheckPeriodicSchedules",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/periodicschedules", "POST"),
 				},
 			},
 		},
 		{
-			Name:        "Users",
-			Description: "Permissions relating to Users.",
+			Name: "PipelineRun",
+			Permissions: []*Permission{
+				{
+					Name:        "Stop",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*/*/stop", "POST"),
+				},
+				{
+					Name:        "Get",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*/*", "GET"),
+				},
+				{
+					Name:        "GetAll",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*", "GET"),
+				},
+				{
+					Name:        "GetLatest",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*/latest", "GET"),
+				},
+				{
+					Name:        "GetLogs",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*/*/log", "GET"),
+				},
+			},
+		},
+		{
+			Name: "Secret",
+			Permissions: []*Permission{
+				{
+					Name:        "List",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/secrets", "GET"),
+				},
+				{
+					Name:        "Remove",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/secret/*", "GET"),
+				},
+				{
+					Name:        "Set",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/secret", "POST"),
+				},
+				{
+					Name:        "Update",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/secret/update", "PUT"),
+				},
+			},
+		},
+		{
+			Name: "User",
 			Permissions: []*Permission{
 				{
 					Name:        "Create",
-					Description: "Create a Gaia user.",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/user", "POST"),
 				},
 				{
-					Name:        "Modify",
-					Description: "Modify a Gaia user.",
+					Name:        "List",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/users", "GET"),
+				},
+				{
+					Name:        "ChangePassword",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/user/password", "POST"),
 				},
 				{
 					Name:        "Delete",
-					Description: "Delete a Gaia user.",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/user/*", "DELETE"),
+				},
+				{
+					Name:        "Add",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/user", "POST"),
+				},
+			},
+		},
+		{
+			Name:        "UserPermission",
+			Description: "Permissions relating to User Permissions.",
+			Permissions: []*Permission{
+				{
+					Name:        "Get",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/user/*/permissions", "GET"),
+				},
+				{
+					Name:        "Save",
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/user/*/permissions", "PUT"),
 				},
 			},
 		},
 	}
-	//PermissionGroupDefaults = []*PermissionGroup{
-	//	{
-	//		Name:        "Admin",
-	//		Permissions: GetAllPerms(PermissionsCategories),
-	//	},
-	//}
 )
 
 func (p *Permission) FullName(category string) string {

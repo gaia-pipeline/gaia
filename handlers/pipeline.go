@@ -11,7 +11,7 @@ import (
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"github.com/labstack/echo"
 	"github.com/robfig/cron"
-	uuid "github.com/satori/go.uuid"
+	"github.com/satori/go.uuid"
 )
 
 const (

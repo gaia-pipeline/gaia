@@ -4,7 +4,9 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
+	"github.com/gaia-pipeline/gaia/services"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/GeertJohan/go.rice"
@@ -135,41 +137,75 @@ func authBarrier(next echo.HandlerFunc) echo.HandlerFunc {
 			return next(c)
 		}
 
-		// Get JWT token
-		jwtRaw := c.Request().Header.Get("Authorization")
-		split := strings.Split(jwtRaw, " ")
-		if len(split) != 2 {
-			return c.String(http.StatusForbidden, errNotAuthorized.Error())
-		}
-		jwtString := split[1]
-
-		// Parse token
-		token, err := jwt.Parse(jwtString, func(token *jwt.Token) (interface{}, error) {
-			signingMethodError := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			switch token.Method.(type) {
-			case *jwt.SigningMethodHMAC:
-				if _, ok := gaia.Cfg.JWTKey.([]byte); !ok {
-					return nil, signingMethodError
-				}
-				return gaia.Cfg.JWTKey, nil
-			case *jwt.SigningMethodRSA:
-				if _, ok := gaia.Cfg.JWTKey.(*rsa.PrivateKey); !ok {
-					return nil, signingMethodError
-				}
-				return gaia.Cfg.JWTKey.(*rsa.PrivateKey).Public(), nil
-			default:
-				return nil, signingMethodError
-			}
-		})
+		token, err := getToken(c)
 		if err != nil {
-			return c.String(http.StatusForbidden, err.Error())
+			return c.String(http.StatusUnauthorized, err.Error())
 		}
 
 		// Validate token
-		if _, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 			// All ok, continue
+			username, ok := claims["username"]
+			if ok {
+				ss, _ := services.StorageService()
+				perms, _ := ss.UserPermissionsGet(username.(string))
+
+				// For now, if there are no perms just allow everything
+				if perms == nil {
+					return next(c)
+				}
+
+				// Look through the perms until we find that the user has this permission
+				for _, pcs := range gaia.PermissionsCategories {
+					for _, p := range pcs.Permissions {
+						reg := regexp.MustCompile(p.ApiEndpoint.Path)
+						if reg.MatchString(c.Path()) && c.Request().Method == p.ApiEndpoint.Method {
+							for _, up := range perms.Permissions {
+								if up == p.FullName(pcs.Name) {
+									return next(c)
+								}
+							}
+							return c.String(http.StatusForbidden, fmt.Sprintf("User %s does not have the required permission %s", username, p.FullName(pcs.Name)))
+						}
+					}
+				}
+			}
 			return next(c)
 		}
-		return c.String(http.StatusForbidden, errNotAuthorized.Error())
+		return c.String(http.StatusUnauthorized, errNotAuthorized.Error())
 	}
+}
+
+func getToken(c echo.Context) (*jwt.Token, error) {
+	// Get the token
+	jwtRaw := c.Request().Header.Get("Authorization")
+	split := strings.Split(jwtRaw, " ")
+	if len(split) != 2 {
+		return nil, errNotAuthorized
+	}
+	jwtString := split[1]
+
+	// Parse token
+	token, err := jwt.Parse(jwtString, func(token *jwt.Token) (interface{}, error) {
+		signingMethodError := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		switch token.Method.(type) {
+		case *jwt.SigningMethodHMAC:
+			if _, ok := gaia.Cfg.JWTKey.([]byte); !ok {
+				return nil, signingMethodError
+			}
+			return gaia.Cfg.JWTKey, nil
+		case *jwt.SigningMethodRSA:
+			if _, ok := gaia.Cfg.JWTKey.(*rsa.PrivateKey); !ok {
+				return nil, signingMethodError
+			}
+			return gaia.Cfg.JWTKey.(*rsa.PrivateKey).Public(), nil
+		default:
+			return nil, signingMethodError
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
 }

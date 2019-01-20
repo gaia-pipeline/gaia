@@ -2,12 +2,19 @@
   <modal :visible="visible" class="modal-z-index">
     <div class="box user-modal">
       <collapse accordion is-fullwidth>
-        <collapse-item :title="'Permissions: ' + user.display_name" selected>
+        <collapse-item v-for="category in permissionOptions" :key="category.name" :title="category.name" selected>
           <div class="user-modal-content">
-            <div v-for="po in permissionOptions">
-              <input type="checkbox" :id="po" :value="po" v-model="permissions.permissions">
-              <label :for="po">{{po}}</label>
-            </div>
+            <a class="button is-primary is-small" v-on:click="selectAll(category)">
+              <span>Select All</span>
+            </a>
+            <a class="button is-primary is-small" v-on:click="deselectAll(category)">
+              <span>Deselect All</span>
+            </a>
+            <br><br>
+              <div v-for="permission in category.permissions">
+                <input type="checkbox" :id="getFullName(category, permission)" :value="getFullName(category, permission)" v-model="permissions.permissions">
+                <label :for="getFullName(category, permission)">{{permission.name}}</label>
+              </div>
           </div>
         </collapse-item>
       </collapse>
@@ -53,6 +60,27 @@
       }
     },
     methods: {
+      selectAll (category) {
+        this.flattenOptions(category).forEach(p => {
+          if (this.permissions.permissions.indexOf(p) === -1) {
+            this.permissions.permissions.push(p)
+          }
+        })
+      },
+      deselectAll (category) {
+        this.flattenOptions(category).forEach(p => {
+          let index = this.permissions.permissions.indexOf(p)
+          if (index > -1) {
+            this.permissions.permissions.splice(index, 1)
+          }
+        })
+      },
+      flattenOptions (category) {
+        return category.permissions.map(p => category.name + p.name)
+      },
+      getFullName (category, permission) {
+        return category.name + permission.name
+      },
       fetchData () {
         this.$http
           .get(`/api/v1/user/${this.user.username}/permissions`)
@@ -68,13 +96,7 @@
           .get('/api/v1/permission')
           .then(response => {
             if (response.data) {
-              const perms = []
-              response.data.forEach(pg => {
-                pg.permissions.forEach(p => {
-                  perms.push(pg.name + p.name)
-                })
-              })
-              this.permissionOptions = perms
+              this.permissionOptions = response.data
             }
           })
           .catch((error) => {
