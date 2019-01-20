@@ -18,6 +18,12 @@ var (
 	gemBinaryName = "gem"
 )
 
+// gemspecNameKey is the variable key which is filtered for during build.
+const gemspecNameKey = "${NAME}"
+
+// gemInitFile is the initial file of the gem.
+const gemInitFile = "gaia.rb"
+
 // BuildPipelineRuby is the real implementation of BuildPipeline for Ruby
 type BuildPipelineRuby struct {
 	Type gaia.PipelineType
@@ -61,6 +67,32 @@ func (b *BuildPipelineRuby) ExecuteBuild(p *gaia.CreatePipeline) error {
 	if len(gemspec) != 1 {
 		gaia.Cfg.Logger.Debug("cannot find gemspec file in cloned repo", "foundGemspecs", len(gemspec), "gemspecs", gemspec)
 		return errors.New("cannot find gemspec file in cloned repo")
+	}
+
+	// Generate a new UUID for the gem name to prevent conflicts with other gems.
+	uuid := uuid.Must(uuid.NewV4(), nil).String()
+
+	// Read gemspec file.
+	gemspecContent, err := ioutil.ReadFile(gemspec[0])
+	if err != nil {
+		gaia.Cfg.Logger.Debug("cannot read gemspec file", "error", err.Error(), "pipeline", p.Pipeline.Name)
+		return err
+	}
+
+	// Replace name variable with new UUID and write content to file.
+	gemspecContentStr := strings.Replace(string(gemspecContent[:]), gemspecNameKey, uuid, 1)
+	err = ioutil.WriteFile(gemspec[0], []byte(gemspecContentStr), 0644)
+	if err != nil {
+		gaia.Cfg.Logger.Debug("cannot write/edit gemspec file", "error", err.Error(), "pipeline", p.Pipeline.Name)
+		return err
+	}
+
+	// The initial ruby file in the gem must be named like the gem name.
+	// We expect that the init file is always `gemInitFile`.
+	err = os.Rename(filepath.Join(p.Pipeline.Repo.LocalDest, "lib", gemInitFile), filepath.Join(p.Pipeline.Repo.LocalDest, "lib", uuid+".rb"))
+	if err != nil {
+		gaia.Cfg.Logger.Debug("cannot rename initial ruby file", "error", err.Error(), "pipeline", p.Pipeline.Name)
+		return err
 	}
 
 	// Set command args for build
