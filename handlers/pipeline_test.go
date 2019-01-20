@@ -468,3 +468,84 @@ func TestPipelineCheckPeriodicSchedules(t *testing.T) {
 		}
 	})
 }
+
+func TestPipelineNameAvailable(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestPipelineNameAvailable")
+	dataDir := tmp
+
+	gaia.Cfg = &gaia.Config{
+		Logger:       hclog.NewNullLogger(),
+		HomePath:     dataDir,
+		DataPath:     dataDir,
+		PipelinePath: dataDir,
+	}
+
+	// Initialize store
+	dataStore, _ := services.StorageService()
+	dataStore.Init()
+	defer func() { services.MockStorageService(nil) }()
+
+	// Initialize global active pipelines
+	ap := pipeline.NewActivePipelines()
+	pipeline.GlobalActivePipelines = ap
+
+	// Initialize echo
+	e := echo.New()
+	InitHandlers(e)
+
+	p := gaia.Pipeline{
+		ID:      1,
+		Name:    "Pipeline A",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+
+	// Add to store
+	err := dataStore.PipelinePut(&p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Add to active pipelines
+	ap.Append(p)
+
+	t.Run("fails for pipeline name already in use", func(t *testing.T) {
+		req := httptest.NewRequest(echo.GET, "/", nil)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/api/" + gaia.APIVersion + "/pipeline/name")
+		q := req.URL.Query()
+		q.Add("name", "pipeline a")
+		req.URL.RawQuery = q.Encode()
+
+		PipelineNameAvailable(c)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
+		}
+		bodyBytes, err := ioutil.ReadAll(rec.Body)
+		if err != nil {
+			t.Fatalf("cannot read response body: %s", err.Error())
+		}
+		if string(bodyBytes[:]) != errPipelineNameInUse.Error() {
+			t.Fatalf("error message should be '%s' but was '%s'", errPipelineNameInUse.Error(), string(bodyBytes[:]))
+		}
+	})
+
+	t.Run("works for pipeline with different name", func(t *testing.T) {
+		req := httptest.NewRequest(echo.GET, "/", nil)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/api/" + gaia.APIVersion + "/pipeline/name")
+		q := req.URL.Query()
+		q.Add("name", "pipeline b")
+		req.URL.RawQuery = q.Encode()
+
+		PipelineNameAvailable(c)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
+		}
+	})
+}

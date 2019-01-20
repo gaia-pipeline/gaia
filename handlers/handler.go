@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/GeertJohan/go.rice"
+	rice "github.com/GeertJohan/go.rice"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/labstack/echo"
@@ -38,6 +38,9 @@ var (
 
 	// errPipelineRename is thrown when a pipeline binary could not be renamed
 	errPipelineRename = errors.New("pipeline could not be renamed")
+
+	// errPipelineNameInUse is thrown when a pipelines name is already in use
+	errPipelineNameInUse = errors.New("pipeline name is already in use")
 )
 
 // InitHandlers initializes(registers) all handlers
