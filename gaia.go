@@ -221,7 +221,7 @@ var (
 				},
 				{
 					Name:        "Remove",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/secret/*", "GET"),
+					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/secret/*", "DELETE"),
 				},
 				{
 					Name:        "Set",
