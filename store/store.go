@@ -23,9 +23,6 @@ var (
 	// Name of the bucket where we store all pipeline runs.
 	pipelineRunBucket = []byte("PipelineRun")
 
-	// Where we store all the created permission groups
-	permGroupsBucket = []byte("PermissionGroups")
-
 	// Where we store all users permissions
 	userPermsBucket = []byte("UsersPermissions")
 )
@@ -117,11 +114,6 @@ func (s *BoltStore) setupDatabase() error {
 		return err
 	}
 	bucketName = userPermsBucket
-	err = s.db.Update(c)
-	if err != nil {
-		return err
-	}
-	bucketName = permGroupsBucket
 	err = s.db.Update(c)
 	if err != nil {
 		return err
