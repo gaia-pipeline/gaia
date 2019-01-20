@@ -91,7 +91,7 @@ func (b *BuildPipelineRuby) ExecuteBuild(p *gaia.CreatePipeline) error {
 	// We expect that the init file is always `gemInitFile`.
 	err = os.Rename(filepath.Join(p.Pipeline.Repo.LocalDest, "lib", gemInitFile), filepath.Join(p.Pipeline.Repo.LocalDest, "lib", uuid+".rb"))
 	if err != nil {
-		gaia.Cfg.Logger.Debug("cannot rename initial ruby file", "error", err.Error(), "pipeline", p.Pipeline.Name)
+		gaia.Cfg.Logger.Debug("cannot rename initial ruby file", "error", err.Error(), "pipeline", p.Pipeline)
 		return err
 	}
 

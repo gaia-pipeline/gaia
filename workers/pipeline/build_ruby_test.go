@@ -50,6 +50,7 @@ func TestExecuteBuildRuby(t *testing.T) {
 		execCommandContext = exec.CommandContext
 	}()
 	tmp, _ := ioutil.TempDir("", "TestExecuteBuildRuby")
+	defer os.RemoveAll(tmp)
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	b := new(BuildPipelineRuby)
@@ -58,14 +59,21 @@ func TestExecuteBuildRuby(t *testing.T) {
 	p.Pipeline.Type = gaia.PTypeRuby
 	p.Pipeline.Repo.LocalDest = tmp
 	src := filepath.Join(tmp, p.Pipeline.Name+".gemspec")
-	f, _ := os.Create(src)
-	defer os.RemoveAll(tmp)
-	defer f.Close()
-	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	if err := ioutil.WriteFile(src, []byte("testcontent"), 0666); err != nil {
+		t.Fatal(err)
+	}
 	dst := filepath.Join(tmp, p.Pipeline.Name+".gem")
-	resultFile, _ := os.Create(dst)
-	defer resultFile.Close()
-	ioutil.WriteFile(dst, []byte("testcontent"), 0666)
+	if err := ioutil.WriteFile(dst, []byte("testcontent"), 0666); err != nil {
+		t.Fatal(err)
+	}
+	libFolder := filepath.Join(tmp, "lib")
+	if err := os.MkdirAll(libFolder, 0766); err != nil {
+		t.Fatal(err)
+	}
+	initFile := filepath.Join(libFolder, gemInitFile)
+	if err := ioutil.WriteFile(initFile, []byte("testcontent"), 0644); err != nil {
+		t.Error(err)
+	}
 	gemBinaryName = "go"
 	err := b.ExecuteBuild(p)
 	if err != nil {
@@ -86,6 +94,7 @@ func TestExecuteBuildContextTimeoutRuby(t *testing.T) {
 		buildKillContext = false
 	}()
 	tmp, _ := ioutil.TempDir("", "TestExecuteBuildContextTimeoutRuby")
+	defer os.RemoveAll(tmp)
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	buf := new(bytes.Buffer)
@@ -100,10 +109,20 @@ func TestExecuteBuildContextTimeoutRuby(t *testing.T) {
 	p.Pipeline.Type = gaia.PTypeRuby
 	p.Pipeline.Repo.LocalDest = tmp
 	src := filepath.Join(tmp, p.Pipeline.Name+".gemspec")
-	f, _ := os.Create(src)
-	defer os.RemoveAll(tmp)
-	defer f.Close()
-	err := b.ExecuteBuild(p)
+	f, err := os.Create(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.Close()
+	libFolder := filepath.Join(tmp, "lib")
+	if err = os.MkdirAll(libFolder, 0766); err != nil {
+		t.Fatal(err)
+	}
+	initFile := filepath.Join(libFolder, gemInitFile)
+	if err = ioutil.WriteFile(initFile, []byte("testcontent"), 0644); err != nil {
+		t.Error(err)
+	}
+	err = b.ExecuteBuild(p)
 	if err == nil {
 		t.Fatal("no error found while expecting error.")
 	}
