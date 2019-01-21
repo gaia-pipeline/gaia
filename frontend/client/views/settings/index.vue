@@ -229,7 +229,7 @@
                   Please see <a href="https://godoc.org/github.com/robfig/cron" target="_blank">here</a> for more information.
                 </label>
               </div>
-            </collapse-item> 
+            </collapse-item>
           </collapse>
           <div class="modal-footer">
             <div style="float: left;">

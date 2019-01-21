@@ -2,7 +2,7 @@
   <modal :visible="visible" class="modal-z-index">
     <div class="box user-modal">
       <collapse accordion is-fullwidth>
-        <collapse-item :title="'Permissions: ' + user.username" selected>
+        <collapse-item :title="'Roles: ' + user.username" selected>
           <collapse accordion is-fullwidth>
             <collapse-item v-for="category in permissionOptions" :key="category.name" :title="category.name" selected>
               <div class="user-modal-content">
@@ -13,9 +13,9 @@
                   <span>Deselect All</span>
                 </a>
                 <br><br>
-                  <div v-for="permission in category.permissions">
-                    <input type="checkbox" :id="getFullName(category, permission)" :value="getFullName(category, permission)" v-model="permissions.permissions">
-                    <label :for="getFullName(category, permission)">{{permission.name}}</label>
+                  <div v-for="role in category.roles">
+                    <input type="checkbox" :id="getFullName(category, role)" :value="getFullName(category, role)" v-model="permissions.roles">
+                    <label :for="getFullName(category, role)">{{role.name}}</label>
                   </div>
               </div>
             </collapse-item>
@@ -50,7 +50,7 @@
     data () {
       return {
         permissions: {
-          permissions: []
+          roles: []
         },
         permsString: '',
         permissionOptions: []
@@ -66,24 +66,24 @@
     methods: {
       selectAll (category) {
         this.flattenOptions(category).forEach(p => {
-          if (this.permissions.permissions.indexOf(p) === -1) {
-            this.permissions.permissions.push(p)
+          if (this.permissions.roles.indexOf(p) === -1) {
+            this.permissions.roles.push(p)
           }
         })
       },
       deselectAll (category) {
         this.flattenOptions(category).forEach(p => {
-          let index = this.permissions.permissions.indexOf(p)
+          let index = this.permissions.roles.indexOf(p)
           if (index > -1) {
-            this.permissions.permissions.splice(index, 1)
+            this.permissions.roles.splice(index, 1)
           }
         })
       },
       flattenOptions (category) {
-        return category.permissions.map(p => category.name + p.name)
+        return category.roles.map(p => category.name + p.name)
       },
-      getFullName (category, permission) {
-        return category.name + permission.name
+      getFullName (category, role) {
+        return category.name + role.name
       },
       fetchData () {
         this.$http
@@ -120,7 +120,7 @@
       },
       close () {
         this.permissions = {
-          permissions: []
+          roles: []
         }
         this.$emit('close')
       }

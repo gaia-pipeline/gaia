@@ -111,179 +111,175 @@ type User struct {
 // User Permission is stored in its own data structure away from the core user. It represents all permission data
 // for a single user.
 type UserPermission struct {
-	Username    string   `json:"username"`
-	Permissions []string `json:"permissions"`
-	Groups      []string `json:"groups"`
+	Username string   `json:"username"`
+	Roles    []string `json:"roles"`
+	Groups   []string `json:"groups"`
 }
 
-// The static Permission structure is build up of PermissionCategory's as the top level.
-type PermissionCategory struct {
-	Name        string        `json:"name"`
-	Description string        `json:"description"`
-	Permissions []*Permission `json:"permissions"`
+// The static Permission structure is build up of UserRoleCategory's as the top level.
+type UserRoleCategory struct {
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Roles       []*UserRole `json:"roles"`
 }
 
-// Permission represents a single permission within a PermissionCategory.
-type Permission struct {
-	Name        string                 `json:"name"`
-	Description string                 `json:"description"`
-	ApiEndpoint *PermissionApiEndpoint `json:"api_endpoint"`
+// Permission represents a single permission within a UserRoleCategory.
+type UserRole struct {
+	Name        string              `json:"name"`
+	Description string              `json:"description"`
+	ApiEndpoint []*UserRoleEndpoint `json:"api_endpoints"`
 }
 
-// PermissionApiEndpoint represents the endpoint & method of the API that should be secured. Is most commonly used by
+// UserRoleEndpoint represents the endpoint & method of the API that should be secured. Is most commonly used by
 // the API middleware to validate permission security.
-type PermissionApiEndpoint struct {
+type UserRoleEndpoint struct {
 	Path   string `json:"path"`
 	Method string `json:"method"`
 }
 
-func NewPermissionApiEndpoint(path string, method string) *PermissionApiEndpoint {
-	return &PermissionApiEndpoint{Path: path, Method: method}
-}
-
-type PermissionGroup struct {
-	Name        string   `json:"name"`
-	Permissions []string `json:"permissions"`
+func NewUserRoleEndpoint(path string, method string) *UserRoleEndpoint {
+	return &UserRoleEndpoint{Path: path, Method: method}
 }
 
 var (
 	// TODO: Probably load these in via a config file or something.
-	PermissionsCategories = []*PermissionCategory{
+	UserRoleCategories = []*UserRoleCategory{
 		{
 			Name: "Pipeline",
-			Permissions: []*Permission{
+			Roles: []*UserRole{
 				{
-					Name:        "Create",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline", "POST"),
+					Name: "Create",
+					ApiEndpoint: []*UserRoleEndpoint{
+						NewUserRoleEndpoint("/api/v1/pipeline", "POST"),
+						NewUserRoleEndpoint("/api/v1/pipeline/gitlsremote", "POST"),
+						NewUserRoleEndpoint("/api/v1/pipeline/githook", "POST"),
+					},
 				},
 				{
-					Name:        "GitLSRemote",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/gitlsremote", "POST"),
-				},
-				{
-					Name:        "GetAll",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/created", "GET"),
+					Name:        "GetCreated",
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/pipeline/created", "GET")},
 				},
 				{
 					Name:        "Get",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*", "GET"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/pipeline/*", "GET")},
 				},
 				{
 					Name:        "Update",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*", "PUT"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/pipeline/*", "PUT")},
 				},
 				{
 					Name:        "Delete",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*", "DELETE"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/pipeline/*", "DELETE")},
 				},
 				{
 					Name:        "Start",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*/start", "POST"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/pipeline/*/start", "POST")},
 				},
 				{
 					Name:        "GetAllWithLatestRun",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/latest", "GET"),
-				},
-				{
-					Name:        "GitHook",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/githook", "POST"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/pipeline/latest", "GET")},
 				},
 				{
 					Name:        "CheckPeriodicSchedules",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/periodicschedules", "POST"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/pipeline/periodicschedules", "POST")},
 				},
 			},
 		},
 		{
 			Name: "PipelineRun",
-			Permissions: []*Permission{
+			Roles: []*UserRole{
 				{
 					Name:        "Stop",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*/*/stop", "POST"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/pipeline/*/*/stop", "POST")},
 				},
 				{
 					Name:        "Get",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*/*", "GET"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/pipeline/*/*", "GET")},
 				},
 				{
 					Name:        "GetAll",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*", "GET"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/pipeline/*", "GET")},
 				},
 				{
 					Name:        "GetLatest",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*/latest", "GET"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/pipeline/*/latest", "GET")},
 				},
 				{
 					Name:        "GetLogs",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/pipeline/*/*/log", "GET"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/pipeline/*/*/log", "GET")},
 				},
 			},
 		},
 		{
 			Name: "Secret",
-			Permissions: []*Permission{
+			Roles: []*UserRole{
 				{
 					Name:        "List",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/secrets", "GET"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/secrets", "GET")},
 				},
 				{
 					Name:        "Remove",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/secret/*", "DELETE"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/secret/*", "DELETE")},
 				},
 				{
 					Name:        "Set",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/secret", "POST"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/secret", "POST")},
 				},
 				{
 					Name:        "Update",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/secret/update", "PUT"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/secret/update", "PUT")},
 				},
 			},
 		},
 		{
 			Name: "User",
-			Permissions: []*Permission{
+			Roles: []*UserRole{
 				{
 					Name:        "Create",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/user", "POST"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/user", "POST")},
 				},
 				{
 					Name:        "List",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/users", "GET"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/users", "GET")},
 				},
 				{
 					Name:        "ChangePassword",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/user/password", "POST"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/user/password", "POST")},
 				},
 				{
 					Name:        "Delete",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/user/*", "DELETE"),
-				},
-				{
-					Name:        "Add",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/user", "POST"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/user/*", "DELETE")},
 				},
 			},
 		},
 		{
-			Name:        "UserPermission",
-			Description: "Permissions relating to User Permissions.",
-			Permissions: []*Permission{
+			Name: "UserPermission",
+			Roles: []*UserRole{
 				{
 					Name:        "Get",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/user/*/permissions", "GET"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/user/*/permissions", "GET")},
 				},
 				{
 					Name:        "Save",
-					ApiEndpoint: NewPermissionApiEndpoint("/api/v1/user/*/permissions", "PUT"),
+					ApiEndpoint: []*UserRoleEndpoint{NewUserRoleEndpoint("/api/v1/user/*/permissions", "PUT")},
 				},
 			},
 		},
 	}
 )
 
-func (p *Permission) FullName(category string) string {
+func (p *UserRole) FullName(category string) string {
 	return category + p.Name
+}
+
+func GetFlattenedUserRoles() []string {
+	var roles []string
+	for _, category := range UserRoleCategories {
+		for _, r := range category.Roles {
+			roles = append(roles, r.FullName(category.Name))
+		}
+	}
+	return roles
 }
 
 // Pipeline represents a single pipeline
@@ -393,4 +389,8 @@ type Config struct {
 // String returns a pipeline type string back
 func (p PipelineType) String() string {
 	return string(p)
+}
+
+type StoreMetadata struct {
+	Version int `json:"version"`
 }

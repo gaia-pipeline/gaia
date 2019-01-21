@@ -13,6 +13,9 @@ var (
 	// Name of the bucket where we store user objects
 	userBucket = []byte("Users")
 
+	// Where we store all users permissions
+	userPermsBucket = []byte("UserPermissions")
+
 	// Name of the bucket where we store information about pipelines
 	pipelineBucket = []byte("Pipelines")
 
@@ -22,9 +25,6 @@ var (
 
 	// Name of the bucket where we store all pipeline runs.
 	pipelineRunBucket = []byte("PipelineRun")
-
-	// Where we store all users permissions
-	userPermsBucket = []byte("UsersPermissions")
 )
 
 const (
@@ -151,6 +151,11 @@ func (s *BoltStore) setupDatabase() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	err = s.CreateDefaultPermissions()
+	if err != nil {
+		return err
 	}
 
 	return nil

@@ -4,7 +4,6 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
-	"github.com/gaia-pipeline/gaia/services"
 	"net/http"
 	"regexp"
 	"strings"
@@ -141,35 +140,43 @@ func authBarrier(next echo.HandlerFunc) echo.HandlerFunc {
 		// Validate token
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 			// All ok, continue
-			username, ok := claims["username"]
-			if ok {
-				ss, _ := services.StorageService()
-				userPerms, _ := ss.UserPermissionsGet(username.(string))
-
-				if userPerms != nil {
-					// Look through the perms until we find that the user has this permission
-					for _, pcs := range gaia.PermissionsCategories {
-						for _, p := range pcs.Permissions {
-							// See if this endpoint has a permission by using regex to match the permission path to the
-							// path used in the request
-							reg := regexp.MustCompile(p.ApiEndpoint.Path)
-							if reg.MatchString(c.Path()) && c.Request().Method == p.ApiEndpoint.Method {
-								// If we require a permission check if the user has it or error
-								for _, up := range userPerms.Permissions {
-									if up == p.FullName(pcs.Name) {
-										return next(c)
-									}
-								}
-								return c.String(http.StatusForbidden, fmt.Sprintf("User %s does not have the required permission %s", username, p.FullName(pcs.Name)))
-							}
+			username, okUsername := claims["username"]
+			roles, okPerms := claims["roles"]
+			// TODO: roles should never be null at this point!
+			if okUsername && okPerms && roles != nil {
+				// Look through the perms until we find that the user has this permission
+				requiredCategory, requiredRole := getRoleForEndpoint(c)
+				if requiredCategory != nil && requiredRole != nil {
+					// If we require a permission check if the user has it or error
+					requiredFullRole := requiredRole.FullName(requiredCategory.Name)
+					for _, up := range roles.([]interface{}) {
+						if up.(string) == requiredFullRole {
+							return next(c)
 						}
 					}
+					return c.String(http.StatusForbidden, fmt.Sprintf("User %s does not have the required permission %s", username, requiredFullRole))
 				}
 			}
 			return next(c)
 		}
 		return c.String(http.StatusUnauthorized, errNotAuthorized.Error())
 	}
+}
+
+func getRoleForEndpoint(c echo.Context) (*gaia.UserRoleCategory, *gaia.UserRole) {
+	for _, pcs := range gaia.UserRoleCategories {
+		for _, p := range pcs.Roles {
+			// See if this endpoint has a permission by using regex to match the permission path to the
+			// path used in the request
+			for _, apie := range p.ApiEndpoint {
+				reg := regexp.MustCompile(apie.Path)
+				if reg.MatchString(c.Path()) && c.Request().Method == apie.Method {
+					return pcs, p
+				}
+			}
+		}
+	}
+	return nil, nil
 }
 
 func getToken(c echo.Context) (*jwt.Token, error) {

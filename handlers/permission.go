@@ -7,5 +7,5 @@ import (
 )
 
 func PermissionGetAll(c echo.Context) error {
-	return c.JSON(http.StatusOK, gaia.PermissionsCategories)
+	return c.JSON(http.StatusOK, gaia.UserRoleCategories)
 }

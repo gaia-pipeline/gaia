@@ -13,10 +13,11 @@ import (
 
 // jwtExpiry defines how long the produced jwt tokens
 // are valid. By default 12 hours.
-const jwtExpiry = (12 * 60 * 60)
+const jwtExpiry = 12 * 60 * 60
 
 type jwtCustomClaims struct {
-	Username string `json:"username"`
+	Username string   `json:"username"`
+	Roles    []string `json:"roles"`
 	jwt.StandardClaims
 }
 
@@ -37,10 +38,16 @@ func UserLogin(c echo.Context) error {
 		return c.String(http.StatusForbidden, "invalid username and/or password")
 	}
 
+	perms, err := storeService.UserPermissionsGet(u.Username)
+	if err != nil {
+		return err
+	}
+
 	// Setup custom claims
 	claims := jwtCustomClaims{
-		user.Username,
-		jwt.StandardClaims{
+		Username: user.Username,
+		Roles:    perms.Roles,
+		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Unix() + jwtExpiry,
 			IssuedAt:  time.Now().Unix(),
 			Subject:   "Gaia Session Token",
