@@ -83,8 +83,7 @@ func CreatePipelineGetAll(c echo.Context) error {
 // available and valid.
 func PipelineNameAvailable(c echo.Context) error {
 	pName := c.QueryParam("name")
-	err := pipeline.ValidatePipelineName(pName)
-	if err != nil {
+	if err := pipeline.ValidatePipelineName(pName); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
