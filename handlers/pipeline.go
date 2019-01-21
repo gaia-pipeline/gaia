@@ -95,12 +95,11 @@ func PipelineNameAvailable(c echo.Context) error {
 			return c.String(http.StatusBadRequest, errPathLength.Error())
 		}
 
-		// check if pipeline name is already in use
+		// Check if pipeline name is already in use.
 		alreadyInUse := false
 		for activePipeline := range pipeline.GlobalActivePipelines.Iter() {
 			if strings.ToLower(s) == strings.ToLower(activePipeline.Name) {
 				alreadyInUse = true
-				break
 			}
 		}
 
