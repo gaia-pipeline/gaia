@@ -18,9 +18,6 @@ var (
 	// errNotAuthorized is thrown when user wants to access resource which is protected
 	errNotAuthorized = errors.New("no or invalid jwt token provided. You are not authorized")
 
-	// errPathLength is a validation error during pipeline name input
-	errPathLength = errors.New("name of pipeline is empty or one of the path elements length exceeds 50 characters")
-
 	// errPipelineNotFound is thrown when a pipeline was not found with the given id
 	errPipelineNotFound = errors.New("pipeline not found with the given id")
 
@@ -38,9 +35,6 @@ var (
 
 	// errPipelineRename is thrown when a pipeline binary could not be renamed
 	errPipelineRename = errors.New("pipeline could not be renamed")
-
-	// errPipelineNameInUse is thrown when a pipelines name is already in use
-	errPipelineNameInUse = errors.New("pipeline name is already in use")
 )
 
 // InitHandlers initializes(registers) all handlers

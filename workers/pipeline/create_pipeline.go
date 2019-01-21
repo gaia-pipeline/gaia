@@ -1,7 +1,9 @@
 package pipeline
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
@@ -19,6 +21,17 @@ const (
 
 	// Completed percent progress
 	pipelineCompleteStatus = 100
+
+	// Split char to separate path from pipeline and name
+	pipelinePathSplitChar = "/"
+)
+
+var (
+	// errPathLength is a validation error during pipeline name input
+	errPathLength = errors.New("name of pipeline is empty or one of the path elements length exceeds 50 characters")
+
+	// errPipelineNameInUse is thrown when a pipelines name is already in use
+	errPipelineNameInUse = errors.New("pipeline name is already in use")
 )
 
 // CreatePipeline is the main function which executes step by step the creation
@@ -144,4 +157,33 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 			return
 		}
 	}
+}
+
+// ValidatePipelineName validates a given pipeline name and
+// returns the correct error back.
+func ValidatePipelineName(pName string) error {
+	// The name could contain a path. Split it up.
+	path := strings.Split(pName, pipelinePathSplitChar)
+
+	// Iterate all objects.
+	for _, s := range path {
+		// Length should be correct.
+		if len(s) < 1 || len(s) > 50 {
+			return errPathLength
+		}
+
+		// Check if pipeline name is already in use.
+		alreadyInUse := false
+		for activePipeline := range GlobalActivePipelines.Iter() {
+			if strings.ToLower(s) == strings.ToLower(activePipeline.Name) {
+				alreadyInUse = true
+			}
+		}
+
+		// Throw error because it's already in use.
+		if alreadyInUse {
+			return errPipelineNameInUse
+		}
+	}
+	return nil
 }

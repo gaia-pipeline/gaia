@@ -527,8 +527,34 @@ func TestPipelineNameAvailable(t *testing.T) {
 		if err != nil {
 			t.Fatalf("cannot read response body: %s", err.Error())
 		}
-		if string(bodyBytes[:]) != errPipelineNameInUse.Error() {
-			t.Fatalf("error message should be '%s' but was '%s'", errPipelineNameInUse.Error(), string(bodyBytes[:]))
+		nameAlreadyInUseMessage := "pipeline name is already in use"
+		if string(bodyBytes[:]) != nameAlreadyInUseMessage {
+			t.Fatalf("error message should be '%s' but was '%s'", nameAlreadyInUseMessage, string(bodyBytes[:]))
+		}
+	})
+
+	t.Run("fails for pipeline name is too long", func(t *testing.T) {
+		req := httptest.NewRequest(echo.GET, "/", nil)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/api/" + gaia.APIVersion + "/pipeline/name")
+		q := req.URL.Query()
+		q.Add("name", "pipeline a pipeline a pipeline a pipeline a pipeline a pipeline a pipeline a pipeline a pipeline a pipeline a")
+		req.URL.RawQuery = q.Encode()
+
+		PipelineNameAvailable(c)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
+		}
+		bodyBytes, err := ioutil.ReadAll(rec.Body)
+		if err != nil {
+			t.Fatalf("cannot read response body: %s", err.Error())
+		}
+		nameTooLongMessage := "name of pipeline is empty or one of the path elements length exceeds 50 characters"
+		if string(bodyBytes[:]) != nameTooLongMessage {
+			t.Fatalf("error message should be '%s' but was '%s'", nameTooLongMessage, string(bodyBytes[:]))
 		}
 	})
 
