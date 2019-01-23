@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
@@ -12,11 +11,6 @@ import (
 	"github.com/labstack/echo"
 	"github.com/robfig/cron"
 	uuid "github.com/satori/go.uuid"
-)
-
-const (
-	// Split char to separate path from pipeline and name
-	pipelinePathSplitChar = "/"
 )
 
 // PipelineGitLSRemote checks for available git remote branches.
@@ -43,6 +37,11 @@ func CreatePipeline(c echo.Context) error {
 	storeService, _ := services.StorageService()
 	p := &gaia.CreatePipeline{}
 	if err := c.Bind(p); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	// Validate pipeline name
+	if err := pipeline.ValidatePipelineName(p.Pipeline.Name); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
@@ -84,18 +83,8 @@ func CreatePipelineGetAll(c echo.Context) error {
 // available and valid.
 func PipelineNameAvailable(c echo.Context) error {
 	pName := c.QueryParam("name")
-
-	// The name could contain a path. Split it up
-	path := strings.Split(pName, pipelinePathSplitChar)
-
-	// Iterate all objects
-	for _, s := range path {
-		// Length should be correct
-		if len(s) < 1 || len(s) > 50 {
-			return c.String(http.StatusBadRequest, errPathLength.Error())
-		}
-
-		// TODO check if pipeline name is already in use
+	if err := pipeline.ValidatePipelineName(pName); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	return nil

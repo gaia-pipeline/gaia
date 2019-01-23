@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/GeertJohan/go.rice"
+	rice "github.com/GeertJohan/go.rice"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/labstack/echo"
@@ -17,9 +17,6 @@ import (
 var (
 	// errNotAuthorized is thrown when user wants to access resource which is protected
 	errNotAuthorized = errors.New("no or invalid jwt token provided. You are not authorized")
-
-	// errPathLength is a validation error during pipeline name input
-	errPathLength = errors.New("name of pipeline is empty or one of the path elements length exceeds 50 characters")
 
 	// errPipelineNotFound is thrown when a pipeline was not found with the given id
 	errPipelineNotFound = errors.New("pipeline not found with the given id")
