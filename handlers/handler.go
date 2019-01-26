@@ -1,24 +1,15 @@
 package handlers
 
 import (
-	"crypto/rsa"
 	"errors"
-	"fmt"
-	"net/http"
-	"regexp"
-	"strings"
-
 	"github.com/GeertJohan/go.rice"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"net/http"
 )
 
 var (
-	// errNotAuthorized is thrown when user wants to access resource which is protected
-	errNotAuthorized = errors.New("no or invalid jwt token provided. You are not authorized")
-
 	// errPathLength is a validation error during pipeline name input
 	errPathLength = errors.New("name of pipeline is empty or one of the path elements length exceeds 50 characters")
 
@@ -30,9 +21,6 @@ var (
 
 	// errPipelineRunNotFound is thrown when a pipeline run was not found with the given id
 	errPipelineRunNotFound = errors.New("pipeline run not found with the given id")
-
-	// errLogNotFound is thrown when a job log file was not found
-	errLogNotFound = errors.New("job log file not found")
 
 	// errPipelineDelete is thrown when a pipeline binary could not be deleted
 	errPipelineDelete = errors.New("pipeline could not be deleted. Perhaps you don't have the right permissions")
@@ -63,15 +51,15 @@ func InitHandlers(e *echo.Echo) error {
 	// Pipelines
 	e.POST(p+"pipeline", CreatePipeline)
 	e.POST(p+"pipeline/gitlsremote", PipelineGitLSRemote)
-	e.GET(p+"pipeline/created", CreatePipelineGetAll)
 	e.GET(p+"pipeline/name", PipelineNameAvailable)
+	e.POST(p+"pipeline/githook", GitWebHook)
+	e.GET(p+"pipeline/created", CreatePipelineGetAll)
 	e.GET(p+"pipeline", PipelineGetAll)
 	e.GET(p+"pipeline/:pipelineid", PipelineGet)
 	e.PUT(p+"pipeline/:pipelineid", PipelineUpdate)
 	e.DELETE(p+"pipeline/:pipelineid", PipelineDelete)
 	e.POST(p+"pipeline/:pipelineid/start", PipelineStart)
 	e.GET(p+"pipeline/latest", PipelineGetAllWithLatestRun)
-	e.POST(p+"pipeline/githook", GitWebHook)
 	e.POST(p+"pipeline/periodicschedules", PipelineCheckPeriodicSchedules)
 
 	// PipelineRun
@@ -91,7 +79,9 @@ func InitHandlers(e *echo.Echo) error {
 	e.Use(middleware.Recover())
 	//e.Use(middleware.Logger())
 	e.Use(middleware.BodyLimit("32M"))
-	e.Use(authBarrier)
+	e.Use(AuthMiddleware(&AuthConfig{
+		RoleCategories: gaia.UserRoleCategories,
+	}))
 
 	// Extra options
 	e.HideBanner = true
@@ -115,100 +105,4 @@ func InitHandlers(e *echo.Echo) error {
 	}
 
 	return nil
-}
-
-// authBarrier is the middleware which prevents user exploits.
-// It makes sure that the request contains a valid jwt token.
-// TODO: Role based access
-func authBarrier(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		// Login, WebHook callback and static resources are open
-		// The webhook callback has it's own authentication method
-		if strings.Contains(c.Path(), "/login") ||
-			c.Path() == "/" ||
-			strings.Contains(c.Path(), "/assets/") ||
-			c.Path() == "/favicon.ico" ||
-			strings.Contains(c.Path(), "pipeline/githook") {
-			return next(c)
-		}
-
-		token, err := getToken(c)
-		if err != nil {
-			return c.String(http.StatusUnauthorized, err.Error())
-		}
-
-		// Validate token
-		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			// All ok, continue
-			username, okUsername := claims["username"]
-			roles, okPerms := claims["roles"]
-			// TODO: roles should never be null at this point!
-			if okUsername && okPerms && roles != nil {
-				// Look through the perms until we find that the user has this permission
-				requiredCategory, requiredRole := getRoleForEndpoint(c)
-				if requiredCategory != nil && requiredRole != nil {
-					// If we require a permission check if the user has it or error
-					requiredFullRole := requiredRole.FullName(requiredCategory.Name)
-					for _, up := range roles.([]interface{}) {
-						if up.(string) == requiredFullRole {
-							return next(c)
-						}
-					}
-					return c.String(http.StatusForbidden, fmt.Sprintf("User %s does not have the required permission %s", username, requiredFullRole))
-				}
-			}
-			return next(c)
-		}
-		return c.String(http.StatusUnauthorized, errNotAuthorized.Error())
-	}
-}
-
-func getRoleForEndpoint(c echo.Context) (*gaia.UserRoleCategory, *gaia.UserRole) {
-	for _, pcs := range gaia.UserRoleCategories {
-		for _, p := range pcs.Roles {
-			// See if this endpoint has a permission by using regex to match the permission path to the
-			// path used in the request
-			for _, apie := range p.ApiEndpoint {
-				reg := regexp.MustCompile(apie.Path)
-				if reg.MatchString(c.Path()) && c.Request().Method == apie.Method {
-					return pcs, p
-				}
-			}
-		}
-	}
-	return nil, nil
-}
-
-func getToken(c echo.Context) (*jwt.Token, error) {
-	// Get the token
-	jwtRaw := c.Request().Header.Get("Authorization")
-	split := strings.Split(jwtRaw, " ")
-	if len(split) != 2 {
-		return nil, errNotAuthorized
-	}
-	jwtString := split[1]
-
-	// Parse token
-	token, err := jwt.Parse(jwtString, func(token *jwt.Token) (interface{}, error) {
-		signingMethodError := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		switch token.Method.(type) {
-		case *jwt.SigningMethodHMAC:
-			if _, ok := gaia.Cfg.JWTKey.([]byte); !ok {
-				return nil, signingMethodError
-			}
-			return gaia.Cfg.JWTKey, nil
-		case *jwt.SigningMethodRSA:
-			if _, ok := gaia.Cfg.JWTKey.(*rsa.PrivateKey); !ok {
-				return nil, signingMethodError
-			}
-			return gaia.Cfg.JWTKey.(*rsa.PrivateKey).Public(), nil
-		default:
-			return nil, signingMethodError
-		}
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return token, nil
 }
