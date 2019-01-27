@@ -7,6 +7,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/emirpasic/gods v1.9.0
 	github.com/gaia-pipeline/flag v1.7.4-pre
+	github.com/gaia-pipeline/gosdk v0.0.0-20180909192508-cc9f89055777
 	github.com/gaia-pipeline/protobuf v0.0.0-20180812091451-7be8a901b55a
 	github.com/golang/protobuf v1.1.0
 	github.com/google/go-github v15.0.0+incompatible
@@ -17,6 +18,7 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
 	github.com/kevinburke/ssh_config v0.0.0-20180317175531-9fc7bb800b55
+	github.com/kr/pretty v0.1.0 // indirect
 	github.com/labstack/echo v3.3.5+incompatible
 	github.com/labstack/gommon v0.0.0-20180613044413-d6898124de91
 	github.com/mattn/go-colorable v0.0.9
@@ -25,6 +27,7 @@ require (
 	github.com/mitchellh/go-testing-interface v0.0.0-20171004221916-a61a99592b77
 	github.com/oklog/run v1.0.0
 	github.com/pelletier/go-buffruneio v0.2.0
+	github.com/pkg/errors v0.8.1 // indirect
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
 	github.com/satori/go.uuid v1.2.0
 	github.com/sergi/go-diff v1.0.0
@@ -40,6 +43,7 @@ require (
 	google.golang.org/appengine v1.1.0
 	google.golang.org/genproto v0.0.0-20180808183934-383e8b2c3b9e
 	google.golang.org/grpc v1.14.0
+	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/src-d/go-billy.v4 v4.2.0
 	gopkg.in/src-d/go-git.v4 v4.5.0
 	gopkg.in/warnings.v0 v0.1.2

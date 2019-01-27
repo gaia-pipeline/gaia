@@ -283,7 +283,33 @@ func PipelineDelete(c echo.Context) error {
 // that is specific to a pipeline. It can only be used by the `auto`
 // user.
 func PipelineTrigger(c echo.Context) error {
-	return c.String(http.StatusOK, "Trigger successful")
+	// Check here against the pipeline's token.
+	pipelineIDStr := c.Param("pipelineid")
+	pipelineToken := c.Param("pipelinetoken")
+
+	// Convert string to int because id is int
+	pipelineID, err := strconv.Atoi(pipelineIDStr)
+	if err != nil {
+		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
+	}
+
+	// Look up pipeline for the given id
+	var foundPipeline *gaia.Pipeline
+	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+		if pipeline.ID == pipelineID {
+			foundPipeline = &pipeline
+		}
+	}
+
+	if foundPipeline == nil {
+		return c.String(http.StatusBadRequest, "Pipeline not found.")
+	}
+
+	if foundPipeline.TriggerToken != pipelineToken {
+		return c.String(http.StatusBadRequest, "Invalid remote trigger token.")
+	}
+
+	return c.String(http.StatusOK, "Trigger successful for pipeline: "+pipelineIDStr)
 }
 
 // PipelineStart starts a pipeline by the given id.
