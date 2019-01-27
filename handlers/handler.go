@@ -61,6 +61,7 @@ func InitHandlers(e *echo.Echo) error {
 	e.PUT(p+"pipeline/:pipelineid", PipelineUpdate)
 	e.DELETE(p+"pipeline/:pipelineid", PipelineDelete)
 	e.POST(p+"pipeline/:pipelineid/start", PipelineStart)
+	e.POST(p+"pipeline/:pipelineid/:pipelinetoken/trigger", PipelineTrigger)
 	e.GET(p+"pipeline/latest", PipelineGetAllWithLatestRun)
 	e.POST(p+"pipeline/githook", GitWebHook)
 	e.POST(p+"pipeline/periodicschedules", PipelineCheckPeriodicSchedules)
@@ -119,7 +120,8 @@ func authBarrier(next echo.HandlerFunc) echo.HandlerFunc {
 			c.Path() == "/" ||
 			strings.Contains(c.Path(), "/assets/") ||
 			c.Path() == "/favicon.ico" ||
-			strings.Contains(c.Path(), "pipeline/githook") {
+			strings.Contains(c.Path(), "pipeline/githook") ||
+			strings.Contains(c.Path(), "/trigger") {
 			return next(c)
 		}
 

@@ -278,6 +278,14 @@ func PipelineDelete(c echo.Context) error {
 	return c.String(http.StatusOK, "Pipeline has been deleted")
 }
 
+// PipelineTrigger allows for a remote running of a pipeline.
+// This endpoint does not require authentication. It will use a TOKEN
+// that is specific to a pipeline. It can only be used by the `auto`
+// user.
+func PipelineTrigger(c echo.Context) error {
+	return c.String(http.StatusOK, "Trigger successful")
+}
+
 // PipelineStart starts a pipeline by the given id.
 // It accepts arguments for the given pipeline.
 // Afterwards it returns the created/scheduled pipeline run.

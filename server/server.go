@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/flag"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
@@ -182,6 +182,8 @@ func Start() (err error) {
 
 	// Start ticker. Periodic job to check for new plugins.
 	pipeline.InitTicker()
+
+	// Create the `auto` user if not present yet.
 
 	// Start listen
 	echoInstance.Logger.Fatal(echoInstance.Start(":" + gaia.Cfg.ListenPort))
