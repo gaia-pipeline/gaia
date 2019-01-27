@@ -4,7 +4,8 @@ var (
 	// TODO: Probably load these in via a config file or something.
 	UserRoleCategories = []*UserRoleCategory{
 		{
-			Name: "Pipeline",
+			Name:        "Pipeline",
+			Description: "Managing and initiating pipelines.",
 			Roles: []*UserRole{
 				{
 					Name: "Create",
@@ -50,7 +51,8 @@ var (
 			},
 		},
 		{
-			Name: "PipelineRun",
+			Name:        "PipelineRun",
+			Description: "Managing of pipeline runs.",
 			Roles: []*UserRole{
 				{
 					Name: "Stop",
@@ -80,7 +82,8 @@ var (
 			},
 		},
 		{
-			Name: "Secret",
+			Name:        "Secret",
+			Description: "Managing of stored secrets used within pipelines.",
 			Roles: []*UserRole{
 				{
 					Name: "List",
@@ -109,7 +112,8 @@ var (
 			},
 		},
 		{
-			Name: "User",
+			Name:        "User",
+			Description: "Managing of users.",
 			Roles: []*UserRole{
 				{
 					Name: "Create",
@@ -138,7 +142,8 @@ var (
 			},
 		},
 		{
-			Name: "UserPermission",
+			Name:        "UserPermission",
+			Description: "Managing of user permissions.",
 			Roles: []*UserRole{
 				{
 					Name: "Get",

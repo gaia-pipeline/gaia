@@ -45,6 +45,9 @@
             </div>
           </div>
         </tab-pane>
+        <tab-pane label="Manage Permissions" icon="fa fa-users">
+          <manage-permissions :users="userRows"/>
+        </tab-pane>
         <tab-pane label="Manage Pipelines" icon="fa fa-wrench">
           <div class="tile is-ancestor">
             <div class="tile is-vertical">
@@ -63,7 +66,7 @@
                     :rows="pipelineRows"
                     :paginate="true"
                     :global-search="true"
-                    :defaultSortBy="{field: 'id', type: 'desc'}"
+                    :defaultSortBy="{field: 'id', type: 'desc'}"Name
                     globalSearchPlaceholder="Search ..."
                     styleClass="table table-own-bordered">
                     <template slot="table-row" slot-scope="props">
@@ -265,7 +268,6 @@
         </article>
       </div>
     </modal>
-    <user-permissions :visible="showUserPermissionsModal" :user="selectUser" @close="close" ></user-permissions>
   </div>
 
 </template>
@@ -280,7 +282,7 @@ import VueTippy from 'vue-tippy'
 import moment from 'moment'
 import Notification from 'vue-bulma-notification-fixed'
 import { mapGetters } from 'vuex'
-import UserPermissions from './permissions/user-permissions'
+import ManagePermissions from './permissions/manage-permissions'
 
 const NotificationComponent = Vue.extend(Notification)
 const openNotification = (propsData = {
@@ -302,7 +304,7 @@ Vue.use(VueTippy)
 
 export default {
   components: {
-    UserPermissions,
+    ManagePermissions,
     Tabs,
     TabPane,
     Modal,

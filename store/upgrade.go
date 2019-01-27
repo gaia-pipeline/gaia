@@ -10,7 +10,6 @@ func (s *BoltStore) CreateDefaultPermissions() error {
 			return err
 		}
 		if perms == nil {
-			gaia.Cfg.Logger.Info("creating default permissions", "user", user.Username)
 			perms := &gaia.UserPermission{
 				Username: user.Username,
 				Roles:    gaia.GetFlattenedUserRoles(),

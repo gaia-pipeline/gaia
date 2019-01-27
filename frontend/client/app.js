@@ -100,6 +100,15 @@ function handleError (error) {
 }
 Vue.prototype.$onError = handleError
 
+Vue.prototype.$onSuccess = (title, message) => {
+  openNotification({
+    title: title,
+    message: message,
+    type: 'success',
+    duration: message > 60 ? 20000 : 4500
+  })
+}
+
 router.beforeEach((route, redirect, next) => {
   if (state.app.device.isMobile && state.app.sidebar.opened) {
     store.commit(TOGGLE_SIDEBAR, false)

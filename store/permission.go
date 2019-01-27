@@ -38,3 +38,10 @@ func (s *BoltStore) UserPermissionsPut(perms *gaia.UserPermission) error {
 		return b.Put([]byte(perms.Username), m)
 	})
 }
+
+func (s *BoltStore) UserPermissionsDelete(username string) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(userPermsBucket)
+		return b.Delete([]byte(username))
+	})
+}

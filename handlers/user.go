@@ -144,8 +144,15 @@ func UserDelete(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Invalid username given")
 	}
 	storeService, _ := services.StorageService()
+
 	// Delete user
 	err := storeService.UserDelete(u)
+	if err != nil {
+		return c.String(http.StatusNotFound, err.Error())
+	}
+
+	// Delete permissions
+	err = storeService.UserPermissionsDelete(u)
 	if err != nil {
 		return c.String(http.StatusNotFound, err.Error())
 	}
@@ -161,9 +168,21 @@ func UserAdd(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Invalid parameters given for add user request")
 	}
 	storeService, _ := services.StorageService()
+
 	// Add user
 	u.LastLogin = time.Now()
 	err := storeService.UserPut(u, true)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	// Add default perms
+	perms := &gaia.UserPermission{
+		Username: u.Username,
+		Roles:    gaia.GetFlattenedUserRoles(),
+		Groups:   []string{},
+	}
+	err = storeService.UserPermissionsPut(perms)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
