@@ -66,7 +66,6 @@ golang.org/x/net v0.0.0-20180811021610-c39426892332 h1:efGso+ep0DjyCBJPjvoz0HI6U
 golang.org/x/net v0.0.0-20180811021610-c39426892332/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
 golang.org/x/oauth2 v0.0.0-20180724155351-3d292e4d0cdc h1:3ElrZeO6IBP+M8kgu5YFwRo92Gqr+zBg3aooYQ6ziqU=
 golang.org/x/oauth2 v0.0.0-20180724155351-3d292e4d0cdc/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
-golang.org/x/sys v0.0.0-20180810173357-98c5dad5d1a0 h1:8H8QZJ30plJyIVj60H3lr8TZGIq2Fh3Cyrs/ZNg1foU=
 golang.org/x/sys v0.0.0-20180810173357-98c5dad5d1a0/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/text v0.0.0-20180810153555-6e3c4e7365dd h1:e/dojZNNKqwK3xq7UQTKTQJim18r/FxvQk7PFXULeZg=
 golang.org/x/text v0.0.0-20180810153555-6e3c4e7365dd/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
