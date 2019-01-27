@@ -10,9 +10,6 @@ import (
 )
 
 var (
-	// errPathLength is a validation error during pipeline name input
-	errPathLength = errors.New("name of pipeline is empty or one of the path elements length exceeds 50 characters")
-
 	// errPipelineNotFound is thrown when a pipeline was not found with the given id
 	errPipelineNotFound = errors.New("pipeline not found with the given id")
 
