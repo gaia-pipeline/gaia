@@ -359,4 +359,12 @@ func TestNewBuildPipeline(t *testing.T) {
 	if pythonBuildPipeline == nil {
 		t.Errorf("should be of type %s but is nil\n", gaia.PTypePython)
 	}
+	cppBuildPipeline := newBuildPipeline(gaia.PTypeCpp)
+	if cppBuildPipeline == nil {
+		t.Errorf("should be of type %s but is nil\n", gaia.PTypeCpp)
+	}
+	rubyBuildPipeline := newBuildPipeline(gaia.PTypeRuby)
+	if rubyBuildPipeline == nil {
+		t.Errorf("should be of type %s but is nil\n", gaia.PTypeRuby)
+	}
 }
