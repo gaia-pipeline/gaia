@@ -34,7 +34,7 @@
               :global-search="true"
               :defaultSortBy="{field: 'id', type: 'desc'}"
               globalSearchPlaceholder="Search ..."
-              styleClass="table table-own-bordered">
+             styleClass="table table-grid table-own-bordered">
               <template slot="table-row" slot-scope="props">
                 <td>
                   <router-link :to="{ path: '/pipeline/detail', query: { pipelineid: pipelineID, runid: props.row.id }}" class="is-blue">

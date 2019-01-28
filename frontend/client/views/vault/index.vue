@@ -20,7 +20,7 @@
                 :global-search="true"
                 :defaultSortBy="{field: 'key', type: 'desc'}"
                 globalSearchPlaceholder="Search ..."
-                styleClass="table table-own-bordered">
+                styleClass="table table-grid table-own-bordered">
                 <template slot="table-row" slot-scope="props">
                   <td>
                     <span>{{ props.row.key }}</span>

@@ -7,15 +7,18 @@
           <span class="icon is-small is-left"><i class="fa fa-search"></i></span>
         </p>
         <br>
-        <table class="table is-striped is-hoverable is-fullwidth">
+        <table class="table is-narrow is-fullwidth table-general table-users">
           <thead>
           <tr>
             <th width="300">Username</th>
           </tr>
           </thead>
           <tbody>
-          <tr v-for="user in filteredUsers" :key="user.username">
+          <tr v-if="filteredUsers.length > 0" v-for="user in filteredUsers" :key="user.username">
             <td class="user-row" @click="fetchData(user)">{{user.username}}</td>
+          </tr>
+          <tr v-if="filteredUsers.length === 0">
+            <td class="user-row"><i>No results.</i></td>
           </tr>
           </tbody>
         </table>
@@ -24,17 +27,17 @@
     <div class="tile is-horizontal is-parent is-9">
       <article class="tile is-child notification content-article box">
         <div v-if="!this.permissions.username">
-          <h4 class="title is-4">Permission Roles: None</h4>
+          <h4 class="title is-4">Permission Roles</h4>
           <p>Select a user from the list.</p>
         </div>
         <div v-else>
           <h4 class="title is-4">Permission Roles: {{ this.permissions.username }}</h4>
           <div v-for="category in permissionOptions" :key="category.name">
             <p>{{ category.name }}: {{ category.description }}</p><br>
-            <table class="table is-striped is-narrow is-hoverable is-fullwidth">
+            <table class="table is-narrow is-fullwidth table-general">
               <thead>
               <tr>
-                <th width="60"><input type="checkbox" @click="checkAll(category)" :checked="allSelected(category)"/>
+                <th style="text-align: center" width="60"><input type="checkbox" @click="checkAll(category)" :checked="allSelected(category)"/>
                 </th>
                 <th width="300">Name</th>
                 <th>Description</th>
@@ -42,10 +45,10 @@
               </thead>
               <tbody>
               <tr v-for="role in category.roles">
-                <td><input type="checkbox" :id="getFullName(category, role)" :value="getFullName(category, role)"
+                <td style="text-align: center"><input type="checkbox" :id="getFullName(category, role)" :value="getFullName(category, role)"
                            v-model="permissions.roles"></td>
                 <td>{{role.name}}</td>
-                <td>Desc...</td>
+                <td>{{role.description}}</td>
               </tr>
               </tbody>
             </table>
@@ -61,11 +64,13 @@
 
 <script>
   import {TabPane, Tabs} from 'vue-bulma-tabs'
+  import {bus} from '../../../app'
 
   export default {
     name: 'manage-permissions',
     components: {Tabs, TabPane},
     props: {
+      reset: Function,
       users: Array
     },
     computed: {
@@ -86,14 +91,15 @@
         permissionOptions: []
       }
     },
-    watch: {
-      visible (newVal) {
-        if (newVal) {
-          this.fetchData()
-        }
-      }
+    mounted () {
+      bus.$on('clearPerms', this.clear)
     },
     methods: {
+      clear () {
+        this.permissions = {
+          roles: []
+        }
+      },
       checkAll (category) {
         if (this.allSelected(category)) {
           this.deselectAll(category)
@@ -165,6 +171,24 @@
 
 <style scoped>
   .user-row {
+    cursor: pointer;
+  }
+  .table-general {
+    background: #413F4A;
+    border: 2px solid #000;
+  }
+  .table-general th {
+    border: 2px solid #000;
+    background: #2c2b32;
+    color: #4da2fc;
+  }
+  .table-general td {
+    border: 2px solid #000;
+    color: #8c91a0;
+  }
+  .table-users td:hover {
+    border: 2px solid #000;
+    background: #575463;
     cursor: pointer;
   }
 </style>

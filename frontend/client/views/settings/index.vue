@@ -1,7 +1,7 @@
 <template>
   <div class="tile is-ancestor">
     <div class="tile is-vertical">
-      <tabs type="boxed" :is-fullwidth="false" alignment="centered" size="large">
+      <tabs type="boxed" :is-fullwidth="false" alignment="centered" size="large" @click.native="clear">
         <tab-pane label="Manage Users" icon="fa fa-user-circle">
           <div class="tile is-ancestor">
             <div class="tile is-vertical">
@@ -22,7 +22,7 @@
                     :global-search="true"
                     :defaultSortBy="{field: 'username', type: 'desc'}"
                     globalSearchPlaceholder="Search ..."
-                    styleClass="table table-own-bordered">
+                   styleClass="table table-grid table-own-bordered">
                     <template slot="table-row" slot-scope="props">
                       <td>
                         <span>{{ props.row.display_name }}</span>
@@ -68,7 +68,7 @@
                     :global-search="true"
                     :defaultSortBy="{field: 'id', type: 'desc'}"Name
                     globalSearchPlaceholder="Search ..."
-                    styleClass="table table-own-bordered">
+                   styleClass="table table-grid table-own-bordered">
                     <template slot="table-row" slot-scope="props">
                       <td>
                         <span>{{ props.row.name }}</span>
@@ -283,6 +283,7 @@ import moment from 'moment'
 import Notification from 'vue-bulma-notification-fixed'
 import { mapGetters } from 'vuex'
 import ManagePermissions from './permissions/manage-permissions'
+import { bus } from '../../app'
 
 const NotificationComponent = Vue.extend(Notification)
 const openNotification = (propsData = {
@@ -371,6 +372,10 @@ export default {
   }),
 
   methods: {
+    clear () {
+      bus.$emit('clearPerms')
+    },
+
     fetchData () {
       this.$http
         .get('/api/v1/users', { showProgressBar: false })
