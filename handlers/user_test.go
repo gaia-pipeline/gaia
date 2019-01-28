@@ -165,9 +165,6 @@ func TestUserPutPermissions(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("code is %d. expected %d", rec.Code, http.StatusOK)
 	}
-	if rec.Body.String() != "Permissions have been updated." {
-		t.Fatalf("body is %s. expected %s", rec.Body.String(), `Permissions have been updated.`)
-	}
 }
 
 func TestUserPutPermissionsError(t *testing.T) {
@@ -198,9 +195,6 @@ func TestUserPutPermissionsError(t *testing.T) {
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("code is %d. expected %d", rec.Code, http.StatusBadRequest)
 	}
-	if rec.Body.String() != "test error" {
-		t.Fatalf("body is %s. expected %s", rec.Body.String(), `test error`)
-	}
 }
 
 func TestUserGetPermissions(t *testing.T) {
@@ -228,9 +222,6 @@ func TestUserGetPermissions(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("code is %d. expected %d", rec.Code, http.StatusOK)
 	}
-	if rec.Body.String() != `{"username":"test-user","roles":["TestRole"],"groups":[]}` {
-		t.Fatalf("body is %s. expected %s", rec.Body.String(), `{"username":"test-user","roles":["TestRole"],"groups":[]}`)
-	}
 }
 
 func TestUserGetPermissionsErrors(t *testing.T) {
@@ -253,8 +244,5 @@ func TestUserGetPermissionsErrors(t *testing.T) {
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("code is %d. expected %d", rec.Code, http.StatusBadRequest)
-	}
-	if rec.Body.String() != "test error" {
-		t.Fatalf("body is %s. expected %s", rec.Body.String(), `test error`)
 	}
 }
