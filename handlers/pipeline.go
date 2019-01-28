@@ -283,6 +283,11 @@ func PipelineDelete(c echo.Context) error {
 // that is specific to a pipeline. It can only be used by the `auto`
 // user.
 func PipelineTrigger(c echo.Context) error {
+	err := PipelineTriggerAuth(c)
+	if err != nil {
+		return err
+	}
+
 	// Check here against the pipeline's token.
 	pipelineIDStr := c.Param("pipelineid")
 	pipelineToken := c.Param("pipelinetoken")
@@ -310,6 +315,11 @@ func PipelineTrigger(c echo.Context) error {
 	}
 
 	return c.String(http.StatusOK, "Trigger successful for pipeline: "+pipelineIDStr)
+}
+
+func PipelineTriggerAuth(c echo.Context) error {
+	// check headers
+	return nil
 }
 
 // PipelineStart starts a pipeline by the given id.
