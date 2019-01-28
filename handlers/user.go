@@ -179,7 +179,7 @@ func UserAdd(c echo.Context) error {
 	// Add default perms
 	perms := &gaia.UserPermission{
 		Username: u.Username,
-		Roles:    gaia.GetFlattenedUserRoles(),
+		Roles:    gaia.FlattenUserCategoryRoles(gaia.UserRoleCategories),
 		Groups:   []string{},
 	}
 	err = storeService.UserPermissionsPut(perms)
@@ -195,7 +195,7 @@ func UserGetPermissions(c echo.Context) error {
 	storeService, _ := services.StorageService()
 	perms, err := storeService.UserPermissionsGet(u)
 	if err != nil {
-		return err
+		return c.String(http.StatusBadRequest, err.Error())
 	}
 	return c.JSON(http.StatusOK, perms)
 }
@@ -208,7 +208,7 @@ func UserPutPermissions(c echo.Context) error {
 	storeService, _ := services.StorageService()
 	err := storeService.UserPermissionsPut(perms)
 	if err != nil {
-		return err
+		return c.String(http.StatusBadRequest, err.Error())
 	}
 	return c.String(http.StatusOK, "Permissions have been updated")
 }

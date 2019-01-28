@@ -12,7 +12,7 @@ func (s *BoltStore) CreateDefaultPermissions() error {
 		if perms == nil {
 			perms := &gaia.UserPermission{
 				Username: user.Username,
-				Roles:    gaia.GetFlattenedUserRoles(),
+				Roles:    gaia.FlattenUserCategoryRoles(gaia.UserRoleCategories),
 				Groups:   []string{},
 			}
 			err := s.UserPermissionsPut(perms)

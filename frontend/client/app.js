@@ -44,8 +44,6 @@ Vue.directive('focus', {
   }
 })
 
-export const bus = new Vue()
-
 const NotificationComponent = Vue.extend(Notification)
 const openNotification = (propsData = {
   title: '',

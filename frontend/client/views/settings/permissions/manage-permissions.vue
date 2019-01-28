@@ -32,29 +32,34 @@
         </div>
         <div v-else>
           <h4 class="title is-4">Permission Roles: {{ this.permissions.username }}</h4>
-          <div v-for="category in permissionOptions" :key="category.name">
-            <p>{{ category.name }}: {{ category.description }}</p><br>
-            <table class="table is-narrow is-fullwidth table-general">
-              <thead>
-              <tr>
-                <th style="text-align: center" width="60"><input type="checkbox" @click="checkAll(category)" :checked="allSelected(category)"/>
-                </th>
-                <th width="300">Name</th>
-                <th>Description</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr v-for="role in category.roles">
-                <td style="text-align: center"><input type="checkbox" :id="getFullName(category, role)" :value="getFullName(category, role)"
-                           v-model="permissions.roles"></td>
-                <td>{{role.name}}</td>
-                <td>{{role.description}}</td>
-              </tr>
-              </tbody>
-            </table>
+          <div v-if="this.permissions.roles.length > 0">
+            <div v-for="category in permissionOptions" :key="category.name">
+              <p>{{ category.name }}: {{ category.description }}</p><br>
+              <table class="table is-narrow is-fullwidth table-general">
+                <thead>
+                <tr>
+                  <th style="text-align: center" width="60"><input type="checkbox" @click="checkAll(category)" :checked="allSelected(category)"/>
+                  </th>
+                  <th width="300">Name</th>
+                  <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="role in category.roles">
+                  <td style="text-align: center"><input type="checkbox" :id="getFullName(category, role)" :value="getFullName(category, role)"
+                             v-model="permissions.roles"></td>
+                  <td>{{role.name}}</td>
+                  <td>{{role.description}}</td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="float: left;">
+              <button class="button is-primary" v-on:click="save">Save</button>
+            </div>
           </div>
-          <div style="float: left;">
-            <button class="button is-primary" v-on:click="save">Save</button>
+          <div v-else>
+            <p>Permission unavailable.</p>
           </div>
         </div>
       </article>
@@ -64,7 +69,6 @@
 
 <script>
   import {TabPane, Tabs} from 'vue-bulma-tabs'
-  import {bus} from '../../../app'
 
   export default {
     name: 'manage-permissions',
@@ -91,15 +95,7 @@
         permissionOptions: []
       }
     },
-    mounted () {
-      bus.$on('clearPerms', this.clear)
-    },
     methods: {
-      clear () {
-        this.permissions = {
-          roles: []
-        }
-      },
       checkAll (category) {
         if (this.allSelected(category)) {
           this.deselectAll(category)

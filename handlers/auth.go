@@ -77,7 +77,7 @@ func (ra *AuthConfig) getRoleApiEndpoint(method, path string) string {
 		for _, p := range pcs.Roles {
 			for _, apie := range p.ApiEndpoint {
 				if method == apie.Method && path == apie.Path {
-					return p.FullName(pcs.Name)
+					return p.FlatName(pcs.Name)
 				}
 			}
 		}

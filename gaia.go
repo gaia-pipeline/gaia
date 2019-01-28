@@ -147,15 +147,15 @@ func NewUserRoleEndpoint(method string, path string) *UserRoleEndpoint {
 	return &UserRoleEndpoint{Path: path, Method: method}
 }
 
-func (p *UserRole) FullName(category string) string {
+func (p *UserRole) FlatName(category string) string {
 	return category + p.Name
 }
 
-func GetFlattenedUserRoles() []string {
+func FlattenUserCategoryRoles(cats []*UserRoleCategory) []string {
 	var roles []string
-	for _, category := range UserRoleCategories {
+	for _, category := range cats {
 		for _, r := range category.Roles {
-			roles = append(roles, r.FullName(category.Name))
+			roles = append(roles, r.FlatName(category.Name))
 		}
 	}
 	return roles
