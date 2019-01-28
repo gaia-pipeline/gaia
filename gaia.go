@@ -37,6 +37,9 @@ const (
 	// PTypeCpp C++ plugin type
 	PTypeCpp PipelineType = "cpp"
 
+	// PTypeRuby ruby plugin type
+	PTypeRuby PipelineType = "ruby"
+
 	// CreatePipelineFailed status
 	CreatePipelineFailed CreatePipelineType = "failed"
 
@@ -96,6 +99,9 @@ const (
 
 	// TmpCppFolder is the name of the c++ temporary folder
 	TmpCppFolder = "cpp"
+
+	// TmpRubyFolder is the name of the ruby temporary folder
+	TmpRubyFolder = "ruby"
 )
 
 // User is the user object
