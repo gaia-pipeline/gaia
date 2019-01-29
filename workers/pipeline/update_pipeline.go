@@ -17,6 +17,9 @@ var (
 	// pythonPipInstallCmd is the command used to install the python distribution
 	// package.
 	pythonPipInstallCmd = ". bin/activate; python -m pip install %s.tar.gz"
+
+	// Ruby gem binary name.
+	rubyGemName = "gem"
 )
 
 // updatePipeline executes update steps dependent on the pipeline type.
@@ -49,6 +52,33 @@ func updatePipeline(p *gaia.Pipeline) error {
 		cmd = exec.Command("/bin/sh", "-c", fmt.Sprintf(pythonPipInstallCmd, filepath.Join(virtualEnvPath, p.Name)))
 		cmd.Dir = virtualEnvPath
 		if err := cmd.Run(); err != nil {
+			return err
+		}
+	case gaia.PTypeRuby:
+		// Find gem binary in path variable.
+		path, err := exec.LookPath(rubyGemName)
+		if err != nil {
+			return err
+		}
+
+		// Gem expects that the file suffix is ".gem".
+		// Copy gem file to temp folder before we install it.
+		tmpFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpRubyFolder)
+		err = os.MkdirAll(tmpFolder, 0700)
+		if err != nil {
+			return err
+		}
+		pipelineCopyPath := filepath.Join(tmpFolder, filepath.Base(p.ExecPath)+".gem")
+		err = copyFileContents(p.ExecPath, pipelineCopyPath)
+		if err != nil {
+			return err
+		}
+		defer os.Remove(pipelineCopyPath)
+
+		// Install gem forcefully.
+		cmd := exec.Command(path, "install", "-f", pipelineCopyPath)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			gaia.Cfg.Logger.Error("error", string(out[:]))
 			return err
 		}
 	}

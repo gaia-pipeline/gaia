@@ -107,7 +107,8 @@ export default {
       return {
         'outer-box-image-python': type === 'python',
         'outer-box-image-cpp': type === 'cpp',
-        'outer-box-image': type !== 'python' && type !== 'cpp'
+        'outer-box-image-ruby': type === 'ruby',
+        'outer-box-image': type !== 'python' && type !== 'cpp' && type !== 'ruby'
       }
     },
 
@@ -276,6 +277,14 @@ export default {
   transform: translate(-50%, -50%);
 }
 
+.outer-box-image-ruby {
+  position: absolute;
+  width: 50px;
+  height: 35px;
+  top: 43%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
 .hoveraction:hover .outer-box-icon-image {
   border-color: #4da2fc !important;
 }

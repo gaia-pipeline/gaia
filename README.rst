@@ -229,6 +229,36 @@ C++
       }
    }
 
+Ruby
+~~~~
+
+.. code:: ruby
+
+   require 'rubysdk'
+
+   class Main
+       AwesomeJob = lambda do |args|
+           STDERR.puts "This output will be streamed back to gaia and will be displayed in the pipeline logs."
+
+           # An error occurred? Raise an exception and gaia will fail the pipeline.
+           # raise "Oh gosh! Something went wrong!"
+       end
+
+       def self.main
+           awesomejob = Interface::Job.new(title: "Awesome Job",
+                                           handler: AwesomeJob,
+                                           desc: "This job does something awesome.")
+
+           begin
+               RubySDK.Serve([awesomejob])
+           rescue => e
+               puts "Error occured: #{e}"
+               exit(false)
+           end
+       end
+   end
+ 
+
 Pipelines are defined by jobs and a function usually represents a job. You can define as many jobs in your pipeline as you want.
 
 Every function accepts arguments. Those arguments can be requested from the pipeline itself and the values passed back in from the UI.
@@ -270,7 +300,7 @@ The SDK implements the Gaia plugin gRPC interface and offers helper functions li
 
 Which programming languages are supported?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We currently fully support Golang, Java, Python and C++.
+We currently fully support Golang, Java, Python, C++ and Ruby.
 
 When do you support programming language **XYZ**?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

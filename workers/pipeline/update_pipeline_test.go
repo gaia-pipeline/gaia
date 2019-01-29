@@ -55,3 +55,36 @@ func TestUpdatePipelinePython(t *testing.T) {
 		t.Fatalf("distribution file does not exist: %s", err.Error())
 	}
 }
+
+func TestUpdatePipelineRuby(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestUpdatePipelineRuby")
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.HomePath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
+
+	p1 := gaia.Pipeline{
+		Name:    "PipelinA",
+		Type:    gaia.PTypeRuby,
+		Created: time.Now(),
+	}
+
+	// Create fake test gem file.
+	src := filepath.Join(tmp, "PipelineA_ruby")
+	p1.ExecPath = src
+	defer os.RemoveAll(tmp)
+	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+
+	// fake execution commands
+	rubyGemName = "echo"
+
+	// run
+	err := updatePipeline(&p1)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
