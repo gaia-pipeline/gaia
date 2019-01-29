@@ -317,6 +317,8 @@ func PipelineTrigger(c echo.Context) error {
 	return c.String(http.StatusOK, "Trigger successful for pipeline: "+pipelineIDStr)
 }
 
+// PipelineTriggerAuth is a barrier before remote trigger which checks if
+// the user is `auto`.
 func PipelineTriggerAuth(c echo.Context) error {
 	// check headers
 	return nil

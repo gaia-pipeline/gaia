@@ -15,7 +15,6 @@ import (
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
-	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -151,33 +150,9 @@ func Start() (err error) {
 	echoInstance = echo.New()
 
 	// Initialize store
-	s, err := services.StorageService()
+	_, err = services.StorageService()
 	if err != nil {
 		return
-	}
-
-	u, err := s.UserGet("auto")
-	if err != nil {
-		gaia.Cfg.Logger.Error("user could not be retrieved")
-		return
-	}
-
-	if u == nil {
-		nsUUID := uuid.NewV4()
-		triggerToken := uuid.NewV5(nsUUID, "autoTriggerToken")
-		auto := gaia.User{
-			DisplayName:  "Auto User",
-			JwtExpiry:    0,
-			Password:     "",
-			Tokenstring:  "",
-			TriggerToken: triggerToken.String(),
-			Username:     "auto",
-		}
-		err = s.UserPut(&auto, false)
-		if err != nil {
-			gaia.Cfg.Logger.Error("failed to create auto user: ", err.Error())
-			return
-		}
 	}
 
 	// Initiating Vault

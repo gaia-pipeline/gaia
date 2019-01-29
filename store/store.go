@@ -7,6 +7,7 @@ import (
 
 	bolt "github.com/coreos/bbolt"
 	"github.com/gaia-pipeline/gaia"
+	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -28,6 +29,8 @@ const (
 	// Username and password of the first admin user
 	adminUsername = "admin"
 	adminPassword = "admin"
+	autoUsername  = "auto"
+	autoPassword  = "auto"
 
 	// Bolt database file name
 	boltDBFileName = "gaia.db"
@@ -138,6 +141,28 @@ func (s *BoltStore) setupDatabase() error {
 			Password:    adminPassword,
 		}, true)
 
+		if err != nil {
+			return err
+		}
+	}
+
+	u, err := s.UserGet(autoUsername)
+	if err != nil {
+		return err
+	}
+
+	if u == nil {
+		nsUUID := uuid.NewV4()
+		triggerToken := uuid.NewV5(nsUUID, "autoTriggerToken")
+		auto := gaia.User{
+			DisplayName:  "Auto User",
+			JwtExpiry:    0,
+			Password:     autoPassword,
+			Tokenstring:  "",
+			TriggerToken: triggerToken.String(),
+			Username:     autoUsername,
+		}
+		err = s.UserPut(&auto, true)
 		if err != nil {
 			return err
 		}
