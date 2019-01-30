@@ -11,6 +11,9 @@ import Notification from 'vue-bulma-notification-fixed'
 import auth from './auth'
 import lodash from 'lodash'
 import VueLodash from 'vue-lodash'
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { faDocker } from '@fortawesome/free-brands-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 const axiosInstance = axios.create({
   baseURL: './'
@@ -27,6 +30,10 @@ axiosInstance.interceptors.request.use(function (request) {
   request.headers['Authorization'] = 'Bearer ' + auth.getToken()
   return request
 })
+
+// Register fontawesome
+library.add(faDocker)
+Vue.component('font-awesome-icon', FontAwesomeIcon)
 
 // Enable devtools
 Vue.config.devtools = true

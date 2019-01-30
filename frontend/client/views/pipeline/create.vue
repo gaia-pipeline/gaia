@@ -52,8 +52,15 @@
                   </span>
                   <span>Add Pipeline Trigger</span>
                 </a>
+                <a class="button is-primary" v-on:click="showDockerSupportModal">
+                  <span class="icon">
+                    <font-awesome-icon :icon="['fab', 'docker']"/>
+                  </span>
+                  <span>Docker Support</span>
+                </a>
               </p>
               <span style="color: red" v-if="periodicSchedulesErr">Periodic schedules invalid: {{ periodicSchedulesErrMsg }}</span>
+              <span style="color: red" v-if="dockerSupportErr">Docker support invalid: {{ dockerSupportErrMsg }}</span>
             </div>
           </article>
 
@@ -270,6 +277,40 @@
       </div>
     </modal>
 
+    <!-- docker support modal -->
+    <modal :visible="dockerSupportModal" class="modal-z-index" @close="close">
+      <div class="box credentials-modal">
+        <div class="block credentials-modal-content">
+          <collapse accordion is-fullwidth>
+            <collapse-item title="Docker Support options:" selected>
+              <div class="credentials-modal-content">
+                <label class="label" style="text-align: left;">
+                  Enable Docker Support:
+                </label>
+                <p class="control">
+                  <vb-switch size="medium" type="primary" v-model="dockerSupportEnabled"></vb-switch>
+                </p><br />
+                <label class="label" style="text-align: left;">
+                  Docker Host API endpoint (<a href="https://docs.docker.com/engine/reference/commandline/dockerd/#bind-docker-to-another-host-port-or-a-unix-socket" target="_blank">more information</a>):
+                </label>
+                <p class="control">
+                  <input class="input input-bar" type="text" v-model="dockerSupportHost" placeholder="unix://var/run/docker.sock">
+                </p>
+              </div>
+            </collapse-item>
+          </collapse>
+          <div class="modal-footer">
+            <div style="float: left;">
+              <button class="button is-primary" v-on:click="setDockerSupportHost">Confirm</button>
+            </div>
+            <div style="float: right;">
+              <button class="button is-danger" v-on:click="cancel">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </modal>
+
     <!-- status output modal -->
     <modal :visible="statusOutputModal" class="modal-z-index" @close="closeStatusModal">
       <div class="box statusModal">
@@ -296,6 +337,7 @@ import VueGoodTable from 'vue-good-table'
 import moment from 'moment'
 import Notification from 'vue-bulma-notification-fixed'
 import Message from 'vue-bulma-message-html'
+import VbSwitch from 'vue-bulma-switch'
 
 const NotificationComponent = Vue.extend(Notification)
 const openNotification = (
@@ -325,6 +367,7 @@ export default {
       gitCredentialsModal: false,
       gitWebHookModal: false,
       periodicalPipelineScheduleModal: false,
+      dockerSupportModal: false,
       gitBranches: [],
       giturl: '',
       pipelinename: '',
@@ -333,6 +376,10 @@ export default {
       periodicSchedules: '',
       periodicSchedulesErrMsg: '',
       periodicSchedulesErr: false,
+      dockerSupportEnabled: false,
+      dockerSupportHost: '',
+      dockerSupportErrMsg: '',
+      dockerSupportErr: false,
       createPipeline: {
         id: '',
         output: '',
@@ -390,7 +437,8 @@ export default {
     Collapse,
     CollapseItem,
     ProgressBar,
-    Message
+    Message,
+    VbSwitch
   },
 
   mounted () {
@@ -553,6 +601,7 @@ export default {
       this.gitCredentialsModal = false
       this.gitWebHookModal = false
       this.periodicalPipelineScheduleModal = false
+      this.dockerSupportModal = false
       this.$emit('close')
     },
 
@@ -564,6 +613,7 @@ export default {
       this.createPipeline.pipeline.repo.privatekey.username = ''
       this.createPipeline.pipeline.repo.privatekey.password = ''
       this.periodicSchedules = ''
+      this.dockerSupportHost = ''
 
       this.close()
     },
@@ -578,6 +628,10 @@ export default {
 
     showPeriodicalPipelineScheduleModal () {
       this.periodicalPipelineScheduleModal = true
+    },
+
+    showDockerSupportModal () {
+      this.dockerSupportModal = true
     },
 
     addPeriodicalSchedules () {
@@ -602,6 +656,11 @@ export default {
           this.periodicSchedulesErrMsg = error.response.data
         })
 
+      this.close()
+    },
+
+    setDockerSupportHost () {
+      // TODO check if docker host is reachable.
       this.close()
     },
 
