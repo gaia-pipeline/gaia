@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/gaia-pipeline/gaia/auth"
+
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/labstack/echo"
@@ -179,7 +181,7 @@ func UserAdd(c echo.Context) error {
 	// Add default perms
 	perms := &gaia.UserPermission{
 		Username: u.Username,
-		Roles:    gaia.FlattenUserCategoryRoles(gaia.UserRoleCategories),
+		Roles:    auth.FlattenUserCategoryRoles(auth.DefaultUserRoles),
 		Groups:   []string{},
 	}
 	err = storeService.UserPermissionsPut(perms)

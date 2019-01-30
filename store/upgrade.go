@@ -1,6 +1,9 @@
 package store
 
-import "github.com/gaia-pipeline/gaia"
+import (
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/auth"
+)
 
 func (s *BoltStore) CreateDefaultPermissions() error {
 	users, _ := s.UserGetAll()
@@ -12,7 +15,7 @@ func (s *BoltStore) CreateDefaultPermissions() error {
 		if perms == nil {
 			perms := &gaia.UserPermission{
 				Username: user.Username,
-				Roles:    gaia.FlattenUserCategoryRoles(gaia.UserRoleCategories),
+				Roles:    auth.FlattenUserCategoryRoles(auth.DefaultUserRoles),
 				Groups:   []string{},
 			}
 			err := s.UserPermissionsPut(perms)

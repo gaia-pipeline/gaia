@@ -1,10 +1,11 @@
 package gaia
 
 import (
-	"github.com/hashicorp/go-hclog"
-	"github.com/robfig/cron"
 	"os"
 	"time"
+
+	hclog "github.com/hashicorp/go-hclog"
+	"github.com/robfig/cron"
 )
 
 // PipelineType represents supported plugin types
@@ -122,43 +123,24 @@ type UserPermission struct {
 	Groups   []string `json:"groups"`
 }
 
-// The static Permission structure is build up of UserRoleCategory's as the top level.
+// UserRoleCategory represents the top-level of the permission role system
 type UserRoleCategory struct {
 	Name        string      `json:"name"`
 	Description string      `json:"description"`
 	Roles       []*UserRole `json:"roles"`
 }
 
-// Permission represents a single permission within a UserRoleCategory.
+// UserRole represents a single permission role.
 type UserRole struct {
 	Name        string              `json:"name"`
 	Description string              `json:"description"`
 	ApiEndpoint []*UserRoleEndpoint `json:"api_endpoints"`
 }
 
-// UserRoleEndpoint represents the endpoint & method of the API that should be secured. Is most commonly used by
-// the API middleware to validate permission security.
+// UserRoleEndpoint represents the path and method of the API endpoint to be secured.
 type UserRoleEndpoint struct {
 	Path   string `json:"path"`
 	Method string `json:"method"`
-}
-
-func NewUserRoleEndpoint(method string, path string) *UserRoleEndpoint {
-	return &UserRoleEndpoint{Path: path, Method: method}
-}
-
-func (p *UserRole) FlatName(category string) string {
-	return category + p.Name
-}
-
-func FlattenUserCategoryRoles(cats []*UserRoleCategory) []string {
-	var roles []string
-	for _, category := range cats {
-		for _, r := range category.Roles {
-			roles = append(roles, r.FlatName(category.Name))
-		}
-	}
-	return roles
 }
 
 // Pipeline represents a single pipeline

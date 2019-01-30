@@ -2,7 +2,8 @@ package store
 
 import (
 	"encoding/json"
-	"github.com/coreos/bbolt"
+
+	bolt "github.com/coreos/bbolt"
 	"github.com/gaia-pipeline/gaia"
 )
 

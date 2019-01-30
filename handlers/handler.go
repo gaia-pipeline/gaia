@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"errors"
-	"github.com/GeertJohan/go.rice"
+	"net/http"
+
+	rice "github.com/GeertJohan/go.rice"
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/auth"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-	"net/http"
 )
 
 var (
@@ -77,7 +79,7 @@ func InitHandlers(e *echo.Echo) error {
 	//e.Use(middleware.Logger())
 	e.Use(middleware.BodyLimit("32M"))
 	e.Use(AuthMiddleware(&AuthConfig{
-		RoleCategories: gaia.UserRoleCategories,
+		RoleCategories: auth.DefaultUserRoles,
 	}))
 
 	// Extra options

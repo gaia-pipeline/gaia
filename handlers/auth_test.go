@@ -10,7 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/gaia-pipeline/gaia/auth"
+
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/labstack/echo"
 )
@@ -23,14 +25,14 @@ var mockRoleAuth = &AuthConfig{
 				{
 					Name: "GetSingle",
 					ApiEndpoint: []*gaia.UserRoleEndpoint{
-						gaia.NewUserRoleEndpoint("GET", "/catone/:id"),
-						gaia.NewUserRoleEndpoint("GET", "/catone/latest"),
+						auth.NewUserRoleEndpoint("GET", "/catone/:id"),
+						auth.NewUserRoleEndpoint("GET", "/catone/latest"),
 					},
 				},
 				{
 					Name: "PostSingle",
 					ApiEndpoint: []*gaia.UserRoleEndpoint{
-						gaia.NewUserRoleEndpoint("POST", "/catone"),
+						auth.NewUserRoleEndpoint("POST", "/catone"),
 					},
 				},
 			},
@@ -41,13 +43,13 @@ var mockRoleAuth = &AuthConfig{
 				{
 					Name: "GetSingle",
 					ApiEndpoint: []*gaia.UserRoleEndpoint{
-						gaia.NewUserRoleEndpoint("GET", "/cattwo/:first/:second"),
+						auth.NewUserRoleEndpoint("GET", "/cattwo/:first/:second"),
 					},
 				},
 				{
 					Name: "PostSingle",
 					ApiEndpoint: []*gaia.UserRoleEndpoint{
-						gaia.NewUserRoleEndpoint("POST", "/cattwo/:first/:second/start"),
+						auth.NewUserRoleEndpoint("POST", "/cattwo/:first/:second/start"),
 					},
 				},
 			},
@@ -332,7 +334,7 @@ func TestAuthBarrierAllPerms(t *testing.T) {
 			req := httptest.NewRequest(echo.POST, "/catone", nil)
 			req.Header.Set("Authorization", "Bearer "+tokenstring)
 			e.ServeHTTP(rec, req)
-			testPermSuccess(t, tt.perm, rec.Code, rec.Body.String())
+			testPermSuccess(t, rec.Code, rec.Body.String())
 		})
 	}
 }
@@ -346,7 +348,7 @@ func testPermFailed(t *testing.T, perm string, statusCode int, body string) {
 	}
 }
 
-func testPermSuccess(t *testing.T, perm string, statusCode int, body string) {
+func testPermSuccess(t *testing.T, statusCode int, body string) {
 	if body != "" {
 		t.Fatalf("expected response body %v got %v", "", body)
 	}

@@ -1,10 +1,11 @@
 package handlers
 
 import (
-	"github.com/labstack/echo"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/labstack/echo"
 )
 
 func TestPermissionGetAll(t *testing.T) {

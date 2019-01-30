@@ -69,6 +69,7 @@
 
 <script>
   import {TabPane, Tabs} from 'vue-bulma-tabs'
+  import {EventBus} from '../../../app'
 
   export default {
     name: 'manage-permissions',
@@ -95,7 +96,19 @@
         permissionOptions: []
       }
     },
+    mounted () {
+      EventBus.$on('onUserDeleted', this.clear)
+    },
     methods: {
+      clear (username) {
+        console.log(username)
+        if (username === this.permissions.username) {
+          this.permissions = {
+            username: undefined,
+            roles: []
+          }
+        }
+      },
       checkAll (category) {
         if (this.allSelected(category)) {
           this.deselectAll(category)

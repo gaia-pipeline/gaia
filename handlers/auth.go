@@ -4,11 +4,13 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/gaia-pipeline/gaia"
-	"github.com/labstack/echo"
 	"net/http"
 	"strings"
+
+	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/auth"
+	"github.com/labstack/echo"
 )
 
 var (
@@ -16,6 +18,7 @@ var (
 	errNotAuthorized = errors.New("no or invalid jwt token provided. You are not authorized")
 )
 
+// Authentication middleware used for each request. Includes functionality that validates tokens and user permissions.
 func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -39,10 +42,9 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 				// All ok, continue
 				username, okUsername := claims["username"]
 				roles, okPerms := claims["roles"]
-				// TODO: roles should never be null at this point!
 				if okUsername && okPerms && roles != nil {
 					// Look through the perms until we find that the user has this permission
-					err := roleAuth.CheckRole(roles, c.Request().Method, c.Path())
+					err := roleAuth.checkRole(roles, c.Request().Method, c.Path())
 					if err != nil {
 						return c.String(http.StatusForbidden, fmt.Sprintf("Permission denied for user %s. %s", username, err.Error()))
 					}
@@ -54,30 +56,35 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 	}
 }
 
+// Simple auth config struct to be passed into the AuthMiddleware. Currently allow the ability to specify the
+// permission roles applied for each echo request.
 type AuthConfig struct {
 	RoleCategories []*gaia.UserRoleCategory
 }
 
-// Check if the given roles are valid
-func (ra *AuthConfig) CheckRole(roles interface{}, method, path string) error {
-	perm := ra.getRoleApiEndpoint(method, path)
+// Finds the required role for the metho & path specified. If it exists we validate that the provided user roles have
+// the permission role. If not, error specifying the required role.
+func (ra *AuthConfig) checkRole(userRoles interface{}, method, path string) error {
+	perm := ra.getRequiredRole(method, path)
 	if perm == "" {
 		return nil
 	}
-	for _, role := range roles.([]interface{}) {
+	for _, role := range userRoles.([]interface{}) {
 		if role.(string) == perm {
 			return nil
 		}
 	}
-	return errors.New(fmt.Sprintf("Required permission %s", perm))
+	return errors.New(fmt.Sprintf("Required permission role %s", perm))
 }
 
-func (ra *AuthConfig) getRoleApiEndpoint(method, path string) string {
-	for _, pcs := range ra.RoleCategories {
-		for _, p := range pcs.Roles {
-			for _, apie := range p.ApiEndpoint {
-				if method == apie.Method && path == apie.Path {
-					return p.FlatName(pcs.Name)
+// Iterate over each category to find a permission (if existing) for this API endpoint.
+func (ra *AuthConfig) getRequiredRole(method, path string) string {
+	for _, category := range ra.RoleCategories {
+		for _, role := range category.Roles {
+			for _, endpoint := range role.ApiEndpoint {
+				// If the http method & path match then return the role required for this endpoint
+				if method == endpoint.Method && path == endpoint.Path {
+					return auth.FullUserRoleName(category, role)
 				}
 			}
 		}
@@ -85,6 +92,7 @@ func (ra *AuthConfig) getRoleApiEndpoint(method, path string) string {
 	return ""
 }
 
+// Get the JWT token from the echo context
 func getToken(c echo.Context) (*jwt.Token, error) {
 	// Get the token
 	jwtRaw := c.Request().Header.Get("Authorization")
