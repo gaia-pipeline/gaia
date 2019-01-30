@@ -251,7 +251,3 @@ type Config struct {
 func (p PipelineType) String() string {
 	return string(p)
 }
-
-type StoreMetadata struct {
-	Version int `json:"version"`
-}

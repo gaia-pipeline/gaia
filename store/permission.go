@@ -7,6 +7,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 )
 
+// Returns the permission data for a given username
 func (s *BoltStore) UserPermissionsGet(username string) (*gaia.UserPermission, error) {
 	var perms *gaia.UserPermission
 
@@ -27,6 +28,7 @@ func (s *BoltStore) UserPermissionsGet(username string) (*gaia.UserPermission, e
 	return perms, nil
 }
 
+// Creates or updates user permissions
 func (s *BoltStore) UserPermissionsPut(perms *gaia.UserPermission) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(userPermsBucket)
@@ -40,6 +42,7 @@ func (s *BoltStore) UserPermissionsPut(perms *gaia.UserPermission) error {
 	})
 }
 
+// Deletes permission data for a given username
 func (s *BoltStore) UserPermissionsDelete(username string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(userPermsBucket)

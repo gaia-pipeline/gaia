@@ -5,7 +5,8 @@ import (
 	"github.com/gaia-pipeline/gaia/auth"
 )
 
-func (s *BoltStore) CreateDefaultPermissions() error {
+// Iterates the users and creates default permissions if they don't exist after upgrading.
+func (s *BoltStore) CreatePermissionsIfNotExisting() error {
 	users, _ := s.UserGetAll()
 	for _, user := range users {
 		perms, err := s.UserPermissionsGet(user.Username)

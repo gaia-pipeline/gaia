@@ -154,7 +154,7 @@ func (s *BoltStore) setupDatabase() error {
 		}
 	}
 
-	err = s.CreateDefaultPermissions()
+	err = s.CreatePermissionsIfNotExisting()
 	if err != nil {
 		return err
 	}
