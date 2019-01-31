@@ -33,8 +33,6 @@
                       <td>
                         <a v-on:click="editUserModal(props.row)"><i class="fa fa-edit"
                                                                     style="color: whitesmoke;"></i></a>
-                        <a v-on:click="userPermissionsModal(props.row)"><i class="fa fa-user"
-                                                                           style="color: whitesmoke;"></i></a>
                         <a v-on:click="deleteUserModal(props.row)" v-if="props.row.username !== session.username"><i
                           class="fa fa-trash" style="color: whitesmoke;"></i></a>
                       </td>
@@ -371,7 +369,6 @@
         showAddUserModal: false,
         showEditPipelineModal: false,
         showDeletePipelineModal: false,
-        showUserPermissionsModal: false,
         pipelinePeriodicSchedules: ''
       }
     },
@@ -456,7 +453,6 @@
         this.showDeletePipelineModal = false
         this.selectPipeline = {}
         this.pipelinePeriodicSchedules = ''
-        this.showUserPermissionsModal = false
         this.$emit('close')
       },
 
@@ -601,11 +597,6 @@
           .catch((error) => {
             this.$onError(error)
           })
-      },
-
-      userPermissionsModal (user) {
-        this.selectUser = user
-        this.showUserPermissionsModal = true
       }
     }
   }
