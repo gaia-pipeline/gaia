@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/gaia-pipeline/gaia/auth"
+
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/labstack/echo"
@@ -13,10 +15,11 @@ import (
 
 // jwtExpiry defines how long the produced jwt tokens
 // are valid. By default 12 hours.
-const jwtExpiry = (12 * 60 * 60)
+const jwtExpiry = 12 * 60 * 60
 
 type jwtCustomClaims struct {
-	Username string `json:"username"`
+	Username string   `json:"username"`
+	Roles    []string `json:"roles"`
 	jwt.StandardClaims
 }
 
@@ -37,10 +40,16 @@ func UserLogin(c echo.Context) error {
 		return c.String(http.StatusForbidden, "invalid username and/or password")
 	}
 
+	perms, err := storeService.UserPermissionsGet(u.Username)
+	if err != nil {
+		return err
+	}
+
 	// Setup custom claims
 	claims := jwtCustomClaims{
-		user.Username,
-		jwt.StandardClaims{
+		Username: user.Username,
+		Roles:    perms.Roles,
+		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Unix() + jwtExpiry,
 			IssuedAt:  time.Now().Unix(),
 			Subject:   "Gaia Session Token",
@@ -137,8 +146,15 @@ func UserDelete(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Invalid username given")
 	}
 	storeService, _ := services.StorageService()
+
 	// Delete user
 	err := storeService.UserDelete(u)
+	if err != nil {
+		return c.String(http.StatusNotFound, err.Error())
+	}
+
+	// Delete permissions
+	err = storeService.UserPermissionsDelete(u)
 	if err != nil {
 		return c.String(http.StatusNotFound, err.Error())
 	}
@@ -154,6 +170,7 @@ func UserAdd(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Invalid parameters given for add user request")
 	}
 	storeService, _ := services.StorageService()
+
 	// Add user
 	u.LastLogin = time.Now()
 	err := storeService.UserPut(u, true)
@@ -161,5 +178,39 @@ func UserAdd(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
+	// Add default perms
+	perms := &gaia.UserPermission{
+		Username: u.Username,
+		Roles:    auth.FlattenUserCategoryRoles(auth.DefaultUserRoles),
+		Groups:   []string{},
+	}
+	err = storeService.UserPermissionsPut(perms)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
 	return c.String(http.StatusCreated, "User has been added")
+}
+
+func UserGetPermissions(c echo.Context) error {
+	u := c.Param("username")
+	storeService, _ := services.StorageService()
+	perms, err := storeService.UserPermissionsGet(u)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	return c.JSON(http.StatusOK, perms)
+}
+
+func UserPutPermissions(c echo.Context) error {
+	var perms *gaia.UserPermission
+	if err := c.Bind(&perms); err != nil {
+		return c.String(http.StatusBadRequest, "Invalid parameters given for request")
+	}
+	storeService, _ := services.StorageService()
+	err := storeService.UserPermissionsPut(perms)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	return c.String(http.StatusOK, "Permissions have been updated")
 }

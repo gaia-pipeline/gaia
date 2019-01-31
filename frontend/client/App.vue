@@ -245,19 +245,19 @@ html {
   height: 50px;
 }
 
-.table td {
+.table-grid td {
   border: 0 !important;
   color: #8c91a0 !important;
   text-align: center !important;
 }
 
-.table th {
+.table-grid th {
   border-top: solid black 2px !important;
   border-bottom: solid black 2px !important;
   color: #4da2fc !important;
 }
 
-.table thead th {
+.table-grid  thead th {
   color: #4da2fc;
   text-align: center !important;
 }

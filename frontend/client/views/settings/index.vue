@@ -1,7 +1,7 @@
 <template>
   <div class="tile is-ancestor">
     <div class="tile is-vertical">
-      <tabs type="boxed" :is-fullwidth="true" alignment="centered" size="large">
+      <tabs type="boxed" :is-fullwidth="false" alignment="centered" size="large">
         <tab-pane label="Manage Users" icon="fa fa-user-circle">
           <div class="tile is-ancestor">
             <div class="tile is-vertical">
@@ -22,7 +22,7 @@
                     :global-search="true"
                     :defaultSortBy="{field: 'username', type: 'desc'}"
                     globalSearchPlaceholder="Search ..."
-                    styleClass="table table-own-bordered">
+                    styleClass="table table-grid table-own-bordered">
                     <template slot="table-row" slot-scope="props">
                       <td>
                         <span>{{ props.row.display_name }}</span>
@@ -31,8 +31,10 @@
                         <span>{{ convertTime(props.row.lastlogin) }}</span>
                       </td>
                       <td>
-                        <a v-on:click="editUserModal(props.row)"><i class="fa fa-edit" style="color: whitesmoke;"></i></a>
-                        <a v-on:click="deleteUserModal(props.row)" v-if="props.row.username !== session.username"><i class="fa fa-trash" style="color: whitesmoke;"></i></a>
+                        <a v-on:click="editUserModal(props.row)"><i class="fa fa-edit"
+                                                                    style="color: whitesmoke;"></i></a>
+                        <a v-on:click="deleteUserModal(props.row)" v-if="props.row.username !== session.username"><i
+                          class="fa fa-trash" style="color: whitesmoke;"></i></a>
                       </td>
                     </template>
                     <div slot="emptystate" class="empty-table-text">
@@ -43,6 +45,9 @@
               </div>
             </div>
           </div>
+        </tab-pane>
+        <tab-pane label="Manage Permissions" icon="fa fa-users">
+          <manage-permissions :users="userRows"/>
         </tab-pane>
         <tab-pane label="Manage Pipelines" icon="fa fa-wrench">
           <div class="tile is-ancestor">
@@ -64,7 +69,7 @@
                     :global-search="true"
                     :defaultSortBy="{field: 'id', type: 'desc'}"
                     globalSearchPlaceholder="Search ..."
-                    styleClass="table table-own-bordered">
+                    styleClass="table table-grid table-own-bordered">
                     <template slot="table-row" slot-scope="props">
                       <td>
                         <span>{{ props.row.name }}</span>
@@ -76,8 +81,10 @@
                         <span>{{ convertTime(props.row.created) }}</span>
                       </td>
                       <td>
-                        <a v-on:click="editPipelineModal(props.row)"><i class="fa fa-edit" style="color: whitesmoke;"></i></a>
-                        <a v-on:click="deletePipelineModal(props.row)"><i class="fa fa-trash" style="color: whitesmoke;"></i></a>
+                        <a v-on:click="editPipelineModal(props.row)"><i class="fa fa-edit"
+                                                                        style="color: whitesmoke;"></i></a>
+                        <a v-on:click="deletePipelineModal(props.row)"><i class="fa fa-trash"
+                                                                          style="color: whitesmoke;"></i></a>
                       </td>
                     </template>
                     <div slot="emptystate" class="empty-table-text">
@@ -99,21 +106,25 @@
           <collapse accordion is-fullwidth>
             <collapse-item title="Change Password" selected>
               <div class="user-modal-content">
-                <label class="label" style="text-align: left;">Change password for user {{ selectUser.display_name }}:</label>
+                <label class="label" style="text-align: left;">Change password for user {{ selectUser.display_name
+                  }}:</label>
                 <p class="control has-icons-left" style="padding-bottom: 5px;">
-                  <input class="input is-medium input-bar" v-focus type="password" v-model="selectUser.oldpassword" placeholder="Old Password">
+                  <input class="input is-medium input-bar" v-focus type="password" v-model="selectUser.oldpassword"
+                         placeholder="Old Password">
                   <span class="icon is-small is-left">
                     <i class="fa fa-lock"></i>
                   </span>
                 </p>
                 <p class="control has-icons-left">
-                  <input class="input is-medium input-bar" type="password" v-model="selectUser.newpassword" placeholder="New Password">
+                  <input class="input is-medium input-bar" type="password" v-model="selectUser.newpassword"
+                         placeholder="New Password">
                   <span class="icon is-small is-left">
                     <i class="fa fa-lock"></i>
                   </span>
                 </p>
                 <p class="control has-icons-left">
-                  <input class="input is-medium input-bar" type="password" v-model="selectUser.newpasswordconf" placeholder="New Password confirmation">
+                  <input class="input is-medium input-bar" type="password" v-model="selectUser.newpasswordconf"
+                         placeholder="New Password confirmation">
                   <span class="icon is-small is-left">
                     <i class="fa fa-lock"></i>
                   </span>
@@ -140,7 +151,8 @@
           <div class="media-content">
             <div class="content">
               <p>
-                <span style="color: whitesmoke;">Do you really want to delete the user {{ selectUser.display_name }}?</span>
+                <span
+                  style="color: whitesmoke;">Do you really want to delete the user {{ selectUser.display_name }}?</span>
               </p>
             </div>
             <div class="modal-footer">
@@ -164,25 +176,29 @@
             <collapse-item title="Add User" selected>
               <div class="user-modal-content">
                 <p class="control has-icons-left" style="padding-bottom: 5px;">
-                  <input class="input is-medium input-bar" v-focus type="text" v-model="selectUser.username" placeholder="Username">
+                  <input class="input is-medium input-bar" v-focus type="text" v-model="selectUser.username"
+                         placeholder="Username">
                   <span class="icon is-small is-left">
                     <i class="fa fa-user"></i>
                   </span>
                 </p>
                 <p class="control has-icons-left">
-                  <input class="input is-medium input-bar" type="text" v-model="selectUser.display_name" placeholder="Display Name (optional)">
+                  <input class="input is-medium input-bar" type="text" v-model="selectUser.display_name"
+                         placeholder="Display Name (optional)">
                   <span class="icon is-small is-left">
                     <i class="fa fa-user-secret"></i>
                   </span>
                 </p>
                 <p class="control has-icons-left">
-                  <input class="input is-medium input-bar" type="password" v-model="selectUser.password" placeholder="Password">
+                  <input class="input is-medium input-bar" type="password" v-model="selectUser.password"
+                         placeholder="Password">
                   <span class="icon is-small is-left">
                     <i class="fa fa-lock"></i>
                   </span>
                 </p>
                 <p class="control has-icons-left">
-                  <input class="input is-medium input-bar" type="password" v-model="selectUser.passwordconf" placeholder="Password confirmation">
+                  <input class="input is-medium input-bar" type="password" v-model="selectUser.passwordconf"
+                         placeholder="Password confirmation">
                   <span class="icon is-small is-left">
                     <i class="fa fa-lock"></i>
                   </span>
@@ -210,7 +226,8 @@
             <collapse-item title="Change Pipeline Name" selected>
               <div class="pipeline-modal-content">
                 <p class="control has-icons-left" style="padding-bottom: 5px;">
-                  <input class="input is-medium input-bar" v-focus v-model="selectPipeline.name" placeholder="Pipeline Name">
+                  <input class="input is-medium input-bar" v-focus v-model="selectPipeline.name"
+                         placeholder="Pipeline Name">
                   <span class="icon is-small is-left">
                     <i class="fa fa-book"></i>
                   </span>
@@ -224,11 +241,12 @@
                 </p>
                 <label class="label" style="test-align: left;">
                   Use the standard cron syntax. For example to start the pipeline every half hour:
-                  <br />0 30 * * * *<br />
-                  Please see <a href="https://godoc.org/github.com/robfig/cron" target="_blank">here</a> for more information.
+                  <br/>0 30 * * * *<br/>
+                  Please see <a href="https://godoc.org/github.com/robfig/cron" target="_blank">here</a> for more
+                  information.
                 </label>
               </div>
-            </collapse-item> 
+            </collapse-item>
           </collapse>
           <div class="modal-footer">
             <div style="float: left;">
@@ -249,7 +267,8 @@
           <div class="media-content">
             <div class="content">
               <p>
-                <span style="color: whitesmoke;">Do you really want to delete the pipeline "{{ selectPipeline.name }}"?</span>
+                <span
+                  style="color: whitesmoke;">Do you really want to delete the pipeline "{{ selectPipeline.name }}"?</span>
               </p>
             </div>
             <div class="modal-footer">
@@ -265,348 +284,353 @@
       </div>
     </modal>
   </div>
+
 </template>
 
 <script>
-import Vue from 'vue'
-import { Tabs, TabPane } from 'vue-bulma-tabs'
-import { Modal } from 'vue-bulma-modal'
-import { Collapse, Item as CollapseItem } from 'vue-bulma-collapse'
-import VueGoodTable from 'vue-good-table'
-import VueTippy from 'vue-tippy'
-import moment from 'moment'
-import Notification from 'vue-bulma-notification-fixed'
-import { mapGetters } from 'vuex'
+  import Vue from 'vue'
+  import {TabPane, Tabs} from 'vue-bulma-tabs'
+  import {Modal} from 'vue-bulma-modal'
+  import {Collapse, Item as CollapseItem} from 'vue-bulma-collapse'
+  import VueGoodTable from 'vue-good-table'
+  import VueTippy from 'vue-tippy'
+  import moment from 'moment'
+  import Notification from 'vue-bulma-notification-fixed'
+  import {mapGetters} from 'vuex'
+  import ManagePermissions from './permissions/manage-permissions'
+  import {EventBus} from '../../app'
 
-const NotificationComponent = Vue.extend(Notification)
-const openNotification = (propsData = {
-  title: '',
-  message: '',
-  type: '',
-  direction: '',
-  duration: 4500,
-  container: '.notifications'
-}) => {
-  return new NotificationComponent({
-    el: document.createElement('div'),
-    propsData
-  })
-}
+  const NotificationComponent = Vue.extend(Notification)
+  const openNotification = (propsData = {
+    title: '',
+    message: '',
+    type: '',
+    direction: '',
+    duration: 4500,
+    container: '.notifications'
+  }) => {
+    return new NotificationComponent({
+      el: document.createElement('div'),
+      propsData
+    })
+  }
 
-Vue.use(VueGoodTable)
-Vue.use(VueTippy)
+  Vue.use(VueGoodTable)
+  Vue.use(VueTippy)
 
-export default {
-  components: {
-    Tabs,
-    TabPane,
-    Modal,
-    Collapse,
-    CollapseItem
-  },
+  export default {
+    components: {
+      ManagePermissions,
+      Tabs,
+      TabPane,
+      Modal,
+      Collapse,
+      CollapseItem
+    },
 
-  data () {
-    return {
-      userColumns: [
-        {
-          label: 'Name',
-          field: 'display_name'
-        },
-        {
-          label: 'Last Login',
-          field: 'lastlogin'
-        },
-        {
-          label: ''
-        }
-      ],
-      userRows: [],
-      pipelineColumns: [
-        {
-          label: 'Name',
-          field: 'name'
-        },
-        {
-          label: 'Type',
-          field: 'type'
-        },
-        {
-          label: 'Created',
-          field: 'created'
-        },
-        {
-          label: ''
-        }
-      ],
-      pipelineRows: [],
-      selectUser: {},
-      selectPipeline: {},
-      showEditUserModal: false,
-      showDeleteUserModal: false,
-      showAddUserModal: false,
-      showEditPipelineModal: false,
-      showDeletePipelineModal: false,
-      pipelinePeriodicSchedules: ''
-    }
-  },
-
-  mounted () {
-    this.fetchData()
-  },
-
-  watch: {
-    '$route': 'fetchData'
-  },
-
-  computed: mapGetters({
-    session: 'session'
-  }),
-
-  methods: {
-    fetchData () {
-      this.$http
-        .get('/api/v1/users', { showProgressBar: false })
-        .then(response => {
-          if (response.data) {
-            this.userRows = response.data
+    data () {
+      return {
+        userColumns: [
+          {
+            label: 'Name',
+            field: 'display_name'
+          },
+          {
+            label: 'Last Login',
+            field: 'lastlogin'
+          },
+          {
+            label: ''
           }
-        })
-        .catch((error) => {
-          this.$onError(error)
-        })
-      this.$http
-        .get('/api/v1/pipeline', { showProgressBar: false })
-        .then(response => {
-          if (response.data) {
-            this.pipelineRows = response.data
-          } else {
-            this.pipelineRows = []
+        ],
+        userRows: [],
+        pipelineColumns: [
+          {
+            label: 'Name',
+            field: 'name'
+          },
+          {
+            label: 'Type',
+            field: 'type'
+          },
+          {
+            label: 'Created',
+            field: 'created'
+          },
+          {
+            label: ''
           }
-        }).catch((error) => {
-          this.$onError(error)
-        })
-    },
-
-    convertTime (time) {
-      return moment(time).fromNow()
-    },
-
-    editUserModal (user) {
-      this.selectUser = user
-      this.showEditUserModal = true
-    },
-
-    deleteUserModal (user) {
-      this.selectUser = user
-      this.showDeleteUserModal = true
-    },
-
-    addUserModal () {
-      this.selectUser = {}
-      this.showAddUserModal = true
-    },
-
-    editPipelineModal (pipeline) {
-      // Check if periodic schedules is given.
-      if (pipeline.periodicschedules) {
-        this.pipelinePeriodicSchedules = pipeline.periodicschedules.join('\n')
+        ],
+        pipelineRows: [],
+        selectUser: {},
+        selectPipeline: {},
+        showEditUserModal: false,
+        showDeleteUserModal: false,
+        showAddUserModal: false,
+        showEditPipelineModal: false,
+        showDeletePipelineModal: false,
+        pipelinePeriodicSchedules: ''
       }
-
-      this.selectPipeline = pipeline
-      this.showEditPipelineModal = true
     },
 
-    deletePipelineModal (pipeline) {
-      this.selectPipeline = pipeline
-      this.showDeletePipelineModal = true
+    mounted () {
+      this.fetchData()
     },
 
-    close () {
-      this.showEditUserModal = false
-      this.showDeleteUserModal = false
-      this.showAddUserModal = false
-      this.selectUser = {}
-      this.showEditPipelineModal = false
-      this.showDeletePipelineModal = false
-      this.selectPipeline = {}
-      this.pipelinePeriodicSchedules = ''
-      this.$emit('close')
+    watch: {
+      '$route': 'fetchData'
     },
 
-    changePassword () {
-      // pre-validate
-      if (!this.selectUser.newpassword || !this.selectUser.newpasswordconf) {
-        openNotification({
-          title: 'Empty password',
-          message: 'Empty password is not allowed.',
-          type: 'danger'
-        })
-        this.close()
-        return
-      }
+    computed: mapGetters({
+      session: 'session'
+    }),
 
-      this.$http
-        .post('/api/v1/user/password', this.selectUser)
-        .then(response => {
-          openNotification({
-            title: 'Password changed!',
-            message: 'Password has been successful changed.',
-            type: 'success'
+    methods: {
+      fetchData () {
+        this.$http
+          .get('/api/v1/users', {showProgressBar: false})
+          .then(response => {
+            if (response.data) {
+              this.userRows = response.data
+            }
           })
-        })
-        .catch((error) => {
-          this.$onError(error)
-        })
-      this.close()
-    },
-
-    addUser () {
-      // pre-validate
-      if (!this.selectUser.password || !this.selectUser.passwordconf) {
-        openNotification({
-          title: 'Empty password',
-          message: 'Empty password is not allowed.',
-          type: 'danger'
-        })
-        this.close()
-        return
-      }
-
-      // pre-validate
-      if (!this.selectUser.username || this.selectUser.username.trim() === '') {
-        openNotification({
-          title: 'Empty username',
-          message: 'Empty username is not allowed.',
-          type: 'danger'
-        })
-        this.close()
-        return
-      }
-
-      // pre-validate
-      if (this.selectUser.password !== this.selectUser.passwordconf) {
-        openNotification({
-          title: 'Password not identical',
-          message: 'Password and confirmation are not identical!',
-          type: 'danger'
-        })
-        this.close()
-        return
-      }
-      this.selectUser.passwordconf = null
-
-      // Display name is optional
-      if (!this.selectUser.display_name) {
-        this.selectUser.display_name = this.selectUser.username
-      }
-
-      this.$http
-        .post('/api/v1/user', this.selectUser)
-        .then(response => {
-          openNotification({
-            title: 'User added!',
-            message: 'User has been successfully added.',
-            type: 'success'
+          .catch((error) => {
+            this.$onError(error)
           })
-          this.fetchData()
-        })
-        .catch((error) => {
-          this.$onError(error)
-        })
-      this.close()
-    },
-
-    deleteUser () {
-      this.$http
-        .delete('/api/v1/user/' + this.selectUser.username)
-        .then(response => {
-          openNotification({
-            title: 'User deleted!',
-            message: 'User ' + this.selectUser.display_name + ' has been successfully deleted.',
-            type: 'success'
+        this.$http
+          .get('/api/v1/pipeline', {showProgressBar: false})
+          .then(response => {
+            if (response.data) {
+              this.pipelineRows = response.data
+            } else {
+              this.pipelineRows = []
+            }
+          }).catch((error) => {
+            this.$onError(error)
           })
-          this.fetchData()
+      },
+
+      convertTime (time) {
+        return moment(time).fromNow()
+      },
+
+      editUserModal (user) {
+        this.selectUser = user
+        this.showEditUserModal = true
+      },
+
+      deleteUserModal (user) {
+        this.selectUser = user
+        this.showDeleteUserModal = true
+      },
+
+      addUserModal () {
+        this.selectUser = {}
+        this.showAddUserModal = true
+      },
+
+      editPipelineModal (pipeline) {
+        // Check if periodic schedules is given.
+        if (pipeline.periodicschedules) {
+          this.pipelinePeriodicSchedules = pipeline.periodicschedules.join('\n')
+        }
+
+        this.selectPipeline = pipeline
+        this.showEditPipelineModal = true
+      },
+
+      deletePipelineModal (pipeline) {
+        this.selectPipeline = pipeline
+        this.showDeletePipelineModal = true
+      },
+
+      close () {
+        this.showEditUserModal = false
+        this.showDeleteUserModal = false
+        this.showAddUserModal = false
+        this.selectUser = {}
+        this.showEditPipelineModal = false
+        this.showDeletePipelineModal = false
+        this.selectPipeline = {}
+        this.pipelinePeriodicSchedules = ''
+        this.$emit('close')
+      },
+
+      changePassword () {
+        // pre-validate
+        if (!this.selectUser.newpassword || !this.selectUser.newpasswordconf) {
+          openNotification({
+            title: 'Empty password',
+            message: 'Empty password is not allowed.',
+            type: 'danger'
+          })
           this.close()
-        })
-        .catch((error) => {
-          this.$onError(error)
-        })
-    },
+          return
+        }
 
-    createPipeline () {
-      this.$router.push('/pipeline/create')
-    },
-
-    changePipeline () {
-      // Convert periodic schedules into list.
-      this.selectPipeline.periodicschedules = this.pipelinePeriodicSchedules.split('\n')
-
-      this.$http
-        .put('/api/v1/pipeline/' + this.selectPipeline.id, this.selectPipeline)
-        .then(response => {
-          openNotification({
-            title: 'Pipeline updated!',
-            message: 'Pipeline has been successfully updated.',
-            type: 'success'
+        this.$http
+          .post('/api/v1/user/password', this.selectUser)
+          .then(response => {
+            openNotification({
+              title: 'Password changed!',
+              message: 'Password has been successful changed.',
+              type: 'success'
+            })
           })
-          this.fetchData()
-          this.close()
-        })
-        .catch((error) => {
-          this.$onError(error)
-        })
-      this.close()
-    },
-
-    deletePipeline () {
-      this.$http
-        .delete('/api/v1/pipeline/' + this.selectPipeline.id)
-        .then(response => {
-          openNotification({
-            title: 'Pipeline deleted!',
-            message: 'Pipeline ' + this.selectPipeline.name + ' has been successfully deleted.',
-            type: 'success'
+          .catch((error) => {
+            this.$onError(error)
           })
-          this.fetchData()
+        this.close()
+      },
+
+      addUser () {
+        // pre-validate
+        if (!this.selectUser.password || !this.selectUser.passwordconf) {
+          openNotification({
+            title: 'Empty password',
+            message: 'Empty password is not allowed.',
+            type: 'danger'
+          })
           this.close()
-        })
-        .catch((error) => {
-          this.$onError(error)
-        })
+          return
+        }
+
+        // pre-validate
+        if (!this.selectUser.username || this.selectUser.username.trim() === '') {
+          openNotification({
+            title: 'Empty username',
+            message: 'Empty username is not allowed.',
+            type: 'danger'
+          })
+          this.close()
+          return
+        }
+
+        // pre-validate
+        if (this.selectUser.password !== this.selectUser.passwordconf) {
+          openNotification({
+            title: 'Password not identical',
+            message: 'Password and confirmation are not identical!',
+            type: 'danger'
+          })
+          this.close()
+          return
+        }
+        this.selectUser.passwordconf = null
+
+        // Display name is optional
+        if (!this.selectUser.display_name) {
+          this.selectUser.display_name = this.selectUser.username
+        }
+
+        this.$http
+          .post('/api/v1/user', this.selectUser)
+          .then(response => {
+            openNotification({
+              title: 'User added!',
+              message: 'User has been successfully added.',
+              type: 'success'
+            })
+            this.fetchData()
+          })
+          .catch((error) => {
+            this.$onError(error)
+          })
+        this.close()
+      },
+
+      deleteUser () {
+        this.$http
+          .delete('/api/v1/user/' + this.selectUser.username)
+          .then(response => {
+            openNotification({
+              title: 'User deleted!',
+              message: 'User ' + this.selectUser.display_name + ' has been successfully deleted.',
+              type: 'success'
+            })
+            EventBus.$emit('onUserDeleted', this.selectUser.username)
+            this.fetchData()
+            this.close()
+          })
+          .catch((error) => {
+            this.$onError(error)
+          })
+      },
+
+      createPipeline () {
+        this.$router.push('/pipeline/create')
+      },
+
+      changePipeline () {
+        // Convert periodic schedules into list.
+        this.selectPipeline.periodicschedules = this.pipelinePeriodicSchedules.split('\n')
+
+        this.$http
+          .put('/api/v1/pipeline/' + this.selectPipeline.id, this.selectPipeline)
+          .then(response => {
+            openNotification({
+              title: 'Pipeline updated!',
+              message: 'Pipeline has been successfully updated.',
+              type: 'success'
+            })
+            this.fetchData()
+            this.close()
+          })
+          .catch((error) => {
+            this.$onError(error)
+          })
+        this.close()
+      },
+
+      deletePipeline () {
+        this.$http
+          .delete('/api/v1/pipeline/' + this.selectPipeline.id)
+          .then(response => {
+            openNotification({
+              title: 'Pipeline deleted!',
+              message: 'Pipeline ' + this.selectPipeline.name + ' has been successfully deleted.',
+              type: 'success'
+            })
+            this.fetchData()
+            this.close()
+          })
+          .catch((error) => {
+            this.$onError(error)
+          })
+      }
     }
   }
-}
 </script>
 
 <style lang="scss">
 
-.tabs {
-  margin: 10px;
+  .tabs {
+    margin: 10px;
 
-  .tab-content {
-    min-height: 50px;
+    .tab-content {
+      min-height: 50px;
+    }
   }
-}
 
-.tabs.is-boxed li.is-active a {
-  background-color: transparent;
-  border-color: transparent;
-  border-bottom-color: #4da2fc !important;
-}
+  .tabs.is-boxed li.is-active a {
+    background-color: transparent;
+    border-color: transparent;
+    border-bottom-color: #4da2fc !important;
+  }
 
-.user-modal, .pipeline-modal {
-  text-align: center;
-  background-color: #2a2735;
-}
+  .user-modal, .pipeline-modal {
+    text-align: center;
+    background-color: #2a2735;
+  }
 
-.user-modal-content, .pipeline-modal-content {
-  margin: auto;
-  padding: 10px;
-}
+  .user-modal-content, .pipeline-modal-content {
+    margin: auto;
+    padding: 10px;
+  }
 
-.modal-footer {
-  height: 45px;
-  padding-top: 15px;
-}
+  .modal-footer {
+    height: 45px;
+    padding-top: 15px;
+  }
 
 </style>

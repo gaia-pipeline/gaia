@@ -124,7 +124,7 @@
               :global-search="true"
               :defaultSortBy="{field: 'created', type: 'desc'}"
               globalSearchPlaceholder="Search ..."
-              styleClass="table table-own-bordered">
+              styleClass="table table-grid table-own-bordered">
               <template slot="table-row" slot-scope="props">
                 <td>{{ props.row.pipeline.name }}</td>
                 <td class="progress-bar-height">
