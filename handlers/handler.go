@@ -43,6 +43,7 @@ func InitHandlers(e *echo.Echo) error {
 	e.GET(p+"user/:username/permissions", UserGetPermissions)
 	e.PUT(p+"user/:username/permissions", UserPutPermissions)
 	e.POST(p+"user", UserAdd)
+	e.GET(p+"user/:username/reset-trigger-token", UserResetTriggerToken)
 
 	perms := e.Group(p + "permission")
 	perms.GET("", PermissionGetAll)
@@ -59,6 +60,7 @@ func InitHandlers(e *echo.Echo) error {
 	e.DELETE(p+"pipeline/:pipelineid", PipelineDelete)
 	e.POST(p+"pipeline/:pipelineid/start", PipelineStart)
 	e.POST(p+"pipeline/:pipelineid/:pipelinetoken/trigger", PipelineTrigger)
+	e.GET(p+"pipeline/:pipelineid/reset-token", PipelineResetToken)
 	e.GET(p+"pipeline/latest", PipelineGetAllWithLatestRun)
 	e.POST(p+"pipeline/periodicschedules", PipelineCheckPeriodicSchedules)
 

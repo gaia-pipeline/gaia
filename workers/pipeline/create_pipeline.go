@@ -142,7 +142,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	}
 
 	nsUUID := uuid.NewV4()
-	p.Pipeline.TriggerToken = uuid.NewV5(nsUUID, "triggerToken").String()
+	p.Pipeline.TriggerToken = uuid.NewV5(nsUUID, "pipelineTriggerToken").String()
 	err = bP.SavePipeline(&p.Pipeline)
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed

@@ -327,6 +327,44 @@ func PipelineTrigger(c echo.Context) error {
 	return c.String(http.StatusBadRequest, "Failed to trigger pipeline run.")
 }
 
+// PipelineResetToken generates a new remote trigger token for a given
+// pipeline.
+func PipelineResetToken(c echo.Context) error {
+	// Check here against the pipeline's token.
+	pipelineIDStr := c.Param("pipelineid")
+
+	// Convert string to int because id is int
+	pipelineID, err := strconv.Atoi(pipelineIDStr)
+	if err != nil {
+		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
+	}
+
+	// Look up pipeline for the given id
+	var foundPipeline gaia.Pipeline
+	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+		if pipeline.ID == pipelineID {
+			foundPipeline = pipeline
+		}
+	}
+
+	if foundPipeline.Name == "" {
+		return c.String(http.StatusBadRequest, "Pipeline not found.")
+	}
+
+	nsUUID := uuid.NewV4()
+	triggerToken := uuid.NewV5(nsUUID, "pipelineTriggerToken")
+	foundPipeline.TriggerToken = triggerToken.String()
+	s, err := services.StorageService()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Error getting store service.")
+	}
+	err = s.PipelinePut(&foundPipeline)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Error while saving pipeline.")
+	}
+	return c.String(http.StatusOK, "Token successfully reset. To see, please open the pipeline's view.")
+}
+
 // PipelineTriggerAuth is a barrier before remote trigger which checks if
 // the user is `auto`.
 func PipelineTriggerAuth(c echo.Context) error {

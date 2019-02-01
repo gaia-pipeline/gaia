@@ -11,6 +11,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/labstack/echo"
+	uuid "github.com/satori/go.uuid"
 )
 
 // jwtExpiry defines how long the produced jwt tokens
@@ -136,6 +137,30 @@ func UserChangePassword(c echo.Context) error {
 	}
 
 	return c.String(http.StatusOK, "Password has been changed")
+}
+
+// UserResetTriggerToken will generate and save a new Remote trigger token
+// for a given user.
+func UserResetTriggerToken(c echo.Context) error {
+	// Get user which we should reset the token for
+	u := c.Param("username")
+	if u == "" {
+		return c.String(http.StatusBadRequest, "Invalid username given")
+	}
+	ss, _ := services.StorageService()
+	user, err := ss.UserGet(u)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "User not found")
+	}
+	nsUUID := uuid.NewV4()
+	triggerToken := uuid.NewV5(nsUUID, "autoTriggerToken")
+	user.TriggerToken = triggerToken.String()
+	err = ss.UserPut(user, true)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Error while saving user")
+	}
+
+	return c.String(http.StatusOK, "Token reset")
 }
 
 // UserDelete deletes the given user
