@@ -22,6 +22,8 @@ github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 h1:BHsljHzVlRcyQhjr
 github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568/go.mod h1:xEzjJPgXI435gkrCt3MPfRiAkVrwSbHsst4LCFVfpJc=
 github.com/gaia-pipeline/flag v1.7.4-pre h1:/TAmHVYVQGE4Mw9xl0Qs0D5UruVDMF95thexyEFbTAY=
 github.com/gaia-pipeline/flag v1.7.4-pre/go.mod h1:rLpsWzqOEPa2K0Yl4aC34nmblLpIYjGqjP/srZbYvEk=
+github.com/gaia-pipeline/gosdk v0.0.0-20180909192508-cc9f89055777 h1:Gn3nmETr4IE44pIFLeTDNNBBRhNXXh53PqFV23CsVok=
+github.com/gaia-pipeline/gosdk v0.0.0-20180909192508-cc9f89055777/go.mod h1:e3TkvPdcdSdHZTgwiS89fs8lJrveYHsGLlz/Q0oXlN8=
 github.com/gaia-pipeline/protobuf v0.0.0-20180812091451-7be8a901b55a h1:/5XAmdAyGl4yL9BugdPdBLaXquif1zw6Hih6go8E7Xs=
 github.com/gaia-pipeline/protobuf v0.0.0-20180812091451-7be8a901b55a/go.mod h1:H0w7MofSuW53Nz7kesnBdVkvr437flf5B7D9Lcsb+lQ=
 github.com/gliderlabs/ssh v0.1.1 h1:j3L6gSLQalDETeEg/Jg0mGY0/y/N6zI2xX1978P0Uqw=
@@ -53,6 +55,7 @@ github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORN
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
+github.com/labstack/echo v3.3.5+incompatible h1:9PfxPUmasKzeJor9uQTaXLT6WUG/r+vSTmvXxvv3JO4=
 github.com/labstack/echo v3.3.5+incompatible/go.mod h1:0INS7j/VjnFxD4E2wkz67b8cVwCLbBmJyDaka6Cmk1s=
 github.com/labstack/gommon v0.0.0-20180613044413-d6898124de91 h1:6R2WAx0PYNGtK2ZED9xKlTGEha51GsCFZijom+NMGEk=
 github.com/labstack/gommon v0.0.0-20180613044413-d6898124de91/go.mod h1:/tj9csK2iPSBvn+3NLM9e52usepMtrd5ilFYA+wQNJ4=

@@ -10,7 +10,7 @@ import (
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"github.com/labstack/echo"
 	"github.com/robfig/cron"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 // PipelineGitLSRemote checks for available git remote branches.
@@ -314,7 +314,17 @@ func PipelineTrigger(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Invalid remote trigger token.")
 	}
 
-	return c.String(http.StatusOK, "Trigger successful for pipeline: "+pipelineIDStr)
+	schedulerService, _ := services.SchedulerService()
+	args := []gaia.Argument{}
+	c.Bind(&args)
+	pipelineRun, err := schedulerService.SchedulePipeline(foundPipeline, args)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	} else if pipelineRun != nil {
+		return c.String(http.StatusOK, "Trigger successful for pipeline: "+pipelineIDStr)
+	}
+
+	return c.String(http.StatusBadRequest, "Failed to trigger pipeline run.")
 }
 
 // PipelineTriggerAuth is a barrier before remote trigger which checks if
