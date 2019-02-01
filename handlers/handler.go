@@ -1,23 +1,17 @@
 package handlers
 
 import (
-	"crypto/rsa"
 	"errors"
-	"fmt"
 	"net/http"
-	"strings"
 
 	rice "github.com/GeertJohan/go.rice"
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/auth"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
 
 var (
-	// errNotAuthorized is thrown when user wants to access resource which is protected
-	errNotAuthorized = errors.New("no or invalid jwt token provided. You are not authorized")
-
 	// errPipelineNotFound is thrown when a pipeline was not found with the given id
 	errPipelineNotFound = errors.New("pipeline not found with the given id")
 
@@ -26,9 +20,6 @@ var (
 
 	// errPipelineRunNotFound is thrown when a pipeline run was not found with the given id
 	errPipelineRunNotFound = errors.New("pipeline run not found with the given id")
-
-	// errLogNotFound is thrown when a job log file was not found
-	errLogNotFound = errors.New("job log file not found")
 
 	// errPipelineDelete is thrown when a pipeline binary could not be deleted
 	errPipelineDelete = errors.New("pipeline could not be deleted. Perhaps you don't have the right permissions")
@@ -49,13 +40,19 @@ func InitHandlers(e *echo.Echo) error {
 	e.GET(p+"users", UserGetAll)
 	e.POST(p+"user/password", UserChangePassword)
 	e.DELETE(p+"user/:username", UserDelete)
+	e.GET(p+"user/:username/permissions", UserGetPermissions)
+	e.PUT(p+"user/:username/permissions", UserPutPermissions)
 	e.POST(p+"user", UserAdd)
+
+	perms := e.Group(p + "permission")
+	perms.GET("", PermissionGetAll)
 
 	// Pipelines
 	e.POST(p+"pipeline", CreatePipeline)
 	e.POST(p+"pipeline/gitlsremote", PipelineGitLSRemote)
-	e.GET(p+"pipeline/created", CreatePipelineGetAll)
 	e.GET(p+"pipeline/name", PipelineNameAvailable)
+	e.POST(p+"pipeline/githook", GitWebHook)
+	e.GET(p+"pipeline/created", CreatePipelineGetAll)
 	e.GET(p+"pipeline", PipelineGetAll)
 	e.GET(p+"pipeline/:pipelineid", PipelineGet)
 	e.PUT(p+"pipeline/:pipelineid", PipelineUpdate)
@@ -63,7 +60,6 @@ func InitHandlers(e *echo.Echo) error {
 	e.POST(p+"pipeline/:pipelineid/start", PipelineStart)
 	e.POST(p+"pipeline/:pipelineid/:pipelinetoken/trigger", PipelineTrigger)
 	e.GET(p+"pipeline/latest", PipelineGetAllWithLatestRun)
-	e.POST(p+"pipeline/githook", GitWebHook)
 	e.POST(p+"pipeline/periodicschedules", PipelineCheckPeriodicSchedules)
 
 	// PipelineRun
@@ -83,7 +79,9 @@ func InitHandlers(e *echo.Echo) error {
 	e.Use(middleware.Recover())
 	//e.Use(middleware.Logger())
 	e.Use(middleware.BodyLimit("32M"))
-	e.Use(authBarrier)
+	e.Use(AuthMiddleware(&AuthConfig{
+		RoleCategories: auth.DefaultUserRoles,
+	}))
 
 	// Extra options
 	e.HideBanner = true
@@ -107,59 +105,4 @@ func InitHandlers(e *echo.Echo) error {
 	}
 
 	return nil
-}
-
-// authBarrier is the middleware which prevents user exploits.
-// It makes sure that the request contains a valid jwt token.
-// TODO: Role based access
-func authBarrier(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		// Login, WebHook callback and static resources are open
-		// The webhook callback has it's own authentication method
-		if strings.Contains(c.Path(), "/login") ||
-			c.Path() == "/" ||
-			strings.Contains(c.Path(), "/assets/") ||
-			c.Path() == "/favicon.ico" ||
-			strings.Contains(c.Path(), "pipeline/githook") ||
-			strings.Contains(c.Path(), "/trigger") {
-			return next(c)
-		}
-
-		// Get JWT token
-		jwtRaw := c.Request().Header.Get("Authorization")
-		split := strings.Split(jwtRaw, " ")
-		if len(split) != 2 {
-			return c.String(http.StatusForbidden, errNotAuthorized.Error())
-		}
-		jwtString := split[1]
-
-		// Parse token
-		token, err := jwt.Parse(jwtString, func(token *jwt.Token) (interface{}, error) {
-			signingMethodError := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			switch token.Method.(type) {
-			case *jwt.SigningMethodHMAC:
-				if _, ok := gaia.Cfg.JWTKey.([]byte); !ok {
-					return nil, signingMethodError
-				}
-				return gaia.Cfg.JWTKey, nil
-			case *jwt.SigningMethodRSA:
-				if _, ok := gaia.Cfg.JWTKey.(*rsa.PrivateKey); !ok {
-					return nil, signingMethodError
-				}
-				return gaia.Cfg.JWTKey.(*rsa.PrivateKey).Public(), nil
-			default:
-				return nil, signingMethodError
-			}
-		})
-		if err != nil {
-			return c.String(http.StatusForbidden, err.Error())
-		}
-
-		// Validate token
-		if _, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			// All ok, continue
-			return next(c)
-		}
-		return c.String(http.StatusForbidden, errNotAuthorized.Error())
-	}
 }

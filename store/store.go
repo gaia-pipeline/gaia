@@ -14,6 +14,9 @@ var (
 	// Name of the bucket where we store user objects
 	userBucket = []byte("Users")
 
+	// Where we store all users permissions
+	userPermsBucket = []byte("UserPermissions")
+
 	// Name of the bucket where we store information about pipelines
 	pipelineBucket = []byte("Pipelines")
 
@@ -62,6 +65,9 @@ type GaiaStore interface {
 	UserGet(username string) (*gaia.User, error)
 	UserGetAll() ([]gaia.User, error)
 	UserDelete(u string) error
+	UserPermissionsPut(perms *gaia.UserPermission) error
+	UserPermissionsGet(username string) (*gaia.UserPermission, error)
+	UserPermissionsDelete(username string) error
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore
@@ -111,6 +117,11 @@ func (s *BoltStore) setupDatabase() error {
 	if err != nil {
 		return err
 	}
+	bucketName = userPermsBucket
+	err = s.db.Update(c)
+	if err != nil {
+		return err
+	}
 	bucketName = pipelineBucket
 	err = s.db.Update(c)
 	if err != nil {
@@ -146,10 +157,12 @@ func (s *BoltStore) setupDatabase() error {
 		}
 	}
 
-	u, err := s.UserGet(autoUsername)
+	err = s.CreatePermissionsIfNotExisting()
 	if err != nil {
 		return err
 	}
+
+	u, err := s.UserGet(autoUsername)
 
 	if u == nil {
 		nsUUID := uuid.NewV4()
