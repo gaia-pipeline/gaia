@@ -321,6 +321,22 @@ func PipelineTrigger(c echo.Context) error {
 // the user is `auto`.
 func PipelineTriggerAuth(c echo.Context) error {
 	// check headers
+	s, err := services.StorageService()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Error getting store service.")
+	}
+	auto, err := s.UserGet("auto")
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Auto user not found.")
+	}
+
+	username, password, ok := c.Request().BasicAuth()
+	if !ok {
+		return c.String(http.StatusInternalServerError, "Something went wrong during user authentication.")
+	}
+	if username != auto.Username || password != auto.TriggerToken {
+		return c.String(http.StatusBadRequest, "Auto username or password did not match.")
+	}
 	return nil
 }
 
