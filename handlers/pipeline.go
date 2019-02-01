@@ -315,9 +315,11 @@ func PipelineTrigger(c echo.Context) error {
 	}
 
 	schedulerService, _ := services.SchedulerService()
-	args := []gaia.Argument{}
-	c.Bind(&args)
-	pipelineRun, err := schedulerService.SchedulePipeline(&foundPipeline, args)
+	var arg struct {
+		Args []gaia.Argument `json:"args"`
+	}
+	c.Bind(&arg)
+	pipelineRun, err := schedulerService.SchedulePipeline(&foundPipeline, arg.Args)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	} else if pipelineRun != nil {
