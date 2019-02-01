@@ -299,14 +299,14 @@ func PipelineTrigger(c echo.Context) error {
 	}
 
 	// Look up pipeline for the given id
-	var foundPipeline *gaia.Pipeline
+	var foundPipeline gaia.Pipeline
 	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
 		if pipeline.ID == pipelineID {
-			foundPipeline = &pipeline
+			foundPipeline = pipeline
 		}
 	}
 
-	if foundPipeline == nil {
+	if foundPipeline.Name == "" {
 		return c.String(http.StatusBadRequest, "Pipeline not found.")
 	}
 
@@ -317,7 +317,7 @@ func PipelineTrigger(c echo.Context) error {
 	schedulerService, _ := services.SchedulerService()
 	args := []gaia.Argument{}
 	c.Bind(&args)
-	pipelineRun, err := schedulerService.SchedulePipeline(foundPipeline, args)
+	pipelineRun, err := schedulerService.SchedulePipeline(&foundPipeline, args)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	} else if pipelineRun != nil {
