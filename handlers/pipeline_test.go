@@ -367,7 +367,8 @@ func TestPipelineStart(t *testing.T) {
 			t.Fatalf("expected response code %v got %v", http.StatusCreated, rec.Code)
 		}
 
-		expectedBody := `{"uniqueid":"","id":999,"pipelineid":0,"startdate":"0001-01-01T00:00:00Z","finishdate":"0001-01-01T00:00:00Z","scheduledate":"0001-01-01T00:00:00Z"}`
+		expectedBody := `{"uniqueid":"","id":999,"pipelineid":0,"startdate":"0001-01-01T00:00:00Z","finishdate":"0001-01-01T00:00:00Z","scheduledate":"0001-01-01T00:00:00Z"}
+`
 		body, _ := ioutil.ReadAll(rec.Body)
 		if string(body) != expectedBody {
 			t.Fatalf("body did not equal expected content. expected: %s, got: %s", expectedBody, string(body))
