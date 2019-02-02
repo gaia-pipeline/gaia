@@ -69,7 +69,39 @@ func TestUserLoginHMACKey(t *testing.T) {
 	if token.Header["alg"] != alg {
 		t.Fatalf("expected token alg %v got %v", alg, token.Header["alg"])
 	}
+}
 
+func TestDeleteUserNotAllowedForAutoUser(t *testing.T) {
+	dataDir, _ := ioutil.TempDir("", "TestDeleteUserNotAllowedForAutoUser")
+
+	defer func() {
+		gaia.Cfg = nil
+	}()
+
+	gaia.Cfg = &gaia.Config{
+		Logger:    hclog.NewNullLogger(),
+		DataPath:  dataDir,
+		CAPath:    dataDir,
+		VaultPath: dataDir,
+	}
+
+	_, err := services.CertificateService()
+	if err != nil {
+		t.Fatalf("cannot initialize certificate service: %v", err.Error())
+	}
+
+	e := echo.New()
+	InitHandlers(e)
+	req := httptest.NewRequest(echo.DELETE, "/api/"+gaia.APIVersion+"/user/auto", bytes.NewBuffer([]byte("")))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	UserDelete(c)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
+	}
 }
 
 func TestUserLoginRSAKey(t *testing.T) {
