@@ -30,6 +30,9 @@
                       <td :title="props.row.lastlogin" v-tippy="{ arrow : true,  animation : 'shift-away'}">
                         <span>{{ convertTime(props.row.lastlogin) }}</span>
                       </td>
+                      <td :title="props.row.trigger_token" v-tippy="{ arrow : true,  animation : 'shift-away'}">
+                        <span>{{ props.row.trigger_token }}</span>
+                      </td>
                       <td>
                         <a v-on:click="editUserModal(props.row)"><i class="fa fa-edit"
                                                                     style="color: whitesmoke;"></i></a>
@@ -338,6 +341,10 @@
           {
             label: 'Last Login',
             field: 'lastlogin'
+          },
+          {
+            label: 'Trigger Token',
+            field: 'trigger_token'
           },
           {
             label: ''

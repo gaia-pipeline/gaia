@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	bolt "github.com/coreos/bbolt"
 	"github.com/gaia-pipeline/gaia"
@@ -174,6 +175,7 @@ func (s *BoltStore) setupDatabase() error {
 			Tokenstring:  "",
 			TriggerToken: triggerToken.String(),
 			Username:     autoUsername,
+			LastLogin:    time.Now(),
 		}
 		err = s.UserPut(&auto, true)
 		if err != nil {
