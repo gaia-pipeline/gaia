@@ -60,7 +60,7 @@ func InitHandlers(e *echo.Echo) error {
 	e.DELETE(p+"pipeline/:pipelineid", PipelineDelete)
 	e.POST(p+"pipeline/:pipelineid/start", PipelineStart)
 	e.POST(p+"pipeline/:pipelineid/:pipelinetoken/trigger", PipelineTrigger)
-	e.GET(p+"pipeline/:pipelineid/reset-token", PipelineResetToken)
+	e.GET(p+"pipeline/:pipelineid/reset-trigger-token", PipelineResetToken)
 	e.GET(p+"pipeline/latest", PipelineGetAllWithLatestRun)
 	e.POST(p+"pipeline/periodicschedules", PipelineCheckPeriodicSchedules)
 

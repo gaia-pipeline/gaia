@@ -152,12 +152,16 @@ func UserResetTriggerToken(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusBadRequest, "User not found")
 	}
+	if user.Username != "auto" {
+		return c.String(http.StatusBadRequest, "Ony auto user can have a token reset")
+	}
 	if user == nil {
 		return c.String(http.StatusBadRequest, "Error retrieving user")
 	}
 	nsUUID := uuid.NewV4()
 	triggerToken := uuid.NewV5(nsUUID, "autoTriggerToken")
 	user.TriggerToken = triggerToken.String()
+	user.Password = "GENERATERANDOMPASSWORD"
 	err = ss.UserPut(user, true)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error while saving user")
