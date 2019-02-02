@@ -59,7 +59,7 @@ func TestUserLoginHMACKey(t *testing.T) {
 	user := &gaia.User{}
 	err = json.Unmarshal(data, user)
 	if err != nil {
-		t.Fatalf("error unmarshaling responce %v", err.Error())
+		t.Fatalf("error unmarshaling response %v", err.Error())
 	}
 	token, _, err := new(jwt.Parser).ParseUnverified(user.Tokenstring, jwt.MapClaims{})
 	if err != nil {
@@ -112,7 +112,7 @@ func TestUserLoginRSAKey(t *testing.T) {
 	user := &gaia.User{}
 	err = json.Unmarshal(data, user)
 	if err != nil {
-		t.Fatalf("error unmarshaling responce %v", err.Error())
+		t.Fatalf("error unmarshaling response %v", err.Error())
 	}
 	token, _, err := new(jwt.Parser).ParseUnverified(user.Tokenstring, jwt.MapClaims{})
 	if err != nil {

@@ -5,7 +5,8 @@ import (
 	"github.com/gaia-pipeline/gaia/auth"
 )
 
-// Iterates the users and creates default permissions if they don't exist after upgrading.
+// CreatePermissionsIfNotExisting iterates any existing users and creates default permissions if they don't exist.
+// This is most probably when they have upgraded to the Gaia version where permissions was added.
 func (s *BoltStore) CreatePermissionsIfNotExisting() error {
 	users, _ := s.UserGetAll()
 	for _, user := range users {

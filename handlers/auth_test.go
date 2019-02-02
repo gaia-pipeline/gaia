@@ -24,14 +24,14 @@ var mockRoleAuth = &AuthConfig{
 			Roles: []*gaia.UserRole{
 				{
 					Name: "GetSingle",
-					ApiEndpoint: []*gaia.UserRoleEndpoint{
+					APIEndpoint: []*gaia.UserRoleEndpoint{
 						auth.NewUserRoleEndpoint("GET", "/catone/:id"),
 						auth.NewUserRoleEndpoint("GET", "/catone/latest"),
 					},
 				},
 				{
 					Name: "PostSingle",
-					ApiEndpoint: []*gaia.UserRoleEndpoint{
+					APIEndpoint: []*gaia.UserRoleEndpoint{
 						auth.NewUserRoleEndpoint("POST", "/catone"),
 					},
 				},
@@ -42,13 +42,13 @@ var mockRoleAuth = &AuthConfig{
 			Roles: []*gaia.UserRole{
 				{
 					Name: "GetSingle",
-					ApiEndpoint: []*gaia.UserRoleEndpoint{
+					APIEndpoint: []*gaia.UserRoleEndpoint{
 						auth.NewUserRoleEndpoint("GET", "/cattwo/:first/:second"),
 					},
 				},
 				{
 					Name: "PostSingle",
-					ApiEndpoint: []*gaia.UserRoleEndpoint{
+					APIEndpoint: []*gaia.UserRoleEndpoint{
 						auth.NewUserRoleEndpoint("POST", "/cattwo/:first/:second/start"),
 					},
 				},

@@ -27,7 +27,7 @@ var (
 func updatePipeline(p *gaia.Pipeline) error {
 	switch p.Type {
 	case gaia.PTypePython:
-		// Remove virtual environment if existend
+		// Remove virtual environment if exists
 		virtualEnvPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder, p.Name)
 		os.RemoveAll(virtualEnvPath)
 

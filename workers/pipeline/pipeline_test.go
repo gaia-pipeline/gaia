@@ -281,12 +281,12 @@ func TestRenameBinary(t *testing.T) {
 
 	err := RenameBinary(p, newName)
 	if err != nil {
-		t.Fatal("an error occured while renaming the binary: ", err)
+		t.Fatal("an error occurred while renaming the binary: ", err)
 	}
 
 	content, err := ioutil.ReadFile(dst)
 	if err != nil {
-		t.Fatal("an error occured while reading destination file: ", err)
+		t.Fatal("an error occurred while reading destination file: ", err)
 	}
 	if string(content) != "testcontent" {
 		t.Fatal("file content does not equal src content. was: ", string(content))
@@ -316,7 +316,7 @@ func TestDeleteBinary(t *testing.T) {
 
 	err := DeleteBinary(p)
 	if err != nil {
-		t.Fatal("an error occured while deleting the binary: ", err)
+		t.Fatal("an error occurred while deleting the binary: ", err)
 	}
 
 	_, err = os.Stat(src)

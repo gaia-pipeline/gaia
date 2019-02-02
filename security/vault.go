@@ -35,7 +35,7 @@ type VaultAPI interface {
 
 // VaultStorer defines a storage medium for the Vault.
 type VaultStorer interface {
-	// Init initializes the medium by creating the file, or bootstraping the
+	// Init initializes the medium by creating the file, or bootstrapping the
 	// db or simply setting up an in-memory mock storage device. The Init
 	// function of a storage medium should be idempotent. Meaning it should
 	// be callable multiple times without changing the underlying medium.
@@ -184,7 +184,7 @@ func (fvs *FileVaultStorer) Write(data []byte) error {
 // encrypt uses an aes cipher provided by the certificate file for encryption.
 // We don't store the password in the file. an error will be thrown in case the encryption
 // operation encounters a problem which will most likely be due to a mistyped password.
-// We will return this possibilitiy but we won't know for sure if that's the cause.
+// We will return this possibility but we won't know for sure if that's the cause.
 // The password is padded with 0x04 to Blocklenght. IV randomized to blocksize and length of the message.
 // In the end we encrypt the whole thing to Base64 for ease of saving an handling.
 func (v *Vault) encrypt(data []byte) (string, error) {
@@ -232,7 +232,7 @@ func (v *Vault) decrypt(data []byte) ([]byte, error) {
 	}
 
 	if (len(decodedMsg) % aes.BlockSize) != 0 {
-		return []byte{}, errors.New("blocksize must be multipe of decoded message length")
+		return []byte{}, errors.New("blocksize must be multiple of decoded message length")
 	}
 
 	iv := decodedMsg[:aes.BlockSize]
