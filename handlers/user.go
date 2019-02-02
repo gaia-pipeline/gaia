@@ -161,7 +161,6 @@ func UserResetTriggerToken(c echo.Context) error {
 	nsUUID := uuid.NewV4()
 	triggerToken := uuid.NewV5(nsUUID, "autoTriggerToken")
 	user.TriggerToken = triggerToken.String()
-	user.Password = "GENERATERANDOMPASSWORD"
 	err = ss.UserPut(user, true)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error while saving user")
