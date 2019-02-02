@@ -36,6 +36,8 @@
                       <td>
                         <a v-on:click="editUserModal(props.row)"><i class="fa fa-edit"
                                                                     style="color: whitesmoke;"></i></a>
+                        <a v-on:click="resetTriggerTokenModal(props.row)"><i class="fa fa-sliders"
+                                                                    style="color: whitesmoke;"></i></a>
                         <a v-on:click="deleteUserModal(props.row)" v-if="props.row.username !== session.username"><i
                           class="fa fa-trash" style="color: whitesmoke;"></i></a>
                       </td>
@@ -138,6 +140,30 @@
           <div class="modal-footer">
             <div style="float: left;">
               <button class="button is-primary" v-on:click="changePassword">Change Password</button>
+            </div>
+            <div style="float: right;">
+              <button class="button is-danger" v-on:click="close">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </modal>
+
+    <!-- reset trigger token modal -->
+    <modal :visible="showResetTriggerTokenModal" class="modal-z-index" @close="close">
+      <div class="box user-modal">
+        <div class="block user-modal-content">
+          <collapse accordion is-fullwidth>
+            <collapse-item title="Reset Trigger Token" selected>
+              <div class="user-modal-content">
+                <label class="label" style="text-align: left;">Reset Trigger Token for user {{ selectUser.display_name
+                  }}?</label>
+              </div>
+            </collapse-item>
+          </collapse>
+          <div class="modal-footer">
+            <div style="float: left;">
+              <button class="button is-primary" v-on:click="resetUserTriggerToken">Reset Token</button>
             </div>
             <div style="float: right;">
               <button class="button is-danger" v-on:click="close">Cancel</button>
@@ -372,6 +398,7 @@
         selectUser: {},
         selectPipeline: {},
         showEditUserModal: false,
+        showResetTriggerToken: false,
         showDeleteUserModal: false,
         showAddUserModal: false,
         showEditPipelineModal: false,
@@ -426,6 +453,11 @@
         this.showEditUserModal = true
       },
 
+      resetTriggerTokenModal (user) {
+        this.selectUser = user
+        this.showResetTriggerTokenModal = true
+      },
+
       deleteUserModal (user) {
         this.selectUser = user
         this.showDeleteUserModal = true
@@ -454,6 +486,7 @@
       close () {
         this.showEditUserModal = false
         this.showDeleteUserModal = false
+        this.showResetTriggerTokenModal = false
         this.showAddUserModal = false
         this.selectUser = {}
         this.showEditPipelineModal = false
@@ -481,6 +514,22 @@
             openNotification({
               title: 'Password changed!',
               message: 'Password has been successful changed.',
+              type: 'success'
+            })
+          })
+          .catch((error) => {
+            this.$onError(error)
+          })
+        this.close()
+      },
+
+      resetUserTriggerToken () {
+        this.$http
+          .get('/api/v1/user/' + this.selectUser.username + '/reset-trigger-token')
+          .then(response => {
+            openNotification({
+              title: 'Token changed!',
+              message: 'New trigger token has been generated!',
               type: 'success'
             })
           })

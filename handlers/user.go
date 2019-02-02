@@ -152,6 +152,9 @@ func UserResetTriggerToken(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusBadRequest, "User not found")
 	}
+	if user == nil {
+		return c.String(http.StatusBadRequest, "Error retrieving user")
+	}
 	nsUUID := uuid.NewV4()
 	triggerToken := uuid.NewV5(nsUUID, "autoTriggerToken")
 	user.TriggerToken = triggerToken.String()
