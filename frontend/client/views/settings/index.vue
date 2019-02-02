@@ -38,7 +38,7 @@
                                                                     style="color: whitesmoke;"></i></a>
                         <a v-on:click="resetTriggerTokenModal(props.row)" v-if="props.row.username === 'auto'">
                                                                 <i class="fa fa-sliders" style="color: whitesmoke;"></i></a>
-                        <a v-on:click="deleteUserModal(props.row)" v-if="props.row.username !== session.username"><i
+                        <a v-on:click="deleteUserModal(props.row)" v-if="props.row.username !== session.username && props.row.username !== 'auto'"><i
                           class="fa fa-trash" style="color: whitesmoke;"></i></a>
                       </td>
                     </template>

@@ -177,7 +177,9 @@ func UserDelete(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Invalid username given")
 	}
 	storeService, _ := services.StorageService()
-
+	if u == "auto" {
+		return c.String(http.StatusBadRequest, "Auto user cannot be deleted")
+	}
 	// Delete user
 	err := storeService.UserDelete(u)
 	if err != nil {
