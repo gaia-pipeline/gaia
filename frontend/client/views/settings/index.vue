@@ -46,9 +46,6 @@
             </div>
           </div>
         </tab-pane>
-        <tab-pane label="Manage Permissions" icon="fa fa-users">
-          <manage-permissions :users="userRows"/>
-        </tab-pane>
         <tab-pane label="Manage Pipelines" icon="fa fa-wrench">
           <div class="tile is-ancestor">
             <div class="tile is-vertical">
@@ -297,7 +294,6 @@
   import moment from 'moment'
   import Notification from 'vue-bulma-notification-fixed'
   import {mapGetters} from 'vuex'
-  import ManagePermissions from './permissions/manage-permissions'
   import {EventBus} from '../../app'
 
   const NotificationComponent = Vue.extend(Notification)
@@ -320,7 +316,6 @@
 
   export default {
     components: {
-      ManagePermissions,
       Tabs,
       TabPane,
       Modal,

@@ -126,6 +126,11 @@ func (s *BoltStore) setupDatabase() error {
 	if err != nil {
 		return err
 	}
+	bucketName = permissionGroupBucket
+	err = s.db.Update(c)
+	if err != nil {
+		return err
+	}
 	bucketName = pipelineBucket
 	err = s.db.Update(c)
 	if err != nil {

@@ -37,6 +37,14 @@ const state = {
         icon: 'fa-cogs'
       },
       component: lazyLoading('settings', true)
+    },
+    {
+      name: 'Permissions',
+      path: '/permissions',
+      meta: {
+        icon: 'fa-users'
+      },
+      component: lazyLoading('permissions', true)
     }
   ]
 }
