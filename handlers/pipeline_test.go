@@ -461,6 +461,7 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		user.TriggerToken = "triggerToken"
 		m := mockUserStoreService{user: &user, err: nil}
 		services.MockStorageService(&m)
+		defer func() { services.MockStorageService(nil) }()
 
 		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/1/triggerToken/trigger", nil)
 		req.Header.Set("Content-Type", "application/json")
