@@ -148,6 +148,7 @@ func TestUserLoginPerms(t *testing.T) {
 	})
 
 	defer func() {
+		services.MockStorageService(nil)
 		gaia.Cfg = nil
 	}()
 

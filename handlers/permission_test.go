@@ -40,6 +40,7 @@ func TestUserPutPermissions(t *testing.T) {
 	}
 
 	services.MockStorageService(ms)
+	defer services.MockStorageService(nil)
 
 	bts, _ := json.Marshal(&gaia.UserPermission{
 		Username: "test-user",
@@ -70,6 +71,7 @@ func TestUserPutPermissionsError(t *testing.T) {
 	}
 
 	services.MockStorageService(ms)
+	defer services.MockStorageService(nil)
 
 	bts, _ := json.Marshal(&gaia.UserPermission{
 		Username: "test-user",
@@ -104,6 +106,7 @@ func TestUserGetPermissions(t *testing.T) {
 	}
 
 	services.MockStorageService(ms)
+	defer services.MockStorageService(nil)
 
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -127,6 +130,7 @@ func TestUserGetPermissionsErrors(t *testing.T) {
 	}
 
 	services.MockStorageService(ms)
+	defer services.MockStorageService(nil)
 
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
