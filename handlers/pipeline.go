@@ -285,7 +285,7 @@ func PipelineDelete(c echo.Context) error {
 func PipelineTrigger(c echo.Context) error {
 	err := PipelineTriggerAuth(c)
 	if err != nil {
-		return err
+		return c.String(http.StatusForbidden, "User rejected")
 	}
 
 	// Check here against the pipeline's token.
@@ -311,7 +311,7 @@ func PipelineTrigger(c echo.Context) error {
 	}
 
 	if foundPipeline.TriggerToken != pipelineToken {
-		return c.String(http.StatusBadRequest, "Invalid remote trigger token.")
+		return c.String(http.StatusForbidden, "Invalid remote trigger token.")
 	}
 
 	schedulerService, _ := services.SchedulerService()

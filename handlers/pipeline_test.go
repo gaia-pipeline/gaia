@@ -13,6 +13,7 @@ import (
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
+	gStore "github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	hclog "github.com/hashicorp/go-hclog"
@@ -412,6 +413,72 @@ func TestPipelineStart(t *testing.T) {
 
 		if rec.Code != http.StatusNotFound {
 			t.Fatalf("expected response code %v got %v", http.StatusNotFound, rec.Code)
+		}
+	})
+}
+
+type mockUserStoreService struct {
+	gStore.GaiaStore
+	user *gaia.User
+	err  error
+}
+
+func (m mockUserStoreService) UserGet(username string) (*gaia.User, error) {
+	return m.user, m.err
+}
+
+func TestPipelineRemoteTrigger(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestPipelineRemoteTrigger")
+	gaia.Cfg = &gaia.Config{
+		Logger:       hclog.NewNullLogger(),
+		HomePath:     tmp,
+		DataPath:     tmp,
+		PipelinePath: tmp,
+	}
+
+	// Initialize global active pipelines
+	ap := pipeline.NewActivePipelines()
+	pipeline.GlobalActivePipelines = ap
+
+	// Initialize echo
+	e := echo.New()
+	InitHandlers(e)
+
+	p := gaia.Pipeline{
+		ID:           1,
+		Name:         "Pipeline A",
+		Type:         gaia.PTypeGolang,
+		Created:      time.Now(),
+		TriggerToken: "triggerToken",
+	}
+
+	// Add to active pipelines
+	ap.Append(p)
+
+	t.Run("can trigger a pipeline with auto user", func(t *testing.T) {
+		user := gaia.User{}
+		user.Username = "auto"
+		user.TriggerToken = "triggerToken"
+		m := mockUserStoreService{user: &user, err: nil}
+		services.MockStorageService(&m)
+
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/1/triggerToken/trigger", nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.SetBasicAuth("auto", "triggerToken")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("pipelineid", "pipelinetoken")
+		c.SetParamValues("1", "triggerToken")
+		ms := new(mockScheduleService)
+		pRun := new(gaia.PipelineRun)
+		pRun.ID = 999
+		ms.pipelineRun = pRun
+		services.MockSchedulerService(ms)
+
+		PipelineTrigger(c)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
 		}
 	})
 }
