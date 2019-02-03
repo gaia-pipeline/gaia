@@ -380,7 +380,7 @@ func PipelineTriggerAuth(c echo.Context) error {
 
 	username, password, ok := c.Request().BasicAuth()
 	if !ok {
-		return c.String(http.StatusInternalServerError, "Something went wrong during user authentication.")
+		return c.String(http.StatusForbidden, "No authentication provided.")
 	}
 	if username != auto.Username || password != auto.TriggerToken {
 		return c.String(http.StatusBadRequest, "Auto username or password did not match.")

@@ -461,7 +461,10 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		user.TriggerToken = "triggerToken"
 		m := mockUserStoreService{user: &user, err: nil}
 		services.MockStorageService(&m)
-		defer func() { services.MockStorageService(nil) }()
+		defer func() {
+			services.MockStorageService(nil)
+			services.MockSchedulerService(nil)
+		}()
 
 		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/1/triggerToken/trigger", nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -480,6 +483,95 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
+		}
+	})
+	t.Run("can't trigger a pipeline with invalid auto user", func(t *testing.T) {
+		user := gaia.User{}
+		user.Username = "auto"
+		user.TriggerToken = "triggerToken"
+		m := mockUserStoreService{user: &user, err: nil}
+		services.MockStorageService(&m)
+		defer func() {
+			services.MockStorageService(nil)
+			services.MockSchedulerService(nil)
+		}()
+
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/1/triggerToken/trigger", nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.SetBasicAuth("auto", "invalid")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("pipelineid", "pipelinetoken")
+		c.SetParamValues("1", "triggerToken")
+		ms := new(mockScheduleService)
+		pRun := new(gaia.PipelineRun)
+		pRun.ID = 999
+		ms.pipelineRun = pRun
+		services.MockSchedulerService(ms)
+
+		PipelineTrigger(c)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
+		}
+	})
+	t.Run("can't trigger a pipeline with invalid token", func(t *testing.T) {
+		user := gaia.User{}
+		user.Username = "auto"
+		user.TriggerToken = "triggerToken"
+		m := mockUserStoreService{user: &user, err: nil}
+		services.MockStorageService(&m)
+		defer func() {
+			services.MockStorageService(nil)
+			services.MockSchedulerService(nil)
+		}()
+
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/1/invalid/trigger", nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.SetBasicAuth("auto", "triggerToken")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("pipelineid", "pipelinetoken")
+		c.SetParamValues("1", "invalid")
+		ms := new(mockScheduleService)
+		pRun := new(gaia.PipelineRun)
+		pRun.ID = 999
+		ms.pipelineRun = pRun
+		services.MockSchedulerService(ms)
+
+		PipelineTrigger(c)
+
+		if rec.Code != http.StatusForbidden {
+			t.Fatalf("expected response code %v got %v", http.StatusForbidden, rec.Code)
+		}
+	})
+	t.Run("can't trigger a pipeline without authentication information", func(t *testing.T) {
+		user := gaia.User{}
+		user.Username = "auto"
+		user.TriggerToken = "triggerToken"
+		m := mockUserStoreService{user: &user, err: nil}
+		services.MockStorageService(&m)
+		defer func() {
+			services.MockStorageService(nil)
+			services.MockSchedulerService(nil)
+		}()
+
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/1/invalid/trigger", nil)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("pipelineid", "pipelinetoken")
+		c.SetParamValues("1", "invalid")
+		ms := new(mockScheduleService)
+		pRun := new(gaia.PipelineRun)
+		pRun.ID = 999
+		ms.pipelineRun = pRun
+		services.MockSchedulerService(ms)
+
+		PipelineTrigger(c)
+
+		if rec.Code != http.StatusForbidden {
+			t.Fatalf("expected response code %v got %v", http.StatusForbidden, rec.Code)
 		}
 	})
 }
