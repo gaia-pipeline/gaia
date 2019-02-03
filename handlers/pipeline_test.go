@@ -576,6 +576,73 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 	})
 }
 
+type mockPipelineResetStorageService struct {
+	gStore.GaiaStore
+	newToken string
+}
+
+func (m mockPipelineResetStorageService) PipelinePut(pipeline *gaia.Pipeline) error {
+	m.newToken = pipeline.TriggerToken
+	return nil
+}
+
+func TestPipelineResetToken(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestPipelineResetToken")
+	gaia.Cfg = &gaia.Config{
+		Logger:       hclog.NewNullLogger(),
+		HomePath:     tmp,
+		DataPath:     tmp,
+		PipelinePath: tmp,
+	}
+
+	// Initialize global active pipelines
+	ap := pipeline.NewActivePipelines()
+	pipeline.GlobalActivePipelines = ap
+
+	// Initialize echo
+	e := echo.New()
+	InitHandlers(e)
+
+	p := gaia.Pipeline{
+		ID:           1,
+		Name:         "Pipeline A",
+		Type:         gaia.PTypeGolang,
+		Created:      time.Now(),
+		TriggerToken: "triggerToken",
+	}
+
+	// Add to active pipelines
+	ap.Append(p)
+
+	req := httptest.NewRequest(echo.GET, "/api/"+gaia.APIVersion+"/pipeline/1/reset-trigger-token", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	c.SetParamNames("pipelineid")
+	c.SetParamValues("1")
+	ms := new(mockScheduleService)
+	pRun := new(gaia.PipelineRun)
+	pRun.ID = 999
+	ms.pipelineRun = pRun
+	services.MockSchedulerService(ms)
+
+	m := mockPipelineResetStorageService{}
+	services.MockStorageService(&m)
+
+	defer func() {
+		services.MockStorageService(nil)
+		services.MockSchedulerService(nil)
+	}()
+
+	PipelineResetToken(c)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
+	}
+	if m.newToken == p.TriggerToken {
+		t.Fatal("expected token to be reset. was not reset.")
+	}
+}
+
 func TestPipelineCheckPeriodicSchedules(t *testing.T) {
 	tmp, _ := ioutil.TempDir("", "TestPipelineCheckPeriodicSchedules")
 	gaia.Cfg = &gaia.Config{
