@@ -71,7 +71,7 @@ func TestAddAndGet(t *testing.T) {
 		t.Fatal(err)
 	}
 	v.Add("key", []byte("value"))
-	val, err := v.Get("key")
+	val, _ := v.Get("key")
 	if bytes.Compare(val, []byte("value")) != 0 {
 		t.Fatal("value didn't match expected of 'value'. was: ", string(val))
 	}
@@ -106,7 +106,7 @@ func TestCloseLoadSecrets(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	val, err := v.Get("key1")
+	val, _ := v.Get("key1")
 	if bytes.Compare(val, []byte("value1")) != 0 {
 		t.Fatal("could not properly retrieve value for key1. was:", string(val))
 	}
@@ -228,7 +228,7 @@ func TestRemovingFromTheVault(t *testing.T) {
 	v.LoadSecrets()
 	_, err = v.Get("key1")
 	if err == nil {
-		t.Fatal("should have failed to retrieve non-existant key")
+		t.Fatal("should have failed to retrieve non-existent key")
 	}
 	expected := "key 'key1' not found in vault"
 	if err.Error() != expected {

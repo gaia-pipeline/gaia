@@ -103,7 +103,7 @@ func Start() (err error) {
 	// Find path for gaia home folder if not given by parameter
 	if gaia.Cfg.HomePath == "" {
 		// Find executeable path
-		execPath, err := findExecuteablePath()
+		execPath, err := findExecutablePath()
 		if err != nil {
 			gaia.Cfg.Logger.Error("cannot find executeable path", "error", err.Error())
 			return err
@@ -188,9 +188,9 @@ func Start() (err error) {
 	return
 }
 
-// findExecuteablePath returns the absolute path for the current
+// findExecutablePath returns the absolute path for the current
 // process.
-func findExecuteablePath() (string, error) {
+func findExecutablePath() (string, error) {
 	ex, err := os.Executable()
 	if err != nil {
 		return "", err

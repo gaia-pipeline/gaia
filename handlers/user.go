@@ -192,6 +192,7 @@ func UserAdd(c echo.Context) error {
 	return c.String(http.StatusCreated, "User has been added")
 }
 
+// UserGetPermissions returns the permissions for a user.
 func UserGetPermissions(c echo.Context) error {
 	u := c.Param("username")
 	storeService, _ := services.StorageService()
@@ -202,6 +203,7 @@ func UserGetPermissions(c echo.Context) error {
 	return c.JSON(http.StatusOK, perms)
 }
 
+// UserPutPermissions adds or updates permissions for a user.
 func UserPutPermissions(c echo.Context) error {
 	var perms *gaia.UserPermission
 	if err := c.Bind(&perms); err != nil {

@@ -205,7 +205,7 @@ func (p *Plugin) Execute(j *gaia.Job) error {
 		timeString := time.Now().Format(timeFormat)
 		p.writer.WriteString(fmt.Sprintf("%s Job '%s' threw an error: %s\n", timeString, j.Title, resultObj.Message))
 	} else if err != nil {
-		// An error occured during the send or somewhere else.
+		// An error occurred during the send or somewhere else.
 		// The job itself usually does not return an error here.
 		// We mark the job as failed.
 		j.Status = gaia.JobFailed

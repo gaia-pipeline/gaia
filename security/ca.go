@@ -190,9 +190,16 @@ func (c *CA) CreateSignedCert() (string, string, error) {
 
 	// Sign the certificate
 	certSigned, err := x509.CreateCertificate(rand.Reader, cert, ca, pub, caPlain.PrivateKey)
+	if err != nil {
+		return "", "", err
+	}
 
 	// Public key
 	certOut, err := ioutil.TempFile("", "crt")
+	if err != nil {
+		return "", "", err
+	}
+
 	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certSigned})
 	certOut.Close()
 
