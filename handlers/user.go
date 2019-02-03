@@ -7,7 +7,7 @@ import (
 
 	"github.com/gaia-pipeline/gaia/auth"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/labstack/echo"
@@ -40,9 +40,17 @@ func UserLogin(c echo.Context) error {
 		return c.String(http.StatusForbidden, "invalid username and/or password")
 	}
 
+	// Get the users permissions
 	perms, err := storeService.UserPermissionsGet(u.Username)
 	if err != nil {
 		return err
+	}
+	// Iterate over any groups the user may be part of. Merge the roles from the group into the users roles.
+	for _, groupName := range perms.Groups {
+		group, _ := storeService.UserPermissionGroupGet(groupName)
+		for _, role := range group.Roles {
+			perms.Roles = appendIfUnique(perms.Roles, role)
+		}
 	}
 
 	// Setup custom claims
@@ -79,6 +87,15 @@ func UserLogin(c echo.Context) error {
 
 	// Return JWT token and display name
 	return c.JSON(http.StatusOK, user)
+}
+
+func appendIfUnique(existing []string, new string) []string {
+	for _, e := range existing {
+		if e == new {
+			return existing
+		}
+	}
+	return append(existing, new)
 }
 
 // UserGetAll returns all users stored in store.
@@ -190,29 +207,4 @@ func UserAdd(c echo.Context) error {
 	}
 
 	return c.String(http.StatusCreated, "User has been added")
-}
-
-// UserGetPermissions returns the permissions for a user.
-func UserGetPermissions(c echo.Context) error {
-	u := c.Param("username")
-	storeService, _ := services.StorageService()
-	perms, err := storeService.UserPermissionsGet(u)
-	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-	return c.JSON(http.StatusOK, perms)
-}
-
-// UserPutPermissions adds or updates permissions for a user.
-func UserPutPermissions(c echo.Context) error {
-	var perms *gaia.UserPermission
-	if err := c.Bind(&perms); err != nil {
-		return c.String(http.StatusBadRequest, "Invalid parameters given for request")
-	}
-	storeService, _ := services.StorageService()
-	err := storeService.UserPermissionsPut(perms)
-	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-	return c.String(http.StatusOK, "Permissions have been updated")
 }

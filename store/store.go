@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	bolt "github.com/coreos/bbolt"
+	"github.com/coreos/bbolt"
 	"github.com/gaia-pipeline/gaia"
 )
 
@@ -15,6 +15,9 @@ var (
 
 	// Where we store all users permissions
 	userPermsBucket = []byte("UserPermissions")
+
+	// Where we store all users permissions
+	permissionGroupBucket = []byte("UserPermissionGroups")
 
 	// Name of the bucket where we store information about pipelines
 	pipelineBucket = []byte("Pipelines")
@@ -65,6 +68,10 @@ type GaiaStore interface {
 	UserPermissionsPut(perms *gaia.UserPermission) error
 	UserPermissionsGet(username string) (*gaia.UserPermission, error)
 	UserPermissionsDelete(username string) error
+	UserPermissionGroupPut(group *gaia.UserPermissionGroup) error
+	UserPermissionGroupGet(name string) (*gaia.UserPermissionGroup, error)
+	UserPermissionGroupGetAll() ([]*gaia.UserPermissionGroup, error)
+	UserPermissionGroupDelete(name string) error
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore

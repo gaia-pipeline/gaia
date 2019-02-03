@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	rice "github.com/GeertJohan/go.rice"
+	"github.com/GeertJohan/go.rice"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/auth"
 	"github.com/labstack/echo"
@@ -46,6 +46,11 @@ func InitHandlers(e *echo.Echo) error {
 
 	perms := e.Group(p + "permission")
 	perms.GET("", PermissionGetAll)
+	perms.GET("/group", UserPermissionGroupGetAll)
+	perms.POST("/group", UserPermissionGroupAdd)
+	perms.PUT("/group", UserPermissionGroupUpdate)
+	perms.GET("/group/:name", UserPermissionGroupGet)
+	perms.DELETE("/group/:name", UserPermissionGroupDelete)
 
 	// Pipelines
 	e.POST(p+"pipeline", CreatePipeline)

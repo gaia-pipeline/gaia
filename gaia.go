@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-hclog"
 	"github.com/robfig/cron"
 )
 
@@ -113,6 +113,13 @@ type User struct {
 	Tokenstring string    `json:"tokenstring,omitempty"`
 	JwtExpiry   int64     `json:"jwtexpiry,omitempty"`
 	LastLogin   time.Time `json:"lastlogin,omitempty"`
+}
+
+// UserPermissionGroup represents a single permission group.
+type UserPermissionGroup struct {
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Roles       []string `json:"roles"`
 }
 
 // UserPermission is stored in its own data structure away from the core user. It represents all permission data
