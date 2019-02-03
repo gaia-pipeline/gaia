@@ -7,7 +7,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-// Simply retrieves a list of all user role categories
+// PermissionGetAll simply returns a list of all the roles available.
 func PermissionGetAll(c echo.Context) error {
 	return c.JSON(http.StatusOK, auth.DefaultUserRoles)
 }

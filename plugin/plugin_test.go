@@ -133,9 +133,9 @@ func TestGetJobs(t *testing.T) {
 
 func TestRebuildDepTree(t *testing.T) {
 	l := []gaia.Job{
-		gaia.Job{ID: 12345},
-		gaia.Job{ID: 1234},
-		gaia.Job{ID: 123},
+		{ID: 12345},
+		{ID: 1234},
+		{ID: 123},
 	}
 	dep := []uint32{1234, 123}
 	depTree := rebuildDepTree(dep, l)

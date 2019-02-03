@@ -18,7 +18,8 @@ var (
 	errNotAuthorized = errors.New("no or invalid jwt token provided. You are not authorized")
 )
 
-// Authentication middleware used for each request. Includes functionality that validates tokens and user permissions.
+// AuthMiddleware is middleware used for each request. Includes functionality that validates the JWT tokens and user
+// permissions.
 func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -57,8 +58,8 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 	}
 }
 
-// Simple auth config struct to be passed into the AuthMiddleware. Currently allow the ability to specify the
-// permission roles applied for each echo request.
+// AuthConfig is a simple config struct to be passed into AuthMiddleware. Currently allows the ability to specify
+// the permission roles required for each echo endpoint.
 type AuthConfig struct {
 	RoleCategories []*gaia.UserRoleCategory
 }
@@ -75,14 +76,14 @@ func (ra *AuthConfig) checkRole(userRoles interface{}, method, path string) erro
 			return nil
 		}
 	}
-	return errors.New(fmt.Sprintf("Required permission role %s", perm))
+	return fmt.Errorf("Required permission role %s", perm)
 }
 
 // Iterate over each category to find a permission (if existing) for this API endpoint.
 func (ra *AuthConfig) getRequiredRole(method, path string) string {
 	for _, category := range ra.RoleCategories {
 		for _, role := range category.Roles {
-			for _, endpoint := range role.ApiEndpoint {
+			for _, endpoint := range role.APIEndpoint {
 				// If the http method & path match then return the role required for this endpoint
 				if method == endpoint.Method && path == endpoint.Path {
 					return auth.FullUserRoleName(category, role)

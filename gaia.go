@@ -116,7 +116,7 @@ type User struct {
 	TriggerToken string    `json:"trigger_token,omitempty"`
 }
 
-// User Permission is stored in its own data structure away from the core user. It represents all permission data
+// UserPermission is stored in its own data structure away from the core user. It represents all permission data
 // for a single user.
 type UserPermission struct {
 	Username string   `json:"username"`
@@ -135,7 +135,7 @@ type UserRoleCategory struct {
 type UserRole struct {
 	Name        string              `json:"name"`
 	Description string              `json:"description"`
-	ApiEndpoint []*UserRoleEndpoint `json:"api_endpoints"`
+	APIEndpoint []*UserRoleEndpoint `json:"api_endpoints"`
 }
 
 // UserRoleEndpoint represents the path and method of the API endpoint to be secured.
