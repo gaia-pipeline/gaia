@@ -147,13 +147,13 @@ func UserResetTriggerToken(c echo.Context) error {
 	if u == "" {
 		return c.String(http.StatusBadRequest, "Invalid username given")
 	}
+	if u != "auto" {
+		return c.String(http.StatusBadRequest, "Only auto user can have a token reset")
+	}
 	ss, _ := services.StorageService()
 	user, err := ss.UserGet(u)
 	if err != nil {
 		return c.String(http.StatusBadRequest, "User not found")
-	}
-	if user.Username != "auto" {
-		return c.String(http.StatusBadRequest, "Ony auto user can have a token reset")
 	}
 	if user == nil {
 		return c.String(http.StatusBadRequest, "Error retrieving user")

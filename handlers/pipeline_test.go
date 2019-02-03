@@ -578,11 +578,12 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 
 type mockPipelineResetStorageService struct {
 	gStore.GaiaStore
-	newToken string
 }
 
+var pipelineNewToken string
+
 func (m mockPipelineResetStorageService) PipelinePut(pipeline *gaia.Pipeline) error {
-	m.newToken = pipeline.TriggerToken
+	pipelineNewToken = pipeline.TriggerToken
 	return nil
 }
 
@@ -638,7 +639,8 @@ func TestPipelineResetToken(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
 	}
-	if m.newToken == p.TriggerToken {
+
+	if pipelineNewToken == "triggerToken" {
 		t.Fatal("expected token to be reset. was not reset.")
 	}
 }
