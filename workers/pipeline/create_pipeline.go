@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"strings"
@@ -124,7 +125,11 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	}
 
 	nsUUID := uuid.NewV4()
-	p.Pipeline.TriggerToken = uuid.NewV5(nsUUID, "pipelineTriggerToken").String()
+	token := make([]byte, 32)
+	rand.Read(token)
+	namespace := string(token)
+	p.Pipeline.TriggerToken = uuid.NewV5(nsUUID, namespace).String()
+
 	// Save the generated pipeline data
 	err = bP.SavePipeline(&p.Pipeline)
 	if err != nil {

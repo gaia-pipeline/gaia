@@ -1,6 +1,7 @@
 package store
 
 import (
+	"crypto/rand"
 	"encoding/binary"
 	"fmt"
 	"path/filepath"
@@ -167,7 +168,10 @@ func (s *BoltStore) setupDatabase() error {
 
 	if u == nil {
 		nsUUID := uuid.NewV4()
-		triggerToken := uuid.NewV5(nsUUID, "autoTriggerToken")
+		token := make([]byte, 32)
+		rand.Read(token)
+		namespace := string(token)
+		triggerToken := uuid.NewV5(nsUUID, namespace)
 		auto := gaia.User{
 			DisplayName:  "Auto User",
 			JwtExpiry:    0,

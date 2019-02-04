@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"crypto/rand"
 	"crypto/rsa"
 	"net/http"
 	"time"
@@ -158,8 +159,12 @@ func UserResetTriggerToken(c echo.Context) error {
 	if user == nil {
 		return c.String(http.StatusBadRequest, "Error retrieving user")
 	}
+
 	nsUUID := uuid.NewV4()
-	triggerToken := uuid.NewV5(nsUUID, "autoTriggerToken")
+	token := make([]byte, 32)
+	rand.Read(token)
+	namespace := string(token)
+	triggerToken := uuid.NewV5(nsUUID, namespace)
 	user.TriggerToken = triggerToken.String()
 	err = ss.UserPut(user, true)
 	if err != nil {
