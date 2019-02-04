@@ -615,7 +615,7 @@ func TestPipelineResetToken(t *testing.T) {
 	// Add to active pipelines
 	ap.Append(p)
 
-	req := httptest.NewRequest(echo.GET, "/api/"+gaia.APIVersion+"/pipeline/1/reset-trigger-token", nil)
+	req := httptest.NewRequest(echo.PUT, "/api/"+gaia.APIVersion+"/pipeline/1/reset-trigger-token", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 	c.SetParamNames("pipelineid")

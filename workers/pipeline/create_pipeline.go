@@ -62,6 +62,16 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 		return
 	}
 
+	nsUUID := uuid.NewV4()
+	p.Pipeline.TriggerToken = uuid.NewV5(nsUUID, "pipelineTriggerToken").String()
+	err = bP.SavePipeline(&p.Pipeline)
+	if err != nil {
+		p.StatusType = gaia.CreatePipelineFailed
+		p.Output = fmt.Sprintf("failed to save the created pipeline: %s", err.Error())
+		storeService.CreatePipelinePut(p)
+		return
+	}
+
 	// Clone git repo
 	err = gitCloneRepo(&p.Pipeline.Repo)
 	if err != nil {
@@ -137,16 +147,6 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot copy compiled binary: %s", err.Error())
-		storeService.CreatePipelinePut(p)
-		return
-	}
-
-	nsUUID := uuid.NewV4()
-	p.Pipeline.TriggerToken = uuid.NewV5(nsUUID, "pipelineTriggerToken").String()
-	err = bP.SavePipeline(&p.Pipeline)
-	if err != nil {
-		p.StatusType = gaia.CreatePipelineFailed
-		p.Output = fmt.Sprintf("failed to save the created pipeline: %s", err.Error())
 		storeService.CreatePipelinePut(p)
 		return
 	}

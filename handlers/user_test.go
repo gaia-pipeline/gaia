@@ -145,7 +145,7 @@ func TestResetAutoUserTriggerToken(t *testing.T) {
 		defer services.MockStorageService(nil)
 		e := echo.New()
 		InitHandlers(e)
-		req := httptest.NewRequest(echo.GET, "/api/"+gaia.APIVersion+"/user/auto/reset-trigger-token", nil)
+		req := httptest.NewRequest(echo.PUT, "/api/"+gaia.APIVersion+"/user/auto/reset-trigger-token", nil)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -165,7 +165,7 @@ func TestResetAutoUserTriggerToken(t *testing.T) {
 	t.Run("only auto user can reset trigger token", func(t *testing.T) {
 		e := echo.New()
 		InitHandlers(e)
-		req := httptest.NewRequest(echo.GET, "/api/"+gaia.APIVersion+"/user/auto2/reset-trigger-token", nil)
+		req := httptest.NewRequest(echo.PUT, "/api/"+gaia.APIVersion+"/user/auto2/reset-trigger-token", nil)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)

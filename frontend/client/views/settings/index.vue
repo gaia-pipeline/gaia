@@ -299,11 +299,6 @@
             <collapse-item title="Reset Pipeline Trigger Token" selected>
               <div class="pipeline-modal-content">
                 <p class="control has-icons-left" style="padding-bottom: 5px;">
-                  <!-- <input class="input is-medium input-bar" v-focus v-model="selectPipeline.name"
-                         placeholder="Pipeline Name">
-                  <span class="icon is-small is-left">
-                    <i class="fa fa-book"></i>
-                  </span> -->
                   <label class="label" style="text-align: left;">Reset Token for pipeline {{ selectPipeline.name
                     }}?</label>
                 </p>
@@ -565,7 +560,7 @@
 
       resetUserTriggerToken () {
         this.$http
-          .get('/api/v1/user/' + this.selectUser.username + '/reset-trigger-token')
+          .put('/api/v1/user/' + this.selectUser.username + '/reset-trigger-token')
           .then(response => {
             openNotification({
               title: 'Token changed!',
@@ -680,7 +675,7 @@
 
       resetPipelineTriggerToken () {
         this.$http
-          .get('/api/v1/pipeline/' + this.selectPipeline.id + '/reset-trigger-token')
+          .put('/api/v1/pipeline/' + this.selectPipeline.id + '/reset-trigger-token')
           .then(response => {
             openNotification({
               title: 'Token changed!',
