@@ -45,13 +45,17 @@
               <button class="button is-primary" v-on:click="addNew">Add</button>
             </div>
           </div>
-          <div v-if="!isNew && roles">
+          <div v-if="!isNew && name !== ''">
             <h4 class="title">User Groups: {{name}}</h4>
             <h4 class="subtitle">{{description ? description : "No description"}}</h4>
             <permission-tables :value="roles" @input="setRoles" :permission-options="permissionOptions"></permission-tables>
             <div style="float: left;">
               <button class="button is-primary" v-on:click="save">Save</button>
             </div>
+          </div>
+          <div v-if="!isNew && name === ''">
+            <h4 class="title">User Groups</h4>
+            <p>Please select an existing group or create a new one.</p>
           </div>
         </article>
       </div>
