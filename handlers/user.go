@@ -1,10 +1,11 @@
 package handlers
 
 import (
-	"crypto/rand"
 	"crypto/rsa"
 	"net/http"
 	"time"
+
+	"github.com/gaia-pipeline/gaia/security"
 
 	"github.com/gaia-pipeline/gaia/auth"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/labstack/echo"
-	uuid "github.com/satori/go.uuid"
 )
 
 // jwtExpiry defines how long the produced jwt tokens
@@ -160,12 +160,7 @@ func UserResetTriggerToken(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Error retrieving user")
 	}
 
-	nsUUID := uuid.NewV4()
-	token := make([]byte, 32)
-	rand.Read(token)
-	namespace := string(token)
-	triggerToken := uuid.NewV5(nsUUID, namespace)
-	user.TriggerToken = triggerToken.String()
+	user.TriggerToken = security.GenerateRandomUUIDV5()
 	err = ss.UserPut(user, true)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error while saving user")

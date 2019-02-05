@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/security"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
@@ -351,9 +353,7 @@ func PipelineResetToken(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Pipeline not found.")
 	}
 
-	nsUUID := uuid.NewV4()
-	triggerToken := uuid.NewV5(nsUUID, "pipelineTriggerToken")
-	foundPipeline.TriggerToken = triggerToken.String()
+	foundPipeline.TriggerToken = security.GenerateRandomUUIDV5()
 	s, err := services.StorageService()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Error getting store service.")

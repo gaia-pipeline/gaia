@@ -1,7 +1,6 @@
 package store
 
 import (
-	"crypto/rand"
 	"encoding/binary"
 	"fmt"
 	"path/filepath"
@@ -9,7 +8,7 @@ import (
 
 	bolt "github.com/coreos/bbolt"
 	"github.com/gaia-pipeline/gaia"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gaia-pipeline/gaia/security"
 )
 
 var (
@@ -167,17 +166,13 @@ func (s *BoltStore) setupDatabase() error {
 	u, err := s.UserGet(autoUsername)
 
 	if u == nil {
-		nsUUID := uuid.NewV4()
-		token := make([]byte, 32)
-		rand.Read(token)
-		namespace := string(token)
-		triggerToken := uuid.NewV5(nsUUID, namespace)
+		triggerToken := security.GenerateRandomUUIDV5()
 		auto := gaia.User{
 			DisplayName:  "Auto User",
 			JwtExpiry:    0,
 			Password:     autoPassword,
 			Tokenstring:  "",
-			TriggerToken: triggerToken.String(),
+			TriggerToken: triggerToken,
 			Username:     autoUsername,
 			LastLogin:    time.Now(),
 		}
