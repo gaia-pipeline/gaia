@@ -78,7 +78,10 @@ func TestInit(t *testing.T) {
 	logpath := filepath.Join(tmp, "test")
 	err := p.Init(exec.Command("echo", "world"), &logpath)
 	if !strings.Contains(err.Error(), "Unrecognized remote plugin message") {
-		t.Fatalf("Error should contain 'Unrecognized remote plugin message' but was '%s'", err.Error())
+		// Sometimes go-plugin throws this error instead...
+		if !strings.Contains(err.Error(), "plugin exited before we could connect") {
+			t.Fatalf("Error should contain 'Unrecognized remote plugin message' but was '%s'", err.Error())
+		}
 	}
 }
 

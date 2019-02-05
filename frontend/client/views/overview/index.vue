@@ -18,21 +18,31 @@
             <hr class="pipeline-hr">
             <div>
               <i class="fa fa-hourglass"></i>
-              <span style="color: #b1adad;"> 
-                Duration: 
+              <span style="color: #b1adad;">
+                Duration:
               </span>
-              <span v-if="pipeline.r.status === 'success' || pipeline.r.status === 'failed'"> 
+              <span v-if="pipeline.r.status === 'success' || pipeline.r.status === 'failed'">
                 {{ calculateDuration(pipeline.r.startdate, pipeline.r.finishdate) }}
               </span>
               <span v-else>
                 unknown
               </span><br />
               <i class="fa fa-calendar"></i>
-              <span style="color: #b1adad;"> 
-                Started: 
+              <span style="color: #b1adad;">
+                Started:
               </span>
-              <span v-if="pipeline.r.status === 'success' || pipeline.r.status === 'failed'"> 
+              <span v-if="pipeline.r.status === 'success' || pipeline.r.status === 'failed'">
                 {{ humanizedDate(pipeline.r.finishdate) }}
+              </span>
+              <span v-else>
+                unknown
+              </span><br />
+              <i class="fa fa-exchange"></i>
+              <span style="color: #b1adad;">
+                Trigger Token:
+              </span>
+              <span v-if="pipeline.p.trigger_token !== ''">
+                {{ pipeline.p.trigger_token }}
               </span>
               <span v-else>
                 unknown

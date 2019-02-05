@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/security"
+
 	"github.com/gaia-pipeline/gaia/auth"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -138,6 +140,35 @@ func UserChangePassword(c echo.Context) error {
 	return c.String(http.StatusOK, "Password has been changed")
 }
 
+// UserResetTriggerToken will generate and save a new Remote trigger token
+// for a given user.
+func UserResetTriggerToken(c echo.Context) error {
+	// Get user which we should reset the token for
+	u := c.Param("username")
+	if u == "" {
+		return c.String(http.StatusBadRequest, "Invalid username given")
+	}
+	if u != "auto" {
+		return c.String(http.StatusBadRequest, "Only auto user can have a token reset")
+	}
+	ss, _ := services.StorageService()
+	user, err := ss.UserGet(u)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "User not found")
+	}
+	if user == nil {
+		return c.String(http.StatusBadRequest, "Error retrieving user")
+	}
+
+	user.TriggerToken = security.GenerateRandomUUIDV5()
+	err = ss.UserPut(user, true)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Error while saving user")
+	}
+
+	return c.String(http.StatusOK, "Token reset")
+}
+
 // UserDelete deletes the given user
 func UserDelete(c echo.Context) error {
 	// Get user which we should delete
@@ -146,7 +177,9 @@ func UserDelete(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Invalid username given")
 	}
 	storeService, _ := services.StorageService()
-
+	if u == "auto" {
+		return c.String(http.StatusBadRequest, "Auto user cannot be deleted")
+	}
 	// Delete user
 	err := storeService.UserDelete(u)
 	if err != nil {

@@ -5,12 +5,14 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/security"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"github.com/labstack/echo"
 	"github.com/robfig/cron"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 // PipelineGitLSRemote checks for available git remote branches.
@@ -276,6 +278,114 @@ func PipelineDelete(c echo.Context) error {
 	pipeline.GlobalActivePipelines.Remove(deletedPipelineIndex)
 
 	return c.String(http.StatusOK, "Pipeline has been deleted")
+}
+
+// PipelineTrigger allows for a remote running of a pipeline.
+// This endpoint does not require authentication. It will use a TOKEN
+// that is specific to a pipeline. It can only be used by the `auto`
+// user.
+func PipelineTrigger(c echo.Context) error {
+	err := PipelineTriggerAuth(c)
+	if err != nil {
+		return c.String(http.StatusForbidden, "User rejected")
+	}
+
+	// Check here against the pipeline's token.
+	pipelineIDStr := c.Param("pipelineid")
+	pipelineToken := c.Param("pipelinetoken")
+
+	// Convert string to int because id is int
+	pipelineID, err := strconv.Atoi(pipelineIDStr)
+	if err != nil {
+		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
+	}
+
+	// Look up pipeline for the given id
+	var foundPipeline gaia.Pipeline
+	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+		if pipeline.ID == pipelineID {
+			foundPipeline = pipeline
+		}
+	}
+
+	if foundPipeline.Name == "" {
+		return c.String(http.StatusBadRequest, "Pipeline not found.")
+	}
+
+	if foundPipeline.TriggerToken != pipelineToken {
+		return c.String(http.StatusForbidden, "Invalid remote trigger token.")
+	}
+
+	schedulerService, _ := services.SchedulerService()
+	args := []gaia.Argument{}
+	c.Bind(&args)
+	pipelineRun, err := schedulerService.SchedulePipeline(&foundPipeline, args)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	} else if pipelineRun != nil {
+		return c.String(http.StatusOK, "Trigger successful for pipeline: "+pipelineIDStr)
+	}
+
+	return c.String(http.StatusBadRequest, "Failed to trigger pipeline run.")
+}
+
+// PipelineResetToken generates a new remote trigger token for a given
+// pipeline.
+func PipelineResetToken(c echo.Context) error {
+	// Check here against the pipeline's token.
+	pipelineIDStr := c.Param("pipelineid")
+
+	// Convert string to int because id is int
+	pipelineID, err := strconv.Atoi(pipelineIDStr)
+	if err != nil {
+		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
+	}
+
+	// Look up pipeline for the given id
+	var foundPipeline gaia.Pipeline
+	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+		if pipeline.ID == pipelineID {
+			foundPipeline = pipeline
+		}
+	}
+
+	if foundPipeline.Name == "" {
+		return c.String(http.StatusBadRequest, "Pipeline not found.")
+	}
+
+	foundPipeline.TriggerToken = security.GenerateRandomUUIDV5()
+	s, err := services.StorageService()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Error getting store service.")
+	}
+	err = s.PipelinePut(&foundPipeline)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Error while saving pipeline.")
+	}
+	return c.String(http.StatusOK, "Token successfully reset. To see, please open the pipeline's view.")
+}
+
+// PipelineTriggerAuth is a barrier before remote trigger which checks if
+// the user is `auto`.
+func PipelineTriggerAuth(c echo.Context) error {
+	// check headers
+	s, err := services.StorageService()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Error getting store service.")
+	}
+	auto, err := s.UserGet("auto")
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Auto user not found.")
+	}
+
+	username, password, ok := c.Request().BasicAuth()
+	if !ok {
+		return c.String(http.StatusForbidden, "No authentication provided.")
+	}
+	if username != auto.Username || password != auto.TriggerToken {
+		return c.String(http.StatusBadRequest, "Auto username or password did not match.")
+	}
+	return nil
 }
 
 // PipelineStart starts a pipeline by the given id.

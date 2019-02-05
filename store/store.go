@@ -4,9 +4,11 @@ import (
 	"encoding/binary"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	bolt "github.com/coreos/bbolt"
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/security"
 )
 
 var (
@@ -31,6 +33,8 @@ const (
 	// Username and password of the first admin user
 	adminUsername = "admin"
 	adminPassword = "admin"
+	autoUsername  = "auto"
+	autoPassword  = "auto"
 
 	// Bolt database file name
 	boltDBFileName = "gaia.db"
@@ -157,6 +161,25 @@ func (s *BoltStore) setupDatabase() error {
 	err = s.CreatePermissionsIfNotExisting()
 	if err != nil {
 		return err
+	}
+
+	u, err := s.UserGet(autoUsername)
+
+	if u == nil {
+		triggerToken := security.GenerateRandomUUIDV5()
+		auto := gaia.User{
+			DisplayName:  "Auto User",
+			JwtExpiry:    0,
+			Password:     autoPassword,
+			Tokenstring:  "",
+			TriggerToken: triggerToken,
+			Username:     autoUsername,
+			LastLogin:    time.Now(),
+		}
+		err = s.UserPut(&auto, true)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

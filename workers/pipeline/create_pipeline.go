@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gaia-pipeline/gaia/security"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 )
@@ -120,6 +122,8 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
 		return
 	}
+
+	p.Pipeline.TriggerToken = security.GenerateRandomUUIDV5()
 
 	// Save the generated pipeline data
 	err = bP.SavePipeline(&p.Pipeline)

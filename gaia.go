@@ -107,12 +107,13 @@ const (
 
 // User is the user object
 type User struct {
-	Username    string    `json:"username,omitempty"`
-	Password    string    `json:"password,omitempty"`
-	DisplayName string    `json:"display_name,omitempty"`
-	Tokenstring string    `json:"tokenstring,omitempty"`
-	JwtExpiry   int64     `json:"jwtexpiry,omitempty"`
-	LastLogin   time.Time `json:"lastlogin,omitempty"`
+	Username     string    `json:"username,omitempty"`
+	Password     string    `json:"password,omitempty"`
+	DisplayName  string    `json:"display_name,omitempty"`
+	Tokenstring  string    `json:"tokenstring,omitempty"`
+	JwtExpiry    int64     `json:"jwtexpiry,omitempty"`
+	LastLogin    time.Time `json:"lastlogin,omitempty"`
+	TriggerToken string    `json:"trigger_token,omitempty"`
 }
 
 // UserPermission is stored in its own data structure away from the core user. It represents all permission data
@@ -156,6 +157,7 @@ type Pipeline struct {
 	UUID              string       `json:"uuid,omitempty"`
 	IsNotValid        bool         `json:"notvalid,omitempty"`
 	PeriodicSchedules []string     `json:"periodicschedules,omitempty"`
+	TriggerToken      string       `json:"trigger_token,omitempty"`
 	CronInst          *cron.Cron   `json:"-"`
 }
 

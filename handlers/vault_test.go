@@ -83,7 +83,7 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 			t.Fatalf("expected response code %v got %v", http.StatusCreated, rec.Code)
 		}
 		body, _ := ioutil.ReadAll(rec.Body)
-		expectedBody := "[{\"key\":\"Key\",\"value\":\"**********\"}]"
+		expectedBody := "[{\"key\":\"Key\",\"value\":\"**********\"}]\n"
 		if string(body) != expectedBody {
 			t.Fatalf("response body did not equal expected body: expected: %s, actual: %s", expectedBody, string(body))
 		}

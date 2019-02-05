@@ -30,10 +30,15 @@
                       <td :title="props.row.lastlogin" v-tippy="{ arrow : true,  animation : 'shift-away'}">
                         <span>{{ convertTime(props.row.lastlogin) }}</span>
                       </td>
+                      <td :title="props.row.trigger_token" v-tippy="{ arrow : true,  animation : 'shift-away'}">
+                        <span>{{ props.row.trigger_token }}</span>
+                      </td>
                       <td>
                         <a v-on:click="editUserModal(props.row)"><i class="fa fa-edit"
                                                                     style="color: whitesmoke;"></i></a>
-                        <a v-on:click="deleteUserModal(props.row)" v-if="props.row.username !== session.username"><i
+                        <a v-on:click="resetTriggerTokenModal(props.row)" v-if="props.row.username === 'auto'">
+                                                                <i class="fa fa-sliders" style="color: whitesmoke;"></i></a>
+                        <a v-on:click="deleteUserModal(props.row)" v-if="props.row.username !== session.username && props.row.username !== 'auto'"><i
                           class="fa fa-trash" style="color: whitesmoke;"></i></a>
                       </td>
                     </template>
@@ -82,6 +87,8 @@
                       </td>
                       <td>
                         <a v-on:click="editPipelineModal(props.row)"><i class="fa fa-edit"
+                                                                        style="color: whitesmoke;"></i></a>
+                        <a v-on:click="resetPipelineTriggerTokenModal(props.row)"><i class="fa fa-sliders"
                                                                         style="color: whitesmoke;"></i></a>
                         <a v-on:click="deletePipelineModal(props.row)"><i class="fa fa-trash"
                                                                           style="color: whitesmoke;"></i></a>
@@ -135,6 +142,30 @@
           <div class="modal-footer">
             <div style="float: left;">
               <button class="button is-primary" v-on:click="changePassword">Change Password</button>
+            </div>
+            <div style="float: right;">
+              <button class="button is-danger" v-on:click="close">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </modal>
+
+    <!-- reset trigger token modal -->
+    <modal :visible="showResetTriggerTokenModal" class="modal-z-index" @close="close">
+      <div class="box user-modal">
+        <div class="block user-modal-content">
+          <collapse accordion is-fullwidth>
+            <collapse-item title="Reset Trigger Token" selected>
+              <div class="user-modal-content">
+                <label class="label" style="text-align: left;">Reset Trigger Token for user {{ selectUser.display_name
+                  }}?</label>
+              </div>
+            </collapse-item>
+          </collapse>
+          <div class="modal-footer">
+            <div style="float: left;">
+              <button class="button is-primary" v-on:click="resetUserTriggerToken">Reset Token</button>
             </div>
             <div style="float: right;">
               <button class="button is-danger" v-on:click="close">Cancel</button>
@@ -260,6 +291,32 @@
       </div>
     </modal>
 
+    <!-- reset trigger token modal -->
+   <modal :visible="showResetPipelineTriggerTokenModal" class="modal-z-index" @close="close">
+      <div class="box pipeline-modal">
+        <div class="block pipeline-modal-content">
+          <collapse accordion is-fullwidth>
+            <collapse-item title="Reset Pipeline Trigger Token" selected>
+              <div class="pipeline-modal-content">
+                <p class="control has-icons-left" style="padding-bottom: 5px;">
+                  <label class="label" style="text-align: left;">Reset Token for pipeline {{ selectPipeline.name
+                    }}?</label>
+                </p>
+              </div>
+            </collapse-item>
+          </collapse>
+          <div class="modal-footer">
+            <div style="float: left;">
+              <button class="button is-primary" v-on:click="resetPipelineTriggerToken">Reset Token</button>
+            </div>
+            <div style="float: right;">
+              <button class="button is-danger" v-on:click="close">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </modal>
+
     <!-- delete pipeline modal -->
     <modal :visible="showDeletePipelineModal" class="modal-z-index" @close="close">
       <div class="box pipeline-modal">
@@ -340,6 +397,10 @@
             field: 'lastlogin'
           },
           {
+            label: 'Trigger Token',
+            field: 'trigger_token'
+          },
+          {
             label: ''
           }
         ],
@@ -366,8 +427,10 @@
         selectPipeline: {},
         showEditUserModal: false,
         showDeleteUserModal: false,
+        showResetTriggerTokenModal: false,
         showAddUserModal: false,
         showEditPipelineModal: false,
+        showResetPipelineTriggerTokenModal: false,
         showDeletePipelineModal: false,
         pipelinePeriodicSchedules: ''
       }
@@ -419,6 +482,11 @@
         this.showEditUserModal = true
       },
 
+      resetTriggerTokenModal (user) {
+        this.selectUser = user
+        this.showResetTriggerTokenModal = true
+      },
+
       deleteUserModal (user) {
         this.selectUser = user
         this.showDeleteUserModal = true
@@ -439,6 +507,11 @@
         this.showEditPipelineModal = true
       },
 
+      resetPipelineTriggerTokenModal (pipeline) {
+        this.selectPipeline = pipeline
+        this.showResetPipelineTriggerTokenModal = true
+      },
+
       deletePipelineModal (pipeline) {
         this.selectPipeline = pipeline
         this.showDeletePipelineModal = true
@@ -447,9 +520,11 @@
       close () {
         this.showEditUserModal = false
         this.showDeleteUserModal = false
+        this.showResetTriggerTokenModal = false
         this.showAddUserModal = false
         this.selectUser = {}
         this.showEditPipelineModal = false
+        this.showResetPipelineTriggerTokenModal = false
         this.showDeletePipelineModal = false
         this.selectPipeline = {}
         this.pipelinePeriodicSchedules = ''
@@ -474,6 +549,22 @@
             openNotification({
               title: 'Password changed!',
               message: 'Password has been successful changed.',
+              type: 'success'
+            })
+          })
+          .catch((error) => {
+            this.$onError(error)
+          })
+        this.close()
+      },
+
+      resetUserTriggerToken () {
+        this.$http
+          .put('/api/v1/user/' + this.selectUser.username + '/reset-trigger-token')
+          .then(response => {
+            openNotification({
+              title: 'Token changed!',
+              message: 'New trigger token has been generated!',
               type: 'success'
             })
           })
@@ -575,6 +666,22 @@
             })
             this.fetchData()
             this.close()
+          })
+          .catch((error) => {
+            this.$onError(error)
+          })
+        this.close()
+      },
+
+      resetPipelineTriggerToken () {
+        this.$http
+          .put('/api/v1/pipeline/' + this.selectPipeline.id + '/reset-trigger-token')
+          .then(response => {
+            openNotification({
+              title: 'Token changed!',
+              message: 'New trigger token has been generated!',
+              type: 'success'
+            })
           })
           .catch((error) => {
             this.$onError(error)
