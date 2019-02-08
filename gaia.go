@@ -19,8 +19,11 @@ type CreatePipelineType string
 // can have.
 type PipelineRunStatus string
 
-// JobStatus represents the different status a job can have.
+// JobStatus represents the different status a job can have
 type JobStatus string
+
+// WorkerStatus represents the different status a worker can have
+type WorkerStatus string
 
 const (
 	// PTypeUnknown unknown plugin type
@@ -80,6 +83,15 @@ const (
 	// JobRunning status
 	JobRunning JobStatus = "running"
 
+	// WorkerActive status
+	WorkerActive WorkerStatus = "active"
+
+	// WorkerInactive status
+	WorkerInactive WorkerStatus = "inactive"
+
+	// WorkerSuspended status
+	WorkerSuspended WorkerStatus = "suspended"
+
 	// LogsFolderName represents the Name of the logs folder in pipeline run folder
 	LogsFolderName = "logs"
 
@@ -103,6 +115,9 @@ const (
 
 	// TmpRubyFolder is the name of the ruby temporary folder
 	TmpRubyFolder = "ruby"
+
+	// WorkerRegisterKey is the used key for worker registration secret
+	WorkerRegisterKey = "WORKER_REGISTER_KEY"
 )
 
 // User is the user object
@@ -220,6 +235,16 @@ type PipelineRun struct {
 	ScheduleDate time.Time         `json:"scheduledate,omitempty"`
 	Status       PipelineRunStatus `json:"status,omitempty"`
 	Jobs         []Job             `json:"jobs,omitempty"`
+}
+
+// Worker represents a single registered worker.
+type Worker struct {
+	UniqueID     string       `json:"uniqueid"`
+	Name         string       `json:"name"`
+	Status       WorkerStatus `json:"status"`
+	RegisterDate time.Time    `json:"registerdate"`
+	LastContact  time.Time    `json:"lastcontact"`
+	Tags         []string     `json:"tags"`
 }
 
 // Cfg represents the global config instance

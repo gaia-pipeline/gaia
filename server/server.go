@@ -161,10 +161,18 @@ func Start() (err error) {
 		// Set default to data folder
 		gaia.Cfg.VaultPath = gaia.Cfg.DataPath
 	}
-	_, err = services.VaultService(nil)
+	v, err = services.VaultService(nil)
 	if err != nil {
 		gaia.Cfg.Logger.Error("error initiating vault")
 		return
+	}
+
+	// Generate global worker secret if it does not exist
+	secret, err := v.Get(gaia.WorkerRegisterKey)
+	if err != nil {
+		// Secret hasn't been generated yet
+		secret = security.GenerateRandomUUIDV5()
+		v.Add(WorkerRegisterKey, secret)
 	}
 
 	// Initialize scheduler

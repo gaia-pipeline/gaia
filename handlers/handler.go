@@ -28,11 +28,6 @@ var (
 	errPipelineRename = errors.New("pipeline could not be renamed")
 )
 
-const (
-	// workerRegisterKey is the used key for worker registration secret.
-	workerRegisterKey = "WORKER_REGISTER_KEY"
-)
-
 // InitHandlers initializes(registers) all handlers
 func InitHandlers(e *echo.Echo) error {
 	// Define prefix
@@ -86,6 +81,10 @@ func InitHandlers(e *echo.Echo) error {
 	e.DELETE(p+"secret/:key", RemoveSecret)
 	e.POST(p+"secret", SetSecret)
 	e.PUT(p+"secret/update", SetSecret)
+
+	// Worker
+	e.GET(p+"worker/secret", GetWorkerRegisterSecret)
+	e.POST(p+"worker/register", RegisterWorker)
 
 	// Middleware
 	e.Use(middleware.Recover())

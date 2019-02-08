@@ -19,8 +19,8 @@ import (
 
 const (
 	rsaBits      = 2048
-	maxValidCA   = 17520 // 2 years
-	maxValidCERT = 48    // 48 hours
+	maxValidCA   = 175200 // 20 years
+	maxValidCERT = 48     // 48 hours
 	orgName      = "gaia-pipeline"
 	orgDNS       = "gaia-pipeline.io"
 
@@ -49,6 +49,12 @@ type CAAPI interface {
 	// First return param is the public cert.
 	// Second return param is the private key.
 	CreateSignedCert() (string, string, error)
+
+	// CreateSignedCertWithValidOpts create a new signed certificate
+	// with the given options.
+	// First return param is the public cert.
+	// Second return param is the private key.
+	CreateSignedCertWithValidOpts(hoursBeforeValid, hoursAfterValid time.Duration) (string, string, error)
 
 	// GenerateTLSConfig generates a TLS config.
 	// It requires the path to the cert and the key.
@@ -147,8 +153,9 @@ func (c *CA) generateCA() error {
 	return nil
 }
 
-// CreateSignedCert creates a new key pair which is signed by the CA.
-func (c *CA) CreateSignedCert() (string, string, error) {
+// CreateSignedCertWithValidOpts creates a signed certificate by the CA.
+// It accepts hoursBeforeValid and hoursAfterValid.
+func (c *CA) CreateSignedCertWithValidOpts(hoursBeforeValid, hoursAfterValid time.Duration) (string, string, error) {
 	// Load CA plain
 	caPlain, err := tls.LoadX509KeyPair(c.caCertPath, c.caKeyPath)
 	if err != nil {
@@ -169,8 +176,8 @@ func (c *CA) CreateSignedCert() (string, string, error) {
 	}
 
 	// Set time range for cert validation
-	notBefore := time.Now()
-	notAfter := notBefore.Add(time.Hour * maxValidCERT)
+	notBefore := time.Now().Add(time.Hour * (-1 * hoursBeforeValid))
+	notAfter := time.Now().Add(time.Hour * hoursAfterValid)
 
 	// Prepare certificate
 	cert := &x509.Certificate{
@@ -219,6 +226,11 @@ func (c *CA) CreateSignedCert() (string, string, error) {
 	keyOut.Close()
 
 	return certOut.Name(), keyOut.Name(), nil
+}
+
+// CreateSignedCert creates a new key pair which is signed by the CA.
+func (c *CA) CreateSignedCert() (string, string, error) {
+	return c.CreateSignedCertWithValidOpts(1, maxValidCERT)
 }
 
 // GenerateTLSConfig generates a new TLS config based on given
