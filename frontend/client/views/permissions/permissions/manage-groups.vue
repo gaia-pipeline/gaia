@@ -46,8 +46,8 @@
             </div>
           </div>
           <div v-if="!isNew && name !== ''">
-            <h4 class="title">User Groups: {{name}}</h4>
-            <h4 class="subtitle">{{description ? description : "No description"}}</h4>
+            <h4 class="title is-4">User Groups: {{name}}</h4>
+            <h4 class="title is-5">{{description ? description : "No description"}}</h4>
             <permission-tables :value="roles" @input="setRoles" :permission-options="permissionOptions"></permission-tables>
             <div style="float: left;">
               <button class="button is-primary" v-on:click="save">Save</button>

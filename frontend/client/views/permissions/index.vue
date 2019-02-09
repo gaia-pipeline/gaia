@@ -2,8 +2,8 @@
   <div class="tile is-ancestor">
     <div class="tile is-vertical">
       <tabs type="boxed" :is-fullwidth="false" alignment="centered" size="large">
-        <tab-pane label="User Roles" icon="fa fa-user">
-          <manage-permissions :users="users" :permission-options="permissionOptions"/>
+        <tab-pane label="User Permissions" icon="fa fa-user">
+          <manage-permissions :users="users" :groups="groups" :permission-options="permissionOptions"/>
         </tab-pane>
         <tab-pane label="User Groups" icon="fa fa-users">
           <manage-groups :groups="groups" :permission-options="permissionOptions"/>
@@ -15,7 +15,6 @@
 
 <script>
   import {TabPane, Tabs} from 'vue-bulma-tabs'
-  import {Modal} from 'vue-bulma-modal'
   import {Collapse, Item as CollapseItem} from 'vue-bulma-collapse'
   import ManagePermissions from './permissions/manage-permissions'
   import ManageGroups from './permissions/manage-groups'
@@ -27,7 +26,6 @@
       ManageGroups,
       Tabs,
       TabPane,
-      Modal,
       Collapse,
       CollapseItem
     },
