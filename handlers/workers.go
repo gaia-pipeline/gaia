@@ -24,9 +24,10 @@ type registerWorker struct {
 }
 
 type registerResponse struct {
-	Cert   string `json:"cert"`
-	Key    string `json:"key"`
-	CACert string `json:"cacert"`
+	UniqueID string `json:"uniqueid"`
+	Cert     string `json:"cert"`
+	Key      string `json:"key"`
+	CACert   string `json:"cacert"`
 }
 
 // RegisterWorker allows new workers to register themself at this Gaia instance.
@@ -94,9 +95,10 @@ func RegisterWorker(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, registerResponse{
-		Cert:   crtB64,
-		Key:    keyB64,
-		CACert: caCertB64,
+		UniqueID: w.UniqueID,
+		Cert:     crtB64,
+		Key:      keyB64,
+		CACert:   caCertB64,
 	})
 }
 
