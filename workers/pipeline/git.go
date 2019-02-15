@@ -15,6 +15,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/google/go-github/github"
+	ssh2 "golang.org/x/crypto/ssh"
 	"golang.org/x/oauth2"
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -32,6 +33,11 @@ const (
 // without actually cloning the repo. This is great
 // for looking if we have access to this repo.
 func GitLSRemote(repo *gaia.GitRepo) error {
+	// Validate provided git url
+	if strings.Contains(repo.URL, "@") {
+		return errors.New("git url should not include username and/or password")
+	}
+
 	// Create new endpoint
 	ep, err := transport.NewEndpoint(repo.URL)
 	if err != nil {
@@ -269,6 +275,9 @@ func getAuthInfo(repo *gaia.GitRepo) (transport.AuthMethod, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		// Ignore host key check for the user experience
+		auth.(*ssh.PublicKeys).HostKeyCallback = ssh2.InsecureIgnoreHostKey()
 	}
 	return auth, nil
 }
