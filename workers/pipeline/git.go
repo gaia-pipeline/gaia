@@ -15,7 +15,6 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/google/go-github/github"
-	ssh2 "golang.org/x/crypto/ssh"
 	"golang.org/x/oauth2"
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -59,7 +58,12 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 	// Open new session
 	s, err := cl.NewUploadPackSession(ep, auth)
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "knownhosts: key is unknown") {
+			gaia.Cfg.Logger.Error("Warning: Unknown host key.")
+			err = nil
+		} else {
+			return err
+		}
 	}
 	defer s.Close()
 
@@ -97,8 +101,13 @@ func UpdateRepository(pipe *gaia.Pipeline) error {
 	auth, err := getAuthInfo(&pipe.Repo)
 	if err != nil {
 		// It's also an error if the repo is already up to date so we just move on.
-		gaia.Cfg.Logger.Error("error getting auth info while doing a pull request: ", "error", err.Error())
-		return err
+		if strings.Contains(err.Error(), "knownhosts: key is unknown") {
+			gaia.Cfg.Logger.Error("Warning: Unknown host key.")
+			err = nil
+		} else {
+			gaia.Cfg.Logger.Error("error getting auth info while doing a pull request: ", "error", err.Error())
+			return err
+		}
 	}
 	tree, _ := r.Worktree()
 	err = tree.Pull(&git.PullOptions{
@@ -129,7 +138,12 @@ func gitCloneRepo(repo *gaia.GitRepo) error {
 	// Check if credentials were provided
 	auth, err := getAuthInfo(repo)
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "knownhosts: key is unknown") {
+			gaia.Cfg.Logger.Error("Warning: Unknown host key.")
+			err = nil
+		} else {
+			return err
+		}
 	}
 
 	// Clone repo
@@ -276,8 +290,11 @@ func getAuthInfo(repo *gaia.GitRepo) (transport.AuthMethod, error) {
 			return nil, err
 		}
 
-		// Ignore host key check for the user experience
-		auth.(*ssh.PublicKeys).HostKeyCallback = ssh2.InsecureIgnoreHostKey()
+		callBack, err := ssh.NewKnownHostsCallback()
+		if err != nil {
+			return nil, err
+		}
+		auth.(*ssh.PublicKeys).HostKeyCallback = callBack
 	}
 	return auth, nil
 }

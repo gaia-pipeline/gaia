@@ -53,8 +53,9 @@ func TestUpdateAllPipelinesRepositoryNotFound(t *testing.T) {
 }
 
 func TestUpdateAllPipelinesAlreadyUpToDate(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestUpdateAllPipelinesAlreadyUpToDate")
 	gaia.Cfg = new(gaia.Config)
-	gaia.Cfg.HomePath = "tmp"
+	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
 	b := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
@@ -87,8 +88,9 @@ func TestUpdateAllPipelinesAlreadyUpToDate(t *testing.T) {
 }
 
 func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline")
 	gaia.Cfg = new(gaia.Config)
-	gaia.Cfg.HomePath = "tmp"
+	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
 	b := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
@@ -126,12 +128,13 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 	}
 }
 
-func TestUpdateAllPipelinesHundredPipelines(t *testing.T) {
+func TestUpdateAllPipelinesFiftyPipelines(t *testing.T) {
 	if _, ok := os.LookupEnv("GAIA_RUN_HUNDRED_PIPELINE_TEST"); !ok {
 		t.Skip()
 	}
+	tmp, _ := ioutil.TempDir("", "TestUpdateAllPipelinesHundredPipelines")
 	gaia.Cfg = new(gaia.Config)
-	gaia.Cfg.HomePath = "tmp"
+	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
 	b := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
@@ -152,7 +155,7 @@ func TestUpdateAllPipelinesHundredPipelines(t *testing.T) {
 	}
 
 	GlobalActivePipelines = NewActivePipelines()
-	for i := 1; i < 100; i++ {
+	for i := 1; i < 50; i++ {
 		p := new(gaia.Pipeline)
 		name := strconv.Itoa(i)
 		p.Name = "main" + name
