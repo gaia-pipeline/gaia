@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
-	"log"
 	gohttp "net/http"
 	"path"
 	"regexp"
@@ -15,6 +14,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/google/go-github/github"
+	gossh "golang.org/x/crypto/ssh"
 	"golang.org/x/oauth2"
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -44,7 +44,7 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 	}
 
 	// Attach credentials if provided
-	auth, err := getAuthInfo(repo)
+	auth, err := getAuthInfo(repo, nil)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,12 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 	if err != nil {
 		if strings.Contains(err.Error(), "knownhosts: key is unknown") {
 			gaia.Cfg.Logger.Error("Warning: Unknown host key.")
+			auth, _ := getAuthInfo(repo, gossh.InsecureIgnoreHostKey())
 			err = nil
+			s, err = cl.NewUploadPackSession(ep, auth)
+			if err != nil {
+				return err
+			}
 		} else {
 			return err
 		}
@@ -89,7 +94,6 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 // it by pulling in new code if it's available.
 func UpdateRepository(pipe *gaia.Pipeline) error {
 	r, err := git.PlainOpen(pipe.Repo.LocalDest)
-	log.Println(pipe.Repo.LocalDest)
 	if err != nil {
 		// We don't stop gaia working because of an automated update failed.
 		// So we just move on.
@@ -98,28 +102,35 @@ func UpdateRepository(pipe *gaia.Pipeline) error {
 	}
 	gaia.Cfg.Logger.Debug("checking pipeline: ", "message", pipe.Name)
 	gaia.Cfg.Logger.Debug("selected branch: ", "message", pipe.Repo.SelectedBranch)
-	auth, err := getAuthInfo(&pipe.Repo)
+	auth, err := getAuthInfo(&pipe.Repo, nil)
 	if err != nil {
 		// It's also an error if the repo is already up to date so we just move on.
-		if strings.Contains(err.Error(), "knownhosts: key is unknown") {
-			gaia.Cfg.Logger.Error("Warning: Unknown host key.")
-			err = nil
-		} else {
-			gaia.Cfg.Logger.Error("error getting auth info while doing a pull request: ", "error", err.Error())
-			return err
-		}
+		gaia.Cfg.Logger.Error("error getting auth info while doing a pull request: ", "error", err.Error())
+		return err
 	}
 	tree, _ := r.Worktree()
-	err = tree.Pull(&git.PullOptions{
+	o := &git.PullOptions{
 		ReferenceName: plumbing.ReferenceName(pipe.Repo.SelectedBranch),
 		SingleBranch:  true,
 		RemoteName:    "origin",
 		Auth:          auth,
-	})
+	}
+	err = tree.Pull(o)
 	if err != nil {
-		// It's also an error if the repo is already up to date so we just move on.
-		gaia.Cfg.Logger.Error("error while doing a pull request: ", "error", err.Error())
-		return err
+		if strings.Contains(err.Error(), "knownhosts: key is unknown") {
+			gaia.Cfg.Logger.Error("Warning: Unknown host key.")
+			err = nil
+			auth, _ = getAuthInfo(&pipe.Repo, gossh.InsecureIgnoreHostKey())
+			o.Auth = auth
+			err = tree.Pull(o)
+			if err != nil {
+				return err
+			}
+		} else {
+			// It's also an error if the repo is already up to date so we just move on.
+			gaia.Cfg.Logger.Error("error while doing a pull request: ", "error", err.Error())
+			return err
+		}
 	}
 
 	gaia.Cfg.Logger.Debug("updating pipeline: ", "message", pipe.Name)
@@ -136,26 +147,33 @@ func UpdateRepository(pipe *gaia.Pipeline) error {
 // The destination will be attached to the given repo obj.
 func gitCloneRepo(repo *gaia.GitRepo) error {
 	// Check if credentials were provided
-	auth, err := getAuthInfo(repo)
+	auth, err := getAuthInfo(repo, nil)
 	if err != nil {
-		if strings.Contains(err.Error(), "knownhosts: key is unknown") {
-			gaia.Cfg.Logger.Error("Warning: Unknown host key.")
-			err = nil
-		} else {
-			return err
-		}
+		return err
 	}
-
-	// Clone repo
-	_, err = git.PlainClone(repo.LocalDest, false, &git.CloneOptions{
+	o := &git.CloneOptions{
 		Auth:              auth,
 		URL:               repo.URL,
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 		SingleBranch:      true,
 		ReferenceName:     plumbing.ReferenceName(repo.SelectedBranch),
-	})
+	}
+	// Clone repo
+	_, err = git.PlainClone(repo.LocalDest, false, o)
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "knownhosts: key is unknown") {
+			gaia.Cfg.Logger.Error("Warning: Unknown host key.")
+			err = nil
+			auth, _ = getAuthInfo(repo, gossh.InsecureIgnoreHostKey())
+			o.Auth = auth
+			// Clone repo again with no host key verification.
+			_, err = git.PlainClone(repo.LocalDest, false, o)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
 	}
 
 	return nil
@@ -275,7 +293,7 @@ func generateWebhookSecret() string {
 	return strings.TrimSuffix(based, "==")
 }
 
-func getAuthInfo(repo *gaia.GitRepo) (transport.AuthMethod, error) {
+func getAuthInfo(repo *gaia.GitRepo, callBack gossh.HostKeyCallback) (transport.AuthMethod, error) {
 	var auth transport.AuthMethod
 	if repo.Username != "" && repo.Password != "" {
 		// Basic auth provided
@@ -290,9 +308,11 @@ func getAuthInfo(repo *gaia.GitRepo) (transport.AuthMethod, error) {
 			return nil, err
 		}
 
-		callBack, err := ssh.NewKnownHostsCallback()
-		if err != nil {
-			return nil, err
+		if callBack == nil {
+			callBack, err = ssh.NewKnownHostsCallback()
+			if err != nil {
+				return nil, err
+			}
 		}
 		auth.(*ssh.PublicKeys).HostKeyCallback = callBack
 	}

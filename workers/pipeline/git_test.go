@@ -129,10 +129,10 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 }
 
 func TestUpdateAllPipelinesFiftyPipelines(t *testing.T) {
-	if _, ok := os.LookupEnv("GAIA_RUN_HUNDRED_PIPELINE_TEST"); !ok {
+	if _, ok := os.LookupEnv("GAIA_RUN_FIFTY_PIPELINE_TEST"); !ok {
 		t.Skip()
 	}
-	tmp, _ := ioutil.TempDir("", "TestUpdateAllPipelinesHundredPipelines")
+	tmp, _ := ioutil.TempDir("", "TestUpdateAllPipelinesFiftyPipelines")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
@@ -177,7 +177,7 @@ func TestGetAuthInfoWithUsernameAndPassword(t *testing.T) {
 		Password:  "password",
 	}
 
-	auth, _ := getAuthInfo(repoWithUsernameAndPassword)
+	auth, _ := getAuthInfo(repoWithUsernameAndPassword, nil)
 	if auth == nil {
 		t.Fatal("auth should not be nil when username and password is provided")
 	}
@@ -200,7 +200,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 		},
 		SelectedBranch: "refs/heads/master",
 	}
-	_, err := getAuthInfo(repoWithValidPrivateKey)
+	_, err := getAuthInfo(repoWithValidPrivateKey, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -215,7 +215,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 		},
 		SelectedBranch: "refs/heads/master",
 	}
-	auth, _ := getAuthInfo(repoWithInvalidPrivateKey)
+	auth, _ := getAuthInfo(repoWithInvalidPrivateKey, nil)
 	if auth != nil {
 		t.Fatal("auth should be nil for invalid private key")
 	}
@@ -226,7 +226,7 @@ func TestGetAuthInfoEmpty(t *testing.T) {
 		URL:       "https://github.com/gaia-pipeline/pipeline-test",
 		LocalDest: "tmp",
 	}
-	auth, _ := getAuthInfo(repoWithoutAuthInfo)
+	auth, _ := getAuthInfo(repoWithoutAuthInfo, nil)
 	if auth != nil {
 		t.Fatal("auth should be nil when no authentication info is provided")
 	}
