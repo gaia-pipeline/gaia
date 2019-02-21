@@ -22,6 +22,8 @@ github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 h1:BHsljHzVlRcyQhjr
 github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568/go.mod h1:xEzjJPgXI435gkrCt3MPfRiAkVrwSbHsst4LCFVfpJc=
 github.com/gaia-pipeline/flag v1.7.4-pre h1:/TAmHVYVQGE4Mw9xl0Qs0D5UruVDMF95thexyEFbTAY=
 github.com/gaia-pipeline/flag v1.7.4-pre/go.mod h1:rLpsWzqOEPa2K0Yl4aC34nmblLpIYjGqjP/srZbYvEk=
+github.com/gaia-pipeline/gosdk v0.0.0-20180909192508-cc9f89055777 h1:Gn3nmETr4IE44pIFLeTDNNBBRhNXXh53PqFV23CsVok=
+github.com/gaia-pipeline/gosdk v0.0.0-20180909192508-cc9f89055777/go.mod h1:e3TkvPdcdSdHZTgwiS89fs8lJrveYHsGLlz/Q0oXlN8=
 github.com/gaia-pipeline/protobuf v0.0.0-20180812091451-7be8a901b55a h1:/5XAmdAyGl4yL9BugdPdBLaXquif1zw6Hih6go8E7Xs=
 github.com/gaia-pipeline/protobuf v0.0.0-20180812091451-7be8a901b55a/go.mod h1:H0w7MofSuW53Nz7kesnBdVkvr437flf5B7D9Lcsb+lQ=
 github.com/gliderlabs/ssh v0.1.1 h1:j3L6gSLQalDETeEg/Jg0mGY0/y/N6zI2xX1978P0Uqw=
