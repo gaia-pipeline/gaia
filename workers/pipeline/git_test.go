@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -85,6 +86,59 @@ func TestUpdateAllPipelinesAlreadyUpToDate(t *testing.T) {
 	if !strings.Contains(b.String(), "already up-to-date") {
 		t.Fatal("log output did not contain error message that the repo is up-to-date.: ", b.String())
 	}
+}
+
+func TestCloneRepoWithSSHAuth(t *testing.T) {
+	samplePrivateKey := `
+-----BEGIN RSA PRIVATE KEY-----
+MD8CAQACCQDB9DczYvFuZQIDAQABAgkAtqAKvH9QoQECBQDjAl9BAgUA2rkqJQIE
+Xbs5AQIEIzWnmQIFAOEml+E=
+-----END RSA PRIVATE KEY-----
+`
+	tmp, _ := ioutil.TempDir("", "TestCloneRepoWithSSHAuth")
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.HomePath = tmp
+	// Initialize shared logger
+	b := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: b,
+		Name:   "Gaia",
+	})
+	tmpPath := filepath.Join(tmp, "tmp")
+	repo := &gaia.GitRepo{
+		URL:            "github.com:gaia-pipeline/pipeline-test",
+		LocalDest:      tmpPath,
+		SelectedBranch: "refs/heads/master",
+		PrivateKey: gaia.PrivateKey{
+			Key:      samplePrivateKey,
+			Username: "git",
+			Password: "",
+		},
+	}
+	hostConfig := "github.comom,1.2.3.4 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+	knownHostsLocation := filepath.Join(tmp, ".known_hosts")
+	ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), 0766)
+	os.Setenv("SSH_KNOWN_HOSTS", knownHostsLocation)
+
+	// always ensure that tmp folder is cleaned up
+	defer os.RemoveAll(tmpPath)
+	gitCloneRepo(repo)
+	want := "knownhosts: key is unknown"
+	if !strings.Contains(b.String(), want) {
+		t.Fatalf("wanted buf to contain: '%s', got: '%s'", want, b.String())
+	}
+
+	// p := new(gaia.Pipeline)
+	// p.Name = "main"
+	// p.Repo.SelectedBranch = "refs/heads/master"
+	// p.Repo.LocalDest = "tmp"
+	// GlobalActivePipelines = NewActivePipelines()
+	// GlobalActivePipelines.Append(*p)
+	// updateAllCurrentPipelines()
+	// if !strings.Contains(b.String(), "already up-to-date") {
+	// 	t.Fatal("log output did not contain error message that the repo is up-to-date.: ", b.String())
+	// }
 }
 
 func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) {
