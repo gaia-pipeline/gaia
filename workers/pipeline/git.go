@@ -59,7 +59,7 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 	s, err := cl.NewUploadPackSession(ep, auth)
 	if err != nil {
 		if strings.Contains(err.Error(), "knownhosts: key is unknown") {
-			gaia.Cfg.Logger.Error("Warning: Unknown host key.", "error", err.Error(), "URL", repo.URL)
+			gaia.Cfg.Logger.Warn("Warning: Unknown host key.", "error", err.Error(), "URL", repo.URL)
 			auth, err := getAuthInfo(repo, gossh.InsecureIgnoreHostKey())
 			if err != nil {
 				return err
@@ -120,7 +120,7 @@ func UpdateRepository(pipe *gaia.Pipeline) error {
 	err = tree.Pull(o)
 	if err != nil {
 		if strings.Contains(err.Error(), "knownhosts: key is unknown") {
-			gaia.Cfg.Logger.Error("Warning: Unknown host key.", "error", err.Error(), "host", "URL", pipe.Repo.URL)
+			gaia.Cfg.Logger.Warn("Warning: Unknown host key.", "error", err.Error(), "host", "URL", pipe.Repo.URL)
 			auth, err = getAuthInfo(&pipe.Repo, gossh.InsecureIgnoreHostKey())
 			if err != nil {
 				return err
@@ -166,7 +166,7 @@ func gitCloneRepo(repo *gaia.GitRepo) error {
 	_, err = git.PlainClone(repo.LocalDest, false, o)
 	if err != nil {
 		if strings.Contains(err.Error(), "knownhosts: key is unknown") {
-			gaia.Cfg.Logger.Error("Warning: Unknown host key.", "error", err.Error(), "URL", repo.URL)
+			gaia.Cfg.Logger.Warn("Warning: Unknown host key.", "error", err.Error(), "URL", repo.URL)
 			auth, err = getAuthInfo(repo, gossh.InsecureIgnoreHostKey())
 			if err != nil {
 				return err
