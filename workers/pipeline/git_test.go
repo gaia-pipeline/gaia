@@ -221,7 +221,7 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 	}
 }
 
-func TestUpdateAllPipelinesFiftyPipelines(t *testing.T) {
+func UpdateAllPipelinesFiftyPipelines(t *testing.T) {
 	if _, ok := os.LookupEnv("GAIA_RUN_FIFTY_PIPELINE_TEST"); !ok {
 		t.Skip()
 	}
@@ -647,4 +647,29 @@ func TestMultipleGithubWebHookURLTypes(t *testing.T) {
 			t.Fatal("expected error. none found")
 		}
 	})
+}
+
+func TestGitLSRemote(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestCloneRepoWithSSHAuth")
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.HomePath = tmp
+	// Initialize shared logger
+	b := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: b,
+		Name:   "Gaia",
+	})
+	repo := &gaia.GitRepo{
+		URL:            "https://github.com/gaia-pipeline/pipeline-test",
+		LocalDest:      "tmp",
+		SelectedBranch: "refs/heads/master",
+	}
+
+	// always ensure that tmp folder is cleaned up
+	defer os.RemoveAll("tmp")
+	err := GitLSRemote(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
