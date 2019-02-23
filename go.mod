@@ -1,7 +1,9 @@
 module github.com/gaia-pipeline/gaia
 
 require (
+	github.com/GeertJohan/go.incremental v0.0.0-20161212213043-1172aab96510 // indirect
 	github.com/GeertJohan/go.rice v0.0.0-20181229193832-0af3f3b09a0a
+	github.com/akavel/rsrc v0.0.0-20170831122431-f6a15ece2cfd // indirect
 	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
 	github.com/boltdb/bolt v1.3.1 // indirect
@@ -22,6 +24,7 @@ require (
 	github.com/hashicorp/go-plugin v0.0.0-20180331002553-e8d22c780116
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
+	github.com/jessevdk/go-flags v1.4.0 // indirect
 	github.com/kevinburke/ssh_config v0.0.0-20180317175531-9fc7bb800b55 // indirect
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.0.0-20180613044413-d6898124de91 // indirect
@@ -29,6 +32,7 @@ require (
 	github.com/mattn/go-isatty v0.0.3 // indirect
 	github.com/mitchellh/go-homedir v0.0.0-20180801233206-58046073cbff // indirect
 	github.com/mitchellh/go-testing-interface v0.0.0-20171004221916-a61a99592b77 // indirect
+	github.com/nkovacs/streamquote v0.0.0-20170412213628-49af9bddb229 // indirect
 	github.com/oklog/run v1.0.0 // indirect
 	github.com/pelletier/go-buffruneio v0.2.0 // indirect
 	github.com/pkg/errors v0.8.1

@@ -128,7 +128,7 @@ RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
 ENV MAVEN_HOME /usr/share/maven
 ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
 
-COPY settings-docker.xml /usr/share/maven/ref/
+COPY docker/settings-docker.xml /usr/share/maven/ref/
 # --------------- End Maven Part ---------------
 
 # --------------- Start C++ Part ---------------
@@ -253,7 +253,7 @@ VOLUME [ "${GAIA_HOMEPATH}" ]
 EXPOSE ${GAIA_PORT}
 
 # Copy entry point script
-COPY docker-entrypoint.sh /usr/local/bin/
+COPY docker/docker-entrypoint.sh /usr/local/bin/
 
 # Start gaia
 ENTRYPOINT [ "docker-entrypoint.sh" ]

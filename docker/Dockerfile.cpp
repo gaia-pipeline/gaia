@@ -41,7 +41,7 @@ VOLUME [ "${GAIA_HOMEPATH}" ]
 EXPOSE ${GAIA_PORT}
 
 # Copy entry point script
-COPY docker-entrypoint.sh /usr/local/bin/
+COPY docker/docker-entrypoint.sh /usr/local/bin/
 
 # Start gaia
 ENTRYPOINT [ "docker-entrypoint.sh" ]

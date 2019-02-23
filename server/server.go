@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/flag"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
@@ -23,7 +23,7 @@ var (
 
 const (
 	// Version is the current version of gaia.
-	Version = "0.2.2"
+	Version = "0.2.3"
 
 	dataFolder      = "data"
 	pipelinesFolder = "pipelines"
