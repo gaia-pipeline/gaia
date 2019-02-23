@@ -63,6 +63,7 @@ func InitHandlers(e *echo.Echo) error {
 	e.PUT(p+"pipeline/:pipelineid/reset-trigger-token", PipelineResetToken)
 	e.GET(p+"pipeline/latest", PipelineGetAllWithLatestRun)
 	e.POST(p+"pipeline/periodicschedules", PipelineCheckPeriodicSchedules)
+	e.POST(p+"pipeline/polling/toggle", PipelineTogglePolling)
 
 	// PipelineRun
 	e.POST(p+"pipelinerun/:pipelineid/:runid/stop", PipelineStop)

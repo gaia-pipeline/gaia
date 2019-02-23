@@ -103,6 +103,8 @@
             </div>
           </div>
         </tab-pane>
+        <tab-pane label="Manage Settings" icon="fa fa-wrench">
+        </tab-pane>
       </tabs>
     </div>
 
