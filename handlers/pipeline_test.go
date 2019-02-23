@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -62,7 +64,7 @@ func TestPipelineGitLSRemote(t *testing.T) {
 		repoURL := "https://example.com"
 		body := map[string]string{
 			"url":      repoURL,
-			"username": "admin",
+			"user":     "admin",
 			"password": "admin",
 		}
 		bodyBytes, _ := json.Marshal(body)
@@ -81,9 +83,7 @@ func TestPipelineGitLSRemote(t *testing.T) {
 	t.Run("otherwise succeed", func(t *testing.T) {
 		repoURL := "https://github.com/gaia-pipeline/pipeline-test"
 		body := map[string]string{
-			"url":      repoURL,
-			"username": "admin",
-			"password": "admin",
+			"url": repoURL,
 		}
 		bodyBytes, _ := json.Marshal(body)
 		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/gitlsremote", bytes.NewBuffer(bodyBytes))
@@ -95,6 +95,69 @@ func TestPipelineGitLSRemote(t *testing.T) {
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
+		}
+	})
+}
+
+func TestPipelineGitLSRemoteWithKeys(t *testing.T) {
+	samplePrivateKey := `
+-----BEGIN RSA PRIVATE KEY-----
+MD8CAQACCQDB9DczYvFuZQIDAQABAgkAtqAKvH9QoQECBQDjAl9BAgUA2rkqJQIE
+Xbs5AQIEIzWnmQIFAOEml+E=
+-----END RSA PRIVATE KEY-----
+`
+	dataDir, _ := ioutil.TempDir("", "TestPipelineGitLSRemoteWithKeys")
+
+	defer func() {
+		gaia.Cfg = nil
+	}()
+
+	gaia.Cfg = &gaia.Config{
+		Logger:   hclog.NewNullLogger(),
+		DataPath: dataDir,
+	}
+
+	e := echo.New()
+	InitHandlers(e)
+
+	t.Run("invalid hostconfig for github in known_hosts file", func(t *testing.T) {
+		buf := new(bytes.Buffer)
+		gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+			Level:  hclog.Trace,
+			Output: buf,
+			Name:   "Gaia",
+		})
+		hostConfig := "github.comom,1.2.3.4 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+		knownHostsLocation := filepath.Join(dataDir, ".known_hosts")
+		ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), 0766)
+		os.Setenv("SSH_KNOWN_HOSTS", knownHostsLocation)
+		repoURL := "github.com:gaia-pipeline/pipeline-test"
+		gr := gaia.GitRepo{
+			URL: repoURL,
+			PrivateKey: gaia.PrivateKey{
+				Key:      samplePrivateKey,
+				Username: "git",
+				Password: "",
+			},
+		}
+		bodyBytes, _ := json.Marshal(gr)
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/gitlsremote", bytes.NewBuffer(bodyBytes))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		PipelineGitLSRemote(c)
+
+		// This will fail because the above SSH key is invalid. But that is fine,
+		// because the initial host file will fail earlier than that.
+		if rec.Code != http.StatusForbidden {
+			t.Fatalf("expected response code %v got %v", http.StatusForbidden, rec.Code)
+		}
+
+		// This is the important bit that needs to be tested.
+		want := "knownhosts: key is unknown"
+		if !strings.Contains(buf.String(), want) {
+			t.Fatalf("wanted buf to contain: '%s', got: '%s'", want, buf.String())
 		}
 	})
 }

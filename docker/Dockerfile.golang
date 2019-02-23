@@ -11,9 +11,13 @@ WORKDIR /app
 # Copy gaia binary into docker image
 COPY gaia-linux-amd64 /app
 
-# Fix permissions and install git
-RUN chmod +x ./gaia-linux-amd64 && \
-    apk add --no-cache --virtual git
+# Fix permissions & setup known hosts file for ssh agent.
+# Install git.
+RUN chmod +x ./gaia-linux-amd64 \
+    && apk add --no-cache --virtual git \
+    && mkdir -p /root/.ssh \
+    && touch /root/.ssh/known_hosts \
+    && chmod 600 /root/.ssh
 
 # Set homepath as volume
 VOLUME [ "${GAIA_HOMEPATH}" ]

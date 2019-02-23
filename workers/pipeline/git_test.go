@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -53,8 +54,9 @@ func TestUpdateAllPipelinesRepositoryNotFound(t *testing.T) {
 }
 
 func TestUpdateAllPipelinesAlreadyUpToDate(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestUpdateAllPipelinesAlreadyUpToDate")
 	gaia.Cfg = new(gaia.Config)
-	gaia.Cfg.HomePath = "tmp"
+	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
 	b := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
@@ -86,9 +88,102 @@ func TestUpdateAllPipelinesAlreadyUpToDate(t *testing.T) {
 	}
 }
 
-func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) {
+func TestCloneRepoWithSSHAuth(t *testing.T) {
+	samplePrivateKey := `
+-----BEGIN RSA PRIVATE KEY-----
+MD8CAQACCQDB9DczYvFuZQIDAQABAgkAtqAKvH9QoQECBQDjAl9BAgUA2rkqJQIE
+Xbs5AQIEIzWnmQIFAOEml+E=
+-----END RSA PRIVATE KEY-----
+`
+	tmp, _ := ioutil.TempDir("", "TestCloneRepoWithSSHAuth")
 	gaia.Cfg = new(gaia.Config)
-	gaia.Cfg.HomePath = "tmp"
+	gaia.Cfg.HomePath = tmp
+	// Initialize shared logger
+	b := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: b,
+		Name:   "Gaia",
+	})
+	repo := &gaia.GitRepo{
+		URL:            "github.com:gaia-pipeline/pipeline-test",
+		LocalDest:      "tmp",
+		SelectedBranch: "refs/heads/master",
+		PrivateKey: gaia.PrivateKey{
+			Key:      samplePrivateKey,
+			Username: "git",
+			Password: "",
+		},
+	}
+	hostConfig := "notgithub.comom,192.30.252.130 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+	knownHostsLocation := filepath.Join(tmp, ".known_hosts")
+	ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), 0766)
+	os.Setenv("SSH_KNOWN_HOSTS", knownHostsLocation)
+
+	// always ensure that tmp folder is cleaned up
+	defer os.RemoveAll("tmp")
+	gitCloneRepo(repo)
+	want := "knownhosts: key is unknown"
+	if !strings.Contains(b.String(), want) {
+		t.Fatalf("wanted buf to contain: '%s', got: '%s'", want, b.String())
+	}
+}
+
+func TestUpdateRepoWithSSHAuth(t *testing.T) {
+	samplePrivateKey := `
+-----BEGIN RSA PRIVATE KEY-----
+MD8CAQACCQDB9DczYvFuZQIDAQABAgkAtqAKvH9QoQECBQDjAl9BAgUA2rkqJQIE
+Xbs5AQIEIzWnmQIFAOEml+E=
+-----END RSA PRIVATE KEY-----
+`
+	tmp, _ := ioutil.TempDir("", "TestUpdateRepoWithSSHAuth")
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.HomePath = tmp
+	// Initialize shared logger
+	b := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: b,
+		Name:   "Gaia",
+	})
+	repo := &gaia.GitRepo{
+		URL:            "github.com:gaia-pipeline/pipeline-test",
+		LocalDest:      "tmp",
+		SelectedBranch: "refs/heads/master",
+		PrivateKey: gaia.PrivateKey{
+			Key:      samplePrivateKey,
+			Username: "git",
+			Password: "",
+		},
+	}
+	hostConfig := "github.com,192.30.252.130 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+	knownHostsLocation := filepath.Join(tmp, ".known_hosts")
+	ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), 0766)
+	os.Setenv("SSH_KNOWN_HOSTS", knownHostsLocation)
+
+	// always ensure that tmp folder is cleaned up
+	defer os.RemoveAll("tmp")
+	gitCloneRepo(repo)
+
+	p := new(gaia.Pipeline)
+	p.Name = "main"
+	p.Repo.SelectedBranch = "refs/heads/master"
+	p.Repo.LocalDest = "tmp"
+	GlobalActivePipelines = NewActivePipelines()
+	GlobalActivePipelines.Append(*p)
+	hostConfig = "invalid.com,192.30.252.130 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+	ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), 0766)
+	updateAllCurrentPipelines()
+	want := "knownhosts: key is unknown"
+	if !strings.Contains(b.String(), want) {
+		t.Fatalf("wanted buf to contain: '%s', got: '%s'", want, b.String())
+	}
+}
+
+func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline")
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
 	b := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
@@ -126,12 +221,13 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 	}
 }
 
-func TestUpdateAllPipelinesHundredPipelines(t *testing.T) {
-	if _, ok := os.LookupEnv("GAIA_RUN_HUNDRED_PIPELINE_TEST"); !ok {
+func UpdateAllPipelinesFiftyPipelines(t *testing.T) {
+	if _, ok := os.LookupEnv("GAIA_RUN_FIFTY_PIPELINE_TEST"); !ok {
 		t.Skip()
 	}
+	tmp, _ := ioutil.TempDir("", "TestUpdateAllPipelinesFiftyPipelines")
 	gaia.Cfg = new(gaia.Config)
-	gaia.Cfg.HomePath = "tmp"
+	gaia.Cfg.HomePath = tmp
 	// Initialize shared logger
 	b := new(bytes.Buffer)
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
@@ -152,7 +248,7 @@ func TestUpdateAllPipelinesHundredPipelines(t *testing.T) {
 	}
 
 	GlobalActivePipelines = NewActivePipelines()
-	for i := 1; i < 100; i++ {
+	for i := 1; i < 50; i++ {
 		p := new(gaia.Pipeline)
 		name := strconv.Itoa(i)
 		p.Name = "main" + name
@@ -174,7 +270,7 @@ func TestGetAuthInfoWithUsernameAndPassword(t *testing.T) {
 		Password:  "password",
 	}
 
-	auth, _ := getAuthInfo(repoWithUsernameAndPassword)
+	auth, _ := getAuthInfo(repoWithUsernameAndPassword, nil)
 	if auth == nil {
 		t.Fatal("auth should not be nil when username and password is provided")
 	}
@@ -197,7 +293,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 		},
 		SelectedBranch: "refs/heads/master",
 	}
-	_, err := getAuthInfo(repoWithValidPrivateKey)
+	_, err := getAuthInfo(repoWithValidPrivateKey, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -212,7 +308,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 		},
 		SelectedBranch: "refs/heads/master",
 	}
-	auth, _ := getAuthInfo(repoWithInvalidPrivateKey)
+	auth, _ := getAuthInfo(repoWithInvalidPrivateKey, nil)
 	if auth != nil {
 		t.Fatal("auth should be nil for invalid private key")
 	}
@@ -223,7 +319,7 @@ func TestGetAuthInfoEmpty(t *testing.T) {
 		URL:       "https://github.com/gaia-pipeline/pipeline-test",
 		LocalDest: "tmp",
 	}
-	auth, _ := getAuthInfo(repoWithoutAuthInfo)
+	auth, _ := getAuthInfo(repoWithoutAuthInfo, nil)
 	if auth != nil {
 		t.Fatal("auth should be nil when no authentication info is provided")
 	}
@@ -551,4 +647,29 @@ func TestMultipleGithubWebHookURLTypes(t *testing.T) {
 			t.Fatal("expected error. none found")
 		}
 	})
+}
+
+func TestGitLSRemote(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestCloneRepoWithSSHAuth")
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.HomePath = tmp
+	// Initialize shared logger
+	b := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: b,
+		Name:   "Gaia",
+	})
+	repo := &gaia.GitRepo{
+		URL:            "https://github.com/gaia-pipeline/pipeline-test",
+		LocalDest:      "tmp",
+		SelectedBranch: "refs/heads/master",
+	}
+
+	// always ensure that tmp folder is cleaned up
+	defer os.RemoveAll("tmp")
+	err := GitLSRemote(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
