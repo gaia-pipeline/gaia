@@ -485,15 +485,3 @@ func PipelineCheckPeriodicSchedules(c echo.Context) error {
 	// All entries are valid.
 	return nil
 }
-
-// PipelineTogglePolling toggles the polling functionality.
-func PipelineTogglePolling(c echo.Context) error {
-	gaia.Cfg.Poll = !gaia.Cfg.Poll
-
-	poll := struct {
-		status bool
-	}{
-		status: gaia.Cfg.Poll,
-	}
-	return c.JSON(http.StatusOK, poll)
-}

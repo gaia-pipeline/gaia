@@ -22,6 +22,44 @@ const (
 	tickerIntervalSeconds = 5
 )
 
+var pollerDone = make(chan struct{}, 0)
+var isPollerRunning bool
+
+// StopPoller sends a done signal to the polling timer if it's running.
+func StopPoller() {
+	if isPollerRunning {
+		pollerDone <- struct{}{}
+	}
+}
+
+// StartPoller starts the poller if it's not already running.
+func StartPoller() {
+	if isPollerRunning {
+		return
+	}
+	if gaia.Cfg.Poll {
+		if gaia.Cfg.PVal < 1 || gaia.Cfg.PVal > 99 {
+			errorMessage := fmt.Sprintf("Invalid value defined for poll interval. Will be using default of 1. Value was: %d, should be between 1-99.", gaia.Cfg.PVal)
+			gaia.Cfg.Logger.Info(errorMessage)
+			gaia.Cfg.PVal = 1
+		}
+		pollTicker := time.NewTicker(time.Duration(gaia.Cfg.PVal) * time.Minute)
+		go func() {
+			defer pollTicker.Stop()
+			for {
+				select {
+				case <-pollTicker.C:
+					updateAllCurrentPipelines()
+				case <-pollerDone:
+					pollTicker.Stop()
+					break
+				}
+			}
+		}()
+		isPollerRunning = true
+	}
+}
+
 // InitTicker inititates the pipeline ticker.
 // This periodic job will check for new pipelines.
 func InitTicker() {
@@ -43,23 +81,7 @@ func InitTicker() {
 		}
 	}()
 
-	if gaia.Cfg.Poll {
-		if gaia.Cfg.PVal < 1 || gaia.Cfg.PVal > 99 {
-			errorMessage := fmt.Sprintf("Invalid value defined for poll interval. Will be using default of 1. Value was: %d, should be between 1-99.", gaia.Cfg.PVal)
-			gaia.Cfg.Logger.Info(errorMessage)
-			gaia.Cfg.PVal = 1
-		}
-		pollTicker := time.NewTicker(time.Duration(gaia.Cfg.PVal) * time.Minute)
-		go func() {
-			defer pollTicker.Stop()
-			for {
-				select {
-				case <-pollTicker.C:
-					updateAllCurrentPipelines()
-				}
-			}
-		}()
-	}
+	StartPoller()
 }
 
 // checkActivePipelines looks up all files in the pipeline folder.
