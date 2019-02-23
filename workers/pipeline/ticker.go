@@ -29,6 +29,7 @@ var isPollerRunning bool
 // StopPoller sends a done signal to the polling timer if it's running.
 func StopPoller() error {
 	if isPollerRunning {
+		isPollerRunning = false
 		pollerDone <- struct{}{}
 		return nil
 	}
