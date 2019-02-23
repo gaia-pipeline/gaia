@@ -3,6 +3,7 @@ package pipeline
 import (
 	"bytes"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -26,16 +27,18 @@ var pollerDone = make(chan struct{}, 0)
 var isPollerRunning bool
 
 // StopPoller sends a done signal to the polling timer if it's running.
-func StopPoller() {
+func StopPoller() error {
 	if isPollerRunning {
 		pollerDone <- struct{}{}
+		return nil
 	}
+	return errors.New("poller is not running")
 }
 
 // StartPoller starts the poller if it's not already running.
-func StartPoller() {
+func StartPoller() error {
 	if isPollerRunning {
-		return
+		return errors.New("poller is already running")
 	}
 	if gaia.Cfg.Poll {
 		if gaia.Cfg.PVal < 1 || gaia.Cfg.PVal > 99 {
@@ -58,6 +61,7 @@ func StartPoller() {
 		}()
 		isPollerRunning = true
 	}
+	return nil
 }
 
 // InitTicker inititates the pipeline ticker.
