@@ -30,7 +30,9 @@ var isPollerRunning bool
 func StopPoller() error {
 	if isPollerRunning {
 		isPollerRunning = false
-		pollerDone <- struct{}{}
+		select {
+		case pollerDone <- struct{}{}:
+		}
 		return nil
 	}
 	return errors.New("poller is not running")
