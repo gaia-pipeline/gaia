@@ -7,7 +7,7 @@
             <table class="table table-grid table-own-bordered">
               <td>
                 <p>
-                  <font color="#eeeeee">Poller</font> <vb-switch type="success" size="large" v-model="settingsTogglePollerValue" @change="settingsTogglePollerSwitch"/>
+                  <font color="#eeeeee">Poller</font> <vb-switch id="pollertoggle" type="success" size="large" v-model="settingsTogglePollerValue" @change="settingsTogglePollerSwitch"/>
                 </p>
               </td>
             </table>
@@ -19,8 +19,24 @@
 </template>
 
 <script>
+  import Vue from 'vue'
   import {TabPane, Tabs} from 'vue-bulma-tabs'
   import VbSwitch from 'vue-bulma-switch'
+  import Notification from 'vue-bulma-notification-fixed'
+  const NotificationComponent = Vue.extend(Notification)
+  const openNotification = (propsData = {
+    title: '',
+    message: '',
+    type: '',
+    direction: '',
+    duration: 4500,
+    container: '.notifications'
+  }) => {
+    return new NotificationComponent({
+      el: document.createElement('div'),
+      propsData
+    })
+  }
 
   export default {
     name: 'manage-settings',
@@ -39,13 +55,50 @@
       settingsTogglePollerSwitch (val) {
         // TODO: Get and Send to API here.
         if (val) {
-          this.settingsTogglePollerText = 'On'
+          // this.settingsTogglePollerText = 'On'
+          this.$http
+            .post('/api/v1/settings/poll/on')
+            .then(response => {
+              openNotification({
+                title: 'Poll turned on!',
+                message: 'Polling has been enabled.',
+                type: 'success'
+              })
+            })
+            .catch((error) => {
+              this.$onError(error)
+            })
+          this.close()
         } else {
-          this.settingsTogglePollerText = 'Off'
+          this.$http
+            .post('/api/v1/settings/poll/off')
+            .then(response => {
+              openNotification({
+                title: 'Poll turned off!',
+                message: 'Polling has been disabled.',
+                type: 'success'
+              })
+            })
+            .catch((error) => {
+              this.$onError(error)
+            })
+          this.close()
         }
       },
       setSettings () {
-        // TODO: Setup the toggles and settings to the current settings.
+        this.$http
+          .get('/api/v1/settings/poll', {showProgressBar: false})
+          .then(response => {
+            let poller = document.getElementById('pollertoggle')
+            if (response.data.Status === true) {
+              poller.parentElement.classList.add('checked')
+            } else {
+              poller.parentElement.classList.delete('checked')
+            }
+          })
+          .catch((error) => {
+            this.$onError(error)
+          })
       }
     }
   }

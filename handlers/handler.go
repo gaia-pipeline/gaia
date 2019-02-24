@@ -65,9 +65,9 @@ func InitHandlers(e *echo.Echo) error {
 	e.POST(p+"pipeline/periodicschedules", PipelineCheckPeriodicSchedules)
 
 	// Settings
-	e.POST(p+"settings/polling/on", SettingsPollingOn)
-	e.POST(p+"settings/polling/off", SettingsPollingOff)
-	e.GET(p+"settings/poll", SettingsPollingGet)
+	e.POST(p+"settings/poll/on", SettingsPollOn)
+	e.POST(p+"settings/poll/off", SettingsPollOff)
+	e.GET(p+"settings/poll", SettingsPollGet)
 
 	// PipelineRun
 	e.POST(p+"pipelinerun/:pipelineid/:runid/stop", PipelineStop)

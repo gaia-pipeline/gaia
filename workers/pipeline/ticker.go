@@ -23,7 +23,7 @@ const (
 	tickerIntervalSeconds = 5
 )
 
-var pollerDone = make(chan struct{}, 0)
+var pollerDone = make(chan struct{}, 1)
 var isPollerRunning bool
 
 // StopPoller sends a done signal to the polling timer if it's running.
@@ -58,7 +58,7 @@ func StartPoller() error {
 					updateAllCurrentPipelines()
 				case <-pollerDone:
 					pollTicker.Stop()
-					break
+					return
 				}
 			}
 		}()

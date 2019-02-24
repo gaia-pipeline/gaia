@@ -9,8 +9,8 @@ import (
 	"github.com/labstack/echo"
 )
 
-// SettingsPollingOn turn on polling functionality.
-func SettingsPollingOn(c echo.Context) error {
+// SettingsPollOn turn on polling functionality.
+func SettingsPollOn(c echo.Context) error {
 	gaia.Cfg.Poll = true
 	err := pipeline.StartPoller()
 	if err != nil {
@@ -19,8 +19,8 @@ func SettingsPollingOn(c echo.Context) error {
 	return c.String(http.StatusOK, "Polling is turned on.")
 }
 
-// SettingsPollingOff turn off polling functionality.
-func SettingsPollingOff(c echo.Context) error {
+// SettingsPollOff turn off polling functionality.
+func SettingsPollOff(c echo.Context) error {
 	gaia.Cfg.Poll = false
 	err := pipeline.StopPoller()
 	if err != nil {
@@ -29,12 +29,12 @@ func SettingsPollingOff(c echo.Context) error {
 	return c.String(http.StatusOK, "Polling is turned off.")
 }
 
-// SettingsPollingGet get status of polling functionality.
-func SettingsPollingGet(c echo.Context) error {
+// SettingsPollGet get status of polling functionality.
+func SettingsPollGet(c echo.Context) error {
 	poll := struct {
-		status bool
+		Status bool
 	}{
-		status: gaia.Cfg.Poll,
+		Status: gaia.Cfg.Poll,
 	}
 	return c.JSON(http.StatusOK, poll)
 }
