@@ -104,6 +104,7 @@
           </div>
         </tab-pane>
         <tab-pane label="Manage Settings" icon="fa fa-wrench">
+          <manage-settings/>
         </tab-pane>
       </tabs>
     </div>
@@ -358,7 +359,6 @@
   import {mapGetters} from 'vuex'
   import ManagePermissions from './permissions/manage-permissions'
   import {EventBus} from '../../app'
-  import VbSwitch from 'vue-bulma-switch'
 
   const NotificationComponent = Vue.extend(Notification)
   const openNotification = (propsData = {
@@ -386,7 +386,6 @@
       Modal,
       Collapse,
       CollapseItem,
-      VbSwitch
     },
 
     data () {
@@ -436,9 +435,7 @@
         showEditPipelineModal: false,
         showResetPipelineTriggerTokenModal: false,
         showDeletePipelineModal: false,
-        pipelinePeriodicSchedules: '',
-        settingsTogglePoller: false,
-        settingsTogglePollerText: 'Off',
+        pipelinePeriodicSchedules: ''
       }
     },
 
@@ -710,15 +707,6 @@
           .catch((error) => {
             this.$onError(error)
           })
-      },
-
-      settingsTogglePollerSwitch(val) {
-        // TODO: Get and Send to API here.
-        if (val) {
-          this.settingsTogglePollerText = 'On'
-        } else {
-          this.settingsTogglePollerText = 'Off'
-        }
       }
     }
   }
