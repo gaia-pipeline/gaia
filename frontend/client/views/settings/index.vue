@@ -358,6 +358,7 @@
   import Notification from 'vue-bulma-notification-fixed'
   import {mapGetters} from 'vuex'
   import ManagePermissions from './permissions/manage-permissions'
+  import ManageSettings from './settings/manage-settings'
   import {EventBus} from '../../app'
 
   const NotificationComponent = Vue.extend(Notification)
@@ -386,6 +387,7 @@
       Modal,
       Collapse,
       CollapseItem,
+      ManageSettings
     },
 
     data () {
