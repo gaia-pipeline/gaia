@@ -358,6 +358,7 @@
   import {mapGetters} from 'vuex'
   import ManagePermissions from './permissions/manage-permissions'
   import {EventBus} from '../../app'
+  import VbSwitch from 'vue-bulma-switch'
 
   const NotificationComponent = Vue.extend(Notification)
   const openNotification = (propsData = {
@@ -384,7 +385,8 @@
       TabPane,
       Modal,
       Collapse,
-      CollapseItem
+      CollapseItem,
+      VbSwitch
     },
 
     data () {
@@ -434,7 +436,9 @@
         showEditPipelineModal: false,
         showResetPipelineTriggerTokenModal: false,
         showDeletePipelineModal: false,
-        pipelinePeriodicSchedules: ''
+        pipelinePeriodicSchedules: '',
+        settingsTogglePoller: false,
+        settingsTogglePollerText: 'Off',
       }
     },
 
@@ -706,6 +710,15 @@
           .catch((error) => {
             this.$onError(error)
           })
+      },
+
+      settingsTogglePollerSwitch(val) {
+        // TODO: Get and Send to API here.
+        if (val) {
+          this.settingsTogglePollerText = 'On'
+        } else {
+          this.settingsTogglePollerText = 'Off'
+        }
       }
     }
   }
