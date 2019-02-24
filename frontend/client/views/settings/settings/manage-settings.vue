@@ -21,6 +21,7 @@
 <script>
   import {TabPane, Tabs} from 'vue-bulma-tabs'
   import VbSwitch from 'vue-bulma-switch'
+import { setSession } from '../../../store/mutations';
 
   export default {
     name: 'manage-settings',
@@ -30,18 +31,10 @@
         search: '',
         settingsTogglePollerValue: false,
         settingsTogglePollerText: 'Off',
-        settingsColumn: [
-          {
-            label: 'Name',
-            fields: 'display_name'
-          },
-          {
-            label: 'Value',
-            fields: 'setting_value'
-          }
-        ],
-        settingsRow: []
       }
+    },
+    mounted () {
+      this.setSettings()
     },
     methods: {
       settingsTogglePollerSwitch (val) {
@@ -51,6 +44,9 @@
         } else {
           this.settingsTogglePollerText = 'Off'
         }
+      },
+      setSettings () {
+        // TODO: Setup the toggles and settings to the current settings.
       }
     }
   }
