@@ -4,16 +4,25 @@
       <article class="tile is-child notification content-article box">
         <div class="tile is-parent">
           <article class="tile is-child notification content-article box">
-            <table>
-              <td>
-                  Poller: <toggle-button
-                    v-model="settingsTogglePollerValue"
-                    id="pollertoggle"
-                    :color="{checked: '#7DCE94', unchecked: '#82C7EB'}"
-                    :labels="{checked: 'On', unchecked: 'Off'}"
-                    @change="settingsTogglePollerSwitch"
-                    :sync="true"/>
-              </td>
+            <table class="table-general responsive">
+              <tr>
+                <th>Setting</th>
+                <th>Value</th>
+              </tr>
+              <tr>
+                <td>
+                  Poller
+                </td>
+                <td>
+                  <toggle-button
+                      v-model="settingsTogglePollerValue"
+                      id="pollertoggle"
+                      :color="{checked: '#7DCE94', unchecked: '#82C7EB'}"
+                      :labels="{checked: 'On', unchecked: 'Off'}"
+                      @change="settingsTogglePollerSwitch"
+                      :sync="true"/>
+                </td>
+              </tr>
             </table>
           </article>
         </div>
@@ -109,8 +118,6 @@
     border: 2px solid #000;
   }
   .table-general th {
-    border: 2px solid #000;
-    background: #2c2b32;
     color: #4da2fc;
   }
   .table-general td {
@@ -118,7 +125,6 @@
     color: #8c91a0;
   }
   .table-settings td:hover {
-    border: 2px solid #000;
     background: #575463;
     cursor: pointer;
   }
