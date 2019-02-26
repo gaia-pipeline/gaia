@@ -4,26 +4,32 @@
       <article class="tile is-child notification content-article box">
         <div class="tile is-parent">
           <article class="tile is-child notification content-article box">
-            <table class="table-general responsive">
-              <tr>
-                <th>Setting</th>
-                <th>Value</th>
-              </tr>
-              <tr>
+            <vue-good-table
+              :columns="settingColumns"
+              :rows="settingRows"
+              :paginate="true"
+              :global-search="true"
+              :defaultSortBy="{field: 'name', type: 'desc'}"
+              globalSearchPlaceholder="Search ..."
+              styleClass="table table-grid table-own-bordered">
+              <template slot="table-row" slot-scope="props">
                 <td>
-                  Poller
+                  <span>{{ props.row.display_name }}</span>
                 </td>
-                <td>
+                <td v-tippy="{ arrow : true,  animation : 'shift-away'}">
                   <toggle-button
-                      v-model="settingsTogglePollerValue"
-                      id="pollertoggle"
-                      :color="{checked: '#7DCE94', unchecked: '#82C7EB'}"
-                      :labels="{checked: 'On', unchecked: 'Off'}"
-                      @change="settingsTogglePollerSwitch"
-                      :sync="true"/>
+                    v-model="props.row.display_value"
+                    id="pollertoggle"
+                    :color="{checked: '#7DCE94', unchecked: '#82C7EB'}"
+                    :labels="{checked: 'On', unchecked: 'Off'}"
+                    @change="settingsTogglePollerSwitch"
+                    :sync="true"/>
                 </td>
-              </tr>
-            </table>
+              </template>
+              <div slot="emptystate" class="empty-table-text">
+                No settings found.
+              </div>
+            </vue-good-table>
           </article>
         </div>
       </article>
@@ -35,6 +41,8 @@
   import Vue from 'vue'
   import { ToggleButton } from 'vue-js-toggle-button'
   import {TabPane, Tabs} from 'vue-bulma-tabs'
+  import VueGoodTable from 'vue-good-table'
+  import VueTippy from 'vue-tippy'
   import Notification from 'vue-bulma-notification-fixed'
   const NotificationComponent = Vue.extend(Notification)
   const openNotification = (propsData = {
@@ -51,13 +59,27 @@
     })
   }
 
+  Vue.use(VueGoodTable)
+  Vue.use(VueTippy)
+
   export default {
     name: 'manage-settings',
     components: {Tabs, TabPane, ToggleButton},
     data () {
       return {
         // search: '',
-        settingsTogglePollerValue: false
+        settingsTogglePollerValue: false,
+        settingColumns: [
+          {
+            label: 'Name',
+            field: 'display_name'
+          },
+          {
+            label: 'Value',
+            field: 'display_value'
+          }
+        ],
+        settingRows: []
       }
     },
     mounted () {
@@ -65,9 +87,7 @@
     },
     methods: {
       settingsTogglePollerSwitch (val) {
-        // TODO: Get and Send to API here.
         if (val.value) {
-          // this.settingsTogglePollerText = 'On'
           this.$http
             .post('/api/v1/settings/poll/on')
             .then(response => {
@@ -99,7 +119,10 @@
         this.$http
           .get('/api/v1/settings/poll', {showProgressBar: false})
           .then(response => {
-            this.settingsTogglePollerValue = response.data.Status
+            this.settingRows = [{
+              display_name: 'Polling',
+              display_value: response.data.Status
+            }]
           })
           .catch((error) => {
             this.$onError(error)
