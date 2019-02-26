@@ -4,11 +4,15 @@
       <article class="tile is-child notification content-article box">
         <div class="tile is-parent">
           <article class="tile is-child notification content-article box">
-            <table class="table table-grid table-own-bordered">
+            <table>
               <td>
-                <p>
-                  <font color="#eeeeee">Poller</font> <vb-switch id="pollertoggle" type="success" size="large" v-model="settingsTogglePollerValue" @change="settingsTogglePollerSwitch"/>
-                </p>
+                  Poller: <toggle-button
+                    v-model="settingsTogglePollerValue"
+                    id="pollertoggle"
+                    :color="{checked: '#7DCE94', unchecked: '#82C7EB'}"
+                    :labels="{checked: 'On', unchecked: 'Off'}"
+                    @change="settingsTogglePollerSwitch"
+                    :sync="true"/>
               </td>
             </table>
           </article>
@@ -20,8 +24,8 @@
 
 <script>
   import Vue from 'vue'
+  import { ToggleButton } from 'vue-js-toggle-button'
   import {TabPane, Tabs} from 'vue-bulma-tabs'
-  import VbSwitch from 'vue-bulma-switch'
   import Notification from 'vue-bulma-notification-fixed'
   const NotificationComponent = Vue.extend(Notification)
   const openNotification = (propsData = {
@@ -40,12 +44,11 @@
 
   export default {
     name: 'manage-settings',
-    components: {Tabs, TabPane, VbSwitch},
+    components: {Tabs, TabPane, ToggleButton},
     data () {
       return {
-        search: '',
-        settingsTogglePollerValue: false,
-        settingsTogglePollerText: 'Off'
+        // search: '',
+        settingsTogglePollerValue: false
       }
     },
     mounted () {
@@ -54,7 +57,7 @@
     methods: {
       settingsTogglePollerSwitch (val) {
         // TODO: Get and Send to API here.
-        if (val) {
+        if (val.value) {
           // this.settingsTogglePollerText = 'On'
           this.$http
             .post('/api/v1/settings/poll/on')
@@ -68,7 +71,6 @@
             .catch((error) => {
               this.$onError(error)
             })
-          this.close()
         } else {
           this.$http
             .post('/api/v1/settings/poll/off')
@@ -82,19 +84,13 @@
             .catch((error) => {
               this.$onError(error)
             })
-          this.close()
         }
       },
       setSettings () {
         this.$http
           .get('/api/v1/settings/poll', {showProgressBar: false})
           .then(response => {
-            let poller = document.getElementById('pollertoggle')
-            if (response.data.Status === true) {
-              poller.parentElement.classList.add('checked')
-            } else {
-              poller.parentElement.classList.delete('checked')
-            }
+            this.settingsTogglePollerValue = response.data.Status
           })
           .catch((error) => {
             this.$onError(error)
