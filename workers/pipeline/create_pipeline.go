@@ -178,7 +178,7 @@ func ValidatePipelineName(pName string) error {
 
 		// Check if pipeline name is already in use.
 		alreadyInUse := false
-		for activePipeline := range GlobalActivePipelines.Iter() {
+		for _, activePipeline := range GlobalActivePipelines.Iter() {
 			if strings.ToLower(s) == strings.ToLower(activePipeline.Name) {
 				alreadyInUse = true
 			}

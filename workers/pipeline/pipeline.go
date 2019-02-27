@@ -133,18 +133,13 @@ func (ap *ActivePipelines) Remove(index int) {
 
 // GetByName looks up the pipeline by the given name.
 func (ap *ActivePipelines) GetByName(n string) *gaia.Pipeline {
-	var foundPipeline gaia.Pipeline
-	for pipeline := range ap.Iter() {
+	for _, pipeline := range ap.Iter() {
 		if pipeline.Name == n {
-			foundPipeline = pipeline
+			return &pipeline
 		}
 	}
 
-	if foundPipeline.Name == "" {
-		return nil
-	}
-
-	return &foundPipeline
+	return nil
 }
 
 // Replace takes the given pipeline and replaces it in the ActivePipelines
@@ -174,62 +169,43 @@ func (ap *ActivePipelines) Replace(p gaia.Pipeline) bool {
 
 // ReplaceByName replaces the pipeline that has the given name with the given pipeline.
 func (ap *ActivePipelines) ReplaceByName(n string, p gaia.Pipeline) bool {
-
-	var index int
-	var pipelineIndex int
-	var found bool
-
-	for pipeline := range ap.Iter() {
+	for index, pipeline := range ap.Iter() {
 		if pipeline.Name == n {
-			found = true
-			pipelineIndex = index
+			ap.Update(index, p)
+			return true
 		}
-		index++
 	}
-
-	if found {
-		ap.Update(pipelineIndex, p)
-	}
-
-	return found
-
+	return false
 }
 
 // Iter iterates over the pipelines in the concurrent slice.
-func (ap *ActivePipelines) Iter() <-chan gaia.Pipeline {
-	c := make(chan gaia.Pipeline)
-
-	go func() {
-		ap.RLock()
-		defer ap.RUnlock()
-		for _, pipeline := range ap.Pipelines {
-			c <- pipeline
-		}
-		close(c)
-	}()
-
+func (ap *ActivePipelines) Iter() []gaia.Pipeline {
+	c := make([]gaia.Pipeline, 0)
+	ap.RLock()
+	defer ap.RUnlock()
+	for _, pipeline := range ap.Pipelines {
+		c = append(c, pipeline)
+	}
 	return c
 }
 
 // Contains checks if the given pipeline name has been already appended
 // to the given ActivePipelines instance.
 func (ap *ActivePipelines) Contains(n string) bool {
-	var foundPipeline bool
-	for pipeline := range ap.Iter() {
+	for _, pipeline := range ap.Iter() {
 		if pipeline.Name == n {
-			foundPipeline = true
+			return true
 		}
 	}
 
-	return foundPipeline
+	return false
 }
 
 // RemoveDeletedPipelines removes the pipelines whose names are NOT
 // present in `existingPipelineNames` from the given ActivePipelines instance.
 func (ap *ActivePipelines) RemoveDeletedPipelines(existingPipelineNames []string) {
 	var deletedPipelineIndices []int
-	var index int
-	for pipeline := range ap.Iter() {
+	for index, pipeline := range ap.Iter() {
 		found := false
 		for _, name := range existingPipelineNames {
 			if pipeline.Name == name {
@@ -240,7 +216,6 @@ func (ap *ActivePipelines) RemoveDeletedPipelines(existingPipelineNames []string
 		if !found {
 			deletedPipelineIndices = append(deletedPipelineIndices, index)
 		}
-		index++
 	}
 	for _, idx := range deletedPipelineIndices {
 		ap.Remove(idx)

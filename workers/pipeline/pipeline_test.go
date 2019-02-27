@@ -74,7 +74,7 @@ func TestRemove(t *testing.T) {
 	ap.Remove(1)
 
 	count := 0
-	for pipeline := range ap.Iter() {
+	for _, pipeline := range ap.Iter() {
 		count++
 		if pipeline.Name == "Pipeline B" {
 			t.Fatalf("Pipeline B still exists. It should have been removed.")
@@ -185,7 +185,7 @@ func TestIter(t *testing.T) {
 	}
 
 	count := 0
-	for pipeline := range ap.Iter() {
+	for _, pipeline := range ap.Iter() {
 		count++
 		retrievedNames = append(retrievedNames, pipeline.Name)
 	}
@@ -246,7 +246,7 @@ func TestRemoveDeletedPipelines(t *testing.T) {
 
 	ap.RemoveDeletedPipelines(existingPipelineNames)
 
-	for pipeline := range ap.Iter() {
+	for _, pipeline := range ap.Iter() {
 		if pipeline.Name == "Pipeline B" {
 			t.Fatalf("Pipeline B still exists. It should have been removed.")
 		}

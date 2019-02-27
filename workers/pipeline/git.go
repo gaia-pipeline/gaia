@@ -190,7 +190,7 @@ func updateAllCurrentPipelines() {
 	var allPipelines []gaia.Pipeline
 	var wg sync.WaitGroup
 	sem := make(chan int, 4)
-	for pipeline := range GlobalActivePipelines.Iter() {
+	for _, pipeline := range GlobalActivePipelines.Iter() {
 		allPipelines = append(allPipelines, pipeline)
 	}
 	for _, p := range allPipelines {

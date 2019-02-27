@@ -73,9 +73,10 @@ func PipelineStop(c echo.Context) error {
 
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
-	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+	for _, pipeline := range pipeline.GlobalActivePipelines.Iter() {
 		if pipeline.ID == p {
 			foundPipeline = pipeline
+			break
 		}
 	}
 

@@ -97,7 +97,7 @@ func PipelineGetAll(c echo.Context) error {
 	var pipelines []gaia.Pipeline
 
 	// Get all active pipelines
-	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+	for _, pipeline := range pipeline.GlobalActivePipelines.Iter() {
 		pipelines = append(pipelines, pipeline)
 	}
 
@@ -116,18 +116,12 @@ func PipelineGet(c echo.Context) error {
 	}
 
 	// Look up pipeline for the given id
-	var foundPipeline gaia.Pipeline
-	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+	for _, pipeline := range pipeline.GlobalActivePipelines.Iter() {
 		if pipeline.ID == pipelineID {
-			foundPipeline = pipeline
+			return c.JSON(http.StatusOK, pipeline)
 		}
 	}
 
-	if foundPipeline.Name != "" {
-		return c.JSON(http.StatusOK, foundPipeline)
-	}
-
-	// Pipeline not found
 	return c.String(http.StatusNotFound, errPipelineNotFound.Error())
 }
 
@@ -142,9 +136,10 @@ func PipelineUpdate(c echo.Context) error {
 
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
-	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+	for _, pipeline := range pipeline.GlobalActivePipelines.Iter() {
 		if pipeline.ID == p.ID {
 			foundPipeline = pipeline
+			break
 		}
 	}
 
@@ -248,14 +243,12 @@ func PipelineDelete(c echo.Context) error {
 
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
-	var index int
 	var deletedPipelineIndex int
-	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+	for index, pipeline := range pipeline.GlobalActivePipelines.Iter() {
 		if pipeline.ID == pipelineID {
 			foundPipeline = pipeline
 			deletedPipelineIndex = index
 		}
-		index++
 	}
 
 	if foundPipeline.Name == "" {
@@ -302,9 +295,10 @@ func PipelineTrigger(c echo.Context) error {
 
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
-	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+	for _, pipeline := range pipeline.GlobalActivePipelines.Iter() {
 		if pipeline.ID == pipelineID {
 			foundPipeline = pipeline
+			break
 		}
 	}
 
@@ -343,9 +337,10 @@ func PipelineResetToken(c echo.Context) error {
 
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
-	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+	for _, pipeline := range pipeline.GlobalActivePipelines.Iter() {
 		if pipeline.ID == pipelineID {
 			foundPipeline = pipeline
+			break
 		}
 	}
 
@@ -408,9 +403,10 @@ func PipelineStart(c echo.Context) error {
 
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
-	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+	for _, pipeline := range pipeline.GlobalActivePipelines.Iter() {
 		if pipeline.ID == pipelineID {
 			foundPipeline = pipeline
+			break
 		}
 	}
 
@@ -438,7 +434,7 @@ func PipelineGetAllWithLatestRun(c echo.Context) error {
 	// Get all active pipelines
 	storeService, _ := services.StorageService()
 	var pipelines []gaia.Pipeline
-	for pipeline := range pipeline.GlobalActivePipelines.Iter() {
+	for _, pipeline := range pipeline.GlobalActivePipelines.Iter() {
 		pipelines = append(pipelines, pipeline)
 	}
 
