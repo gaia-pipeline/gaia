@@ -187,12 +187,9 @@ func gitCloneRepo(repo *gaia.GitRepo) error {
 
 func updateAllCurrentPipelines() {
 	gaia.Cfg.Logger.Debug("starting updating of pipelines...")
-	var allPipelines []gaia.Pipeline
+	allPipelines := GlobalActivePipelines.GetAll()
 	var wg sync.WaitGroup
 	sem := make(chan int, 4)
-	for _, pipeline := range GlobalActivePipelines.Iter() {
-		allPipelines = append(allPipelines, pipeline)
-	}
 	for _, p := range allPipelines {
 		wg.Add(1)
 		go func(pipe gaia.Pipeline) {

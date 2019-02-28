@@ -133,7 +133,7 @@ func (ap *ActivePipelines) Remove(index int) {
 
 // GetByName looks up the pipeline by the given name.
 func (ap *ActivePipelines) GetByName(n string) *gaia.Pipeline {
-	for _, pipeline := range ap.Iter() {
+	for _, pipeline := range ap.GetAll() {
 		if pipeline.Name == n {
 			return &pipeline
 		}
@@ -169,7 +169,7 @@ func (ap *ActivePipelines) Replace(p gaia.Pipeline) bool {
 
 // ReplaceByName replaces the pipeline that has the given name with the given pipeline.
 func (ap *ActivePipelines) ReplaceByName(n string, p gaia.Pipeline) bool {
-	for index, pipeline := range ap.Iter() {
+	for index, pipeline := range ap.GetAll() {
 		if pipeline.Name == n {
 			ap.Update(index, p)
 			return true
@@ -178,8 +178,8 @@ func (ap *ActivePipelines) ReplaceByName(n string, p gaia.Pipeline) bool {
 	return false
 }
 
-// Iter iterates over the pipelines in the concurrent slice.
-func (ap *ActivePipelines) Iter() []gaia.Pipeline {
+// GetAll iterates over the pipelines in the concurrent slice.
+func (ap *ActivePipelines) GetAll() []gaia.Pipeline {
 	c := make([]gaia.Pipeline, 0)
 	ap.RLock()
 	defer ap.RUnlock()
@@ -192,7 +192,7 @@ func (ap *ActivePipelines) Iter() []gaia.Pipeline {
 // Contains checks if the given pipeline name has been already appended
 // to the given ActivePipelines instance.
 func (ap *ActivePipelines) Contains(n string) bool {
-	for _, pipeline := range ap.Iter() {
+	for _, pipeline := range ap.GetAll() {
 		if pipeline.Name == n {
 			return true
 		}
@@ -205,7 +205,7 @@ func (ap *ActivePipelines) Contains(n string) bool {
 // present in `existingPipelineNames` from the given ActivePipelines instance.
 func (ap *ActivePipelines) RemoveDeletedPipelines(existingPipelineNames []string) {
 	var deletedPipelineIndices []int
-	for index, pipeline := range ap.Iter() {
+	for index, pipeline := range ap.GetAll() {
 		found := false
 		for _, name := range existingPipelineNames {
 			if pipeline.Name == name {

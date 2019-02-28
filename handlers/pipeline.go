@@ -94,12 +94,8 @@ func PipelineNameAvailable(c echo.Context) error {
 
 // PipelineGetAll returns all registered pipelines.
 func PipelineGetAll(c echo.Context) error {
-	var pipelines []gaia.Pipeline
-
 	// Get all active pipelines
-	for _, pipeline := range pipeline.GlobalActivePipelines.Iter() {
-		pipelines = append(pipelines, pipeline)
-	}
+	pipelines := pipeline.GlobalActivePipelines.GetAll()
 
 	// Return as json
 	return c.JSON(http.StatusOK, pipelines)
@@ -116,7 +112,7 @@ func PipelineGet(c echo.Context) error {
 	}
 
 	// Look up pipeline for the given id
-	for _, pipeline := range pipeline.GlobalActivePipelines.Iter() {
+	for _, pipeline := range pipeline.GlobalActivePipelines.GetAll() {
 		if pipeline.ID == pipelineID {
 			return c.JSON(http.StatusOK, pipeline)
 		}
@@ -136,7 +132,7 @@ func PipelineUpdate(c echo.Context) error {
 
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
-	for _, pipeline := range pipeline.GlobalActivePipelines.Iter() {
+	for _, pipeline := range pipeline.GlobalActivePipelines.GetAll() {
 		if pipeline.ID == p.ID {
 			foundPipeline = pipeline
 			break
@@ -244,10 +240,11 @@ func PipelineDelete(c echo.Context) error {
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
 	var deletedPipelineIndex int
-	for index, pipeline := range pipeline.GlobalActivePipelines.Iter() {
+	for index, pipeline := range pipeline.GlobalActivePipelines.GetAll() {
 		if pipeline.ID == pipelineID {
 			foundPipeline = pipeline
 			deletedPipelineIndex = index
+			break
 		}
 	}
 
@@ -295,7 +292,7 @@ func PipelineTrigger(c echo.Context) error {
 
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
-	for _, pipeline := range pipeline.GlobalActivePipelines.Iter() {
+	for _, pipeline := range pipeline.GlobalActivePipelines.GetAll() {
 		if pipeline.ID == pipelineID {
 			foundPipeline = pipeline
 			break
@@ -337,7 +334,7 @@ func PipelineResetToken(c echo.Context) error {
 
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
-	for _, pipeline := range pipeline.GlobalActivePipelines.Iter() {
+	for _, pipeline := range pipeline.GlobalActivePipelines.GetAll() {
 		if pipeline.ID == pipelineID {
 			foundPipeline = pipeline
 			break
@@ -403,7 +400,7 @@ func PipelineStart(c echo.Context) error {
 
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
-	for _, pipeline := range pipeline.GlobalActivePipelines.Iter() {
+	for _, pipeline := range pipeline.GlobalActivePipelines.GetAll() {
 		if pipeline.ID == pipelineID {
 			foundPipeline = pipeline
 			break
@@ -433,10 +430,7 @@ type getAllWithLatestRun struct {
 func PipelineGetAllWithLatestRun(c echo.Context) error {
 	// Get all active pipelines
 	storeService, _ := services.StorageService()
-	var pipelines []gaia.Pipeline
-	for _, pipeline := range pipeline.GlobalActivePipelines.Iter() {
-		pipelines = append(pipelines, pipeline)
-	}
+	pipelines := pipeline.GlobalActivePipelines.GetAll()
 
 	// Iterate all pipelines
 	var pipelinesWithLatestRun []getAllWithLatestRun
