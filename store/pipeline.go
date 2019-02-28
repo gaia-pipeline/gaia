@@ -330,28 +330,19 @@ func (s *BoltStore) SettingsPut(c *gaia.StoreConfig) error {
 		// Get settings bucket
 		b := tx.Bucket(settingsBucket)
 
-		// Generate ID for the settings if its new.
-		if c.ID == 0 {
-			id, err := b.NextSequence()
-			if err != nil {
-				return err
-			}
-			c.ID = int(id)
-		}
-
 		// Marshal pipeline data into bytes.
 		buf, err := json.Marshal(c)
 		if err != nil {
 			return err
 		}
 
-		// Persist bytes to pipelines bucket.
-		return b.Put(itob(c.ID), buf)
+		// Persist bytes to settings bucket.
+		return b.Put(itob(1), buf)
 	})
 }
 
 // SettingsGet gets a pipeline by given id.
-func (s *BoltStore) SettingsGet(id int) (*gaia.StoreConfig, error) {
+func (s *BoltStore) SettingsGet() (*gaia.StoreConfig, error) {
 	var config = &gaia.StoreConfig{}
 
 	return config, s.db.View(func(tx *bolt.Tx) error {
@@ -359,7 +350,7 @@ func (s *BoltStore) SettingsGet(id int) (*gaia.StoreConfig, error) {
 		b := tx.Bucket(settingsBucket)
 
 		// Get pipeline
-		v := b.Get(itob(id))
+		v := b.Get(itob(1))
 
 		// Check if we found the pipeline
 		if v == nil {

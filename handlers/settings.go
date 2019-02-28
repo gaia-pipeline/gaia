@@ -41,14 +41,22 @@ func SettingsPollOff(c echo.Context) error {
 	return c.String(http.StatusOK, "Polling is turned off.")
 }
 
+type pollStatus struct {
+	Status bool
+}
+
 // SettingsPollGet get status of polling functionality.
 func SettingsPollGet(c echo.Context) error {
 	storeService, _ := services.StorageService()
 	settings, err := storeService.SettingsGet()
-	poll := struct {
-		Status bool
-	}{
-		Status: gaia.Cfg.Poll,
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Something went wrong while getting storage service.")
 	}
-	return c.JSON(http.StatusOK, poll)
+	var ps pollStatus
+	if settings == nil {
+		ps.Status = gaia.Cfg.Poll
+	} else {
+		ps.Status = settings.Poll
+	}
+	return c.JSON(http.StatusOK, ps)
 }
