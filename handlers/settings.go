@@ -12,13 +12,24 @@ import (
 
 // SettingsPollOn turn on polling functionality.
 func SettingsPollOn(c echo.Context) error {
-	storeService, _ := services.StorageService()
+	storeService, err := services.StorageService()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Something went wrong while getting storage service.")
+	}
+	configStore, err := storeService.SettingsGet()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Something went wrong while getting storage service.")
+	}
+	if configStore == nil {
+		configStore = &gaia.StoreConfig{}
+	}
+
 	gaia.Cfg.Poll = true
-	err := pipeline.StartPoller()
+	err = pipeline.StartPoller()
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 	}
-	configStore := &gaia.StoreConfig{}
+
 	configStore.Poll = true
 	err = storeService.SettingsPut(configStore)
 	if err != nil {
@@ -30,12 +41,18 @@ func SettingsPollOn(c echo.Context) error {
 // SettingsPollOff turn off polling functionality.
 func SettingsPollOff(c echo.Context) error {
 	storeService, _ := services.StorageService()
+	configStore, err := storeService.SettingsGet()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Something went wrong while getting storage service.")
+	}
+	if configStore == nil {
+		configStore = &gaia.StoreConfig{}
+	}
 	gaia.Cfg.Poll = false
-	err := pipeline.StopPoller()
+	err = pipeline.StopPoller()
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 	}
-	configStore := &gaia.StoreConfig{}
 	configStore.Poll = true
 	err = storeService.SettingsPut(configStore)
 	return c.String(http.StatusOK, "Polling is turned off.")

@@ -54,7 +54,7 @@
         <tab-pane label="Manage Permissions" icon="fa fa-users">
           <manage-permissions :users="userRows"/>
         </tab-pane>
-        <tab-pane label="Manage Pipelines" icon="fa fa-wrench">
+        <tab-pane label="Manage Pipelines" icon="fa fa-cog">
           <div class="tile is-ancestor">
             <div class="tile is-vertical">
               <div class="tile is-parent">

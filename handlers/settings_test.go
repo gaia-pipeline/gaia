@@ -8,12 +8,28 @@ import (
 	"testing"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/services"
+	gStore "github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
 
 type status struct {
 	Status bool
+}
+
+type mockSettingStoreService struct {
+	gStore.GaiaStore
+	config *gaia.StoreConfig
+	err    error
+}
+
+func (m mockSettingStoreService) SettingsGet() (*gaia.StoreConfig, error) {
+	return m.config, m.err
+}
+
+func (m mockSettingStoreService) SettingsPut(c *gaia.StoreConfig) error {
+	return m.err
 }
 
 func TestSetPollerToggle(t *testing.T) {
@@ -31,6 +47,11 @@ func TestSetPollerToggle(t *testing.T) {
 	// // Initialize echo
 	e := echo.New()
 	InitHandlers(e)
+	m := mockSettingStoreService{config: nil, err: nil}
+	services.MockStorageService(&m)
+	defer func() {
+		services.MockStorageService(nil)
+	}()
 
 	t.Run("switching it on twice should fail", func(t2 *testing.T) {
 		req := httptest.NewRequest(echo.POST, "/", nil)
@@ -128,11 +149,11 @@ func TestSetPollerToggle(t *testing.T) {
 			PipelinePath: dataDir,
 			Poll:         true,
 		}
-		req := httptest.NewRequest(echo.POST, "/", nil)
+		req := httptest.NewRequest(echo.GET, "/", nil)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/on")
+		c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll")
 
 		SettingsPollGet(c)
 		retStatus := http.StatusOK
@@ -145,4 +166,43 @@ func TestSetPollerToggle(t *testing.T) {
 			t.Fatalf("expected returned status to be true. was: %v", s.Status)
 		}
 	})
+}
+
+func TestGettingSettingFromDBTakesPrecedence(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestGettingSettingFromDBTakesPrecedence")
+	dataDir := tmp
+
+	gaia.Cfg = &gaia.Config{
+		Logger:       hclog.NewNullLogger(),
+		DataPath:     dataDir,
+		HomePath:     dataDir,
+		PipelinePath: dataDir,
+		Poll:         false,
+	}
+
+	// // Initialize echo
+	e := echo.New()
+	InitHandlers(e)
+	config := &gaia.StoreConfig{
+		Poll: true,
+	}
+	m := mockSettingStoreService{config: config, err: nil}
+	services.MockStorageService(&m)
+	defer services.MockStorageService(nil)
+	req := httptest.NewRequest(echo.GET, "/", nil)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/")
+
+	SettingsPollGet(c)
+	retStatus := http.StatusOK
+	if rec.Code != retStatus {
+		t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
+	}
+	var s status
+	json.NewDecoder(rec.Body).Decode(&s)
+	if s.Status != true {
+		t.Fatalf("expected returned status to be true from storage. was: %v", s.Status)
+	}
 }
