@@ -35,11 +35,16 @@ func SettingsPollOff(c echo.Context) error {
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 	}
+	configStore := &gaia.StoreConfig{}
+	configStore.Poll = true
+	err = storeService.SettingsPut(configStore)
 	return c.String(http.StatusOK, "Polling is turned off.")
 }
 
 // SettingsPollGet get status of polling functionality.
 func SettingsPollGet(c echo.Context) error {
+	storeService, _ := services.StorageService()
+	settings, err := storeService.SettingsGet()
 	poll := struct {
 		Status bool
 	}{

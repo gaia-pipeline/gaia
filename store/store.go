@@ -73,6 +73,7 @@ type GaiaStore interface {
 	UserPermissionsGet(username string) (*gaia.UserPermission, error)
 	UserPermissionsDelete(username string) error
 	SettingsPut(config *gaia.StoreConfig) error
+	SettingsGet() (*gaia.StoreConfig, error)
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore
