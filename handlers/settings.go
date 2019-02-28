@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 
 	"github.com/gaia-pipeline/gaia"
@@ -11,8 +12,15 @@ import (
 
 // SettingsPollOn turn on polling functionality.
 func SettingsPollOn(c echo.Context) error {
+	storeService, _ := services.StorageService()
 	gaia.Cfg.Poll = true
 	err := pipeline.StartPoller()
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+	}
+	configStore := &gaia.StoreConfig{}
+	configStore.Poll = true
+	err = storeService.SettingsPut(configStore)
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 	}
@@ -21,6 +29,7 @@ func SettingsPollOn(c echo.Context) error {
 
 // SettingsPollOff turn off polling functionality.
 func SettingsPollOff(c echo.Context) error {
+	storeService, _ := services.StorageService()
 	gaia.Cfg.Poll = false
 	err := pipeline.StopPoller()
 	if err != nil {
