@@ -65,3 +65,123 @@ func TestCheckActivePipelines(t *testing.T) {
 		t.Error("cannot find pipeline in store")
 	}
 }
+
+func TestTurningThePollerOn(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestTurningThePollerOn")
+	dataDir := tmp
+
+	gaia.Cfg = &gaia.Config{
+		Logger:       hclog.NewNullLogger(),
+		DataPath:     dataDir,
+		HomePath:     dataDir,
+		PipelinePath: dataDir,
+		Poll:         true,
+	}
+
+	defer StopPoller()
+	err := StartPoller()
+	if err != nil {
+		t.Fatal("error was not expected. got: ", err)
+	}
+}
+
+func TestTurningThePollerOnWhilePollingIsDisabled(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestTurningThePollerOnWhilePollingIsDisabled")
+	dataDir := tmp
+
+	gaia.Cfg = &gaia.Config{
+		Logger:       hclog.NewNullLogger(),
+		DataPath:     dataDir,
+		HomePath:     dataDir,
+		PipelinePath: dataDir,
+		Poll:         false,
+	}
+
+	err := StartPoller()
+	if err != nil {
+		t.Fatal("error was not expected. got: ", err)
+	}
+	if isPollerRunning != false {
+		t.Fatal("expected isPollerRunning to be false. was: ", isPollerRunning)
+	}
+}
+
+func TestTurningThePollerOnWhilePollingIsEnabled(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestTurningThePollerOnWhilePollingIsEnabled")
+	dataDir := tmp
+
+	gaia.Cfg = &gaia.Config{
+		Logger:       hclog.NewNullLogger(),
+		DataPath:     dataDir,
+		HomePath:     dataDir,
+		PipelinePath: dataDir,
+		Poll:         true,
+	}
+	defer StopPoller()
+	err := StartPoller()
+	if err != nil {
+		t.Fatal("error was not expected. got: ", err)
+	}
+	if isPollerRunning != true {
+		t.Fatal("expected isPollerRunning to be true. was: ", isPollerRunning)
+	}
+}
+
+func TestTurningThePollerOff(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestTurningThePollerOff")
+	dataDir := tmp
+
+	gaia.Cfg = &gaia.Config{
+		Logger:       hclog.NewNullLogger(),
+		DataPath:     dataDir,
+		HomePath:     dataDir,
+		PipelinePath: dataDir,
+		Poll:         true,
+	}
+
+	err := StartPoller()
+	if err != nil {
+		t.Fatal("error was not expected. got: ", err)
+	}
+	if isPollerRunning != true {
+		t.Fatal("expected isPollerRunning to be true. was: ", isPollerRunning)
+	}
+
+	err = StopPoller()
+	if err != nil {
+		t.Fatal("error was not expected. got: ", err)
+	}
+	if isPollerRunning != false {
+		t.Fatal("expected isPollerRunning to be false. was: ", isPollerRunning)
+	}
+}
+
+func TestTogglePoller(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestTogglePoller")
+	dataDir := tmp
+
+	gaia.Cfg = &gaia.Config{
+		Logger:       hclog.NewNullLogger(),
+		DataPath:     dataDir,
+		HomePath:     dataDir,
+		PipelinePath: dataDir,
+		Poll:         true,
+	}
+
+	err := StartPoller()
+	if err != nil {
+		t.Fatal("error was not expected. got: ", err)
+	}
+	err = StartPoller()
+	if err == nil {
+		t.Fatal("starting the poller again should have failed")
+	}
+	err = StopPoller()
+	if err != nil {
+		t.Fatal("stopping the poller while it's running should not have failed. got: ", err)
+	}
+	err = StopPoller()
+	if err == nil {
+		t.Fatal("stopping the poller again while it's stopped should have failed.")
+	}
+}

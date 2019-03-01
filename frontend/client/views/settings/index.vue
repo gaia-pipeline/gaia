@@ -54,7 +54,7 @@
         <tab-pane label="Manage Permissions" icon="fa fa-users">
           <manage-permissions :users="userRows"/>
         </tab-pane>
-        <tab-pane label="Manage Pipelines" icon="fa fa-wrench">
+        <tab-pane label="Manage Pipelines" icon="fa fa-cog">
           <div class="tile is-ancestor">
             <div class="tile is-vertical">
               <div class="tile is-parent">
@@ -102,6 +102,9 @@
               </div>
             </div>
           </div>
+        </tab-pane>
+        <tab-pane label="Manage Settings" icon="fa fa-wrench">
+          <manage-settings/>
         </tab-pane>
       </tabs>
     </div>
@@ -355,6 +358,7 @@
   import Notification from 'vue-bulma-notification-fixed'
   import {mapGetters} from 'vuex'
   import ManagePermissions from './permissions/manage-permissions'
+  import ManageSettings from './settings/manage-settings'
   import {EventBus} from '../../app'
 
   const NotificationComponent = Vue.extend(Notification)
@@ -382,7 +386,8 @@
       TabPane,
       Modal,
       Collapse,
-      CollapseItem
+      CollapseItem,
+      ManageSettings
     },
 
     data () {

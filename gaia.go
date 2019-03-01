@@ -249,6 +249,11 @@ type Config struct {
 	}
 }
 
+type StoreConfig struct {
+	ID   int
+	Poll bool
+}
+
 // String returns a pipeline type string back
 func (p PipelineType) String() string {
 	return string(p)

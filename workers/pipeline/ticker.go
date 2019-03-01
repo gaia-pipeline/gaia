@@ -3,6 +3,7 @@ package pipeline
 import (
 	"bytes"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -21,6 +22,50 @@ const (
 	// Definition in seconds.
 	tickerIntervalSeconds = 5
 )
+
+var pollerDone = make(chan struct{}, 1)
+var isPollerRunning bool
+
+// StopPoller sends a done signal to the polling timer if it's running.
+func StopPoller() error {
+	if isPollerRunning {
+		isPollerRunning = false
+		select {
+		case pollerDone <- struct{}{}:
+		}
+		return nil
+	}
+	return errors.New("poller is not running")
+}
+
+// StartPoller starts the poller if it's not already running.
+func StartPoller() error {
+	if isPollerRunning {
+		return errors.New("poller is already running")
+	}
+	if gaia.Cfg.Poll {
+		if gaia.Cfg.PVal < 1 || gaia.Cfg.PVal > 99 {
+			errorMessage := fmt.Sprintf("Invalid value defined for poll interval. Will be using default of 1. Value was: %d, should be between 1-99.", gaia.Cfg.PVal)
+			gaia.Cfg.Logger.Info(errorMessage)
+			gaia.Cfg.PVal = 1
+		}
+		pollTicker := time.NewTicker(time.Duration(gaia.Cfg.PVal) * time.Minute)
+		go func() {
+			defer pollTicker.Stop()
+			for {
+				select {
+				case <-pollTicker.C:
+					updateAllCurrentPipelines()
+				case <-pollerDone:
+					pollTicker.Stop()
+					return
+				}
+			}
+		}()
+		isPollerRunning = true
+	}
+	return nil
+}
 
 // InitTicker inititates the pipeline ticker.
 // This periodic job will check for new pipelines.
@@ -43,23 +88,7 @@ func InitTicker() {
 		}
 	}()
 
-	if gaia.Cfg.Poll {
-		if gaia.Cfg.PVal < 1 || gaia.Cfg.PVal > 99 {
-			errorMessage := fmt.Sprintf("Invalid value defined for poll interval. Will be using default of 1. Value was: %d, should be between 1-99.", gaia.Cfg.PVal)
-			gaia.Cfg.Logger.Info(errorMessage)
-			gaia.Cfg.PVal = 1
-		}
-		pollTicker := time.NewTicker(time.Duration(gaia.Cfg.PVal) * time.Minute)
-		go func() {
-			defer pollTicker.Stop()
-			for {
-				select {
-				case <-pollTicker.C:
-					updateAllCurrentPipelines()
-				}
-			}
-		}()
-	}
+	StartPoller()
 }
 
 // checkActivePipelines looks up all files in the pipeline folder.

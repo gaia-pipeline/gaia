@@ -27,6 +27,9 @@ var (
 
 	// Name of the bucket where we store all pipeline runs.
 	pipelineRunBucket = []byte("PipelineRun")
+
+	// Name of the bucket where we store information about settings
+	settingsBucket = []byte("Settings")
 )
 
 const (
@@ -69,6 +72,8 @@ type GaiaStore interface {
 	UserPermissionsPut(perms *gaia.UserPermission) error
 	UserPermissionsGet(username string) (*gaia.UserPermission, error)
 	UserPermissionsDelete(username string) error
+	SettingsPut(config *gaia.StoreConfig) error
+	SettingsGet() (*gaia.StoreConfig, error)
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore
@@ -134,6 +139,11 @@ func (s *BoltStore) setupDatabase() error {
 		return err
 	}
 	bucketName = pipelineRunBucket
+	err = s.db.Update(c)
+	if err != nil {
+		return err
+	}
+	bucketName = settingsBucket
 	err = s.db.Update(c)
 	if err != nil {
 		return err
