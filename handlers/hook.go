@@ -122,9 +122,10 @@ func GitWebHook(c echo.Context) error {
 	}
 
 	var foundPipe *gaia.Pipeline
-	for pipe := range pipeline.GlobalActivePipelines.Iter() {
+	for _, pipe := range pipeline.GlobalActivePipelines.GetAll() {
 		if pipe.Repo.URL == p.Repo.GitURL || pipe.Repo.URL == p.Repo.HTMLURL || pipe.Repo.URL == p.Repo.SSHURL {
 			foundPipe = &pipe
+			break
 		}
 	}
 	err = pipeline.UpdateRepository(foundPipe)
