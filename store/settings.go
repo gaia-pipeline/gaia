@@ -20,7 +20,7 @@ func (s *BoltStore) SettingsPut(c *gaia.StoreConfig) error {
 		}
 
 		// Persist bytes to settings bucket.
-		return b.Put(itob(1), buf)
+		return b.Put([]byte("gaia_config_settings"), buf)
 	})
 }
 
@@ -33,7 +33,7 @@ func (s *BoltStore) SettingsGet() (*gaia.StoreConfig, error) {
 		b := tx.Bucket(settingsBucket)
 
 		// Get pipeline
-		v := b.Get(itob(1))
+		v := b.Get([]byte("gaia_config_settings"))
 
 		// Check if we found the pipeline
 		if v == nil {

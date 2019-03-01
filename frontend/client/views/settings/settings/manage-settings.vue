@@ -67,7 +67,6 @@
     components: {Tabs, TabPane, ToggleButton},
     data () {
       return {
-        // search: '',
         settingsTogglePollerValue: false,
         settingColumns: [
           {

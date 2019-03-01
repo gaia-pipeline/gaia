@@ -143,6 +143,11 @@ func (s *BoltStore) setupDatabase() error {
 	if err != nil {
 		return err
 	}
+	bucketName = settingsBucket
+	err = s.db.Update(c)
+	if err != nil {
+		return err
+	}
 
 	// Make sure that the user "admin" does exist
 	admin, err := s.UserGet(adminUsername)
