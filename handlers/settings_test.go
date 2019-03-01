@@ -20,16 +20,16 @@ type status struct {
 
 type mockSettingStoreService struct {
 	gStore.GaiaStore
-	config *gaia.StoreConfig
-	err    error
+	get func() (*gaia.StoreConfig, error)
+	put func(*gaia.StoreConfig) error
 }
 
 func (m mockSettingStoreService) SettingsGet() (*gaia.StoreConfig, error) {
-	return m.config, m.err
+	return m.get()
 }
 
 func (m mockSettingStoreService) SettingsPut(c *gaia.StoreConfig) error {
-	return m.err
+	return m.put(c)
 }
 
 func TestSetPollerToggle(t *testing.T) {
@@ -47,7 +47,13 @@ func TestSetPollerToggle(t *testing.T) {
 	// // Initialize echo
 	e := echo.New()
 	InitHandlers(e)
-	m := mockSettingStoreService{config: nil, err: nil}
+	get := func() (*gaia.StoreConfig, error) {
+		return nil, nil
+	}
+	put := func(*gaia.StoreConfig) error {
+		return nil
+	}
+	m := mockSettingStoreService{get: get, put: put}
 	services.MockStorageService(&m)
 	defer func() {
 		services.MockStorageService(nil)
@@ -183,10 +189,15 @@ func TestGettingSettingFromDBTakesPrecedence(t *testing.T) {
 	// // Initialize echo
 	e := echo.New()
 	InitHandlers(e)
-	config := &gaia.StoreConfig{
-		Poll: true,
+	get := func() (*gaia.StoreConfig, error) {
+		return &gaia.StoreConfig{
+			Poll: true,
+		}, nil
 	}
-	m := mockSettingStoreService{config: config, err: nil}
+	put := func(*gaia.StoreConfig) error {
+		return nil
+	}
+	m := mockSettingStoreService{get: get, put: put}
 	services.MockStorageService(&m)
 	defer services.MockStorageService(nil)
 	req := httptest.NewRequest(echo.GET, "/", nil)
@@ -204,5 +215,55 @@ func TestGettingSettingFromDBTakesPrecedence(t *testing.T) {
 	json.NewDecoder(rec.Body).Decode(&s)
 	if s.Status != true {
 		t.Fatalf("expected returned status to be true from storage. was: %v", s.Status)
+	}
+}
+
+func TestSettingPollerOnAlsoSavesSettingsInDB(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestSettingPollerOnAlsoSavesSettingsInDB")
+	dataDir := tmp
+
+	gaia.Cfg = &gaia.Config{
+		Logger:       hclog.NewNullLogger(),
+		DataPath:     dataDir,
+		HomePath:     dataDir,
+		PipelinePath: dataDir,
+		Poll:         false,
+	}
+
+	// // Initialize echo
+	e := echo.New()
+	InitHandlers(e)
+	get := func() (*gaia.StoreConfig, error) {
+		return &gaia.StoreConfig{
+			Poll: true,
+		}, nil
+	}
+	putCalled := false
+	put := func(*gaia.StoreConfig) error {
+		putCalled = true
+		return nil
+	}
+	m := mockSettingStoreService{get: get, put: put}
+	services.MockStorageService(&m)
+	defer services.MockStorageService(nil)
+	req := httptest.NewRequest(echo.POST, "/", nil)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/on")
+
+	SettingsPollOn(c)
+	retStatus := http.StatusOK
+	if rec.Code != retStatus {
+		t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
+	}
+
+	if putCalled != true {
+		t.Fatal("SettingPut should have been called. Was not.")
+	}
+	putCalled = false
+	SettingsPollOff(c)
+	if putCalled != true {
+		t.Fatal("SettingPut should have been called. Was not.")
 	}
 }

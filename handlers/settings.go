@@ -18,7 +18,7 @@ func SettingsPollOn(c echo.Context) error {
 	}
 	configStore, err := storeService.SettingsGet()
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Something went wrong while getting storage service.")
+		return c.String(http.StatusInternalServerError, "Something went wrong while retrieving settings information.")
 	}
 	if configStore == nil {
 		configStore = &gaia.StoreConfig{}
@@ -40,10 +40,13 @@ func SettingsPollOn(c echo.Context) error {
 
 // SettingsPollOff turn off polling functionality.
 func SettingsPollOff(c echo.Context) error {
-	storeService, _ := services.StorageService()
-	configStore, err := storeService.SettingsGet()
+	storeService, err := services.StorageService()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Something went wrong while getting storage service.")
+	}
+	configStore, err := storeService.SettingsGet()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Something went wrong while retrieving settings information.")
 	}
 	if configStore == nil {
 		configStore = &gaia.StoreConfig{}
@@ -64,16 +67,19 @@ type pollStatus struct {
 
 // SettingsPollGet get status of polling functionality.
 func SettingsPollGet(c echo.Context) error {
-	storeService, _ := services.StorageService()
-	settings, err := storeService.SettingsGet()
+	storeService, err := services.StorageService()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Something went wrong while getting storage service.")
 	}
+	configStore, err := storeService.SettingsGet()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Something went wrong while retrieving settings information.")
+	}
 	var ps pollStatus
-	if settings == nil {
+	if configStore == nil {
 		ps.Status = gaia.Cfg.Poll
 	} else {
-		ps.Status = settings.Poll
+		ps.Status = configStore.Poll
 	}
 	return c.JSON(http.StatusOK, ps)
 }
