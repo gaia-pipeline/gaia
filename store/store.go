@@ -30,7 +30,7 @@ var (
 
 	// Name of the bucket where we store information about settings
 	settingsBucket = []byte("Settings")
-	
+
 	// Name of the bucket where we store all worker.
 	workerBucket = []byte("Worker")
 )
@@ -75,12 +75,9 @@ type GaiaStore interface {
 	UserPermissionsPut(perms *gaia.UserPermission) error
 	UserPermissionsGet(username string) (*gaia.UserPermission, error)
 	UserPermissionsDelete(username string) error
-<<<<<<< HEAD
 	SettingsPut(config *gaia.StoreConfig) error
 	SettingsGet() (*gaia.StoreConfig, error)
-=======
 	WorkerPut(w *gaia.Worker) error
->>>>>>> Implemented registration process
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore
