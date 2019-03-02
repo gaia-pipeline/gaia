@@ -2,6 +2,7 @@ package server
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"github.com/gaia-pipeline/flag"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
+	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	hclog "github.com/hashicorp/go-hclog"
@@ -53,6 +55,7 @@ func init() {
 	fs.BoolVar(&gaia.Cfg.VersionSwitch, "version", false, "If true, will print the version and immediately exit")
 	fs.BoolVar(&gaia.Cfg.Poll, "poll", false, "Instead of using a Webhook, keep polling git for changes on pipelines")
 	fs.IntVar(&gaia.Cfg.PVal, "pval", 1, "The interval in minutes in which to poll vcs for changes")
+	fs.StringVar(&gaia.Cfg.Mode, "mode", "server", "The mode in which gaia should be started. Possible options are server and worker")
 
 	// Default values
 	gaia.Cfg.Bolt.Mode = 0600
@@ -76,29 +79,17 @@ func Start() (err error) {
 		Name:   "Gaia",
 	})
 
-	var jwtKey interface{}
-	// Check JWT key is set
-	if gaia.Cfg.JwtPrivateKeyPath == "" {
-		gaia.Cfg.Logger.Warn("using auto-generated key to sign jwt tokens, do not use in production")
-		jwtKey = make([]byte, 64)
-		_, err = rand.Read(jwtKey.([]byte))
-		if err != nil {
-			gaia.Cfg.Logger.Error("error auto-generating jwt key", "error", err.Error())
-			return
-		}
-	} else {
-		keyData, err := ioutil.ReadFile(gaia.Cfg.JwtPrivateKeyPath)
-		if err != nil {
-			gaia.Cfg.Logger.Error("could not read jwt key file", "error", err.Error())
-			return err
-		}
-		jwtKey, err = jwt.ParseRSAPrivateKeyFromPEM(keyData)
-		if err != nil {
-			gaia.Cfg.Logger.Error("could not parse jwt key file", "error", err.Error())
-			return err
-		}
+	// Determine the mode in which Gaia should be started
+	var gaiaMode gaia.GaiaMode
+	switch gaia.Cfg.Mode {
+	case "server":
+		gaiaMode = gaia.ModeServer
+	case "worker":
+		gaiaMode = gaia.ModeWorker
+	default:
+		gaia.Cfg.Logger.Error("unsupported mode used", "mode", gaia.Cfg.Mode)
+		return errors.New("unsupported mode used")
 	}
-	gaia.Cfg.JWTKey = jwtKey
 
 	// Find path for gaia home folder if not given by parameter
 	if gaia.Cfg.HomePath == "" {
@@ -146,33 +137,66 @@ func Start() (err error) {
 		return
 	}
 
-	// Initialize echo instance
-	echoInstance = echo.New()
+	if gaiaMode == gaia.ModeServer {
+		var jwtKey interface{}
+		// Check JWT key is set
+		if gaia.Cfg.JwtPrivateKeyPath == "" {
+			gaia.Cfg.Logger.Warn("using auto-generated key to sign jwt tokens, do not use in production")
+			jwtKey = make([]byte, 64)
+			_, err = rand.Read(jwtKey.([]byte))
+			if err != nil {
+				gaia.Cfg.Logger.Error("error auto-generating jwt key", "error", err.Error())
+				return
+			}
+		} else {
+			keyData, err := ioutil.ReadFile(gaia.Cfg.JwtPrivateKeyPath)
+			if err != nil {
+				gaia.Cfg.Logger.Error("could not read jwt key file", "error", err.Error())
+				return err
+			}
+			jwtKey, err = jwt.ParseRSAPrivateKeyFromPEM(keyData)
+			if err != nil {
+				gaia.Cfg.Logger.Error("could not parse jwt key file", "error", err.Error())
+				return err
+			}
+		}
+		gaia.Cfg.JWTKey = jwtKey
 
-	// Initialize store
-	_, err = services.StorageService()
-	if err != nil {
-		return
-	}
+		// Initialize echo instance
+		echoInstance = echo.New()
 
-	// Initiating Vault
-	// Check Vault path
-	if gaia.Cfg.VaultPath == "" {
-		// Set default to data folder
-		gaia.Cfg.VaultPath = gaia.Cfg.DataPath
-	}
-	v, err = services.VaultService(nil)
-	if err != nil {
-		gaia.Cfg.Logger.Error("error initiating vault")
-		return
-	}
+		// Initialize store
+		_, err = services.StorageService()
+		if err != nil {
+			return
+		}
 
-	// Generate global worker secret if it does not exist
-	secret, err := v.Get(gaia.WorkerRegisterKey)
-	if err != nil {
-		// Secret hasn't been generated yet
-		secret = security.GenerateRandomUUIDV5()
-		v.Add(WorkerRegisterKey, secret)
+		// Initiating Vault
+		// Check Vault path
+		if gaia.Cfg.VaultPath == "" {
+			// Set default to data folder
+			gaia.Cfg.VaultPath = gaia.Cfg.DataPath
+		}
+		v, err := services.VaultService(nil)
+		if err != nil {
+			gaia.Cfg.Logger.Error("error initiating vault")
+			return err
+		}
+
+		// Generate global worker secret if it does not exist
+		secret, err := v.Get(gaia.WorkerRegisterKey)
+		if err != nil {
+			// Secret hasn't been generated yet
+			secret = []byte(security.GenerateRandomUUIDV5())
+			v.Add(gaia.WorkerRegisterKey, secret)
+		}
+
+		// Initialize handlers
+		err = handlers.InitHandlers(echoInstance)
+		if err != nil {
+			gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
+			return err
+		}
 	}
 
 	// Initialize scheduler
@@ -181,18 +205,16 @@ func Start() (err error) {
 		return
 	}
 
-	// Initialize handlers
-	err = handlers.InitHandlers(echoInstance)
-	if err != nil {
-		gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
-		return
-	}
-
 	// Start ticker. Periodic job to check for new plugins.
 	pipeline.InitTicker()
 
-	// Start listen
-	echoInstance.Logger.Fatal(echoInstance.Start(":" + gaia.Cfg.ListenPort))
+	switch gaiaMode {
+	case gaia.ModeServer:
+		// Start listen
+		echoInstance.Logger.Fatal(echoInstance.Start(":" + gaia.Cfg.ListenPort))
+	case gaia.ModeWorker:
+		// TODO Start worker loop
+	}
 	return
 }
 

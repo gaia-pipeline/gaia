@@ -22,6 +22,9 @@ type PipelineRunStatus string
 // JobStatus represents the different status a job can have
 type JobStatus string
 
+// GaiaMode represents the different modes for Gaia
+type GaiaMode string
+
 // WorkerStatus represents the different status a worker can have
 type WorkerStatus string
 
@@ -82,6 +85,12 @@ const (
 
 	// JobRunning status
 	JobRunning JobStatus = "running"
+
+	// ModeServer mode
+	ModeServer GaiaMode = "server"
+
+	// ModeWorker mode
+	ModeWorker GaiaMode = "worker"
 
 	// WorkerActive status
 	WorkerActive WorkerStatus = "active"
@@ -253,6 +262,7 @@ var Cfg = &Config{}
 // Config holds all config options
 type Config struct {
 	DevMode           bool
+	Mode              string
 	VersionSwitch     bool
 	Poll              bool
 	PVal              int
