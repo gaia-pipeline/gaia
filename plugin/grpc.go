@@ -35,8 +35,8 @@ func (p *GaiaPluginImpl) GRPCServer(b *plugin.GRPCBroker, s *grpc.Server) error 
 	return nil
 }
 
-// GaiaPluginClient is the passing method for the gRPC client.
-func (p *GaiaPluginImpl) GaiaPluginClient(context context.Context, b *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
+// GRPCClient is the passing method for the gRPC client.
+func (p *GaiaPluginImpl) GRPCClient(context context.Context, b *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
 	return &GaiaPluginClient{client: proto.NewPluginClient(c)}, nil
 }
 
