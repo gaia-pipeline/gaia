@@ -49,3 +49,6 @@ deploy-kube:
 
 kube-ingress-lb:
 	kubectl apply -R -f ${HELM_DIR}/_system
+
+lint:
+	golint ./...
