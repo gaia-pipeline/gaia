@@ -279,6 +279,9 @@ type Config struct {
 	Logger            hclog.Logger
 	CAPath            string
 
+	// Worker
+	WorkerName string
+
 	Bolt struct {
 		Mode os.FileMode
 	}

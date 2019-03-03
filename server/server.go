@@ -14,6 +14,7 @@ import (
 	"github.com/gaia-pipeline/gaia/handlers"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/services"
+	"github.com/gaia-pipeline/gaia/workers/agent"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
@@ -213,7 +214,11 @@ func Start() (err error) {
 		// Start listen
 		echoInstance.Logger.Fatal(echoInstance.Start(":" + gaia.Cfg.ListenPort))
 	case gaia.ModeWorker:
-		// TODO Start worker loop
+		// Start worker main loop and block until SIGINT or SIGTERM has been received.
+		err := agent.StartAgent()
+		if err != nil {
+			return err
+		}
 	}
 	return
 }
