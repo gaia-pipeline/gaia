@@ -249,6 +249,7 @@ type Config struct {
 	}
 }
 
+// StoreConfig defines config settings to be stored in DB.
 type StoreConfig struct {
 	ID   int
 	Poll bool

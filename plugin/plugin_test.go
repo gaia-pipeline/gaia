@@ -29,16 +29,16 @@ func (c *fakeCAAPI) GetCACertPath() (string, string)    { return "", "" }
 
 type fakeClientProtocol struct{}
 
-func (cp *fakeClientProtocol) Dispense(s string) (interface{}, error) { return &fakePluginGRPC{}, nil }
+func (cp *fakeClientProtocol) Dispense(s string) (interface{}, error) { return &fakeGaiaPlugin{}, nil }
 func (cp *fakeClientProtocol) Ping() error                            { return nil }
 func (cp *fakeClientProtocol) Close() error                           { return nil }
 
-type fakePluginGRPC struct{}
+type fakeGaiaPlugin struct{}
 
-func (p *fakePluginGRPC) GetJobs() (proto.Plugin_GetJobsClient, error) {
+func (p *fakeGaiaPlugin) GetJobs() (proto.Plugin_GetJobsClient, error) {
 	return &fakeJobsClient{}, nil
 }
-func (p *fakePluginGRPC) ExecuteJob(job *proto.Job) (*proto.JobResult, error) {
+func (p *fakeGaiaPlugin) ExecuteJob(job *proto.Job) (*proto.JobResult, error) {
 	return &proto.JobResult{}, nil
 }
 
@@ -106,7 +106,7 @@ func TestExecute(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	p := &Plugin{pluginConn: new(fakePluginGRPC)}
+	p := &Plugin{pluginConn: new(fakeGaiaPlugin)}
 	buf := new(bytes.Buffer)
 	p.writer = bufio.NewWriter(buf)
 	err := p.Execute(&gaia.Job{})
@@ -122,7 +122,7 @@ func TestGetJobs(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	p := &Plugin{pluginConn: new(fakePluginGRPC)}
+	p := &Plugin{pluginConn: new(fakeGaiaPlugin)}
 	buf := new(bytes.Buffer)
 	p.writer = bufio.NewWriter(buf)
 	_, err := p.GetJobs()
