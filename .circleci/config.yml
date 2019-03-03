@@ -1,6 +1,22 @@
 version: 2
 
 jobs:
+  linter:
+    working_directory: /go/src/github.com/gaia-pipeline/gaia
+    docker:
+      - image: circleci/golang:1.11.4
+        environment:
+          GO111MODULE: "on"
+    steps:
+      - checkout
+      - run:
+          name: Install linter
+          command: |
+            go get -u golang.org/x/lint/golint
+      - run:
+          name: Run linter
+          command: |
+            make lint
   test_and_coverage:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
@@ -76,6 +92,7 @@ workflows:
   version: 2
   test_and_compile:
     jobs:
+      - linter
       - test_and_coverage
       - acceptance_tests
       - compile

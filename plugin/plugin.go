@@ -34,7 +34,7 @@ var handshake = plugin.HandshakeConfig{
 }
 
 var pluginMap = map[string]plugin.Plugin{
-	pluginMapKey: &PluginGRPCImpl{},
+	pluginMapKey: &GaiaPluginImpl{},
 }
 
 // timeFormat is the logging time format.
@@ -50,7 +50,7 @@ type Plugin struct {
 	clientProtocol plugin.ClientProtocol
 
 	// Interface to the connected plugin.
-	pluginConn PluginGRPC
+	pluginConn GaiaPlugin
 
 	// Log file where all output is stored.
 	logFile *os.File
@@ -160,7 +160,7 @@ func (p *Plugin) Validate() error {
 	}
 
 	// Convert plugin to interface
-	if pC, ok := raw.(PluginGRPC); ok {
+	if pC, ok := raw.(GaiaPlugin); ok {
 		p.pluginConn = pC
 		return nil
 	}
