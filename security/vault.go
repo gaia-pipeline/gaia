@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/gaia-pipeline/gaia"
@@ -207,9 +208,11 @@ func (v *Vault) encrypt(data []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// TODO: hex.Encode the nonce to save it.
+
 	ciphertext := aesgcm.Seal(nil, nonce, data, nil)
-	content := fmt.Sprintf("%s||%s", string(nonce), string(ciphertext))
+	hexNonce := hex.EncodeToString(nonce)
+	hexChiperText := hex.EncodeToString(ciphertext)
+	content := fmt.Sprintf("%s||%s", hexNonce, hexChiperText)
 	finalMsg := hex.EncodeToString([]byte(content))
 	return finalMsg, nil
 }
@@ -221,13 +224,10 @@ func (v *Vault) decrypt(encodedData []byte) ([]byte, error) {
 	}
 	key, _ := hex.DecodeString("6368616e676520746869732070617373776f726420746f206120736563726574")
 	decodedMsg, _ := hex.DecodeString(string(encodedData))
-	var nonce string
-	var data string
-	fmt.Sscanf(string(decodedMsg), "%v||%s", &nonce, &data)
-	b := []byte(nonce)
-	fmt.Println(b)
-	v.counter = binary.LittleEndian.Uint64(b)
-	// TODO: hex.Decode the nonce and then make it b 12.
+	split := strings.Split(string(decodedMsg), "||")
+	nonce, _ := hex.DecodeString(split[0])
+	data, _ := hex.DecodeString(split[1])
+	v.counter = binary.LittleEndian.Uint64(nonce)
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return []byte{}, err
@@ -238,7 +238,7 @@ func (v *Vault) decrypt(encodedData []byte) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	plaintext, err := aesgcm.Open(nil, []byte(nonce), []byte(data), nil)
+	plaintext, err := aesgcm.Open(nil, nonce, []byte(data), nil)
 	if err != nil {
 		return []byte{}, err
 	}
