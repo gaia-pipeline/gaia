@@ -2,10 +2,12 @@ package security
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
 	"io/ioutil"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/gaia-pipeline/gaia"
@@ -365,4 +367,104 @@ func TestDefaultStorerIsAFileStorer(t *testing.T) {
 	if _, ok := v.storer.(*FileVaultStorer); !ok {
 		t.Fatal("default filestorer not created when nil is passed in")
 	}
+}
+
+func TestNonceCounter(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestNonceCounter")
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.VaultPath = tmp
+	gaia.Cfg.CAPath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
+	c, _ := InitCA()
+	v, err := NewVault(c, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mvs := new(MockVaultStorer)
+	v.storer = mvs
+	v.Add("key1", []byte("value1"))
+	beginCounter := v.counter
+	for i := 0; i < 3; i++ {
+		err = v.SaveSecrets()
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = v.LoadSecrets()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if v.counter == beginCounter {
+		t.Fatal("counter should have not equaled to the count at the begin of the test.")
+	}
+	want := uint64(3)
+	if v.counter != want {
+		t.Fatalf("counter should have been %d. got: %d\n", want, v.counter)
+	}
+}
+
+func TestEmptyVault(t *testing.T) {
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
+	v := Vault{}
+	t.Run("empty vault", func(t *testing.T) {
+		data := []byte{}
+		_, err := v.decrypt(data)
+		if err != nil {
+			t.Fatal("was not expecting an error. was: ", err)
+		}
+		want := "the vault is empty"
+		if strings.Contains(want, buf.String()) {
+			t.Fatalf("wanted log message '%s'. Got: %s", want, buf.String())
+		}
+	})
+}
+
+func TestAllTheHexDecrypts(t *testing.T) {
+	v := Vault{}
+	t.Run("encoded data", func(t *testing.T) {
+		data := []byte("invalid")
+		_, err := v.decrypt(data)
+		if err == nil {
+			t.Fatal("should have failed since data is not valid hex string")
+		}
+	})
+	t.Run("invalid data format", func(t *testing.T) {
+		d := []byte("asdf&&asdf")
+		data := []byte(hex.EncodeToString(d))
+		_, err := v.decrypt(data)
+		if err == nil {
+			t.Fatal("should have failed since data did not contain delimiter")
+		}
+		want := "invalid number of returned splits from data. was:  1\n"
+		if err.Error() != want {
+			t.Fatalf("want: %s, got: %s", want, err.Error())
+		}
+	})
+	t.Run("invalid nonce", func(t *testing.T) {
+		d := []byte("asdf||asdf")
+		data := []byte(hex.EncodeToString(d))
+		_, err := v.decrypt(data)
+		if err == nil {
+			t.Fatal("should have failed since data did not contain delimiter")
+		}
+	})
+	t.Run("invalid data", func(t *testing.T) {
+		nonce := hex.EncodeToString([]byte("valid"))
+		d := []byte(nonce + "||asdf")
+		data := []byte(hex.EncodeToString(d))
+		_, err := v.decrypt(data)
+		if err == nil {
+			t.Fatal("should have failed since data did not contain delimiter")
+		}
+	})
 }

@@ -18,10 +18,8 @@ import (
 )
 
 const (
-	vaultName        = ".gaia_vault"
-	secretCheckKey   = "GAIA_CHECK_SECRET"
-	secretCheckValue = "!CHECK_ME!"
-	keySize          = 32
+	vaultName = ".gaia_vault"
+	keySize   = 32
 )
 
 // VaultAPI defines a set of apis that a Vault must provide in order to be a Gaia Vault.
@@ -197,8 +195,6 @@ func (v *Vault) encrypt(data []byte) (string, error) {
 		// User has deleted all the secrets. the file will be empty.
 		return "", nil
 	}
-	secretCheck := fmt.Sprintf("\n%s=%s", secretCheckKey, secretCheckValue)
-	data = append(data, []byte(secretCheck)...)
 	key := v.cert
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -227,10 +223,23 @@ func (v *Vault) decrypt(encodedData []byte) ([]byte, error) {
 		return []byte{}, nil
 	}
 	key := v.cert
-	decodedMsg, _ := hex.DecodeString(string(encodedData))
+	decodedMsg, err := hex.DecodeString(string(encodedData))
+	if err != nil {
+		return []byte{}, err
+	}
 	split := strings.Split(string(decodedMsg), "||")
-	nonce, _ := hex.DecodeString(split[0])
-	data, _ := hex.DecodeString(split[1])
+	if len(split) < 2 {
+		message := fmt.Sprintln("invalid number of returned splits from data. was: ", len(split))
+		return []byte{}, errors.New(message)
+	}
+	nonce, err := hex.DecodeString(split[0])
+	if err != nil {
+		return []byte{}, err
+	}
+	data, err := hex.DecodeString(split[1])
+	if err != nil {
+		return []byte{}, err
+	}
 	v.counter = binary.LittleEndian.Uint64(nonce)
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -246,10 +255,6 @@ func (v *Vault) decrypt(encodedData []byte) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-
-	if !bytes.Contains(plaintext, []byte(secretCheckValue)) {
-		return []byte{}, errors.New("possible mistyped password")
-	}
 	return plaintext, nil
 }
 
@@ -262,9 +267,6 @@ func (v *Vault) parseToMap(data []byte) error {
 	row := bytes.Split(data, []byte("\n"))
 	for _, r := range row {
 		d := bytes.Split(r, []byte("="))
-		if bytes.Equal(d[0], []byte(secretCheckKey)) {
-			continue
-		}
 		v.data[string(d[0])] = d[1]
 	}
 	return nil
