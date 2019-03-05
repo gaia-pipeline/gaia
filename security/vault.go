@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/rand"
 	"encoding/base64"
+	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -57,6 +56,7 @@ type Vault struct {
 	cert   []byte
 	data   map[string][]byte
 	sync.RWMutex
+	counter uint64
 }
 
 // NewVault creates a vault which is a simple k/v storage medium with AES encryption.
@@ -111,7 +111,7 @@ func (v *Vault) SaveSecrets() error {
 	}
 	// clear the hash after saving so the system always has a fresh view of the vault.
 	v.data = make(map[string][]byte, 0)
-	return v.storer.Write([]byte(encryptedData))
+	return v.storer.Write(encryptedData)
 }
 
 // GetAll returns all keys and values in a copy of the internal data.
@@ -187,69 +187,68 @@ func (fvs *FileVaultStorer) Write(data []byte) error {
 // We will return this possibility but we won't know for sure if that's the cause.
 // The password is padded with 0x04 to Blocklenght. IV randomized to blocksize and length of the message.
 // In the end we encrypt the whole thing to Base64 for ease of saving an handling.
-func (v *Vault) encrypt(data []byte) (string, error) {
+func (v *Vault) encrypt(data []byte) ([]byte, error) {
 	if len(data) < 1 {
 		// User has deleted all the secrets. the file will be empty.
-		return "", nil
+		return []byte{}, nil
 	}
 	secretCheck := fmt.Sprintf("\n%s=%s", secretCheckKey, secretCheckValue)
 	data = append(data, []byte(secretCheck)...)
-	paddedPassword := v.pad(v.cert)
-	ci := base64.URLEncoding.EncodeToString(paddedPassword)
-	block, err := aes.NewCipher([]byte(ci[:aes.BlockSize]))
+	key := v.pad(v.cert)
+	block, err := aes.NewCipher(key)
 	if err != nil {
-		return "", err
+		return []byte{}, err
 	}
 
-	msg := v.pad(data)
-	ciphertext := make([]byte, aes.BlockSize+len(msg))
-	iv := ciphertext[:aes.BlockSize]
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return "", err
+	v.counter++
+	nonce := make([]byte, 12)
+	binary.LittleEndian.PutUint64(nonce, v.counter)
+
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return []byte{}, err
 	}
 
-	cfb := cipher.NewCFBEncrypter(block, iv)
-	cfb.XORKeyStream(ciphertext[aes.BlockSize:], []byte(msg))
-	finalMsg := base64.URLEncoding.EncodeToString(ciphertext)
-	return finalMsg, nil
+	ciphertext := aesgcm.Seal(nil, nonce, data, nil)
+	src := fmt.Sprintf("%s||%s", nonce, ciphertext)
+	var dst []byte
+	base64.URLEncoding.Encode(dst, []byte(src))
+	return dst, nil
 }
 
-func (v *Vault) decrypt(data []byte) ([]byte, error) {
-	if len(data) < 1 {
+func (v *Vault) decrypt(encodedData []byte) ([]byte, error) {
+	if len(encodedData) < 1 {
 		gaia.Cfg.Logger.Info("the vault is empty")
 		return []byte{}, nil
 	}
-	paddedPassword := v.pad(v.cert)
-	ci := base64.URLEncoding.EncodeToString(paddedPassword)
-	block, err := aes.NewCipher([]byte(ci[:aes.BlockSize]))
+	key := v.pad(v.cert)
+	var dst []byte
+	base64.URLEncoding.Decode(dst, encodedData)
+	var nonce string
+	var data string
+	fmt.Sscanf(string(dst), "%s||%s", &nonce, &data)
+	b := []byte(nonce)
+	v.counter = binary.LittleEndian.Uint64(b)
+
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return []byte{}, err
 	}
 
-	decodedMsg, err := base64.URLEncoding.DecodeString(string(data))
+	aesgcm, err := cipher.NewGCM(block)
 	if err != nil {
 		return []byte{}, err
 	}
 
-	if (len(decodedMsg) % aes.BlockSize) != 0 {
-		return []byte{}, errors.New("blocksize must be multiple of decoded message length")
-	}
-
-	iv := decodedMsg[:aes.BlockSize]
-	msg := decodedMsg[aes.BlockSize:]
-
-	cfb := cipher.NewCFBDecrypter(block, iv)
-	cfb.XORKeyStream(msg, msg)
-
-	unpadMsg, err := v.unpad(msg)
+	plaintext, err := aesgcm.Open(nil, []byte(nonce), []byte(data), nil)
 	if err != nil {
 		return []byte{}, err
 	}
 
-	if !bytes.Contains(unpadMsg, []byte(secretCheckValue)) {
+	if !bytes.Contains(plaintext, []byte(secretCheckValue)) {
 		return []byte{}, errors.New("possible mistyped password")
 	}
-	return unpadMsg, nil
+	return plaintext, nil
 }
 
 // ParseToMap will update the Vault data map with values from
