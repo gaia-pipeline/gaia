@@ -111,7 +111,7 @@ func (v *Vault) SaveSecrets() error {
 	}
 	// clear the hash after saving so the system always has a fresh view of the vault.
 	v.data = make(map[string][]byte, 0)
-	return v.storer.Write(encryptedData)
+	return v.storer.Write([]byte(encryptedData))
 }
 
 // GetAll returns all keys and values in a copy of the internal data.
@@ -187,17 +187,17 @@ func (fvs *FileVaultStorer) Write(data []byte) error {
 // We will return this possibility but we won't know for sure if that's the cause.
 // The password is padded with 0x04 to Blocklenght. IV randomized to blocksize and length of the message.
 // In the end we encrypt the whole thing to Base64 for ease of saving an handling.
-func (v *Vault) encrypt(data []byte) ([]byte, error) {
+func (v *Vault) encrypt(data []byte) (string, error) {
 	if len(data) < 1 {
 		// User has deleted all the secrets. the file will be empty.
-		return []byte{}, nil
+		return "", nil
 	}
 	secretCheck := fmt.Sprintf("\n%s=%s", secretCheckKey, secretCheckValue)
 	data = append(data, []byte(secretCheck)...)
 	key := v.pad(v.cert)
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return []byte{}, err
+		return "", err
 	}
 
 	v.counter++
@@ -206,14 +206,13 @@ func (v *Vault) encrypt(data []byte) ([]byte, error) {
 
 	aesgcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return []byte{}, err
+		return "", err
 	}
 
 	ciphertext := aesgcm.Seal(nil, nonce, data, nil)
-	src := fmt.Sprintf("%s||%s", nonce, ciphertext)
-	var dst []byte
-	base64.URLEncoding.Encode(dst, []byte(src))
-	return dst, nil
+	content := fmt.Sprintf("%s||%s", nonce, ciphertext)
+	finalMsg := base64.URLEncoding.EncodeToString([]byte(content))
+	return finalMsg, nil
 }
 
 func (v *Vault) decrypt(encodedData []byte) ([]byte, error) {
@@ -222,11 +221,10 @@ func (v *Vault) decrypt(encodedData []byte) ([]byte, error) {
 		return []byte{}, nil
 	}
 	key := v.pad(v.cert)
-	var dst []byte
-	base64.URLEncoding.Decode(dst, encodedData)
+	decodedMsg, _ := base64.URLEncoding.DecodeString(string(encodedData))
 	var nonce string
 	var data string
-	fmt.Sscanf(string(dst), "%s||%s", &nonce, &data)
+	fmt.Sscanf(string(decodedMsg), "%s||%s", &nonce, &data)
 	b := []byte(nonce)
 	v.counter = binary.LittleEndian.Uint64(b)
 
