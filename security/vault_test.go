@@ -130,7 +130,7 @@ func TestCloseLoadSecretsWithInvalidPassword(t *testing.T) {
 	}
 	mvs := new(MockVaultStorer)
 	v.storer = mvs
-	v.cert = []byte("test")
+	v.cert = []byte("change this password to a secret")
 	v.Add("key1", []byte("value1"))
 	v.Add("key2", []byte("value2"))
 	err = v.SaveSecrets()
@@ -138,12 +138,12 @@ func TestCloseLoadSecretsWithInvalidPassword(t *testing.T) {
 		t.Fatal(err)
 	}
 	v.data = make(map[string][]byte, 0)
-	v.cert = []byte("tset")
+	v.cert = []byte("change this pa00word to a secret")
 	err = v.LoadSecrets()
 	if err == nil {
 		t.Fatal("error should not have been nil.")
 	}
-	expected := "possible mistyped password"
+	expected := "cipher: message authentication failed"
 	if err.Error() != expected {
 		t.Fatalf("didn't get the right error. expected: \n'%s'\n error was: \n'%s'\n", expected, err.Error())
 	}
@@ -170,12 +170,12 @@ func TestAnExistingVaultFileIsNotOverwritten(t *testing.T) {
 	defer os.Remove(vaultName)
 	defer os.Remove("ca.crt")
 	defer os.Remove("ca.key")
-	v.cert = []byte("test")
+	v.cert = []byte("change this password to a secret")
 	v.Add("test", []byte("value"))
 	v.SaveSecrets()
 	v2, _ := NewVault(c, nil)
 	v2.storer = mvs
-	v2.cert = []byte("test")
+	v2.cert = []byte("change this password to a secret")
 	v2.LoadSecrets()
 	if err != nil {
 		t.Fatal(err)

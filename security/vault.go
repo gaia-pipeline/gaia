@@ -21,6 +21,7 @@ const (
 	vaultName        = ".gaia_vault"
 	secretCheckKey   = "GAIA_CHECK_SECRET"
 	secretCheckValue = "!CHECK_ME!"
+	keySize          = 32
 )
 
 // VaultAPI defines a set of apis that a Vault must provide in order to be a Gaia Vault.
@@ -84,7 +85,10 @@ func NewVault(ca CAAPI, storer VaultStorer) (*Vault, error) {
 		return nil, err
 	}
 	v.storer = storer
-	v.cert = data
+	if len(data) < 32 {
+		return nil, errors.New("key lenght should be longer than 32")
+	}
+	v.cert = data[:keySize]
 	v.data = make(map[string][]byte, 0)
 	return v, nil
 }
@@ -195,7 +199,7 @@ func (v *Vault) encrypt(data []byte) (string, error) {
 	}
 	secretCheck := fmt.Sprintf("\n%s=%s", secretCheckKey, secretCheckValue)
 	data = append(data, []byte(secretCheck)...)
-	key, _ := hex.DecodeString("6368616e676520746869732070617373776f726420746f206120736563726574")
+	key := v.cert
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", err
@@ -222,7 +226,7 @@ func (v *Vault) decrypt(encodedData []byte) ([]byte, error) {
 		gaia.Cfg.Logger.Info("the vault is empty")
 		return []byte{}, nil
 	}
-	key, _ := hex.DecodeString("6368616e676520746869732070617373776f726420746f206120736563726574")
+	key := v.cert
 	decodedMsg, _ := hex.DecodeString(string(encodedData))
 	split := strings.Split(string(decodedMsg), "||")
 	nonce, _ := hex.DecodeString(split[0])
