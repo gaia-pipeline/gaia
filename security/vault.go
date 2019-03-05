@@ -281,22 +281,3 @@ func (v *Vault) parseFromMap() []byte {
 
 	return bytes.Join(data, []byte("\n"))
 }
-
-// Pad pads the src with 0x04 until block length.
-func (v *Vault) pad(src []byte) []byte {
-	padding := 32 - len(src)%32
-	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
-	return append(src, padtext...)
-}
-
-// Unpad removes the padding from pad.
-func (v *Vault) unpad(src []byte) ([]byte, error) {
-	length := len(src)
-	unpadding := int(src[length-1])
-
-	if unpadding > length {
-		return nil, errors.New("possible mistyped password")
-	}
-
-	return src[:(length - unpadding)], nil
-}
