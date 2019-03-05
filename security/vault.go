@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
-	"encoding/base64"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -194,7 +194,7 @@ func (v *Vault) encrypt(data []byte) (string, error) {
 	}
 	secretCheck := fmt.Sprintf("\n%s=%s", secretCheckKey, secretCheckValue)
 	data = append(data, []byte(secretCheck)...)
-	key := v.pad(v.cert)
+	key, _ := hex.DecodeString("6368616e676520746869732070617373776f726420746f206120736563726574")
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", err
@@ -203,15 +203,14 @@ func (v *Vault) encrypt(data []byte) (string, error) {
 	v.counter++
 	nonce := make([]byte, 12)
 	binary.LittleEndian.PutUint64(nonce, v.counter)
-
 	aesgcm, err := cipher.NewGCM(block)
 	if err != nil {
 		return "", err
 	}
-
+	// TODO: hex.Encode the nonce to save it.
 	ciphertext := aesgcm.Seal(nil, nonce, data, nil)
-	content := fmt.Sprintf("%s||%s", nonce, ciphertext)
-	finalMsg := base64.URLEncoding.EncodeToString([]byte(content))
+	content := fmt.Sprintf("%s||%s", string(nonce), string(ciphertext))
+	finalMsg := hex.EncodeToString([]byte(content))
 	return finalMsg, nil
 }
 
@@ -220,14 +219,15 @@ func (v *Vault) decrypt(encodedData []byte) ([]byte, error) {
 		gaia.Cfg.Logger.Info("the vault is empty")
 		return []byte{}, nil
 	}
-	key := v.pad(v.cert)
-	decodedMsg, _ := base64.URLEncoding.DecodeString(string(encodedData))
+	key, _ := hex.DecodeString("6368616e676520746869732070617373776f726420746f206120736563726574")
+	decodedMsg, _ := hex.DecodeString(string(encodedData))
 	var nonce string
 	var data string
-	fmt.Sscanf(string(decodedMsg), "%s||%s", &nonce, &data)
+	fmt.Sscanf(string(decodedMsg), "%v||%s", &nonce, &data)
 	b := []byte(nonce)
+	fmt.Println(b)
 	v.counter = binary.LittleEndian.Uint64(b)
-
+	// TODO: hex.Decode the nonce and then make it b 12.
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return []byte{}, err
@@ -280,7 +280,7 @@ func (v *Vault) parseFromMap() []byte {
 
 // Pad pads the src with 0x04 until block length.
 func (v *Vault) pad(src []byte) []byte {
-	padding := aes.BlockSize - len(src)%aes.BlockSize
+	padding := 32 - len(src)%32
 	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
 	return append(src, padtext...)
 }
