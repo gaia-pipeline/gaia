@@ -317,6 +317,9 @@ func (v *Vault) parseToMap(data []byte) error {
 	row := bytes.Split(data, []byte("\n"))
 	for _, r := range row {
 		d := bytes.Split(r, []byte("="))
+		if bytes.Equal(d[0], []byte(secretCheckKey)) {
+			continue
+		}
 		v.data[string(d[0])] = d[1]
 	}
 	return nil
