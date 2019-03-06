@@ -132,7 +132,7 @@ func TestCloseLoadSecretsWithInvalidPassword(t *testing.T) {
 	}
 	mvs := new(MockVaultStorer)
 	v.storer = mvs
-	v.cert = []byte("change this password to a secret")
+	v.key = []byte("change this password to a secret")
 	v.Add("key1", []byte("value1"))
 	v.Add("key2", []byte("value2"))
 	err = v.SaveSecrets()
@@ -140,7 +140,7 @@ func TestCloseLoadSecretsWithInvalidPassword(t *testing.T) {
 		t.Fatal(err)
 	}
 	v.data = make(map[string][]byte, 0)
-	v.cert = []byte("change this pa00word to a secret")
+	v.key = []byte("change this pa00word to a secret")
 	err = v.LoadSecrets()
 	if err == nil {
 		t.Fatal("error should not have been nil.")
@@ -172,12 +172,12 @@ func TestAnExistingVaultFileIsNotOverwritten(t *testing.T) {
 	defer os.Remove(vaultName)
 	defer os.Remove("ca.crt")
 	defer os.Remove("ca.key")
-	v.cert = []byte("change this password to a secret")
+	v.key = []byte("change this password to a secret")
 	v.Add("test", []byte("value"))
 	v.SaveSecrets()
 	v2, _ := NewVault(c, nil)
 	v2.storer = mvs
-	v2.cert = []byte("change this password to a secret")
+	v2.key = []byte("change this password to a secret")
 	v2.LoadSecrets()
 	if err != nil {
 		t.Fatal(err)
@@ -467,4 +467,12 @@ func TestAllTheHexDecrypts(t *testing.T) {
 			t.Fatal("should have failed since data did not contain delimiter")
 		}
 	})
+}
+
+func TestLegacyDecryptOfOldVaultFile(t *testing.T) {
+	oldVault, err := ioutil.ReadFile("./testdata/old_gaia_vault_file")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Fatal("read content", oldVault)
 }
