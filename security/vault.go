@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
@@ -86,12 +87,15 @@ func NewVault(ca CAAPI, storer VaultStorer) (*Vault, error) {
 	if err != nil {
 		return nil, err
 	}
-	v.storer = storer
 	if len(data) < 32 {
 		return nil, errors.New("key lenght should be longer than 32")
 	}
+	h := sha256.New()
+	h.Write(data)
+	sum := h.Sum(nil)
+	v.storer = storer
 	v.cert = data
-	v.key = v.cert[:keySize]
+	v.key = sum[:keySize]
 	v.data = make(map[string][]byte, 0)
 	return v, nil
 }

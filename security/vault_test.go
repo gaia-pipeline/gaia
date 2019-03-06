@@ -470,9 +470,9 @@ func TestAllTheHexDecrypts(t *testing.T) {
 }
 
 func TestLegacyDecryptOfOldVaultFile(t *testing.T) {
-	oldVault, err := ioutil.ReadFile("./testdata/old_gaia_vault_file")
+	oldVault, err := ioutil.ReadFile("./testdata/gaia_vault")
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Fatal("read content", oldVault)
+	t.Fatal(oldVault)
 }
