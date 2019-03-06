@@ -474,5 +474,18 @@ func TestLegacyDecryptOfOldVaultFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Fatal(oldVault)
+	key, err := ioutil.ReadFile("./testdata/ca.key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	v := Vault{
+		cert: key,
+	}
+	content, err := v.legacyDecrypt(oldVault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(content), "test=secret") {
+		t.Fatal("was expecting content to have 'test=secret'. it was: ", string(content))
+	}
 }
