@@ -280,7 +280,9 @@ type Config struct {
 	CAPath            string
 
 	// Worker
-	WorkerName string
+	WorkerName    string
+	WorkerHostURL string
+	WorkerSecret  string
 
 	Bolt struct {
 		Mode os.FileMode
