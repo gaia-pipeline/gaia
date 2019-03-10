@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package worker;
+
+// WorkerInstance represents the identity of
+// a worker instance.
+message WorkerInstance {
+    string unique_id = 1;
+}
+
+// PipelineRun represents one pipeline run.
+message PipelineRun {
+    string unique_id = 1;
+}
+
+// Empty request/response.
+message Empty {}
+
+service Worker {
+    rpc Ping(WorkerInstance) returns (Empty);
+    rpc GetWork(WorkerInstance) returns (stream PipelineRun);
+    rpc Deregister(WorkerInstance) returns (Empty);
+}
