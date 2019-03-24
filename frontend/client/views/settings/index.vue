@@ -106,6 +106,9 @@
         <tab-pane label="Manage Settings" icon="fa fa-wrench">
           <manage-settings/>
         </tab-pane>
+        <tab-pane label="Manage Worker" icon="fa fa-wrench">
+          <manage-worker/>
+        </tab-pane>
       </tabs>
     </div>
 
@@ -359,6 +362,7 @@
   import {mapGetters} from 'vuex'
   import ManagePermissions from './permissions/manage-permissions'
   import ManageSettings from './settings/manage-settings'
+  import ManageWorker from './worker/manage-worker'
   import {EventBus} from '../../app'
 
   const NotificationComponent = Vue.extend(Notification)
@@ -387,7 +391,8 @@
       Modal,
       Collapse,
       CollapseItem,
-      ManageSettings
+      ManageSettings,
+      ManageWorker
     },
 
     data () {

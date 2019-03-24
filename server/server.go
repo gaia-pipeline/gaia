@@ -57,6 +57,8 @@ func init() {
 	fs.BoolVar(&gaia.Cfg.Poll, "poll", false, "Instead of using a Webhook, keep polling git for changes on pipelines")
 	fs.IntVar(&gaia.Cfg.PVal, "pval", 1, "The interval in minutes in which to poll vcs for changes")
 	fs.StringVar(&gaia.Cfg.Mode, "mode", "server", "The mode in which gaia should be started. Possible options are server and worker")
+	fs.StringVar(&gaia.Cfg.WorkerHostURL, "hosturl", "http://localhost:8080", "The host url of an gaia instance to connect to. Only used in worker mode")
+	fs.StringVar(&gaia.Cfg.WorkerSecret, "workersecret", "", "The secret which used to register a worker at an gaia instance")
 
 	// Default values
 	gaia.Cfg.Bolt.Mode = 0600
@@ -173,7 +175,6 @@ func Start() (err error) {
 		}
 
 		// Initiating Vault
-		// Check Vault path
 		if gaia.Cfg.VaultPath == "" {
 			// Set default to data folder
 			gaia.Cfg.VaultPath = gaia.Cfg.DataPath
@@ -183,11 +184,16 @@ func Start() (err error) {
 			gaia.Cfg.Logger.Error("error initiating vault")
 			return err
 		}
+		if err = v.LoadSecrets(); err != nil {
+			gaia.Cfg.Logger.Error("error loading secrets from vault")
+			return err
+		}
 
 		// Generate global worker secret if it does not exist
 		secret, err := v.Get(gaia.WorkerRegisterKey)
 		if err != nil {
 			// Secret hasn't been generated yet
+			gaia.Cfg.Logger.Warn("global worker registration secret has not been generated yet", "error", err)
 			secret = []byte(security.GenerateRandomUUIDV5())
 			v.Add(gaia.WorkerRegisterKey, secret)
 		}
@@ -215,8 +221,10 @@ func Start() (err error) {
 		echoInstance.Logger.Fatal(echoInstance.Start(":" + gaia.Cfg.ListenPort))
 	case gaia.ModeWorker:
 		// Start worker main loop and block until SIGINT or SIGTERM has been received.
-		err := agent.StartAgent()
+		ag := agent.InitAgent()
+		err := ag.StartAgent()
 		if err != nil {
+			gaia.Cfg.Logger.Error("cannot start agent", "error", err)
 			return err
 		}
 	}

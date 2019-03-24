@@ -21,7 +21,8 @@ type RegisterResponse struct {
 // It uses the given secret for authentication and returns certs
 // which can be used for a future mTLS connection.
 func RegisterWorker(host, secret string) (*RegisterResponse, error) {
-	resp, err := http.PostForm(host,
+	fullUrl := fmt.Sprintf("%s/api/v1/worker/register", host)
+	resp, err := http.PostForm(fullUrl,
 		url.Values{"secret": {secret}})
 	if err != nil {
 		return nil, err

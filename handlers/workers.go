@@ -64,7 +64,7 @@ func RegisterWorker(c echo.Context) error {
 		gaia.Cfg.Logger.Error("cannot get certificate service", "error", err.Error())
 		return c.String(http.StatusInternalServerError, "cannot get certificate service")
 	}
-	crt, key, err := cert.CreateSignedCertWithValidOpts(hoursBeforeValid, hoursAfterValid)
+	crtPath, keyPath, err := cert.CreateSignedCertWithValidOpts(hoursBeforeValid, hoursAfterValid)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot create signed certificate", "error", err.Error())
 		return c.String(http.StatusInternalServerError, "cannot create signed certificate")
@@ -76,6 +76,18 @@ func RegisterWorker(c echo.Context) error {
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot load CA cert", "error", err.Error())
 		return c.String(http.StatusInternalServerError, "cannot load CA cert")
+	}
+
+	// Load certs from disk
+	crt, err := ioutil.ReadFile(crtPath)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot load cert", "error", err.Error())
+		return c.String(http.StatusInternalServerError, "cannot load cert")
+	}
+	key, err := ioutil.ReadFile(keyPath)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot load key", "error", err.Error())
+		return c.String(http.StatusInternalServerError, "cannot load key")
 	}
 
 	// Encode all certificates base64 to prevent inconsistency during transport

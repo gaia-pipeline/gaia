@@ -18,20 +18,35 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-// Define the local certificates path
-var certFile, keyFile, caCertFile string
+// Agent represents an instance of an agent
+type Agent struct {
+	// certFile represents the local path to the agent cert
+	certFile string
 
-func init() {
+	// keyFile represents the local path to the agent key
+	keyFile string
+
+	// caCertFile represents the local path to the agent ca cert
+	caCertFile string
+}
+
+
+// InitAgent initiates the agent instance
+func InitAgent() *Agent {
+	ag := &Agent{}
+
 	// Set path to local certificates
-	certFile = filepath.Join(gaia.Cfg.HomePath, "cert.pem")
-	keyFile = filepath.Join(gaia.Cfg.HomePath, "key.pem")
-	caCertFile = filepath.Join(gaia.Cfg.HomePath, "caCert.pem")
+	ag.certFile = filepath.Join(gaia.Cfg.HomePath, "cert.pem")
+	ag.keyFile = filepath.Join(gaia.Cfg.HomePath, "key.pem")
+	ag.caCertFile = filepath.Join(gaia.Cfg.HomePath, "caCert.pem")
 
+	// return instance
+	return ag
 }
 
 // StartAgent starts the agent main loop and waits until SIGINT or SIGTERM
 // signal has been received.
-func StartAgent() error {
+func (a *Agent) StartAgent() error {
 	// Allocate SIG channel
 	sigs := make(chan os.Signal, 1)
 
@@ -39,7 +54,7 @@ func StartAgent() error {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	// Check if this worker has been already registered at a Gaia instance
-	clientTLS, err := generateClientTLSCreds()
+	clientTLS, err := a.generateClientTLSCreds()
 	if err != nil {
 		// If there is an error, no matter if no certificates exist or
 		// we cannot load them, we try the registration process to register
@@ -64,18 +79,18 @@ func StartAgent() error {
 		}
 
 		// Store received certificates locally
-		if err = ioutil.WriteFile(certFile, cert, 0600); err != nil {
+		if err = ioutil.WriteFile(a.certFile, cert, 0600); err != nil {
 			return fmt.Errorf("cannot write cert to disk: %s", err.Error())
 		}
-		if err = ioutil.WriteFile(keyFile, key, 0600); err != nil {
+		if err = ioutil.WriteFile(a.keyFile, key, 0600); err != nil {
 			return fmt.Errorf("cannot write key to disk: %s", err.Error())
 		}
-		if err = ioutil.WriteFile(caCertFile, caCert, 0600); err != nil {
+		if err = ioutil.WriteFile(a.caCertFile, caCert, 0600); err != nil {
 			return fmt.Errorf("cannot write ca cert to disk: %s", err.Error())
 		}
 
 		// Update the client TLS object
-		clientTLS, err = generateClientTLSCreds()
+		clientTLS, err = a.generateClientTLSCreds()
 		if err != nil {
 			return err
 		}
@@ -97,26 +112,26 @@ func StartAgent() error {
 
 // generateClientTLSCreds checks if certificates exist in the home directory.
 // It will load the certificates and generates TLS creds for mTLS connection.
-func generateClientTLSCreds() (credentials.TransportCredentials, error) {
+func (a *Agent) generateClientTLSCreds() (credentials.TransportCredentials, error) {
 	// Check if all certs exist
-	if _, err := os.Stat(certFile); os.IsNotExist(err) {
+	if _, err := os.Stat(a.certFile); os.IsNotExist(err) {
 		return nil, err
 	}
-	if _, err := os.Stat(keyFile); os.IsNotExist(err) {
+	if _, err := os.Stat(a.keyFile); os.IsNotExist(err) {
 		return nil, err
 	}
-	if _, err := os.Stat(caCertFile); os.IsNotExist(err) {
+	if _, err := os.Stat(a.caCertFile); os.IsNotExist(err) {
 		return nil, err
 	}
 
 	// Load client key pair
-	certs, err := tls.LoadX509KeyPair(certFile, keyFile)
+	certs, err := tls.LoadX509KeyPair(a.certFile, a.keyFile)
 	if err != nil {
 		return nil, err
 	}
 
 	certPool := x509.NewCertPool()
-	caCert, err := ioutil.ReadFile(caCertFile)
+	caCert, err := ioutil.ReadFile(a.caCertFile)
 	if err != nil {
 		return nil, err
 	}

@@ -15,7 +15,7 @@ func (s *BoltStore) WorkerPut(w *gaia.Worker) error {
 		b := tx.Bucket(workerBucket)
 
 		// Marshal worker object
-		m, err := json.Marshal(w)
+		m, err := json.Marshal(*w)
 		if err != nil {
 			return err
 		}

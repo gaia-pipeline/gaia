@@ -30,7 +30,8 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 				strings.Contains(c.Path(), "/assets/") ||
 				c.Path() == "/favicon.ico" ||
 				strings.Contains(c.Path(), "pipeline/githook") ||
-				strings.Contains(c.Path(), "/trigger") {
+				strings.Contains(c.Path(), "/trigger") ||
+				strings.Contains(c.Path(), "/worker/register") {
 				return next(c)
 			}
 
