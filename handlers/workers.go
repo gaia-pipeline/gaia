@@ -9,7 +9,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/labstack/echo"
-	uuid "github.com/satori/go.uuid"
+	"github.com/satori/go.uuid"
 )
 
 const (
@@ -18,9 +18,9 @@ const (
 )
 
 type registerWorker struct {
-	Secret string   `json:"secret"`
-	Name   string   `json:"name"`
-	Tags   []string `json:"tags"`
+	Secret string            `json:"secret"`
+	Name   string            `json:"name"`
+	Tags   map[string]string `json:"tags"`
 }
 
 type registerResponse struct {

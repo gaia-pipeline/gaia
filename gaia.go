@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-hclog"
 	"github.com/robfig/cron"
 )
 
@@ -248,12 +248,12 @@ type PipelineRun struct {
 
 // Worker represents a single registered worker.
 type Worker struct {
-	UniqueID     string       `json:"uniqueid"`
-	Name         string       `json:"name"`
-	Status       WorkerStatus `json:"status"`
-	RegisterDate time.Time    `json:"registerdate"`
-	LastContact  time.Time    `json:"lastcontact"`
-	Tags         []string     `json:"tags"`
+	UniqueID     string            `json:"uniqueid"`
+	Name         string            `json:"name"`
+	Status       WorkerStatus      `json:"status"`
+	RegisterDate time.Time         `json:"registerdate"`
+	LastContact  time.Time         `json:"lastcontact"`
+	Tags         map[string]string `json:"tags"`
 }
 
 // Cfg represents the global config instance
@@ -262,7 +262,8 @@ var Cfg = &Config{}
 // Config holds all config options
 type Config struct {
 	DevMode           bool
-	Mode              string
+	ModeRaw           string
+	Mode              GaiaMode
 	VersionSwitch     bool
 	Poll              bool
 	PVal              int
@@ -278,6 +279,7 @@ type Config struct {
 	JWTKey            interface{}
 	Logger            hclog.Logger
 	CAPath            string
+	WorkerServerPort  string
 
 	// Worker
 	WorkerName    string

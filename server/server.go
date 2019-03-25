@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"github.com/gaia-pipeline/gaia/workers/server"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -56,15 +57,16 @@ func init() {
 	fs.BoolVar(&gaia.Cfg.VersionSwitch, "version", false, "If true, will print the version and immediately exit")
 	fs.BoolVar(&gaia.Cfg.Poll, "poll", false, "Instead of using a Webhook, keep polling git for changes on pipelines")
 	fs.IntVar(&gaia.Cfg.PVal, "pval", 1, "The interval in minutes in which to poll vcs for changes")
-	fs.StringVar(&gaia.Cfg.Mode, "mode", "server", "The mode in which gaia should be started. Possible options are server and worker")
+	fs.StringVar(&gaia.Cfg.ModeRaw, "mode", "server", "The mode in which gaia should be started. Possible options are server and worker")
 	fs.StringVar(&gaia.Cfg.WorkerHostURL, "hosturl", "http://localhost:8080", "The host url of an gaia instance to connect to. Only used in worker mode")
 	fs.StringVar(&gaia.Cfg.WorkerSecret, "workersecret", "", "The secret which used to register a worker at an gaia instance")
+	fs.StringVar(&gaia.Cfg.WorkerServerPort, "workerserverport", "8090", "Listen port for gaia worker communication")
 
 	// Default values
 	gaia.Cfg.Bolt.Mode = 0600
 }
 
-// Start initiates all components of Gaia and starts the server.
+// Start initiates all components of Gaia and starts the server/agent.
 func Start() (err error) {
 	// Parse command line flgs
 	fs.Parse(os.Args[1:])
@@ -83,12 +85,11 @@ func Start() (err error) {
 	})
 
 	// Determine the mode in which Gaia should be started
-	var gaiaMode gaia.GaiaMode
-	switch gaia.Cfg.Mode {
+	switch gaia.Cfg.ModeRaw {
 	case "server":
-		gaiaMode = gaia.ModeServer
+		gaia.Cfg.Mode = gaia.ModeServer
 	case "worker":
-		gaiaMode = gaia.ModeWorker
+		gaia.Cfg.Mode = gaia.ModeWorker
 	default:
 		gaia.Cfg.Logger.Error("unsupported mode used", "mode", gaia.Cfg.Mode)
 		return errors.New("unsupported mode used")
@@ -140,7 +141,7 @@ func Start() (err error) {
 		return
 	}
 
-	if gaiaMode == gaia.ModeServer {
+	if gaia.Cfg.Mode == gaia.ModeServer {
 		var jwtKey interface{}
 		// Check JWT key is set
 		if gaia.Cfg.JwtPrivateKeyPath == "" {
@@ -167,12 +168,6 @@ func Start() (err error) {
 
 		// Initialize echo instance
 		echoInstance = echo.New()
-
-		// Initialize store
-		_, err = services.StorageService()
-		if err != nil {
-			return
-		}
 
 		// Initiating Vault
 		if gaia.Cfg.VaultPath == "" {
@@ -206,6 +201,12 @@ func Start() (err error) {
 		}
 	}
 
+	// Initialize store
+	_, err = services.StorageService()
+	if err != nil {
+		return
+	}
+
 	// Initialize scheduler
 	_, err = services.SchedulerService()
 	if err != nil {
@@ -215,8 +216,12 @@ func Start() (err error) {
 	// Start ticker. Periodic job to check for new plugins.
 	pipeline.InitTicker()
 
-	switch gaiaMode {
+	switch gaia.Cfg.Mode {
 	case gaia.ModeServer:
+		// Start worker gRPC server
+		workerServer := server.InitWorkerServer()
+		go workerServer.Start()
+
 		// Start listen
 		echoInstance.Logger.Fatal(echoInstance.Start(":" + gaia.Cfg.ListenPort))
 	case gaia.ModeWorker:

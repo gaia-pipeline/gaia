@@ -110,6 +110,14 @@ func (a *Agent) StartAgent() error {
 	return nil
 }
 
+// scheduleWork is a periodic go routine which continuously pulls work
+// from the Gaia master instance. In case the pipeline is not available
+// on this machine, the create pipeline process will be triggered.
+func (a *Agent) scheduleWork() {
+	// Get actual work from remote Gaia instance
+
+}
+
 // generateClientTLSCreds checks if certificates exist in the home directory.
 // It will load the certificates and generates TLS creds for mTLS connection.
 func (a *Agent) generateClientTLSCreds() (credentials.TransportCredentials, error) {
