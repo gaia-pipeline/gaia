@@ -108,7 +108,6 @@ Usage
 
 Go
 ~~~
-Writing a pipeline is as easy as importing a library, defining a function which will be the job to execute, and serving the gRPC-Server via a single command.
 
 .. code:: go
 
@@ -180,6 +179,8 @@ Java
 
         private static Handler MyAwesomeJob = (gaiaArgs) -> {
             LOGGER.info("This output will be streamed back to gaia and will be displayed in the pipeline logs.");
+	    # Just raise an exception to tell Gaia if a job failed.
+            # throw new IllegalArgumentException("Oh no, this job failed!");
         };
 
         public static void main( String[] args )
