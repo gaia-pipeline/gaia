@@ -3,6 +3,7 @@ package scheduler
 import (
 	"errors"
 	"fmt"
+	"github.com/gaia-pipeline/gaia/services"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -244,6 +245,25 @@ func (s *Scheduler) schedule() {
 		return
 	}
 
+	// Get memdb service
+	db, err := services.MemDBService()
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot access memdb service", "error", err.Error())
+		return
+	}
+
+	// If we are a server instance, we will by default give the worker the advantage.
+	// Only in case all workers are busy we will schedule work on server.
+	// TODO: Check if all are workers busy and schedule work
+	count, err := db.CountWorker()
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot count worker in memdb", "error", err.Error())
+		return
+	}
+	if gaia.Cfg.Mode == gaia.ModeServer && count > 0 {
+		return
+	}
+
 	// Get scheduled pipelines but limit the returning number of elements.
 	scheduled, err := s.storeService.PipelineGetScheduled(schedulerBufferLimit)
 	if err != nil {
@@ -254,7 +274,7 @@ func (s *Scheduler) schedule() {
 	// Iterate scheduled runs
 	for id := range scheduled {
 		// push scheduled run into our channel
-		s.scheduledRuns <- (*scheduled[id])
+		s.scheduledRuns <- *scheduled[id]
 
 		// Mark them as scheduled
 		scheduled[id].Status = gaia.RunScheduled

@@ -199,6 +199,13 @@ func Start() (err error) {
 			gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
 			return err
 		}
+
+		// Initialize MemDB
+		_, err = services.MemDBService()
+		if err != nil {
+			gaia.Cfg.Logger.Error("cannot initialize memdb service", "error", err.Error())
+			return err
+		}
 	}
 
 	// Initialize store

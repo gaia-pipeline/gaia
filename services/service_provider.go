@@ -7,6 +7,7 @@ import (
 	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
+	"github.com/gaia-pipeline/gaia/store/memdb"
 	"github.com/gaia-pipeline/gaia/workers/scheduler"
 )
 
@@ -22,6 +23,9 @@ var certificateService security.CAAPI
 
 // vaultService is an instance of the internal Vault.
 var vaultService security.VaultAPI
+
+// memDBService is an instance of the internal memdb.
+var memDBService memdb.GaiaMemDB
 
 // StorageService initializes and keeps track of a storage service.
 // If the internal storage service is a singleton. This function retruns an error
@@ -114,4 +118,19 @@ func VaultService(vaultStore security.VaultStorer) (security.VaultAPI, error) {
 // for the internal vault service manager.
 func MockVaultService(service security.VaultAPI) {
 	vaultService = service
+}
+
+// MemDBService creates a memdb service instance.
+func MemDBService() (memdb.GaiaMemDB, error) {
+	if memDBService != nil && !reflect.ValueOf(memDBService).IsNil() {
+		return memDBService, nil
+	}
+
+	db, err := memdb.InitMemDB()
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot initialize memdb service", "error", err.Error())
+		return nil, err
+	}
+	memDBService = db
+	return memDBService, nil
 }
