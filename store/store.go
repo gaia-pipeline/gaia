@@ -78,6 +78,7 @@ type GaiaStore interface {
 	SettingsPut(config *gaia.StoreConfig) error
 	SettingsGet() (*gaia.StoreConfig, error)
 	WorkerPut(w *gaia.Worker) error
+	WorkerGetAll() ([]*gaia.Worker, error)
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore

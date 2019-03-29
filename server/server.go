@@ -141,6 +141,12 @@ func Start() (err error) {
 		return
 	}
 
+	// Initialize store
+	store, err := services.StorageService()
+	if err != nil {
+		return
+	}
+
 	if gaia.Cfg.Mode == gaia.ModeServer {
 		var jwtKey interface{}
 		// Check JWT key is set
@@ -201,17 +207,23 @@ func Start() (err error) {
 		}
 
 		// Initialize MemDB
-		_, err = services.MemDBService()
+		db, err := services.MemDBService()
 		if err != nil {
 			gaia.Cfg.Logger.Error("cannot initialize memdb service", "error", err.Error())
 			return err
 		}
-	}
 
-	// Initialize store
-	_, err = services.StorageService()
-	if err != nil {
-		return
+		// Load initial data from store into the memdb
+		worker, err := store.WorkerGetAll()
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to load worker from store", "error", err.Error())
+			return err
+		}
+		for _, w := range worker {
+			if err = db.UpsertWorker(w); err != nil {
+				return err
+			}
+		}
 	}
 
 	// Initialize scheduler

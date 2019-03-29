@@ -19,6 +19,9 @@ type MemDB struct {
 type GaiaMemDB interface {
 	// CountWorker counts the number of stored workers.
 	CountWorker() (int, error)
+
+	// UpsertWorker inserts or updates the given worker in the memdb.
+	UpsertWorker(w *gaia.Worker) error
 }
 
 // InitMemDB initiates a new memdb db.
@@ -93,10 +96,32 @@ func (m *MemDB) CountWorker() (count int, err error) {
 	return
 }
 
-func SyncWorker() error {
-	// TODO: Sync all worker from store into memdb
-}
+// UpsertWorker inserts or updates the given worker in the memdb.
+func (m *MemDB) UpsertWorker(w *gaia.Worker) error {
+	// Create a write transaction
+	txn := m.db.Txn(true)
 
-func InsertWorker(worker *gaia.Worker) error {
-	// TODO: Insert worker into memdb and store
+	// Find existing entry
+	raw, err := txn.First(workerTableName, "id", w.UniqueID)
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to lookup worker via upsert", "error", err.Error())
+		return err
+	}
+
+	// Delete if it exists
+	if raw != nil {
+		err = txn.Delete(workerTableName, raw)
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to delete worker via upsert", "error", err.Error())
+			return err
+		}
+	}
+
+	// Insert it
+	if err := txn.Insert(workerTableName, w); err != nil {
+		gaia.Cfg.Logger.Error("failed to insert worker via upsert", "error", err.Error())
+		return err
+	}
+
+	return nil
 }

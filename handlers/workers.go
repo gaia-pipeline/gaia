@@ -106,6 +106,17 @@ func RegisterWorker(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "cannot store worker object")
 	}
 
+	// Insert worker into memdb
+	db, err := services.MemDBService()
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot get memdb service via register worker", "error", err.Error())
+		return c.String(http.StatusInternalServerError, "cannot get memdb service")
+	}
+	if err = db.UpsertWorker(&w); err != nil {
+		gaia.Cfg.Logger.Error("failed to store worker in memdb via register worker", "error", err.Error())
+		return c.String(http.StatusInternalServerError, "failed to store worker in memdb")
+	}
+
 	return c.JSON(http.StatusOK, registerResponse{
 		UniqueID: w.UniqueID,
 		Cert:     crtB64,

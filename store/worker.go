@@ -24,3 +24,29 @@ func (s *BoltStore) WorkerPut(w *gaia.Worker) error {
 		return b.Put([]byte(w.UniqueID), m)
 	})
 }
+
+// WorkerGetAll returns all existing worker objects from the store.
+// It returns an error when the action failed.
+func (s *BoltStore) WorkerGetAll() ([]*gaia.Worker, error) {
+	var worker []*gaia.Worker
+
+	return worker, s.db.View(func(tx *bolt.Tx) error {
+		// Get bucket
+		b := tx.Bucket(workerBucket)
+
+		// Iterate all worker.
+		return b.ForEach(func(k, v []byte) error {
+			// Unmarshal
+			w := &gaia.Worker{}
+			err := json.Unmarshal(v, w)
+			if err != nil {
+				return err
+			}
+
+			// Append to our list
+			worker = append(worker, w)
+
+			return nil
+		})
+	})
+}
