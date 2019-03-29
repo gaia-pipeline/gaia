@@ -21,6 +21,7 @@ require (
 	github.com/google/go-github v15.0.0+incompatible
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135 // indirect
 	github.com/hashicorp/go-hclog v0.0.0-20180709165350-ff2cf002a8dd
+	github.com/hashicorp/go-memdb v1.0.0
 	github.com/hashicorp/go-plugin v0.0.0-20180331002553-e8d22c780116
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
