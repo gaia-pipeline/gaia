@@ -6,6 +6,7 @@ package worker;
 // a worker instance.
 message WorkerInstance {
     string unique_id = 1;
+    uint32 worker_slots = 2;
 }
 
 // PipelineRun represents one pipeline run.
@@ -13,8 +14,6 @@ message PipelineRun {
     string unique_id = 1;
     uint32 id = 2;
     string status = 3;
-
-
 }
 
 // Empty request/response.

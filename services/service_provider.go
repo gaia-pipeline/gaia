@@ -121,12 +121,12 @@ func MockVaultService(service security.VaultAPI) {
 }
 
 // MemDBService creates a memdb service instance.
-func MemDBService() (memdb.GaiaMemDB, error) {
+func MemDBService(store store.GaiaStore) (memdb.GaiaMemDB, error) {
 	if memDBService != nil && !reflect.ValueOf(memDBService).IsNil() {
 		return memDBService, nil
 	}
 
-	db, err := memdb.InitMemDB()
+	db, err := memdb.InitMemDB(store)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize memdb service", "error", err.Error())
 		return nil, err

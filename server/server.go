@@ -207,22 +207,13 @@ func Start() (err error) {
 		}
 
 		// Initialize MemDB
-		db, err := services.MemDBService()
+		db, err := services.MemDBService(store)
 		if err != nil {
 			gaia.Cfg.Logger.Error("cannot initialize memdb service", "error", err.Error())
 			return err
 		}
-
-		// Load initial data from store into the memdb
-		worker, err := store.WorkerGetAll()
-		if err != nil {
-			gaia.Cfg.Logger.Error("failed to load worker from store", "error", err.Error())
+		if err = db.SyncStore(); err != nil {
 			return err
-		}
-		for _, w := range worker {
-			if err = db.UpsertWorker(w); err != nil {
-				return err
-			}
 		}
 	}
 

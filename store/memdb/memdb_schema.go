@@ -16,5 +16,15 @@ var memDBSchema = &memdb.DBSchema{
 				},
 			},
 		},
+		pipelineRunTable: &memdb.TableSchema{
+			Name: pipelineRunTable,
+			Indexes: map[string]*memdb.IndexSchema{
+				"id": &memdb.IndexSchema{
+					Name: "id",
+					Unique: true,
+					Indexer: &memdb.StringFieldIndex{Field: "uniqueid"},
+				},
+			},
+		},
 	},
 }

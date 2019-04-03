@@ -246,21 +246,9 @@ func (s *Scheduler) schedule() {
 	}
 
 	// Get memdb service
-	db, err := services.MemDBService()
+	db, err := services.MemDBService(nil)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot access memdb service", "error", err.Error())
-		return
-	}
-
-	// If we are a server instance, we will by default give the worker the advantage.
-	// Only in case all workers are busy we will schedule work on server.
-	// TODO: Check if all are workers busy and schedule work
-	count, err := db.CountWorker()
-	if err != nil {
-		gaia.Cfg.Logger.Error("cannot count worker in memdb", "error", err.Error())
-		return
-	}
-	if gaia.Cfg.Mode == gaia.ModeServer && count > 0 {
 		return
 	}
 
@@ -273,9 +261,6 @@ func (s *Scheduler) schedule() {
 
 	// Iterate scheduled runs
 	for id := range scheduled {
-		// push scheduled run into our channel
-		s.scheduledRuns <- *scheduled[id]
-
 		// Mark them as scheduled
 		scheduled[id].Status = gaia.RunScheduled
 
@@ -283,7 +268,20 @@ func (s *Scheduler) schedule() {
 		err = s.storeService.PipelinePutRun(scheduled[id])
 		if err != nil {
 			gaia.Cfg.Logger.Debug("could not put pipeline run into store", "error", err.Error())
+			continue
 		}
+
+		// If we are a server instance, we will by default give the worker the advantage.
+		// Only in case all workers are busy we will schedule work on the server.
+		// TODO: Check if all are workers are busy and schedule work locally
+		if gaia.Cfg.Mode == gaia.ModeServer && db.CountWorker() > 0 {
+			// Insert pipeline run into memdb where all workers get their work from
+			db.InsertPipelineRun(scheduled[id])
+			continue
+		}
+
+		// push scheduled run into our channel
+		s.scheduledRuns <- *scheduled[id]
 	}
 }
 
