@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
@@ -11,15 +12,26 @@ import (
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/workers/agent/api"
+	pb "github.com/gaia-pipeline/gaia/workers/worker"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
+// schedulerTickerSeconds defines the interval in seconds for the scheduler.
+const schedulerTickerSeconds = 3
+
 // Agent represents an instance of an agent
 type Agent struct {
+	// client represents the interface for the worker client
+	client pb.WorkerClient
+
+	// self represents the current agent instance information
+	self *pb.WorkerInstance
+
 	// certFile represents the local path to the agent cert
 	certFile string
 
@@ -29,7 +41,6 @@ type Agent struct {
 	// caCertFile represents the local path to the agent ca cert
 	caCertFile string
 }
-
 
 // InitAgent initiates the agent instance
 func InitAgent() *Agent {
@@ -104,17 +115,46 @@ func (a *Agent) StartAgent() error {
 	}
 	defer conn.Close()
 
+	// Get worker interface
+	a.client = pb.NewWorkerClient(conn)
+
+	// Setup information object about the current agent
+	a.self = &pb.WorkerInstance{
+		UniqueId:
+	}
+
+	// Start periodic go routine which schedules the worker work
+	ticker := time.NewTicker(schedulerTickerSeconds * time.Second)
+	quitScheduler := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				// execute schedule function
+				a.scheduleWork()
+			case <-quitScheduler:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+
 	// Block until signal received
 	<-sigs
 	gaia.Cfg.Logger.Info("exit signal received. Exiting...")
+
+	// Safely stop scheduler
+	close(quitScheduler)
+
 	return nil
 }
 
 // scheduleWork is a periodic go routine which continuously pulls work
 // from the Gaia master instance. In case the pipeline is not available
-// on this machine, the create pipeline process will be triggered.
+// on this machine, the pipeline will be downloaded from the Gaia instance.
 func (a *Agent) scheduleWork() {
 	// Get actual work from remote Gaia instance
+	stream, err := a.client.GetWork(context.Background(), )
 
 }
 

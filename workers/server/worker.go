@@ -2,17 +2,25 @@ package server
 
 import (
 	"context"
+	"errors"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
+	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	pb "github.com/gaia-pipeline/gaia/workers/worker"
+	"github.com/golang/protobuf/ptypes/empty"
+	"io"
+	"os"
 )
+
+// chunkSize is the size of binary chunks transferred to workers.
+const chunkSize = 64 * 1024 // 64 KiB
 
 // WorkServer is the implementation of the worker gRPC server interface.
 type WorkServer struct{}
 
-func (w *WorkServer) Ping(ctx context.Context, workInst *pb.WorkerInstance) (*pb.Empty, error) {
+func (w *WorkServer) Ping(ctx context.Context, workInst *pb.WorkerInstance) (*empty.Empty, error) {
 	// TODO: Store ping received.
-	return &pb.Empty{}, nil
+	return &empty.Empty{}, nil
 }
 
 // GetWork gets pipeline runs from the store which are not scheduled yet and streams them
@@ -26,7 +34,7 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 	}
 
 	// Get scheduled work from memdb
-	for i := uint32(0); i < workInst.WorkerSlots; i++ {
+	for i := int32(0); i < workInst.WorkerSlots; i++ {
 		// TODO: Pop pipeline runs by their tags & worker tags
 		scheduled, err := db.PopPipelineRun()
 		if err != nil {
@@ -36,7 +44,7 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 		// Convert pipeline run to gRPC object
 		gRPCPipelineRun := pb.PipelineRun{
 			UniqueId: scheduled.UniqueID,
-			Id: uint32(scheduled.ID),
+			Id: int64(scheduled.ID),
 			Status: string(scheduled.Status),
 		}
 
@@ -46,12 +54,66 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 
 			// Insert pipeline run back into memdb since we have popped it
 			db.InsertPipelineRun(scheduled)
+			return err
 		}
 	}
 	return nil
 }
 
-func (w *WorkServer) Deregister(ctx context.Context, workInst *pb.WorkerInstance) (*pb.Empty, error) {
+// StreamBinary streams a pipeline binary in chunks back to the worker.
+func (w *WorkServer) StreamBinary(pipelineRun *pb.PipelineRun, serv pb.Worker_StreamBinaryServer) error {
+	// Lookup related pipeline
+	var foundPipeline *gaia.Pipeline
+	pipelines := pipeline.GlobalActivePipelines.GetAll()
+	for id := range pipelines {
+		if pipelines[id].ID == int(pipelineRun.PipelineId) {
+			foundPipeline = &pipelines[id]
+		}
+	}
+
+	// Failed to find the pipeline
+	if foundPipeline == nil {
+		gaia.Cfg.Logger.Error("failed to stream binary. Couldn't find related pipeline.", "pipelinerun", pipelineRun)
+		return errors.New("failed to find related pipeline with given id")
+	}
+
+	// Open pipeline binary file
+	file, err := os.Open(foundPipeline.ExecPath)
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to open pipeline binary for streambinary", "error", err.Error(), "pipelinerun", pipelineRun)
+		return errors.New("failed to open pipeline binary for streaming")
+	}
+	defer file.Close()
+
+	// Stream back the binary in chunks
+	chunk := &pb.BinaryChunk{}
+	buffer := make([]byte, chunkSize)
+	for {
+		bytesread, err := file.Read(buffer)
+
+		// Check for errors
+		if err != nil {
+			if err != io.EOF {
+				gaia.Cfg.Logger.Error("error occurred during pipeline binary disk read", "error", err.Error(), "pipelinerun", pipelineRun)
+				return err
+			}
+			break
+		}
+
+		// Set bytes
+		chunk.Chunk = buffer[:bytesread]
+
+		// Stream it back to worker
+		if err = serv.Send(chunk); err != nil {
+			gaia.Cfg.Logger.Error("failed to stream binary chunk back to worker", "error", err.Error(), "pipelinerun", pipelineRun)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (w *WorkServer) Deregister(ctx context.Context, workInst *pb.WorkerInstance) (*empty.Empty, error) {
 	// TODO: Remove worker from store
-	return &pb.Empty{}, nil
+	return &empty.Empty{}, nil
 }

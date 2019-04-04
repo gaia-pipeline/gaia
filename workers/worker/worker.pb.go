@@ -7,6 +7,7 @@ import (
 	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	math "math"
 )
@@ -26,7 +27,7 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 // a worker instance.
 type WorkerInstance struct {
 	UniqueId             string   `protobuf:"bytes,1,opt,name=unique_id,json=uniqueId,proto3" json:"unique_id,omitempty"`
-	WorkerSlots          uint32   `protobuf:"varint,2,opt,name=worker_slots,json=workerSlots,proto3" json:"worker_slots,omitempty"`
+	WorkerSlots          int32    `protobuf:"varint,2,opt,name=worker_slots,json=workerSlots,proto3" json:"worker_slots,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -64,7 +65,7 @@ func (m *WorkerInstance) GetUniqueId() string {
 	return ""
 }
 
-func (m *WorkerInstance) GetWorkerSlots() uint32 {
+func (m *WorkerInstance) GetWorkerSlots() int32 {
 	if m != nil {
 		return m.WorkerSlots
 	}
@@ -74,8 +75,10 @@ func (m *WorkerInstance) GetWorkerSlots() uint32 {
 // PipelineRun represents one pipeline run.
 type PipelineRun struct {
 	UniqueId             string   `protobuf:"bytes,1,opt,name=unique_id,json=uniqueId,proto3" json:"unique_id,omitempty"`
-	Id                   uint32   `protobuf:"varint,2,opt,name=id,proto3" json:"id,omitempty"`
-	Status               string   `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	Id                   int64    `protobuf:"varint,2,opt,name=id,proto3" json:"id,omitempty"`
+	PipelineId           int64    `protobuf:"varint,3,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`
+	Status               string   `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	PipelineName         string   `protobuf:"bytes,5,opt,name=pipeline_name,json=pipelineName,proto3" json:"pipeline_name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -113,9 +116,16 @@ func (m *PipelineRun) GetUniqueId() string {
 	return ""
 }
 
-func (m *PipelineRun) GetId() uint32 {
+func (m *PipelineRun) GetId() int64 {
 	if m != nil {
 		return m.Id
+	}
+	return 0
+}
+
+func (m *PipelineRun) GetPipelineId() int64 {
+	if m != nil {
+		return m.PipelineId
 	}
 	return 0
 }
@@ -127,63 +137,84 @@ func (m *PipelineRun) GetStatus() string {
 	return ""
 }
 
-// Empty request/response.
-type Empty struct {
+func (m *PipelineRun) GetPipelineName() string {
+	if m != nil {
+		return m.PipelineName
+	}
+	return ""
+}
+
+// BinaryChunk represents one chunk of a binary.
+type BinaryChunk struct {
+	Chunk                []byte   `protobuf:"bytes,1,opt,name=chunk,proto3" json:"chunk,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Empty) Reset()         { *m = Empty{} }
-func (m *Empty) String() string { return proto.CompactTextString(m) }
-func (*Empty) ProtoMessage()    {}
-func (*Empty) Descriptor() ([]byte, []int) {
+func (m *BinaryChunk) Reset()         { *m = BinaryChunk{} }
+func (m *BinaryChunk) String() string { return proto.CompactTextString(m) }
+func (*BinaryChunk) ProtoMessage()    {}
+func (*BinaryChunk) Descriptor() ([]byte, []int) {
 	return fileDescriptor_e4ff6184b07e587a, []int{2}
 }
 
-func (m *Empty) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Empty.Unmarshal(m, b)
+func (m *BinaryChunk) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BinaryChunk.Unmarshal(m, b)
 }
-func (m *Empty) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Empty.Marshal(b, m, deterministic)
+func (m *BinaryChunk) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BinaryChunk.Marshal(b, m, deterministic)
 }
-func (m *Empty) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Empty.Merge(m, src)
+func (m *BinaryChunk) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BinaryChunk.Merge(m, src)
 }
-func (m *Empty) XXX_Size() int {
-	return xxx_messageInfo_Empty.Size(m)
+func (m *BinaryChunk) XXX_Size() int {
+	return xxx_messageInfo_BinaryChunk.Size(m)
 }
-func (m *Empty) XXX_DiscardUnknown() {
-	xxx_messageInfo_Empty.DiscardUnknown(m)
+func (m *BinaryChunk) XXX_DiscardUnknown() {
+	xxx_messageInfo_BinaryChunk.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Empty proto.InternalMessageInfo
+var xxx_messageInfo_BinaryChunk proto.InternalMessageInfo
+
+func (m *BinaryChunk) GetChunk() []byte {
+	if m != nil {
+		return m.Chunk
+	}
+	return nil
+}
 
 func init() {
 	proto.RegisterType((*WorkerInstance)(nil), "worker.WorkerInstance")
 	proto.RegisterType((*PipelineRun)(nil), "worker.PipelineRun")
-	proto.RegisterType((*Empty)(nil), "worker.Empty")
+	proto.RegisterType((*BinaryChunk)(nil), "worker.BinaryChunk")
 }
 
 func init() { proto.RegisterFile("worker.proto", fileDescriptor_e4ff6184b07e587a) }
 
 var fileDescriptor_e4ff6184b07e587a = []byte{
-	// 226 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x29, 0xcf, 0x2f, 0xca,
-	0x4e, 0x2d, 0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x83, 0xf0, 0x94, 0x02, 0xb8, 0xf8,
-	0xc2, 0xc1, 0x2c, 0xcf, 0xbc, 0xe2, 0x92, 0xc4, 0xbc, 0xe4, 0x54, 0x21, 0x69, 0x2e, 0xce, 0xd2,
-	0xbc, 0xcc, 0xc2, 0xd2, 0xd4, 0xf8, 0xcc, 0x14, 0x09, 0x46, 0x05, 0x46, 0x0d, 0xce, 0x20, 0x0e,
-	0x88, 0x80, 0x67, 0x8a, 0x90, 0x22, 0xcc, 0x98, 0xf8, 0xe2, 0x9c, 0xfc, 0x92, 0x62, 0x09, 0x26,
-	0x05, 0x46, 0x0d, 0xde, 0x20, 0x6e, 0x88, 0x58, 0x30, 0x48, 0x48, 0x29, 0x88, 0x8b, 0x3b, 0x20,
-	0xb3, 0x20, 0x35, 0x27, 0x33, 0x2f, 0x35, 0xa8, 0x34, 0x0f, 0xbf, 0x71, 0x7c, 0x5c, 0x4c, 0x99,
-	0x29, 0x50, 0x43, 0x98, 0x32, 0x53, 0x84, 0xc4, 0xb8, 0xd8, 0x8a, 0x4b, 0x12, 0x4b, 0x4a, 0x8b,
-	0x25, 0x98, 0xc1, 0x2a, 0xa1, 0x3c, 0x25, 0x76, 0x2e, 0x56, 0xd7, 0xdc, 0x82, 0x92, 0x4a, 0xa3,
-	0x65, 0x8c, 0x5c, 0x6c, 0x10, 0xf7, 0x0a, 0xe9, 0x72, 0xb1, 0x04, 0x64, 0xe6, 0xa5, 0x0b, 0x89,
-	0xe9, 0x41, 0x3d, 0x86, 0xea, 0x0f, 0x29, 0x5e, 0x98, 0x38, 0x58, 0xa7, 0x90, 0x05, 0x17, 0xbb,
-	0x7b, 0x6a, 0x09, 0x48, 0x0d, 0x4e, 0x1d, 0xc2, 0x30, 0x71, 0x24, 0xf7, 0x1b, 0x30, 0x0a, 0x19,
-	0x73, 0x71, 0xb9, 0xa4, 0x16, 0xa5, 0xa6, 0x67, 0x16, 0x97, 0xa4, 0x16, 0x11, 0x69, 0x5d, 0x12,
-	0x1b, 0x38, 0x98, 0x8d, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff, 0xf1, 0x5a, 0x10, 0x91, 0x76, 0x01,
-	0x00, 0x00,
+	// 324 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x90, 0x4f, 0x4b, 0xc3, 0x40,
+	0x10, 0xc5, 0xd9, 0xfe, 0x89, 0x76, 0x12, 0x7b, 0x18, 0xa5, 0x84, 0xf6, 0x60, 0x6d, 0x2f, 0x3d,
+	0xa5, 0x45, 0x41, 0x44, 0x3c, 0xf9, 0x07, 0xe9, 0x45, 0x4a, 0x7a, 0xf0, 0x58, 0xd2, 0x66, 0x8c,
+	0x4b, 0x9b, 0x4d, 0xdc, 0x6c, 0x90, 0x7e, 0x13, 0x3f, 0xa8, 0x1f, 0x40, 0xb2, 0x9b, 0x68, 0x05,
+	0x15, 0xbc, 0xe5, 0xbd, 0x79, 0x6f, 0x32, 0xfb, 0x03, 0xe7, 0x35, 0x91, 0x6b, 0x92, 0x5e, 0x2a,
+	0x13, 0x95, 0xa0, 0x65, 0x54, 0xb7, 0x17, 0x25, 0x49, 0xb4, 0xa1, 0xb1, 0x76, 0x97, 0xf9, 0xd3,
+	0x98, 0xe2, 0x54, 0x6d, 0x4d, 0x68, 0x30, 0x83, 0xf6, 0xa3, 0x8e, 0x4d, 0x45, 0xa6, 0x02, 0xb1,
+	0x22, 0xec, 0x41, 0x2b, 0x17, 0xfc, 0x25, 0xa7, 0x05, 0x0f, 0x5d, 0xd6, 0x67, 0xa3, 0x96, 0xbf,
+	0x6f, 0x8c, 0x69, 0x88, 0x27, 0xd5, 0x3f, 0x16, 0xd9, 0x26, 0x51, 0x99, 0x5b, 0xeb, 0xb3, 0x51,
+	0xd3, 0xb7, 0x8d, 0x37, 0x2f, 0xac, 0xc1, 0x1b, 0x03, 0x7b, 0xc6, 0x53, 0xda, 0x70, 0x41, 0x7e,
+	0x2e, 0xfe, 0xde, 0xd7, 0x86, 0x1a, 0x0f, 0xf5, 0x96, 0xba, 0x5f, 0xe3, 0x21, 0x1e, 0x83, 0x9d,
+	0x96, 0xdd, 0x22, 0x5e, 0xd7, 0x03, 0xa8, 0xac, 0x69, 0x88, 0x1d, 0xb0, 0x32, 0x15, 0xa8, 0x3c,
+	0x73, 0x1b, 0x7a, 0x55, 0xa9, 0x70, 0x08, 0x07, 0x9f, 0x45, 0x11, 0xc4, 0xe4, 0x36, 0xf5, 0xd8,
+	0xa9, 0xcc, 0x87, 0x20, 0xa6, 0xc1, 0x10, 0xec, 0x6b, 0x2e, 0x02, 0xb9, 0xbd, 0x79, 0xce, 0xc5,
+	0x1a, 0x8f, 0xa0, 0xb9, 0x2a, 0x3e, 0xf4, 0x55, 0x8e, 0x6f, 0xc4, 0xe9, 0x3b, 0x03, 0xcb, 0x20,
+	0xc1, 0x73, 0x68, 0xcc, 0xb8, 0x88, 0xb0, 0xe3, 0x95, 0x60, 0xbf, 0xa3, 0xea, 0x76, 0x3c, 0x83,
+	0xd6, 0xab, 0xd0, 0x7a, 0x77, 0x05, 0x5a, 0xbc, 0x80, 0xbd, 0x7b, 0x52, 0x45, 0xf8, 0xd7, 0xea,
+	0x61, 0xe5, 0xef, 0xa0, 0x9a, 0x30, 0xbc, 0x04, 0x67, 0xae, 0x24, 0x05, 0xb1, 0xb9, 0x13, 0x7f,
+	0x8a, 0x7d, 0x75, 0x77, 0x1e, 0x33, 0x61, 0x78, 0x05, 0x70, 0x4b, 0x92, 0x22, 0x9e, 0x29, 0x92,
+	0xff, 0xbd, 0x79, 0x69, 0x69, 0x7d, 0xf6, 0x11, 0x00, 0x00, 0xff, 0xff, 0xf1, 0xde, 0xb8, 0x90,
+	0x44, 0x02, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -198,9 +229,14 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type WorkerClient interface {
-	Ping(ctx context.Context, in *WorkerInstance, opts ...grpc.CallOption) (*Empty, error)
+	// Ping is used to send a ping response.
+	Ping(ctx context.Context, in *WorkerInstance, opts ...grpc.CallOption) (*empty.Empty, error)
+	// GetWork pulls work from the primary instance.
 	GetWork(ctx context.Context, in *WorkerInstance, opts ...grpc.CallOption) (Worker_GetWorkClient, error)
-	Deregister(ctx context.Context, in *WorkerInstance, opts ...grpc.CallOption) (*Empty, error)
+	// StreamBinary streams a pipeline binary back to a worker instance.
+	StreamBinary(ctx context.Context, in *PipelineRun, opts ...grpc.CallOption) (Worker_StreamBinaryClient, error)
+	// Deregister deregister a registered worker from the primary instance.
+	Deregister(ctx context.Context, in *WorkerInstance, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type workerClient struct {
@@ -211,8 +247,8 @@ func NewWorkerClient(cc *grpc.ClientConn) WorkerClient {
 	return &workerClient{cc}
 }
 
-func (c *workerClient) Ping(ctx context.Context, in *WorkerInstance, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *workerClient) Ping(ctx context.Context, in *WorkerInstance, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/worker.Worker/Ping", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -252,8 +288,40 @@ func (x *workerGetWorkClient) Recv() (*PipelineRun, error) {
 	return m, nil
 }
 
-func (c *workerClient) Deregister(ctx context.Context, in *WorkerInstance, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *workerClient) StreamBinary(ctx context.Context, in *PipelineRun, opts ...grpc.CallOption) (Worker_StreamBinaryClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_Worker_serviceDesc.Streams[1], "/worker.Worker/StreamBinary", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &workerStreamBinaryClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Worker_StreamBinaryClient interface {
+	Recv() (*BinaryChunk, error)
+	grpc.ClientStream
+}
+
+type workerStreamBinaryClient struct {
+	grpc.ClientStream
+}
+
+func (x *workerStreamBinaryClient) Recv() (*BinaryChunk, error) {
+	m := new(BinaryChunk)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *workerClient) Deregister(ctx context.Context, in *WorkerInstance, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/worker.Worker/Deregister", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -263,9 +331,14 @@ func (c *workerClient) Deregister(ctx context.Context, in *WorkerInstance, opts 
 
 // WorkerServer is the server API for Worker service.
 type WorkerServer interface {
-	Ping(context.Context, *WorkerInstance) (*Empty, error)
+	// Ping is used to send a ping response.
+	Ping(context.Context, *WorkerInstance) (*empty.Empty, error)
+	// GetWork pulls work from the primary instance.
 	GetWork(*WorkerInstance, Worker_GetWorkServer) error
-	Deregister(context.Context, *WorkerInstance) (*Empty, error)
+	// StreamBinary streams a pipeline binary back to a worker instance.
+	StreamBinary(*PipelineRun, Worker_StreamBinaryServer) error
+	// Deregister deregister a registered worker from the primary instance.
+	Deregister(context.Context, *WorkerInstance) (*empty.Empty, error)
 }
 
 func RegisterWorkerServer(s *grpc.Server, srv WorkerServer) {
@@ -311,6 +384,27 @@ func (x *workerGetWorkServer) Send(m *PipelineRun) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Worker_StreamBinary_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(PipelineRun)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(WorkerServer).StreamBinary(m, &workerStreamBinaryServer{stream})
+}
+
+type Worker_StreamBinaryServer interface {
+	Send(*BinaryChunk) error
+	grpc.ServerStream
+}
+
+type workerStreamBinaryServer struct {
+	grpc.ServerStream
+}
+
+func (x *workerStreamBinaryServer) Send(m *BinaryChunk) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _Worker_Deregister_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(WorkerInstance)
 	if err := dec(in); err != nil {
@@ -346,6 +440,11 @@ var _Worker_serviceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "GetWork",
 			Handler:       _Worker_GetWork_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "StreamBinary",
+			Handler:       _Worker_StreamBinary_Handler,
 			ServerStreams: true,
 		},
 	},
