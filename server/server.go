@@ -50,7 +50,7 @@ func init() {
 	fs.StringVar(&gaia.Cfg.HomePath, "homepath", "", "Path to the gaia home folder")
 	fs.StringVar(&gaia.Cfg.Hostname, "hostname", "https://localhost", "The host's name under which gaia is deployed at e.g.: https://gaia-pipeline.com")
 	fs.StringVar(&gaia.Cfg.VaultPath, "vaultpath", "", "Path to the gaia vault folder")
-	fs.StringVar(&gaia.Cfg.Worker, "worker", "2", "Number of worker gaia will use to execute pipelines in parallel")
+	fs.IntVar(&gaia.Cfg.Worker, "worker", 2, "Number of worker gaia will use to execute pipelines in parallel")
 	fs.StringVar(&gaia.Cfg.JwtPrivateKeyPath, "jwtPrivateKeyPath", "", "A RSA private key used to sign JWT tokens")
 	fs.StringVar(&gaia.Cfg.CAPath, "capath", "", "Folder path where the generated CA certificate files will be saved")
 	fs.BoolVar(&gaia.Cfg.DevMode, "dev", false, "If true, gaia will be started in development mode. Don't use this in production!")
@@ -218,7 +218,7 @@ func Start() (err error) {
 	}
 
 	// Initialize scheduler
-	_, err = services.SchedulerService()
+	scheduler, err := services.SchedulerService()
 	if err != nil {
 		return
 	}
@@ -236,10 +236,10 @@ func Start() (err error) {
 		echoInstance.Logger.Fatal(echoInstance.Start(":" + gaia.Cfg.ListenPort))
 	case gaia.ModeWorker:
 		// Start worker main loop and block until SIGINT or SIGTERM has been received.
-		ag := agent.InitAgent()
+		ag := agent.InitAgent(scheduler)
 		err := ag.StartAgent()
 		if err != nil {
-			gaia.Cfg.Logger.Error("cannot start agent", "error", err)
+			gaia.Cfg.Logger.Error("failed to start agent", "error", err)
 			return err
 		}
 	}

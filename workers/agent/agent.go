@@ -7,6 +7,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/gaia-pipeline/gaia/services"
+	"github.com/gaia-pipeline/gaia/workers/scheduler"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -40,11 +43,16 @@ type Agent struct {
 
 	// caCertFile represents the local path to the agent ca cert
 	caCertFile string
+
+	// Instance of scheduler
+	scheduler scheduler.GaiaScheduler
 }
 
 // InitAgent initiates the agent instance
-func InitAgent() *Agent {
-	ag := &Agent{}
+func InitAgent(scheduler scheduler.GaiaScheduler) *Agent {
+	ag := &Agent{
+		scheduler: scheduler,
+	}
 
 	// Set path to local certificates
 	ag.certFile = filepath.Join(gaia.Cfg.HomePath, "cert.pem")
@@ -64,7 +72,14 @@ func (a *Agent) StartAgent() error {
 	// Register the signal channel
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
+	// Get store interface
+	store, err := services.StorageService()
+	if err != nil {
+		return fmt.Errorf("cannot access local store: %s", err.Error())
+	}
+
 	// Check if this worker has been already registered at a Gaia instance
+	workerID := ""
 	clientTLS, err := a.generateClientTLSCreds()
 	if err != nil {
 		// If there is an error, no matter if no certificates exist or
@@ -72,8 +87,19 @@ func (a *Agent) StartAgent() error {
 		// the worker again.
 		regResp, err := api.RegisterWorker(gaia.Cfg.WorkerHostURL, gaia.Cfg.WorkerSecret)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to register worker: %s", err.Error())
 		}
+
+		// The registration process was successful.
+		// Store the generated worker id since we need it later.
+		if err = store.WorkerDeleteAll(); err != nil {
+			return fmt.Errorf("failed to clean up worker bucket in store: %s", err.Error())
+		}
+		w := &gaia.Worker{UniqueID: regResp.UniqueID}
+		if err = store.WorkerPut(w); err != nil {
+			return fmt.Errorf("failed to store worker obj in store: %s", err.Error())
+		}
+		workerID = regResp.UniqueID
 
 		// Decode received certificates
 		cert, err := base64.StdEncoding.DecodeString(regResp.Cert)
@@ -103,24 +129,39 @@ func (a *Agent) StartAgent() error {
 		// Update the client TLS object
 		clientTLS, err = a.generateClientTLSCreds()
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to generate TLS credentials: %s", err.Error())
 		}
 	}
 
 	dialOption := grpc.WithTransportCredentials(clientTLS)
 	conn, err := grpc.Dial(gaia.Cfg.WorkerHostURL, dialOption)
 	if err != nil {
-		gaia.Cfg.Logger.Error("cannot establish connection to Gaia instance", "error", err)
-		return err
+		return fmt.Errorf("failed to connect to remote host: %s", err.Error())
 	}
 	defer conn.Close()
 
 	// Get worker interface
 	a.client = pb.NewWorkerClient(conn)
 
+	// Load worker id from store
+	if workerID == "" {
+		worker, err := store.WorkerGetAll()
+		if err != nil {
+			return fmt.Errorf("failed to load worker id from store: %s", err.Error())
+		}
+
+		// Only one worker obj should exist
+		if len(worker) != 1 {
+			return fmt.Errorf("failed to load worker obj from store. Expected one object but got %d", len(worker))
+		}
+
+		// Set worker id
+		workerID = worker[0].UniqueID
+	}
+
 	// Setup information object about the current agent
 	a.self = &pb.WorkerInstance{
-		UniqueId:
+		UniqueId: workerID,
 	}
 
 	// Start periodic go routine which schedules the worker work
@@ -151,10 +192,49 @@ func (a *Agent) StartAgent() error {
 
 // scheduleWork is a periodic go routine which continuously pulls work
 // from the Gaia master instance. In case the pipeline is not available
-// on this machine, the pipeline will be downloaded from the Gaia instance.
+// on this machine, the pipeline will be downloaded from the Gaia master instance.
 func (a *Agent) scheduleWork() {
+	// Check if the agent is busy. Only ask for work when we have the capacity to do it.
+	a.self.WorkerSlots = int32(a.scheduler.GetFreeWorkers())
+	if a.self.WorkerSlots == 0 {
+		return
+	}
+
+	// Setup context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), (3 * schedulerTickerSeconds) * time.Second)
+	defer cancel()
+
+	// TODO: Add worker tags to a.self
 	// Get actual work from remote Gaia instance
-	stream, err := a.client.GetWork(context.Background(), )
+	stream, err := a.client.GetWork(ctx, a.self)
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to retrieve work from remote instance", "error", err.Error())
+		return
+	}
+
+	// Read until the stream was closed
+	for {
+		pipelineRunPB, err := stream.Recv()
+
+		// Stream was closed
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to stream work from remote instance", "error", err.Error())
+			return
+		}
+
+		// Convert protobuf pipeline run to internal struct
+		pipelineRun := &gaia.PipelineRun{
+			UniqueID: pipelineRunPB.UniqueId,
+			ID: int(pipelineRunPB.Id),
+			Status: gaia.PipelineRunStatus(pipelineRunPB.Status),
+			PipelineID: int(pipelineRunPB.PipelineId),
+		}
+
+		// TODO: Check if we have to download the pipeline binary
+	}
 
 }
 

@@ -10,6 +10,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 // chunkSize is the size of binary chunks transferred to workers.
@@ -46,6 +47,15 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 			UniqueId: scheduled.UniqueID,
 			Id: int64(scheduled.ID),
 			Status: string(scheduled.Status),
+		}
+
+		// Lookup pipeline from run
+		for _, p := range pipeline.GlobalActivePipelines.GetAll() {
+			if p.ID == scheduled.PipelineID {
+				gRPCPipelineRun.ShaSum = p.SHA256Sum
+				gRPCPipelineRun.PipelineName = filepath.Base(p.ExecPath)
+				break
+			}
 		}
 
 		// Stream pipeline run back to worker

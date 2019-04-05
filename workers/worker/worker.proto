@@ -15,9 +15,10 @@ message WorkerInstance {
 message PipelineRun {
     string unique_id = 1;
     int64 id = 2;
-    int64 pipeline_id = 3;
-    string status = 4;
+    string status = 3;
+    int64 pipeline_id = 4;
     string pipeline_name = 5;
+    bytes sha_sum = 6;
 }
 
 // BinaryChunk represents one chunk of a binary.
@@ -27,14 +28,14 @@ message BinaryChunk {
 
 service Worker {
     // Ping is used to send a ping response.
-    rpc Ping(WorkerInstance) returns (google.protobuf.Empty);
+    rpc Ping (WorkerInstance) returns (google.protobuf.Empty);
 
     // GetWork pulls work from the primary instance.
-    rpc GetWork(WorkerInstance) returns (stream PipelineRun);
+    rpc GetWork (WorkerInstance) returns (stream PipelineRun);
 
     // StreamBinary streams a pipeline binary back to a worker instance.
-    rpc StreamBinary(PipelineRun) returns (stream BinaryChunk);
+    rpc StreamBinary (PipelineRun) returns (stream BinaryChunk);
 
     // Deregister deregister a registered worker from the primary instance.
-    rpc Deregister(WorkerInstance) returns (google.protobuf.Empty);
+    rpc Deregister (WorkerInstance) returns (google.protobuf.Empty);
 }

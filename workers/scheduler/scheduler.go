@@ -9,12 +9,13 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
-	uuid "github.com/satori/go.uuid"
+	"github.com/satori/go.uuid"
 )
 
 const (
@@ -75,7 +76,7 @@ type Plugin interface {
 	// FlushLogs flushes the logs.
 	FlushLogs() error
 
-	// Close closes the connection and cleansup open file writes.
+	// Close closes the connection and cleans open file writes.
 	Close()
 }
 
@@ -85,6 +86,7 @@ type GaiaScheduler interface {
 	SchedulePipeline(p *gaia.Pipeline, args []gaia.Argument) (*gaia.PipelineRun, error)
 	SetPipelineJobs(p *gaia.Pipeline) error
 	StopPipelineRun(p *gaia.Pipeline, runID int) error
+	GetFreeWorkers() uint32
 }
 
 var _ GaiaScheduler = (*Scheduler)(nil)
@@ -106,6 +108,9 @@ type Scheduler struct {
 
 	// vault is the instance of the vault.
 	vault security.VaultAPI
+
+	// Atomic Counter that represents the current free workers
+	freeWorkers *uint32
 }
 
 // NewScheduler creates a new instance of Scheduler.
@@ -117,6 +122,7 @@ func NewScheduler(store store.GaiaStore, pS Plugin, ca security.CAAPI, vault sec
 		pluginSystem:  pS,
 		ca:            ca,
 		vault:         vault,
+		freeWorkers:   new(uint32),
 	}
 
 	return s
@@ -124,14 +130,8 @@ func NewScheduler(store store.GaiaStore, pS Plugin, ca security.CAAPI, vault sec
 
 // Init initializes the scheduler.
 func (s *Scheduler) Init() error {
-	// Get number of worker
-	w, err := strconv.Atoi(gaia.Cfg.Worker)
-	if err != nil {
-		return err
-	}
-
 	// Setup worker
-	for i := 0; i < w; i++ {
+	for i := 0; i < gaia.Cfg.Worker; i++ {
 		go s.work()
 	}
 
@@ -155,8 +155,14 @@ func (s *Scheduler) Init() error {
 func (s *Scheduler) work() {
 	// This worker never stops working.
 	for {
+		// We haven't picked up work yet so mark this worker as free
+		atomic.AddUint32(s.freeWorkers, 1)
+
 		// Take one scheduled run, block if there are no scheduled pipelines
 		r := <-s.scheduledRuns
+
+		// We picked up work and are from now on busy
+		atomic.AddUint32(s.freeWorkers, -1)
 
 		// Prepare execution and start it
 		s.prepareAndExec(r)
@@ -734,6 +740,11 @@ func (s *Scheduler) SetPipelineJobs(p *gaia.Pipeline) error {
 	p.Jobs = jobs
 
 	return nil
+}
+
+// GetFreeWorkers returns the number of free workers.
+func (s *Scheduler) GetFreeWorkers() uint32 {
+	return atomic.LoadUint32(s.freeWorkers)
 }
 
 // finishPipelineRun finishes the pipeline run and stores the results.

@@ -50,3 +50,19 @@ func (s *BoltStore) WorkerGetAll() ([]*gaia.Worker, error) {
 		})
 	})
 }
+
+// WorkerDeleteAll deletes all worker objects in the bucket.
+func (s *BoltStore) WorkerDeleteAll() error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		// Get bucket
+		b := tx.Bucket(workerBucket)
+
+		// Delete bucket
+		if err := b.DeleteBucket(workerBucket); err != nil {
+			return err
+		}
+
+		_, err := tx.CreateBucket(workerBucket)
+		return err
+	})
+}

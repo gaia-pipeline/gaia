@@ -274,7 +274,7 @@ type Config struct {
 	DataPath          string
 	PipelinePath      string
 	WorkspacePath     string
-	Worker            string
+	Worker            int
 	JwtPrivateKeyPath string
 	JWTKey            interface{}
 	Logger            hclog.Logger
