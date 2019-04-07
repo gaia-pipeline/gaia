@@ -3,6 +3,7 @@ module github.com/gaia-pipeline/gaia
 require (
 	github.com/GeertJohan/go.rice v0.0.0-20181229193832-0af3f3b09a0a
 	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
+	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
 	github.com/boltdb/bolt v1.3.1 // indirect
 	github.com/coreos/bbolt v1.3.0
@@ -32,6 +33,7 @@ require (
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/swaggo/echo-swagger v0.0.0-20190329130007-1219b460a043
+	github.com/swaggo/swag v1.4.0
 	github.com/xanzy/ssh-agent v0.2.0 // indirect
 	golang.org/x/crypto v0.0.0-20190211182817-74369b46fc67
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be

@@ -1,0 +1,15 @@
+basePath: /api/v1
+host: gaia-pipeline.io
+info:
+  contact:
+    name: API Support
+    url: https://github.com/gaia-pipeline/gaia
+  description: This is the API that the Gaia Admin UI uses.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://github.com/gaia-pipeline/gaia/blob/master/LICENSE
+  title: Gaia API
+  version: "1.0"
+paths: {}
+swagger: "2.0"

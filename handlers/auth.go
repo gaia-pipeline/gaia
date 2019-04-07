@@ -25,12 +25,13 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			// Login, WebHook callback and static resources are open
 			// The webhook callback has it's own authentication method
-			if strings.Contains(c.Path(), "/login") ||
-				c.Path() == "/" ||
-				strings.Contains(c.Path(), "/assets/") ||
-				c.Path() == "/favicon.ico" ||
-				strings.Contains(c.Path(), "pipeline/githook") ||
-				strings.Contains(c.Path(), "/trigger") {
+			excludeContains := []string{"/login", "/assets/", "pipeline/githook", "/trigger", "/swagger"}
+			for _, e := range excludeContains {
+				if strings.Contains(c.Path(), e) {
+					return next(c)
+				}
+			}
+			if c.Path() == "/" || c.Path() == "/favicon.ico" {
 				return next(c)
 			}
 
