@@ -7,7 +7,7 @@ import (
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 // SettingsPollOn turn on polling functionality.

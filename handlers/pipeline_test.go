@@ -19,7 +19,7 @@ import (
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	hclog "github.com/hashicorp/go-hclog"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 type mockScheduleService struct {

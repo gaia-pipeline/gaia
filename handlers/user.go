@@ -12,7 +12,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 // jwtExpiry defines how long the produced jwt tokens

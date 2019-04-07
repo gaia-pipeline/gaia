@@ -7,8 +7,9 @@ import (
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/auth"
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 var (
@@ -81,6 +82,9 @@ func InitHandlers(e *echo.Echo) error {
 	e.DELETE(p+"secret/:key", RemoveSecret)
 	e.POST(p+"secret", SetSecret)
 	e.PUT(p+"secret/update", SetSecret)
+
+	// Swagger UI
+	e.GET(p+"swagger/*", echoSwagger.WrapHandler)
 
 	// Middleware
 	e.Use(middleware.Recover())

@@ -11,7 +11,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	hclog "github.com/hashicorp/go-hclog"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 func TestVaultWorkflowAddListDelete(t *testing.T) {

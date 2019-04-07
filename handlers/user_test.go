@@ -17,7 +17,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
 	hclog "github.com/hashicorp/go-hclog"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 func TestUserLoginHMACKey(t *testing.T) {

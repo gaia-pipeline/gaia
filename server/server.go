@@ -14,7 +14,7 @@ import (
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	hclog "github.com/hashicorp/go-hclog"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 var (
@@ -35,7 +35,7 @@ var fs *flag.FlagSet
 func init() {
 	// set configuration file name for run-time arguments
 
-	// set a prefix for environment properties so they are destinct to Gaia
+	// set a prefix for environment properties so they are distinct to Gaia
 	fs = flag.NewFlagSetWithEnvPrefix(os.Args[0], "GAIA", 0)
 
 	// set the configuration filename
@@ -60,8 +60,10 @@ func init() {
 
 // Start initiates all components of Gaia and starts the server.
 func Start() (err error) {
-	// Parse command line flgs
-	fs.Parse(os.Args[1:])
+	// Parse command line flags
+	// We are ignoring errors explicitly here, because this is trying
+	// to parse .gaia_config file even if we didn't create it as a fallback.
+	_ = fs.Parse(os.Args[1:])
 
 	// Check version switch
 	if gaia.Cfg.VersionSwitch {
@@ -102,14 +104,14 @@ func Start() (err error) {
 
 	// Find path for gaia home folder if not given by parameter
 	if gaia.Cfg.HomePath == "" {
-		// Find executeable path
+		// Find executable path
 		execPath, err := findExecutablePath()
 		if err != nil {
-			gaia.Cfg.Logger.Error("cannot find executeable path", "error", err.Error())
+			gaia.Cfg.Logger.Error("cannot find executable path", "error", err.Error())
 			return err
 		}
 		gaia.Cfg.HomePath = execPath
-		gaia.Cfg.Logger.Debug("executeable path found", "path", execPath)
+		gaia.Cfg.Logger.Debug("executable path found", "path", execPath)
 	}
 
 	// Set data path, workspace path and pipeline path relative to home folder and create it
