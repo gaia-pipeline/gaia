@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/gaia-pipeline/gaia/server"
 	_ "github.com/gaia-pipeline/gaia/docs"
+	"github.com/gaia-pipeline/gaia/server"
 )
 
 // @title Gaia API

@@ -27,6 +27,16 @@ type jwtCustomClaims struct {
 
 // UserLogin authenticates the user with
 // the given credentials.
+// @Summary User Login
+// @Description Returns an authenticated user.
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} gaia.User
+// @Failure 400 {string} error reading json
+// @Failure 403 {string} invalid credentials provided
+// @Failure 500 {string} error creating jwt token
+// @Failure 500 {string} error signing jwt token
+// @Router /login [post]
 func UserLogin(c echo.Context) error {
 	storeService, _ := services.StorageService()
 	u := &gaia.User{}

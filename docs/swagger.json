@@ -16,5 +16,73 @@
     },
     "host": "gaia-pipeline.io",
     "basePath": "/api/v1",
-    "paths": {}
+    "paths": {
+        "/login": {
+            "post": {
+                "description": "Returns an authenticated user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "User Login",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/gaia.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "gaia.User": {
+            "type": "object",
+            "properties": {
+                "display_name": {
+                    "type": "string"
+                },
+                "jwtexpiry": {
+                    "type": "integer"
+                },
+                "lastlogin": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "tokenstring": {
+                    "type": "string"
+                },
+                "trigger_token": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        }
+    }
 }
