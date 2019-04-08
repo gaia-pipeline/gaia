@@ -18,7 +18,8 @@ message PipelineRun {
     string status = 3;
     int64 pipeline_id = 4;
     string pipeline_name = 5;
-    bytes sha_sum = 6;
+    string pipeline_type = 6;
+    bytes sha_sum = 7;
 }
 
 // BinaryChunk represents one chunk of a binary.
@@ -32,6 +33,9 @@ service Worker {
 
     // GetWork pulls work from the primary instance.
     rpc GetWork (WorkerInstance) returns (stream PipelineRun);
+
+    // UpdateWork updates work information at the primary instance.
+    rpc UpdateWork (PipelineRun) returns (google.protobuf.Empty);
 
     // StreamBinary streams a pipeline binary back to a worker instance.
     rpc StreamBinary (PipelineRun) returns (stream BinaryChunk);

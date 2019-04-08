@@ -1,19 +1,22 @@
 package agent
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/gaia-pipeline/gaia/services"
+	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -25,7 +28,11 @@ import (
 )
 
 // schedulerTickerSeconds defines the interval in seconds for the scheduler.
-const schedulerTickerSeconds = 3
+const (
+	schedulerTickerSeconds = 3
+
+	typeDelimiter = "_"
+)
 
 // Agent represents an instance of an agent
 type Agent struct {
@@ -46,12 +53,16 @@ type Agent struct {
 
 	// Instance of scheduler
 	scheduler scheduler.GaiaScheduler
+
+	// Instance of store
+	store store.GaiaStore
 }
 
 // InitAgent initiates the agent instance
-func InitAgent(scheduler scheduler.GaiaScheduler) *Agent {
+func InitAgent(scheduler scheduler.GaiaScheduler, store store.GaiaStore) *Agent {
 	ag := &Agent{
 		scheduler: scheduler,
+		store: store,
 	}
 
 	// Set path to local certificates
@@ -72,12 +83,6 @@ func (a *Agent) StartAgent() error {
 	// Register the signal channel
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	// Get store interface
-	store, err := services.StorageService()
-	if err != nil {
-		return fmt.Errorf("cannot access local store: %s", err.Error())
-	}
-
 	// Check if this worker has been already registered at a Gaia instance
 	workerID := ""
 	clientTLS, err := a.generateClientTLSCreds()
@@ -92,11 +97,11 @@ func (a *Agent) StartAgent() error {
 
 		// The registration process was successful.
 		// Store the generated worker id since we need it later.
-		if err = store.WorkerDeleteAll(); err != nil {
+		if err = a.store.WorkerDeleteAll(); err != nil {
 			return fmt.Errorf("failed to clean up worker bucket in store: %s", err.Error())
 		}
 		w := &gaia.Worker{UniqueID: regResp.UniqueID}
-		if err = store.WorkerPut(w); err != nil {
+		if err = a.store.WorkerPut(w); err != nil {
 			return fmt.Errorf("failed to store worker obj in store: %s", err.Error())
 		}
 		workerID = regResp.UniqueID
@@ -145,7 +150,7 @@ func (a *Agent) StartAgent() error {
 
 	// Load worker id from store
 	if workerID == "" {
-		worker, err := store.WorkerGetAll()
+		worker, err := a.store.WorkerGetAll()
 		if err != nil {
 			return fmt.Errorf("failed to load worker id from store: %s", err.Error())
 		}
@@ -201,7 +206,7 @@ func (a *Agent) scheduleWork() {
 	}
 
 	// Setup context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), (3 * schedulerTickerSeconds) * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), (3*schedulerTickerSeconds)*time.Second)
 	defer cancel()
 
 	// TODO: Add worker tags to a.self
@@ -227,15 +232,127 @@ func (a *Agent) scheduleWork() {
 
 		// Convert protobuf pipeline run to internal struct
 		pipelineRun := &gaia.PipelineRun{
-			UniqueID: pipelineRunPB.UniqueId,
-			ID: int(pipelineRunPB.Id),
-			Status: gaia.PipelineRunStatus(pipelineRunPB.Status),
+			UniqueID:   pipelineRunPB.UniqueId,
+			ID:         int(pipelineRunPB.Id),
+			Status:     gaia.PipelineRunStatus(pipelineRunPB.Status),
 			PipelineID: int(pipelineRunPB.PipelineId),
 		}
 
-		// TODO: Check if we have to download the pipeline binary
+		// Get pipeline binary name and SHA256SUM
+		pipelineName := pipelineRunPB.PipelineName
+		pipelineSHA256SUM := pipelineRunPB.ShaSum
+
+		// Check if the binary is already stored locally
+		pipelineFullPath := filepath.Join(gaia.Cfg.PipelinePath, pipelineName)
+		if _, err := os.Stat(pipelineFullPath); err != nil {
+			// Download binary from remote gaia instance
+			if err = a.streamBinary(pipelineRunPB, pipelineFullPath); err != nil {
+				// TODO: Let gaia master know that an error happened so that it can reschedule the work
+				return
+			}
+		}
+
+		// Validate SHA256 sum to make sure the integrity is provided
+		sha256Sum, err := getSHA256Sum(pipelineFullPath)
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to determine SHA256Sum of pipeline file", "error", err.Error(), "pipelinerun", pipelineRunPB)
+			// TODO: Let gaia master know that an error happened so that it can reschedule the work
+			return
+		}
+		if bytes.Compare(sha256Sum, pipelineSHA256SUM) != 0 {
+			gaia.Cfg.Logger.Error("pipeline binary SHA256Sum mismatch", "pipelinerun", pipelineRunPB)
+			// TODO: Let gaia master know that an error happened so that it can reschedule the work
+			return
+		}
+
+		// Check if the pipeline has been already stored
+		pipeline, err := a.store.PipelineGet(pipelineRun.PipelineID)
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to load pipeline from store", "error", err.Error(), "pipelinerun", pipelineRunPB)
+			// TODO: Let gaia master know that an error happened so that it can reschedule the work
+			return
+		}
+		if pipeline == nil {
+			// Create a new pipeline object
+			pipelineType := gaia.PipelineType(pipelineRunPB.PipelineType)
+			pipeline = &gaia.Pipeline{
+				ID: pipelineRun.PipelineID,
+				Name: getRealPipelineName(pipelineRunPB.PipelineName, pipelineType),
+				Type: pipelineType,
+				ExecPath: pipelineFullPath,
+			}
+		}
+
+		// Doesn't matter if we created a new pipeline object or load it from store,
+		// we always set the correct SHA256Sum to make sure this is always the newest.
+		pipeline.SHA256Sum = pipelineSHA256SUM
+
+		// Let us try to start the plugin and receive all implemented jobs
+		if err = a.scheduler.SetPipelineJobs(pipeline); err != nil {
+			// Mark that this pipeline is broken.
+			pipeline.IsNotValid = true
+			gaia.Cfg.Logger.Error("cannot get pipeline jobs", "error", err.Error(), "pipelinerun", pipelineRunPB)
+			// TODO: Let gaia master know that an error happened so that it can reschedule the work
+			return
+		}
+
+		// Store pipeline
+		if err = a.store.PipelinePut(pipeline); err != nil {
+			gaia.Cfg.Logger.Error("failed to store pipeline in store", "error", err.Error(), "pipelinerun", pipelineRunPB)
+			// TODO: Let gaia master know that an error happened so that it can reschedule the work
+			return
+		}
+
+		// Store finally pipeline run
+		if err = a.store.PipelinePutRun(pipelineRun); err != nil {
+			gaia.Cfg.Logger.Error("failed to store pipeline run in store", "error", err.Error(), "pipelinerun", pipelineRunPB)
+			// TODO: Let gaia master know that an error happened so that it can reschedule the work
+			return
+		}
+	}
+}
+
+// streamBinary streams the binary in chunks from the remote instance to the given path.
+func (a *Agent) streamBinary(pipelineRunPB *pb.PipelineRun, pipelinePath string) error {
+	// Create a context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Initiate streaming
+	stream, err := a.client.StreamBinary(ctx, pipelineRunPB)
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to stream pipeline binary from remote instance", "error", err.Error(), "pipelinerun", pipelineRunPB)
+		return err
 	}
 
+	// Open output file
+	pipelineFile, err := os.Create(pipelinePath)
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to create new pipeline binary file during remote binary stream", "error", err.Error(), "pipelinerun", pipelineRunPB)
+		return err
+	}
+	defer pipelineFile.Close()
+
+	// Read whole stream
+	for {
+		streamChunk, err := stream.Recv()
+
+		// Check if stream was closed remotely
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to stream full pipeline binary from remote instance", "error", err.Error(), "pipelinerun", pipelineRunPB)
+			return err
+		}
+
+		// Write chunk to file
+		if _, err := pipelineFile.Write(streamChunk.Chunk); err != nil {
+			gaia.Cfg.Logger.Error("failed to write chunk to local disk during stream binary", "error", err.Error(), "pipelinerun", pipelineRunPB)
+			return err
+		}
+	}
+	return nil
 }
 
 // generateClientTLSCreds checks if certificates exist in the home directory.
@@ -275,4 +392,29 @@ func (a *Agent) generateClientTLSCreds() (credentials.TransportCredentials, erro
 		Certificates: []tls.Certificate{certs},
 		RootCAs:      certPool,
 	}), nil
+}
+
+// getSHA256Sum accepts a path to a file.
+// It load's the file and calculates a SHA256 Checksum and returns it.
+func getSHA256Sum(path string) ([]byte, error) {
+	// Open file
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	// Create sha256 obj and insert bytes
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return nil, err
+	}
+
+	// return sha256 checksum
+	return h.Sum(nil), nil
+}
+
+// getRealPipelineName removes the suffix from the pipeline name.
+func getRealPipelineName(n string, pType gaia.PipelineType) string {
+	return strings.TrimSuffix(n, typeDelimiter+pType.String())
 }

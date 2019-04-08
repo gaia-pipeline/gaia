@@ -147,6 +147,22 @@ func Start() (err error) {
 		return
 	}
 
+	// Initialize MemDB
+	db, err := services.MemDBService(store)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot initialize memdb service", "error", err.Error())
+		return err
+	}
+	if err = db.SyncStore(); err != nil {
+		return err
+	}
+
+	// Initialize scheduler
+	scheduler, err := services.SchedulerService()
+	if err != nil {
+		return
+	}
+
 	if gaia.Cfg.Mode == gaia.ModeServer {
 		var jwtKey interface{}
 		// Check JWT key is set
@@ -206,25 +222,9 @@ func Start() (err error) {
 			return err
 		}
 
-		// Initialize MemDB
-		db, err := services.MemDBService(store)
-		if err != nil {
-			gaia.Cfg.Logger.Error("cannot initialize memdb service", "error", err.Error())
-			return err
-		}
-		if err = db.SyncStore(); err != nil {
-			return err
-		}
+		// Start ticker. Periodic job to check for new plugins.
+		pipeline.InitTicker()
 	}
-
-	// Initialize scheduler
-	scheduler, err := services.SchedulerService()
-	if err != nil {
-		return
-	}
-
-	// Start ticker. Periodic job to check for new plugins.
-	pipeline.InitTicker()
 
 	switch gaia.Cfg.Mode {
 	case gaia.ModeServer:
