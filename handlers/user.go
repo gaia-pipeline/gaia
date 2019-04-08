@@ -29,8 +29,9 @@ type jwtCustomClaims struct {
 // the given credentials.
 // @Summary User Login
 // @Description Returns an authenticated user.
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
+// @Param UserLoginRequest body gaia.User true "UserLogin request"
 // @Success 200 {object} gaia.User
 // @Failure 400 {string} error reading json
 // @Failure 403 {string} invalid credentials provided

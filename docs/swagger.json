@@ -27,6 +27,18 @@
                     "application/json"
                 ],
                 "summary": "User Login",
+                "parameters": [
+                    {
+                        "description": "UserLogin request",
+                        "name": "UserLoginRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/gaia.User"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",

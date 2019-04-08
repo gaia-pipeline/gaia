@@ -35,6 +35,14 @@ paths:
       consumes:
       - application/json
       description: Returns an authenticated user.
+      parameters:
+      - description: UserLogin request
+        in: body
+        name: UserLoginRequest
+        required: true
+        schema:
+          $ref: '#/definitions/gaia.User'
+          type: object
       produces:
       - application/json
       responses:
