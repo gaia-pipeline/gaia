@@ -70,6 +70,51 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 	return nil
 }
 
+// UpdateWork updates work from a worker.
+func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun) (*empty.Empty, error) {
+	e := &empty.Empty{}
+
+	// Check the status of the pipeline run
+	switch gaia.PipelineRunStatus(pipelineRun.Status) {
+	case gaia.RunNotScheduled:
+		// Usually, the run is already scheduled when it arrives at a worker.
+		// If it is not scheduled then an error happened right before the worker
+		// had the chance to start the run. We will reschedule the run now.
+		store, err := services.StorageService()
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to get storage service via updatework", "error", err.Error())
+			return e, err
+		}
+		run, err := store.PipelineGetRunByPipelineIDAndID(int(pipelineRun.PipelineId), int(pipelineRun.Id))
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to load pipeline run via updatework", "error", err.Error(), "pipelinerun", pipelineRun)
+			return e, err
+		}
+		if run == nil {
+			gaia.Cfg.Logger.Error("unable to find pipeline run in store", "pipelinerun", pipelineRun)
+			return e, err
+		}
+
+		// This should actually never happen but lets add a defence-in-depth check here
+		if run.Status != gaia.RunScheduled {
+			gaia.Cfg.Logger.Warn("pipeline run must have scheduled status to be rescheduled", "pipelinerun", pipelineRun)
+			return e, nil
+		}
+
+		// Get memdb service
+		db, err := services.MemDBService(nil)
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to get memdb service via updatework", "error", err.Error())
+			return e, err
+		}
+
+		// Put pipeline run back into memdb. This adds the pipeline run to the stack again.
+		db.InsertPipelineRun(run)
+	}
+
+	return e, nil
+}
+
 // StreamBinary streams a pipeline binary in chunks back to the worker.
 func (w *WorkServer) StreamBinary(pipelineRun *pb.PipelineRun, serv pb.Worker_StreamBinaryServer) error {
 	// Lookup related pipeline

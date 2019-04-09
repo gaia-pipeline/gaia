@@ -247,7 +247,9 @@ func (a *Agent) scheduleWork() {
 		if _, err := os.Stat(pipelineFullPath); err != nil {
 			// Download binary from remote gaia instance
 			if err = a.streamBinary(pipelineRunPB, pipelineFullPath); err != nil {
-				// TODO: Let gaia master know that an error happened so that it can reschedule the work
+				// Reschedule pipeline
+				pipelineRunPB.Status = string(gaia.RunNotScheduled)
+				a.client.UpdateWork(context.Background(), pipelineRunPB)
 				return
 			}
 		}
@@ -256,12 +258,18 @@ func (a *Agent) scheduleWork() {
 		sha256Sum, err := getSHA256Sum(pipelineFullPath)
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to determine SHA256Sum of pipeline file", "error", err.Error(), "pipelinerun", pipelineRunPB)
-			// TODO: Let gaia master know that an error happened so that it can reschedule the work
+
+			// Reschedule pipeline
+			pipelineRunPB.Status = string(gaia.RunNotScheduled)
+			a.client.UpdateWork(context.Background(), pipelineRunPB)
 			return
 		}
 		if bytes.Compare(sha256Sum, pipelineSHA256SUM) != 0 {
 			gaia.Cfg.Logger.Error("pipeline binary SHA256Sum mismatch", "pipelinerun", pipelineRunPB)
-			// TODO: Let gaia master know that an error happened so that it can reschedule the work
+
+			// Reschedule pipeline
+			pipelineRunPB.Status = string(gaia.RunNotScheduled)
+			a.client.UpdateWork(context.Background(), pipelineRunPB)
 			return
 		}
 
@@ -269,7 +277,10 @@ func (a *Agent) scheduleWork() {
 		pipeline, err := a.store.PipelineGet(pipelineRun.PipelineID)
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to load pipeline from store", "error", err.Error(), "pipelinerun", pipelineRunPB)
-			// TODO: Let gaia master know that an error happened so that it can reschedule the work
+
+			// Reschedule pipeline
+			pipelineRunPB.Status = string(gaia.RunNotScheduled)
+			a.client.UpdateWork(context.Background(), pipelineRunPB)
 			return
 		}
 		if pipeline == nil {
@@ -292,21 +303,30 @@ func (a *Agent) scheduleWork() {
 			// Mark that this pipeline is broken.
 			pipeline.IsNotValid = true
 			gaia.Cfg.Logger.Error("cannot get pipeline jobs", "error", err.Error(), "pipelinerun", pipelineRunPB)
-			// TODO: Let gaia master know that an error happened so that it can reschedule the work
+
+			// Reschedule pipeline
+			pipelineRunPB.Status = string(gaia.RunNotScheduled)
+			a.client.UpdateWork(context.Background(), pipelineRunPB)
 			return
 		}
 
 		// Store pipeline
 		if err = a.store.PipelinePut(pipeline); err != nil {
 			gaia.Cfg.Logger.Error("failed to store pipeline in store", "error", err.Error(), "pipelinerun", pipelineRunPB)
-			// TODO: Let gaia master know that an error happened so that it can reschedule the work
+
+			// Reschedule pipeline
+			pipelineRunPB.Status = string(gaia.RunNotScheduled)
+			a.client.UpdateWork(context.Background(), pipelineRunPB)
 			return
 		}
 
 		// Store finally pipeline run
 		if err = a.store.PipelinePutRun(pipelineRun); err != nil {
 			gaia.Cfg.Logger.Error("failed to store pipeline run in store", "error", err.Error(), "pipelinerun", pipelineRunPB)
-			// TODO: Let gaia master know that an error happened so that it can reschedule the work
+
+			// Reschedule pipeline
+			pipelineRunPB.Status = string(gaia.RunNotScheduled)
+			a.client.UpdateWork(context.Background(), pipelineRunPB)
 			return
 		}
 	}
