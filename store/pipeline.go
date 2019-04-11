@@ -250,8 +250,8 @@ func (s *BoltStore) PipelineGetRunByPipelineIDAndID(pipelineid int, runid int) (
 	})
 }
 
-// PipelineGetAllRuns looks for all pipeline runs by the given pipeline id.
-func (s *BoltStore) PipelineGetAllRuns(pipelineID int) ([]gaia.PipelineRun, error) {
+// PipelineGetAllRunsByPipelineID looks for all pipeline runs by the given pipeline id.
+func (s *BoltStore) PipelineGetAllRunsByPipelineID(pipelineID int) ([]gaia.PipelineRun, error) {
 	var runs []gaia.PipelineRun
 
 	return runs, s.db.View(func(tx *bolt.Tx) error {
@@ -274,6 +274,33 @@ func (s *BoltStore) PipelineGetAllRuns(pipelineID int) ([]gaia.PipelineRun, erro
 				// add this to our list
 				runs = append(runs, *r)
 			}
+
+			return nil
+		})
+	})
+}
+
+// PipelineGetAllRuns loads all existing pipeline runs.
+func (s *BoltStore) PipelineGetAllRuns() ([]gaia.PipelineRun, error) {
+	var runs []gaia.PipelineRun
+
+	return runs, s.db.View(func(tx *bolt.Tx) error {
+		// Get Bucket
+		b := tx.Bucket(pipelineRunBucket)
+
+		// Iterate all pipeline runs.
+		return b.ForEach(func(k, v []byte) error {
+			// create single run object
+			r := &gaia.PipelineRun{}
+
+			// Unmarshal
+			err := json.Unmarshal(v, r)
+			if err != nil {
+				return err
+			}
+
+			// Append this run
+			runs = append(runs, *r)
 
 			return nil
 		})
@@ -321,5 +348,16 @@ func (s *BoltStore) PipelineDelete(id int) error {
 
 		// Delete pipeline
 		return b.Delete(itob(id))
+	})
+}
+
+// PipelineRunsDelete deletes the pipeline run with the given id.
+func (s *BoltStore) PipelineRunDelete(uniqueID string) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		// Get bucket
+		b := tx.Bucket(pipelineRunBucket)
+
+		// Delete pipeline
+		return b.Delete([]byte(uniqueID))
 	})
 }

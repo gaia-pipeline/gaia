@@ -64,9 +64,11 @@ type GaiaStore interface {
 	PipelinePutRun(r *gaia.PipelineRun) error
 	PipelineGetScheduled(limit int) ([]*gaia.PipelineRun, error)
 	PipelineGetRunByPipelineIDAndID(pipelineid int, runid int) (*gaia.PipelineRun, error)
-	PipelineGetAllRuns(pipelineID int) ([]gaia.PipelineRun, error)
+	PipelineGetAllRuns() ([]gaia.PipelineRun, error)
+	PipelineGetAllRunsByPipelineID(pipelineID int) ([]gaia.PipelineRun, error)
 	PipelineGetLatestRun(pipelineID int) (*gaia.PipelineRun, error)
 	PipelineDelete(id int) error
+	PipelineRunDelete(uniqueID string) error
 	UserPut(u *gaia.User, encryptPassword bool) error
 	UserAuth(u *gaia.User, updateLastLogin bool) (*gaia.User, error)
 	UserGet(username string) (*gaia.User, error)

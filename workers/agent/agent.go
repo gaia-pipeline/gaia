@@ -31,6 +31,8 @@ import (
 const (
 	schedulerTickerSeconds = 3
 
+	updateTickerSeconds = 2
+
 	typeDelimiter = "_"
 )
 
@@ -62,7 +64,7 @@ type Agent struct {
 func InitAgent(scheduler scheduler.GaiaScheduler, store store.GaiaStore) *Agent {
 	ag := &Agent{
 		scheduler: scheduler,
-		store: store,
+		store:     store,
 	}
 
 	// Set path to local certificates
@@ -170,16 +172,32 @@ func (a *Agent) StartAgent() error {
 	}
 
 	// Start periodic go routine which schedules the worker work
-	ticker := time.NewTicker(schedulerTickerSeconds * time.Second)
+	workTicker := time.NewTicker(schedulerTickerSeconds * time.Second)
 	quitScheduler := make(chan struct{})
 	go func() {
 		for {
 			select {
-			case <-ticker.C:
+			case <-workTicker.C:
 				// execute schedule function
 				a.scheduleWork()
 			case <-quitScheduler:
-				ticker.Stop()
+				workTicker.Stop()
+				return
+			}
+		}
+	}()
+
+	// Start periodic go routine which returns information to the Gaia master instance
+	updateTicker := time.NewTicker(updateTickerSeconds * time.Second)
+	quitUpdate := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-updateTicker.C:
+				// run update function
+				a.updateWork()
+			case <-quitUpdate:
+				updateTicker.Stop()
 				return
 			}
 		}
@@ -191,6 +209,7 @@ func (a *Agent) StartAgent() error {
 
 	// Safely stop scheduler
 	close(quitScheduler)
+	close(quitUpdate)
 
 	return nil
 }
@@ -237,6 +256,8 @@ func (a *Agent) scheduleWork() {
 			Status:     gaia.PipelineRunStatus(pipelineRunPB.Status),
 			PipelineID: int(pipelineRunPB.PipelineId),
 		}
+
+		// TODO: Convert jobs & arguments
 
 		// Get pipeline binary name and SHA256SUM
 		pipelineName := pipelineRunPB.PipelineName
@@ -287,9 +308,9 @@ func (a *Agent) scheduleWork() {
 			// Create a new pipeline object
 			pipelineType := gaia.PipelineType(pipelineRunPB.PipelineType)
 			pipeline = &gaia.Pipeline{
-				ID: pipelineRun.PipelineID,
-				Name: getRealPipelineName(pipelineRunPB.PipelineName, pipelineType),
-				Type: pipelineType,
+				ID:       pipelineRun.PipelineID,
+				Name:     getRealPipelineName(pipelineRunPB.PipelineName, pipelineType),
+				Type:     pipelineType,
 				ExecPath: pipelineFullPath,
 			}
 		}
@@ -375,6 +396,49 @@ func (a *Agent) streamBinary(pipelineRunPB *pb.PipelineRun, pipelinePath string)
 	return nil
 }
 
+// updateWork is function that is periodically called and it is used to
+// send new information about a pipeline run to the Gaia master instance.
+func (a *Agent) updateWork() {
+	// Read all pipeline runs from the store. The number of pipeline runs
+	// should be relatively low since we delete pipeline runs after successful
+	// execution.
+	runs, err := a.store.PipelineGetAllRuns()
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to load pipeline runs from store", "error", err.Error())
+		return
+	}
+
+	// Send all pipeline run to the remote primary instance
+	for _, run := range runs {
+		// Transform to protobuf struct
+		runPB := &pb.PipelineRun{
+			Id:         int64(run.ID),
+			UniqueId:   run.UniqueID,
+			Status:     string(run.Status),
+			PipelineId: int64(run.PipelineID),
+		}
+
+		// TODO: Transform jobs too
+
+		// Create context with timeout
+		ctx, cancel := context.WithTimeout(context.Background(), (updateTickerSeconds*3)*time.Second)
+		defer cancel()
+
+		// Send to remote instance
+		if _, err := a.client.UpdateWork(ctx, runPB); err != nil {
+			gaia.Cfg.Logger.Error("failed to send update information to remote instance", "error", err.Error())
+			continue
+		}
+
+		// Remove pipeline run from store when the state is finalized
+		if run.Status == gaia.RunFailed || run.Status == gaia.RunSuccess {
+			if err = a.store.PipelineRunDelete(run.UniqueID); err != nil {
+				gaia.Cfg.Logger.Error("failed to remove pipeline run from store", "error", err.Error(), "pipelinerun", run)
+			}
+		}
+	}
+}
+
 // generateClientTLSCreds checks if certificates exist in the home directory.
 // It will load the certificates and generates TLS creds for mTLS connection.
 func (a *Agent) generateClientTLSCreds() (credentials.TransportCredentials, error) {
@@ -413,6 +477,8 @@ func (a *Agent) generateClientTLSCreds() (credentials.TransportCredentials, erro
 		RootCAs:      certPool,
 	}), nil
 }
+
+// --- TODO: move to helper package since this is also used in ticker.go ---
 
 // getSHA256Sum accepts a path to a file.
 // It load's the file and calculates a SHA256 Checksum and returns it.

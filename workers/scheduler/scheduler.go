@@ -425,7 +425,7 @@ DEPENDSON_LOOP:
 			}
 		}
 
-		// Check if job is alreay in unresolved list
+		// Check if job is already in unresolved list
 		for _, unresolvedJob := range unresolved {
 			if unresolvedJob.ID == job.ID {
 				// Circular dependency detected

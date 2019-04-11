@@ -110,6 +110,16 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 
 		// Put pipeline run back into memdb. This adds the pipeline run to the stack again.
 		db.InsertPipelineRun(run)
+	default:
+		// Transform protobuf object to internal struct
+		run := &gaia.PipelineRun{
+			UniqueID: pipelineRun.UniqueId,
+			Status: gaia.PipelineRunStatus(pipelineRun.Status),
+			PipelineID: int(pipelineRun.PipelineId),
+			ID: int(pipelineRun.Id),
+			Jobs:
+		}
+
 	}
 
 	return e, nil
