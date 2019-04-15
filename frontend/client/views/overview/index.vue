@@ -48,7 +48,7 @@
                 unknown
               </span><br />
               <div class="pipelinegrid-footer">
-                <a class="button is-primary" @click="checkPipelineArgs(pipeline.p)" style="width: 100%;">
+                <a class="button is-primary" @click="checkPipelineArgsAndStartPipeline(pipeline.p)" style="width: 100%;">
                   <span class="icon">
                     <i class="fa fa-play-circle"></i>
                   </span>
@@ -68,6 +68,7 @@
 
 <script>
 import moment from 'moment'
+import helper from '../../helper'
 
 export default {
   data () {
@@ -82,7 +83,7 @@ export default {
     this.fetchData()
 
     // periodically update dashboard
-    var intervalID = setInterval(function () {
+    let intervalID = setInterval(function () {
       this.fetchData()
     }.bind(this), 3000)
 
@@ -122,35 +123,8 @@ export default {
       }
     },
 
-    checkPipelineArgs (pipeline) {
-      this.pipeline = pipeline
-
-      // check if this pipeline has args
-      for (let x = 0, y = pipeline.jobs.length; x < y; x++) {
-        if (pipeline.jobs[x].args && pipeline.jobs[x].args.type !== 'vault') {
-          // we found args. Redirect user to params view.
-          this.$router.push({path: '/pipeline/params', query: { pipelineid: pipeline.id }})
-          return
-        }
-      }
-
-      // No args. Just start pipeline.
-      this.startPipeline()
-    },
-
-    startPipeline () {
-      // Send start request
-      this.$http
-        .post('/api/v1/pipeline/' + this.pipeline.id + '/start')
-        .then(response => {
-          if (response.data) {
-            this.$router.push({path: '/pipeline/detail', query: { pipelineid: this.pipeline.id, runid: response.data.id }})
-          }
-        })
-        .catch((error) => {
-          this.$store.commit('clearIntervals')
-          this.$onError(error)
-        })
+    checkPipelineArgsAndStartPipeline (pipeline) {
+      helper.StartPipelineWithArgsCheck(this, pipeline)
     },
 
     getImagePath (type) {
