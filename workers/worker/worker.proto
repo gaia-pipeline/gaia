@@ -28,13 +28,12 @@ message PipelineRun {
 
 // Job represents one job from a pipeline run.
 message Job {
-    int64    id             = 1;
+    int32    id             = 1;
 	string   title          = 2;
 	string   description    = 3;
 	repeated Job depends_on = 4;
 	string   status         = 5;
 	repeated Argument args  = 6;
-	bool     fail_pipeline  = 7;
 }
 
 // Argument represents one argument from a job.

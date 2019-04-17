@@ -187,7 +187,7 @@ func (a *Agent) StartAgent() error {
 		}
 	}()
 
-	// Start periodic go routine which returns information to the Gaia master instance
+	// Start periodic go routine which sends back information to the Gaia master instance
 	updateTicker := time.NewTicker(updateTickerSeconds * time.Second)
 	quitUpdate := make(chan struct{})
 	go func() {
@@ -251,26 +251,77 @@ func (a *Agent) scheduleWork() {
 
 		// Convert protobuf pipeline run to internal struct
 		pipelineRun := &gaia.PipelineRun{
-			UniqueID:   pipelineRunPB.UniqueId,
-			ID:         int(pipelineRunPB.Id),
-			Status:     gaia.PipelineRunStatus(pipelineRunPB.Status),
-			PipelineID: int(pipelineRunPB.PipelineId),
+			UniqueID:     pipelineRunPB.UniqueId,
+			ID:           int(pipelineRunPB.Id),
+			Status:       gaia.PipelineRunStatus(pipelineRunPB.Status),
+			PipelineID:   int(pipelineRunPB.PipelineId),
+			ScheduleDate: time.Unix(pipelineRunPB.ScheduleDate, 0),
 		}
 
-		// TODO: Convert jobs & arguments
+		// Convert jobs
+		jobsMap := make(map[uint32]gaia.Job)
+		for _, job := range pipelineRunPB.Jobs {
+			j := gaia.Job{
+				ID:          uint32(job.Id),
+				Title:       job.Title,
+				Status:      gaia.JobStatus(job.Status),
+				Description: job.Description,
+			}
+			jobsMap[j.ID] = j
+
+			// Arguments
+			j.Args = make([]gaia.Argument, 0, len(job.Args))
+			for _, arg := range job.Args {
+				a := gaia.Argument{
+					Description: arg.Description,
+					Type:        arg.Type,
+					Key:         arg.Key,
+					Value:       arg.Value,
+				}
+				j.Args = append(j.Args, a)
+			}
+		}
+
+		// Convert dependencies
+		for _, pbJob := range pipelineRunPB.Jobs {
+			// Get job
+			j := jobsMap[uint32(pbJob.Id)]
+
+			// Iterate all dependencies
+			j.DependsOn = make([]*gaia.Job, 0, len(pbJob.DependsOn))
+			for _, depJob := range pbJob.DependsOn {
+				// Get dependency
+				depJ := jobsMap[uint32(depJob.Id)]
+
+				// Set dependency
+				j.DependsOn = append(j.DependsOn, &depJ)
+			}
+		}
+
+		// Convert jobs map
+		jobs := make([]gaia.Job, 0, len(jobsMap))
+		for _, job := range jobsMap {
+			jobs = append(jobs, job)
+		}
+		pipelineRun.Jobs = jobs
 
 		// Get pipeline binary name and SHA256SUM
 		pipelineName := pipelineRunPB.PipelineName
 		pipelineSHA256SUM := pipelineRunPB.ShaSum
+
+		// Setup reschedule of pipeline in case something goes wrong
+		reschedulePipeline := func() {
+			pipelineRunPB.Status = string(gaia.RunNotScheduled)
+			a.client.UpdateWork(context.Background(), pipelineRunPB)
+		}
 
 		// Check if the binary is already stored locally
 		pipelineFullPath := filepath.Join(gaia.Cfg.PipelinePath, pipelineName)
 		if _, err := os.Stat(pipelineFullPath); err != nil {
 			// Download binary from remote gaia instance
 			if err = a.streamBinary(pipelineRunPB, pipelineFullPath); err != nil {
-				// Reschedule pipeline
-				pipelineRunPB.Status = string(gaia.RunNotScheduled)
-				a.client.UpdateWork(context.Background(), pipelineRunPB)
+				gaia.Cfg.Logger.Error("failed to download pipeline binary from remote instance", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				reschedulePipeline()
 				return
 			}
 		}
@@ -279,29 +330,42 @@ func (a *Agent) scheduleWork() {
 		sha256Sum, err := getSHA256Sum(pipelineFullPath)
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to determine SHA256Sum of pipeline file", "error", err.Error(), "pipelinerun", pipelineRunPB)
-
-			// Reschedule pipeline
-			pipelineRunPB.Status = string(gaia.RunNotScheduled)
-			a.client.UpdateWork(context.Background(), pipelineRunPB)
+			reschedulePipeline()
 			return
 		}
 		if bytes.Compare(sha256Sum, pipelineSHA256SUM) != 0 {
-			gaia.Cfg.Logger.Error("pipeline binary SHA256Sum mismatch", "pipelinerun", pipelineRunPB)
+			// A possible scenario is that the pipeline has been updated and the old binary still exists here.
+			// Let us try to delete the binary and re-download the pipeline.
+			if err := os.Remove(pipelineFullPath); err != nil {
+				gaia.Cfg.Logger.Error("failed to remove inconsistent pipeline binary", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				reschedulePipeline()
+				return
+			}
+			if err := a.streamBinary(pipelineRunPB, pipelineFullPath); err != nil {
+				gaia.Cfg.Logger.Error("failed to download pipeline binary from remote instance", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				reschedulePipeline()
+				return
+			}
 
-			// Reschedule pipeline
-			pipelineRunPB.Status = string(gaia.RunNotScheduled)
-			a.client.UpdateWork(context.Background(), pipelineRunPB)
-			return
+			// Validate SHA256 sum again to make sure the integrity is provided
+			sha256Sum, err := getSHA256Sum(pipelineFullPath)
+			if err != nil {
+				gaia.Cfg.Logger.Error("failed to determine SHA256Sum of pipeline file", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				reschedulePipeline()
+				return
+			}
+			if bytes.Compare(sha256Sum, pipelineSHA256SUM) != 0 {
+				gaia.Cfg.Logger.Error("pipeline binary SHA256Sum mismatch", "pipelinerun", pipelineRunPB)
+				reschedulePipeline()
+				return
+			}
 		}
 
 		// Check if the pipeline has been already stored
 		pipeline, err := a.store.PipelineGet(pipelineRun.PipelineID)
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to load pipeline from store", "error", err.Error(), "pipelinerun", pipelineRunPB)
-
-			// Reschedule pipeline
-			pipelineRunPB.Status = string(gaia.RunNotScheduled)
-			a.client.UpdateWork(context.Background(), pipelineRunPB)
+			reschedulePipeline()
 			return
 		}
 		if pipeline == nil {
@@ -324,30 +388,21 @@ func (a *Agent) scheduleWork() {
 			// Mark that this pipeline is broken.
 			pipeline.IsNotValid = true
 			gaia.Cfg.Logger.Error("cannot get pipeline jobs", "error", err.Error(), "pipelinerun", pipelineRunPB)
-
-			// Reschedule pipeline
-			pipelineRunPB.Status = string(gaia.RunNotScheduled)
-			a.client.UpdateWork(context.Background(), pipelineRunPB)
+			reschedulePipeline()
 			return
 		}
 
 		// Store pipeline
 		if err = a.store.PipelinePut(pipeline); err != nil {
 			gaia.Cfg.Logger.Error("failed to store pipeline in store", "error", err.Error(), "pipelinerun", pipelineRunPB)
-
-			// Reschedule pipeline
-			pipelineRunPB.Status = string(gaia.RunNotScheduled)
-			a.client.UpdateWork(context.Background(), pipelineRunPB)
+			reschedulePipeline()
 			return
 		}
 
 		// Store finally pipeline run
 		if err = a.store.PipelinePutRun(pipelineRun); err != nil {
 			gaia.Cfg.Logger.Error("failed to store pipeline run in store", "error", err.Error(), "pipelinerun", pipelineRunPB)
-
-			// Reschedule pipeline
-			pipelineRunPB.Status = string(gaia.RunNotScheduled)
-			a.client.UpdateWork(context.Background(), pipelineRunPB)
+			reschedulePipeline()
 			return
 		}
 	}
@@ -427,7 +482,7 @@ func (a *Agent) updateWork() {
 		// Send to remote instance
 		if _, err := a.client.UpdateWork(ctx, runPB); err != nil {
 			gaia.Cfg.Logger.Error("failed to send update information to remote instance", "error", err.Error())
-			continue
+			return
 		}
 
 		// Remove pipeline run from store when the state is finalized

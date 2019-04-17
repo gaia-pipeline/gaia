@@ -235,8 +235,8 @@ func Start() (err error) {
 		// Start listen
 		echoInstance.Logger.Fatal(echoInstance.Start(":" + gaia.Cfg.ListenPort))
 	case gaia.ModeWorker:
-		// Start worker main loop and block until SIGINT or SIGTERM has been received.
-		ag := agent.InitAgent(scheduler)
+		// Start worker main loop and block until SIGINT or SIGTERM has been received
+		ag := agent.InitAgent(scheduler, store)
 		err := ag.StartAgent()
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to start agent", "error", err)
