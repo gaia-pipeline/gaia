@@ -4,12 +4,11 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"github.com/gaia-pipeline/gaia/workers/server"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/flag"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
@@ -17,7 +16,8 @@ import (
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/agent"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/gaia-pipeline/gaia/workers/server"
+	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
 

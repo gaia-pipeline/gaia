@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 // chunkSize is the size of binary chunks transferred to workers.
@@ -45,8 +46,8 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 		// Convert pipeline run to gRPC object
 		gRPCPipelineRun := pb.PipelineRun{
 			UniqueId: scheduled.UniqueID,
-			Id: int64(scheduled.ID),
-			Status: string(scheduled.Status),
+			Id:       int64(scheduled.ID),
+			Status:   string(scheduled.Status),
 		}
 
 		// Lookup pipeline from run
@@ -113,13 +114,60 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 	default:
 		// Transform protobuf object to internal struct
 		run := &gaia.PipelineRun{
-			UniqueID: pipelineRun.UniqueId,
-			Status: gaia.PipelineRunStatus(pipelineRun.Status),
-			PipelineID: int(pipelineRun.PipelineId),
-			ID: int(pipelineRun.Id),
-			Jobs:
+			UniqueID:     pipelineRun.UniqueId,
+			Status:       gaia.PipelineRunStatus(pipelineRun.Status),
+			PipelineID:   int(pipelineRun.PipelineId),
+			ID:           int(pipelineRun.Id),
+			ScheduleDate: time.Unix(pipelineRun.ScheduleDate, 0),
+			StartDate:    time.Unix(pipelineRun.StartDate, 0),
+			FinishDate:   time.Unix(pipelineRun.FinishDate, 0),
+		}
+		run.Jobs = make([]*gaia.Job, 0, len(pipelineRun.Jobs))
+
+		// Transform pipeline run jobs
+		jobsMap := make(map[uint32]*gaia.Job)
+		for _, job := range pipelineRun.Jobs {
+			j := &gaia.Job{
+				ID:          job.UniqueId,
+				Title:       job.Title,
+				Status:      gaia.JobStatus(job.Status),
+				Description: job.Description,
+			}
+			run.Jobs = append(run.Jobs, j)
+
+			// Fill helper map for job dependency search
+			jobsMap[j.ID] = j
+
+			// We will not convert arguments here since arguments are only needed before/during execution.
+			// We just send updates here to the primary instance we do not need args.
 		}
 
+		// Convert dependencies
+		for _, job := range pipelineRun.Jobs {
+			// Get job
+			j := jobsMap[job.UniqueId]
+
+			// Iterate all dependencies
+			j.DependsOn = make([]*gaia.Job, 0, len(job.DependsOn))
+			for _, depJob := range job.DependsOn {
+				// Get dependency
+				depJ := jobsMap[depJob.UniqueId]
+
+				// Set dependency
+				j.DependsOn = append(j.DependsOn, depJ)
+			}
+		}
+
+		// Store pipeline run
+		store, err := services.StorageService()
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to get storage service via updatework", "error", err.Error())
+			return e, err
+		}
+		if err = store.PipelinePutRun(run); err != nil {
+			gaia.Cfg.Logger.Error("failed to store pipeline run via updatework", "error", err.Error())
+			return e, err
+		}
 	}
 
 	return e, nil

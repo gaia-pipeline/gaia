@@ -172,11 +172,11 @@ type UserRoleEndpoint struct {
 type Pipeline struct {
 	ID                int          `json:"id,omitempty"`
 	Name              string       `json:"name,omitempty"`
-	Repo              GitRepo      `json:"repo,omitempty"`
+	Repo              *GitRepo     `json:"repo,omitempty"`
 	Type              PipelineType `json:"type,omitempty"`
 	ExecPath          string       `json:"execpath,omitempty"`
 	SHA256Sum         []byte       `json:"sha256sum,omitempty"`
-	Jobs              []Job        `json:"jobs,omitempty"`
+	Jobs              []*Job       `json:"jobs,omitempty"`
 	Created           time.Time    `json:"created,omitempty"`
 	UUID              string       `json:"uuid,omitempty"`
 	IsNotValid        bool         `json:"notvalid,omitempty"`
@@ -198,13 +198,13 @@ type GitRepo struct {
 
 // Job represents a single job of a pipeline
 type Job struct {
-	ID           uint32     `json:"id,omitempty"`
-	Title        string     `json:"title,omitempty"`
-	Description  string     `json:"desc,omitempty"`
-	DependsOn    []*Job     `json:"dependson,omitempty"`
-	Status       JobStatus  `json:"status,omitempty"`
-	Args         []Argument `json:"args,omitempty"`
-	FailPipeline bool       `json:"failpipeline,omitempty"`
+	ID           uint32      `json:"id,omitempty"`
+	Title        string      `json:"title,omitempty"`
+	Description  string      `json:"desc,omitempty"`
+	DependsOn    []*Job      `json:"dependson,omitempty"`
+	Status       JobStatus   `json:"status,omitempty"`
+	Args         []*Argument `json:"args,omitempty"`
+	FailPipeline bool        `json:"failpipeline,omitempty"`
 }
 
 // Argument represents a single argument of a job
@@ -243,7 +243,7 @@ type PipelineRun struct {
 	FinishDate   time.Time         `json:"finishdate,omitempty"`
 	ScheduleDate time.Time         `json:"scheduledate,omitempty"`
 	Status       PipelineRunStatus `json:"status,omitempty"`
-	Jobs         []Job             `json:"jobs,omitempty"`
+	Jobs         []*Job            `json:"jobs,omitempty"`
 }
 
 // Worker represents a single registered worker.

@@ -3,6 +3,7 @@ package pipeline
 import (
 	"errors"
 	"fmt"
+	"github.com/gaia-pipeline/gaia/helper/filehelper"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -84,7 +85,7 @@ func updatePipeline(p *gaia.Pipeline) error {
 	}
 
 	// Update checksum
-	checksum, err := getSHA256Sum(p.ExecPath)
+	checksum, err := filehelper.GetSHA256Sum(p.ExecPath)
 	if err != nil {
 		return err
 	}

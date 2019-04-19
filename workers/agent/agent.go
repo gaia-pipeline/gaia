@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	"io"
@@ -16,7 +17,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strings"
 	"syscall"
 	"time"
 
@@ -32,8 +32,6 @@ const (
 	schedulerTickerSeconds = 3
 
 	updateTickerSeconds = 2
-
-	typeDelimiter = "_"
 )
 
 // Agent represents an instance of an agent
@@ -259,20 +257,21 @@ func (a *Agent) scheduleWork() {
 		}
 
 		// Convert jobs
-		jobsMap := make(map[uint32]gaia.Job)
+		jobsMap := make(map[uint32]*gaia.Job)
 		for _, job := range pipelineRunPB.Jobs {
-			j := gaia.Job{
-				ID:          uint32(job.Id),
+			j := &gaia.Job{
+				ID:          job.UniqueId,
 				Title:       job.Title,
 				Status:      gaia.JobStatus(job.Status),
 				Description: job.Description,
 			}
 			jobsMap[j.ID] = j
+			pipelineRun.Jobs = append(pipelineRun.Jobs, j)
 
 			// Arguments
-			j.Args = make([]gaia.Argument, 0, len(job.Args))
+			j.Args = make([]*gaia.Argument, 0, len(job.Args))
 			for _, arg := range job.Args {
-				a := gaia.Argument{
+				a := &gaia.Argument{
 					Description: arg.Description,
 					Type:        arg.Type,
 					Key:         arg.Key,
@@ -285,25 +284,18 @@ func (a *Agent) scheduleWork() {
 		// Convert dependencies
 		for _, pbJob := range pipelineRunPB.Jobs {
 			// Get job
-			j := jobsMap[uint32(pbJob.Id)]
+			j := jobsMap[pbJob.UniqueId]
 
 			// Iterate all dependencies
 			j.DependsOn = make([]*gaia.Job, 0, len(pbJob.DependsOn))
 			for _, depJob := range pbJob.DependsOn {
 				// Get dependency
-				depJ := jobsMap[uint32(depJob.Id)]
+				depJ := jobsMap[depJob.UniqueId]
 
 				// Set dependency
-				j.DependsOn = append(j.DependsOn, &depJ)
+				j.DependsOn = append(j.DependsOn, depJ)
 			}
 		}
-
-		// Convert jobs map
-		jobs := make([]gaia.Job, 0, len(jobsMap))
-		for _, job := range jobsMap {
-			jobs = append(jobs, job)
-		}
-		pipelineRun.Jobs = jobs
 
 		// Get pipeline binary name and SHA256SUM
 		pipelineName := pipelineRunPB.PipelineName
@@ -373,7 +365,7 @@ func (a *Agent) scheduleWork() {
 			pipelineType := gaia.PipelineType(pipelineRunPB.PipelineType)
 			pipeline = &gaia.Pipeline{
 				ID:       pipelineRun.PipelineID,
-				Name:     getRealPipelineName(pipelineRunPB.PipelineName, pipelineType),
+				Name:     pipelinehelper.GetRealPipelineName(pipelineRunPB.PipelineName, pipelineType),
 				Type:     pipelineType,
 				ExecPath: pipelineFullPath,
 			}
@@ -463,17 +455,52 @@ func (a *Agent) updateWork() {
 		return
 	}
 
-	// Send all pipeline run to the remote primary instance
+	// Send all pipeline runs to the remote primary instance
 	for _, run := range runs {
 		// Transform to protobuf struct
 		runPB := &pb.PipelineRun{
-			Id:         int64(run.ID),
-			UniqueId:   run.UniqueID,
-			Status:     string(run.Status),
-			PipelineId: int64(run.PipelineID),
+			Id:           int64(run.ID),
+			UniqueId:     run.UniqueID,
+			Status:       string(run.Status),
+			PipelineId:   int64(run.PipelineID),
+			ScheduleDate: run.ScheduleDate.Unix(),
+			StartDate:    run.StartDate.Unix(),
+			FinishDate:   run.FinishDate.Unix(),
 		}
 
-		// TODO: Transform jobs too
+		// Transform pipeline run jobs
+		jobsMap := make(map[uint32]*pb.Job)
+		for _, job := range run.Jobs {
+			j := &pb.Job{
+				UniqueId:    job.ID,
+				Title:       job.Title,
+				Status:      string(job.Status),
+				Description: job.Description,
+			}
+			runPB.Jobs = append(runPB.Jobs, j)
+
+			// Fill helper map for job dependency search
+			jobsMap[j.UniqueId] = j
+
+			// We will not convert arguments here since arguments are only needed before/during execution.
+			// We just send updates here to the primary instance we do not need args.
+		}
+
+		// Convert dependencies
+		for _, job := range run.Jobs {
+			// Get job
+			j := jobsMap[job.ID]
+
+			// Iterate all dependencies
+			j.DependsOn = make([]*pb.Job, 0, len(job.DependsOn))
+			for _, depJob := range job.DependsOn {
+				// Get dependency
+				depJ := jobsMap[depJob.ID]
+
+				// Set dependency
+				j.DependsOn = append(j.DependsOn, depJ)
+			}
+		}
 
 		// Create context with timeout
 		ctx, cancel := context.WithTimeout(context.Background(), (updateTickerSeconds*3)*time.Second)
@@ -553,9 +580,4 @@ func getSHA256Sum(path string) ([]byte, error) {
 
 	// return sha256 checksum
 	return h.Sum(nil), nil
-}
-
-// getRealPipelineName removes the suffix from the pipeline name.
-func getRealPipelineName(n string, pType gaia.PipelineType) string {
-	return strings.TrimSuffix(n, typeDelimiter+pType.String())
 }

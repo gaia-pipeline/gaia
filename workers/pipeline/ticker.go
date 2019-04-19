@@ -2,12 +2,11 @@ package pipeline
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"errors"
 	"fmt"
-	"io"
+	"github.com/gaia-pipeline/gaia/helper/filehelper"
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -117,7 +116,7 @@ func checkActivePipelines() {
 
 			// Get real pipeline name and check if the global active pipelines slice
 			// already contains it.
-			pName := getRealPipelineName(n, pType)
+			pName := pipelinehelper.GetRealPipelineName(n, pType)
 			// Add the real pipeline name to the slice of existing pipeline names.
 			existingPipelineNames = append(existingPipelineNames, pName)
 			if GlobalActivePipelines.Contains(pName) {
@@ -125,7 +124,7 @@ func checkActivePipelines() {
 				p := GlobalActivePipelines.GetByName(pName)
 				if p != nil && p.SHA256Sum != nil {
 					// Get SHA256 Checksum
-					checksum, err := getSHA256Sum(filepath.Join(gaia.Cfg.PipelinePath, file.Name()))
+					checksum, err := filehelper.GetSHA256Sum(filepath.Join(gaia.Cfg.PipelinePath, file.Name()))
 					if err != nil {
 						gaia.Cfg.Logger.Debug("cannot calculate SHA256 checksum for pipeline", "error", err.Error(), "pipeline", p)
 						continue
@@ -179,7 +178,7 @@ func checkActivePipelines() {
 
 			// We calculate a SHA256 Checksum and store it.
 			// We use this to estimate if a pipeline has been changed.
-			pipelineCheckSum, err := getSHA256Sum(pipeline.ExecPath)
+			pipelineCheckSum, err := filehelper.GetSHA256Sum(pipeline.ExecPath)
 			if err != nil {
 				gaia.Cfg.Logger.Debug("cannot calculate sha256 checksum for pipeline", "error", err.Error(), "pipeline", pipeline)
 				continue
@@ -214,7 +213,7 @@ func checkActivePipelines() {
 				// Iterate over all cron schedules.
 				for _, cron := range pipeline.PeriodicSchedules {
 					pipeline.CronInst.AddFunc(cron, func() {
-						_, err := schedulerService.SchedulePipeline(pipeline, []gaia.Argument{})
+						_, err := schedulerService.SchedulePipeline(pipeline, []*gaia.Argument{})
 						if err != nil {
 							gaia.Cfg.Logger.Error("cannot schedule pipeline from periodic schedule", "error", err, "pipeline", pipeline)
 							return
@@ -271,29 +270,4 @@ func getPipelineType(n string) (gaia.PipelineType, error) {
 	}
 
 	return gaia.PTypeUnknown, errMissingType
-}
-
-// getRealPipelineName removes the suffix from the pipeline name.
-func getRealPipelineName(n string, pType gaia.PipelineType) string {
-	return strings.TrimSuffix(n, typeDelimiter+pType.String())
-}
-
-// getSHA256Sum accepts a path to a file.
-// It load's the file and calculates a SHA256 Checksum and returns it.
-func getSHA256Sum(path string) ([]byte, error) {
-	// Open file
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	// Create sha256 obj and insert bytes
-	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return nil, err
-	}
-
-	// return sha256 checksum
-	return h.Sum(nil), nil
 }

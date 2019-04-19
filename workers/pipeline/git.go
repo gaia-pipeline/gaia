@@ -104,7 +104,7 @@ func UpdateRepository(pipe *gaia.Pipeline) error {
 	}
 	gaia.Cfg.Logger.Debug("checking pipeline: ", "message", pipe.Name)
 	gaia.Cfg.Logger.Debug("selected branch: ", "message", pipe.Repo.SelectedBranch)
-	auth, err := getAuthInfo(&pipe.Repo, nil)
+	auth, err := getAuthInfo(pipe.Repo, nil)
 	if err != nil {
 		// It's also an error if the repo is already up to date so we just move on.
 		gaia.Cfg.Logger.Error("error getting auth info while doing a pull request: ", "error", err.Error())
@@ -121,7 +121,7 @@ func UpdateRepository(pipe *gaia.Pipeline) error {
 	if err != nil {
 		if strings.Contains(err.Error(), "knownhosts: key is unknown") {
 			gaia.Cfg.Logger.Warn("Warning: Unknown host key.", "error", err.Error(), "host", "URL", pipe.Repo.URL)
-			auth, err = getAuthInfo(&pipe.Repo, gossh.InsecureIgnoreHostKey())
+			auth, err = getAuthInfo(pipe.Repo, gossh.InsecureIgnoreHostKey())
 			if err != nil {
 				return err
 			}

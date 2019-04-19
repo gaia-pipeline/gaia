@@ -11,7 +11,7 @@ type workload struct {
 	finishedSig chan bool
 	done        bool
 	started     bool
-	job         gaia.Job
+	job         *gaia.Job
 }
 
 // managedWorkloads holds workloads.
