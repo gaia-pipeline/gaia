@@ -9,29 +9,34 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
-	"github.com/gaia-pipeline/gaia/store"
-	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/agent/api"
+	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	pb "github.com/gaia-pipeline/gaia/workers/worker"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-// schedulerTickerSeconds defines the interval in seconds for the scheduler.
 const (
+	// schedulerTickerSeconds defines the interval in seconds for the scheduler.
 	schedulerTickerSeconds = 3
 
+	// updateTickerSeconds defines the interval in seconds to send updates.
 	updateTickerSeconds = 2
+
+	// chunkSize is the size of binary chunks transferred to workers.
+	chunkSize = 64 * 1024 // 64 KiB
 )
 
 // Agent represents an instance of an agent
@@ -513,10 +518,59 @@ func (a *Agent) updateWork() {
 		}
 
 		// Remove pipeline run from store when the state is finalized
-		if run.Status == gaia.RunFailed || run.Status == gaia.RunSuccess {
+		if run.Status == gaia.RunFailed || run.Status == gaia.RunSuccess || run.Status == gaia.RunCancelled {
 			if err = a.store.PipelineRunDelete(run.UniqueID); err != nil {
 				gaia.Cfg.Logger.Error("failed to remove pipeline run from store", "error", err.Error(), "pipelinerun", run)
 			}
+		}
+
+		// Find related logs from this pipeline run
+		logFilePath := filepath.Join(gaia.Cfg.WorkspacePath, strconv.Itoa(run.PipelineID), strconv.Itoa(run.ID), gaia.LogsFolderName, gaia.LogsFileName)
+		if _, err := os.Stat(logFilePath); err == nil {
+			// Open file handle
+			file, err := os.Open(logFilePath)
+			if err != nil {
+				gaia.Cfg.Logger.Warn("failed to open pipeline run log file via updatework", "error", err.Error(), "pipelinerun", run)
+				return
+			}
+			defer file.Close()
+
+			// Open streaming session to primary instance
+			ctx, cancel := context.WithTimeout(context.Background(), 5*updateTickerSeconds)
+			defer cancel()
+			stream, err := a.client.StreamLogs(ctx)
+			if err != nil {
+				gaia.Cfg.Logger.Warn("failed to open stream session to primary instance to ship logs via updatework", "error", err.Error(), "pipelinerun", run)
+				return
+			}
+
+			chunk := &pb.LogChunk{
+				PipelineId: int64(run.PipelineID),
+				RunId:      int64(run.ID),
+			}
+			buffer := make([]byte, chunkSize)
+			for {
+				bytesread, err := file.Read(buffer)
+
+				// Check for errors
+				if err != nil {
+					if err != io.EOF {
+						gaia.Cfg.Logger.Warn("error occurred during pipeline run log disk read", "error", err.Error(), "pipelinerun", run)
+						return
+					}
+					break
+				}
+
+				// Set bytes
+				chunk.Chunk = buffer[:bytesread]
+
+				// Stream it to primary instance
+				if err = stream.Send(chunk); err != nil {
+					gaia.Cfg.Logger.Error("failed to stream log chunk to primary instance", "error", err.Error(), "pipelinerun", run)
+					return
+				}
+			}
+			stream.CloseSend()
 		}
 	}
 }

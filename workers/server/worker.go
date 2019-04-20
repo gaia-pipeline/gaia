@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -199,7 +200,7 @@ func (w *WorkServer) StreamBinary(pipelineRun *pb.PipelineRun, serv pb.Worker_St
 	defer file.Close()
 
 	// Stream back the binary in chunks
-	chunk := &pb.BinaryChunk{}
+	chunk := &pb.FileChunk{}
 	buffer := make([]byte, chunkSize)
 	for {
 		bytesread, err := file.Read(buffer)
@@ -223,6 +224,60 @@ func (w *WorkServer) StreamBinary(pipelineRun *pb.PipelineRun, serv pb.Worker_St
 		}
 	}
 
+	return nil
+}
+
+// StreamLogs streams logs in chunks from the client to the primary instance.
+func (w *WorkServer) StreamLogs(stream pb.Worker_StreamLogsServer) error {
+	defer stream.SendAndClose(&empty.Empty{})
+
+	// Read first chunk which must have content
+	firstLogChunk, err := stream.Recv()
+	if err != nil {
+		gaia.Cfg.Logger.Error("corrupted stream opened via streamlogs", "error", err.Error())
+		return err
+	}
+
+	// Open output file
+	logFilePath := filepath.Join(gaia.Cfg.WorkspacePath, strconv.Itoa(int(firstLogChunk.PipelineId)), strconv.Itoa(int(firstLogChunk.RunId)), gaia.LogsFolderName, gaia.LogsFileName)
+	logFile, err := os.Create(logFilePath)
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to create new log file via streamlogs", "error", err.Error(), "logobj", firstLogChunk)
+		return err
+	}
+	defer logFile.Close()
+
+	// Write chunk to file
+	if _, err := logFile.Write(firstLogChunk.Chunk); err != nil {
+		gaia.Cfg.Logger.Error("failed to write chunk to local disk during streamlogs", "error", err.Error(), "logobj", firstLogChunk)
+		return err
+	}
+
+	// Read whole stream
+	for {
+		logChunk, err := stream.Recv()
+
+		// Check if stream was closed remotely
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to stream pipeline run log file from remote instance", "error", err.Error(), "logobj", logChunk)
+			return err
+		}
+
+		// Defense in depth check. Should never happen!
+		if logChunk.RunId != firstLogChunk.RunId || logChunk.PipelineId != firstLogChunk.PipelineId {
+			gaia.Cfg.Logger.Error("corrupted chunk found in stream during streamlogs", "logobj", logChunk, "firstlogobj", firstLogChunk)
+			return errors.New("corrupted chunk found in stream")
+		}
+
+		// Write chunk to file
+		if _, err := logFile.Write(logChunk.Chunk); err != nil {
+			gaia.Cfg.Logger.Error("failed to write chunk to local disk during streamlogs", "error", err.Error(), "logobj", logChunk)
+			return err
+		}
+	}
 	return nil
 }
 

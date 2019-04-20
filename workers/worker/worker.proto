@@ -44,8 +44,15 @@ message Argument {
 	string value       = 4;
 }
 
-// BinaryChunk represents one chunk of a binary.
-message BinaryChunk {
+// LogChunk represents one chunk of a log file.
+message LogChunk {
+    int64 run_id      = 1;
+    int64 pipeline_id = 2;
+    bytes chunk       = 3;
+}
+
+// FileChunk represents one chunk of a file.
+message FileChunk {
     bytes chunk = 1;
 }
 
@@ -60,7 +67,10 @@ service Worker {
     rpc UpdateWork (PipelineRun) returns (google.protobuf.Empty);
 
     // StreamBinary streams a pipeline binary back to a worker instance.
-    rpc StreamBinary (PipelineRun) returns (stream BinaryChunk);
+    rpc StreamBinary (PipelineRun) returns (stream FileChunk);
+
+    // StreamLogs streams pipeline run logs to the primary instance.
+    rpc StreamLogs (stream LogChunk) returns (google.protobuf.Empty);
 
     // Deregister deregister a registered worker from the primary instance.
     rpc Deregister (WorkerInstance) returns (google.protobuf.Empty);
