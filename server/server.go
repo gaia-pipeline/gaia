@@ -59,8 +59,9 @@ func init() {
 	fs.IntVar(&gaia.Cfg.PVal, "pval", 1, "The interval in minutes in which to poll vcs for changes")
 	fs.StringVar(&gaia.Cfg.ModeRaw, "mode", "server", "The mode in which gaia should be started. Possible options are server and worker")
 	fs.StringVar(&gaia.Cfg.WorkerHostURL, "hosturl", "http://localhost:8080", "The host url of an gaia instance to connect to. Only used in worker mode")
-	fs.StringVar(&gaia.Cfg.WorkerSecret, "workersecret", "", "The secret which used to register a worker at an gaia instance")
-	fs.StringVar(&gaia.Cfg.WorkerServerPort, "workerserverport", "8090", "Listen port for gaia worker communication")
+	fs.StringVar(&gaia.Cfg.WorkerGRPCHostURL, "grpchosturl", "localhost:8989", "The host url of an gaia instance gRPC interface used for worker connection. Only used in worker mode")
+	fs.StringVar(&gaia.Cfg.WorkerSecret, "workersecret", "", "The secret which is used to register a worker at an gaia instance")
+	fs.StringVar(&gaia.Cfg.WorkerServerPort, "workerserverport", "8989", "Listen port for gaia worker gRPC communication")
 
 	// Default values
 	gaia.Cfg.Bolt.Mode = 0600
@@ -210,9 +211,17 @@ func Start() (err error) {
 		secret, err := v.Get(gaia.WorkerRegisterKey)
 		if err != nil {
 			// Secret hasn't been generated yet
-			gaia.Cfg.Logger.Info("global worker registration secret has not been generated yet. Will generate one now...")
+			gaia.Cfg.Logger.Info("global worker registration secret has not been generated yet. Will generate it now...")
 			secret = []byte(security.GenerateRandomUUIDV5())
+			// TODO: Remove below output
+			gaia.Cfg.Logger.Info("global secret", "secret", string(secret))
+
+			// Store secret in vault
 			v.Add(gaia.WorkerRegisterKey, secret)
+			if err := v.SaveSecrets(); err != nil {
+				gaia.Cfg.Logger.Error("failed to store secret into vault", "error", err.Error())
+				return err
+			}
 		}
 
 		// Initialize handlers

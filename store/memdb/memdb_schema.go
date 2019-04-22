@@ -12,7 +12,7 @@ var memDBSchema = &memdb.DBSchema{
 				"id": &memdb.IndexSchema{
 					Name: "id",
 					Unique: true,
-					Indexer: &memdb.StringFieldIndex{Field: "uniqueid"},
+					Indexer: &memdb.StringFieldIndex{Field: "UniqueID"},
 				},
 			},
 		},
@@ -22,7 +22,7 @@ var memDBSchema = &memdb.DBSchema{
 				"id": &memdb.IndexSchema{
 					Name: "id",
 					Unique: true,
-					Indexer: &memdb.StringFieldIndex{Field: "uniqueid"},
+					Indexer: &memdb.StringFieldIndex{Field: "UniqueID"},
 				},
 			},
 		},

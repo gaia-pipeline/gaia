@@ -190,7 +190,7 @@ func (c *CA) CreateSignedCertWithValidOpts(hoursBeforeValid, hoursAfterValid tim
 		SubjectKeyId: []byte{1, 2, 3, 4, 6},
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		KeyUsage:     x509.KeyUsageDigitalSignature,
-		DNSNames:     []string{orgDNS, goPluginHostname},
+		DNSNames:     []string{orgDNS, goPluginHostname, "localhost"},
 	}
 	priv, _ := rsa.GenerateKey(rand.Reader, rsaBits)
 	pub := &priv.PublicKey

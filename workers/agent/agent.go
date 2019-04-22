@@ -22,8 +22,8 @@ import (
 	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/agent/api"
+	pb "github.com/gaia-pipeline/gaia/workers/proto"
 	"github.com/gaia-pipeline/gaia/workers/scheduler"
-	pb "github.com/gaia-pipeline/gaia/workers/worker"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -144,7 +144,7 @@ func (a *Agent) StartAgent() error {
 	}
 
 	dialOption := grpc.WithTransportCredentials(clientTLS)
-	conn, err := grpc.Dial(gaia.Cfg.WorkerHostURL, dialOption)
+	conn, err := grpc.Dial(gaia.Cfg.WorkerGRPCHostURL, dialOption)
 	if err != nil {
 		return fmt.Errorf("failed to connect to remote host: %s", err.Error())
 	}
@@ -221,9 +221,13 @@ func (a *Agent) StartAgent() error {
 // from the Gaia master instance. In case the pipeline is not available
 // on this machine, the pipeline will be downloaded from the Gaia master instance.
 func (a *Agent) scheduleWork() {
+	// Print info output
+	gaia.Cfg.Logger.Debug("try to pull work from Gaia master instance...")
+
 	// Check if the agent is busy. Only ask for work when we have the capacity to do it.
 	a.self.WorkerSlots = int32(a.scheduler.GetFreeWorkers())
 	if a.self.WorkerSlots == 0 {
+		gaia.Cfg.Logger.Debug("all workers are currently busy. Will try it again after a while...")
 		return
 	}
 
@@ -240,6 +244,7 @@ func (a *Agent) scheduleWork() {
 	}
 
 	// Read until the stream was closed
+	workCounter := 0
 	for {
 		pipelineRunPB, err := stream.Recv()
 
@@ -251,6 +256,9 @@ func (a *Agent) scheduleWork() {
 			gaia.Cfg.Logger.Error("failed to stream work from remote instance", "error", err.Error())
 			return
 		}
+
+		gaia.Cfg.Logger.Info("received work from Gaia master instance...")
+		workCounter++
 
 		// Convert protobuf pipeline run to internal struct
 		pipelineRun := &gaia.PipelineRun{
@@ -402,6 +410,11 @@ func (a *Agent) scheduleWork() {
 			reschedulePipeline()
 			return
 		}
+	}
+
+	// Check if we received work at all
+	if workCounter == 0 {
+		gaia.Cfg.Logger.Debug("got no work from Gaia master instance. Will try it again after a while...")
 	}
 }
 

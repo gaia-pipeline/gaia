@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package worker;
+package protobuf;
 
 import "google/protobuf/empty.proto";
 

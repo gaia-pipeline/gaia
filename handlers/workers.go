@@ -129,6 +129,10 @@ func getWorkerSecret() (string, error) {
 		gaia.Cfg.Logger.Debug("cannot get vault instance", "error", err.Error())
 		return "", err
 	}
+	if err = v.LoadSecrets(); err != nil {
+		gaia.Cfg.Logger.Debug("cannot load secrets from vault", "error", err.Error())
+		return "", err
+	}
 	secret, err := v.Get(gaia.WorkerRegisterKey)
 	if err != nil {
 		gaia.Cfg.Logger.Debug("global worker secret not found", "error", err.Error())

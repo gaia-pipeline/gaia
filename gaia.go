@@ -282,9 +282,10 @@ type Config struct {
 	WorkerServerPort  string
 
 	// Worker
-	WorkerName    string
-	WorkerHostURL string
-	WorkerSecret  string
+	WorkerName        string
+	WorkerHostURL     string
+	WorkerGRPCHostURL string
+	WorkerSecret      string
 
 	Bolt struct {
 		Mode os.FileMode

@@ -6,7 +6,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
-	pb "github.com/gaia-pipeline/gaia/workers/worker"
+	pb "github.com/gaia-pipeline/gaia/workers/proto"
 	"github.com/golang/protobuf/ptypes/empty"
 	"io"
 	"os"
@@ -42,6 +42,11 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 		scheduled, err := db.PopPipelineRun()
 		if err != nil {
 			return err
+		}
+
+		// Check if we have actual work
+		if scheduled == nil {
+			return nil
 		}
 
 		// Convert pipeline run to gRPC object
