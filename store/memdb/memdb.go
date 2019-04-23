@@ -185,9 +185,9 @@ func (m *MemDB) PopPipelineRun() (*gaia.PipelineRun, error) {
 		}
 
 		// Convert into pipeline run object
-		pipelineRun, ok := item.(gaia.PipelineRun)
+		pipelineRun, ok := item.(*gaia.PipelineRun)
 		if !ok {
-			gaia.Cfg.Logger.Error("failed to convert pipeline run to data struct via poppipelinerun", "error", err.Error())
+			gaia.Cfg.Logger.Error("failed to convert pipeline run to data struct via poppipelinerun", "item", item)
 			continue
 		}
 
@@ -223,14 +223,14 @@ func (m *MemDB) PopPipelineRun() (*gaia.PipelineRun, error) {
 		txn.Commit()
 
 		// Convert pipeline run
-		pipelineRun, ok := pipelineRunRaw.(gaia.PipelineRun)
+		pipelineRun, ok := pipelineRunRaw.(*gaia.PipelineRun)
 		if !ok {
-			gaia.Cfg.Logger.Error("failed to convert pipeline run via poppipelinerun", "error", err.Error())
+			gaia.Cfg.Logger.Error("failed to convert pipeline run via poppipelinerun", "item", pipelineRunRaw)
 			return nil, err
 		}
 
 		// Return pipeline run
-		return &pipelineRun, nil
+		return pipelineRun, nil
 	}
 
 	return nil, nil

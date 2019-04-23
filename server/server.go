@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -15,7 +16,6 @@ import (
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/agent"
-	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"github.com/gaia-pipeline/gaia/workers/server"
 	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
@@ -158,12 +158,6 @@ func Start() (err error) {
 		return err
 	}
 
-	// Initialize scheduler
-	scheduler, err := services.SchedulerService()
-	if err != nil {
-		return
-	}
-
 	if gaia.Cfg.Mode == gaia.ModeServer {
 		var jwtKey interface{}
 		// Check JWT key is set
@@ -230,13 +224,19 @@ func Start() (err error) {
 			gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
 			return err
 		}
+	}
 
-		// Start ticker. Periodic job to check for new plugins.
-		pipeline.InitTicker()
+	// Initialize scheduler
+	scheduler, err := services.SchedulerService()
+	if err != nil {
+		return
 	}
 
 	switch gaia.Cfg.Mode {
 	case gaia.ModeServer:
+		// Start ticker. Periodic job to check for new plugins.
+		pipeline.InitTicker()
+
 		// Start worker gRPC server
 		workerServer := server.InitWorkerServer()
 		go workerServer.Start()

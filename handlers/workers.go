@@ -64,7 +64,7 @@ func RegisterWorker(c echo.Context) error {
 		gaia.Cfg.Logger.Error("cannot get certificate service", "error", err.Error())
 		return c.String(http.StatusInternalServerError, "cannot get certificate service")
 	}
-	crtPath, keyPath, err := cert.CreateSignedCertWithValidOpts(hoursBeforeValid, hoursAfterValid)
+	crtPath, keyPath, err := cert.CreateSignedCertWithValidOpts("", hoursBeforeValid, hoursAfterValid)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot create signed certificate", "error", err.Error())
 		return c.String(http.StatusInternalServerError, "cannot create signed certificate")

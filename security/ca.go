@@ -54,7 +54,7 @@ type CAAPI interface {
 	// with the given options.
 	// First return param is the public cert.
 	// Second return param is the private key.
-	CreateSignedCertWithValidOpts(hoursBeforeValid, hoursAfterValid time.Duration) (string, string, error)
+	CreateSignedCertWithValidOpts(hostname string, hoursBeforeValid, hoursAfterValid time.Duration) (string, string, error)
 
 	// GenerateTLSConfig generates a TLS config.
 	// It requires the path to the cert and the key.
@@ -155,7 +155,7 @@ func (c *CA) generateCA() error {
 
 // CreateSignedCertWithValidOpts creates a signed certificate by the CA.
 // It accepts hoursBeforeValid and hoursAfterValid.
-func (c *CA) CreateSignedCertWithValidOpts(hoursBeforeValid, hoursAfterValid time.Duration) (string, string, error) {
+func (c *CA) CreateSignedCertWithValidOpts(hostname string, hoursBeforeValid, hoursAfterValid time.Duration) (string, string, error) {
 	// Load CA plain
 	caPlain, err := tls.LoadX509KeyPair(c.caCertPath, c.caKeyPath)
 	if err != nil {
@@ -190,8 +190,14 @@ func (c *CA) CreateSignedCertWithValidOpts(hoursBeforeValid, hoursAfterValid tim
 		SubjectKeyId: []byte{1, 2, 3, 4, 6},
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		KeyUsage:     x509.KeyUsageDigitalSignature,
-		DNSNames:     []string{orgDNS, goPluginHostname, "localhost"},
+		DNSNames:     []string{orgDNS, goPluginHostname},
 	}
+
+	// Add additional hostname if provided
+	if hostname != "" {
+		cert.DNSNames = append(cert.DNSNames, hostname)
+	}
+
 	priv, _ := rsa.GenerateKey(rand.Reader, rsaBits)
 	pub := &priv.PublicKey
 
@@ -230,7 +236,7 @@ func (c *CA) CreateSignedCertWithValidOpts(hoursBeforeValid, hoursAfterValid tim
 
 // CreateSignedCert creates a new key pair which is signed by the CA.
 func (c *CA) CreateSignedCert() (string, string, error) {
-	return c.CreateSignedCertWithValidOpts(1, maxValidCERT)
+	return c.CreateSignedCertWithValidOpts("",1, maxValidCERT)
 }
 
 // GenerateTLSConfig generates a new TLS config based on given

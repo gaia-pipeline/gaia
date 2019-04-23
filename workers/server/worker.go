@@ -48,12 +48,15 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 		if scheduled == nil {
 			return nil
 		}
+		gaia.Cfg.Logger.Info("popped following run", "run", scheduled)
 
 		// Convert pipeline run to gRPC object
 		gRPCPipelineRun := pb.PipelineRun{
-			UniqueId: scheduled.UniqueID,
-			Id:       int64(scheduled.ID),
-			Status:   string(scheduled.Status),
+			UniqueId:     scheduled.UniqueID,
+			Id:           int64(scheduled.ID),
+			Status:       string(scheduled.Status),
+			PipelineId:   int64(scheduled.PipelineID),
+			ScheduleDate: scheduled.ScheduleDate.Unix(),
 		}
 
 		// Lookup pipeline from run
@@ -61,6 +64,7 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 			if p.ID == scheduled.PipelineID {
 				gRPCPipelineRun.ShaSum = p.SHA256Sum
 				gRPCPipelineRun.PipelineName = filepath.Base(p.ExecPath)
+				gRPCPipelineRun.PipelineType = string(p.Type)
 				break
 			}
 		}
@@ -87,6 +91,7 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 		// Usually, the run is already scheduled when it arrives at a worker.
 		// If it is not scheduled then an error happened right before the worker
 		// had the chance to start the run. We will reschedule the run now.
+		// TODO: Make sure that the same work will not be scheduled on the same node
 		store, err := services.StorageService()
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to get storage service via updatework", "error", err.Error())
@@ -117,6 +122,9 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 
 		// Put pipeline run back into memdb. This adds the pipeline run to the stack again.
 		db.InsertPipelineRun(run)
+
+		// Print information output
+		gaia.Cfg.Logger.Debug("failed to execute work at worker. Rescheduling...", "run", run)
 	default:
 		// Transform protobuf object to internal struct
 		run := &gaia.PipelineRun{
@@ -187,12 +195,13 @@ func (w *WorkServer) StreamBinary(pipelineRun *pb.PipelineRun, serv pb.Worker_St
 	for id := range pipelines {
 		if pipelines[id].ID == int(pipelineRun.PipelineId) {
 			foundPipeline = &pipelines[id]
+			break
 		}
 	}
 
 	// Failed to find the pipeline
 	if foundPipeline == nil {
-		gaia.Cfg.Logger.Error("failed to stream binary. Couldn't find related pipeline.", "pipelinerun", pipelineRun)
+		gaia.Cfg.Logger.Error("failed to stream binary. Failed to find related pipeline", "pipelinerun", pipelineRun)
 		return errors.New("failed to find related pipeline with given id")
 	}
 

@@ -83,7 +83,7 @@ func (s *BoltStore) PipelinePut(p *gaia.Pipeline) error {
 
 // PipelineGet gets a pipeline by given id.
 func (s *BoltStore) PipelineGet(id int) (*gaia.Pipeline, error) {
-	var pipeline = &gaia.Pipeline{}
+	var pipeline *gaia.Pipeline
 
 	return pipeline, s.db.View(func(tx *bolt.Tx) error {
 		// Get bucket
@@ -98,6 +98,7 @@ func (s *BoltStore) PipelineGet(id int) (*gaia.Pipeline, error) {
 		}
 
 		// Unmarshal pipeline object
+		pipeline = &gaia.Pipeline{}
 		err := json.Unmarshal(v, pipeline)
 		if err != nil {
 			return err

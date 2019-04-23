@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -49,8 +50,15 @@ func (w *WorkerServer) Start() {
 	_, certErr := os.Stat(certPath)
 	_, keyErr := os.Stat(keyPath)
 	if os.IsNotExist(certErr) || os.IsNotExist(keyErr) {
+		// Parse hostname for the certificate
+		s := strings.Split(gaia.Cfg.WorkerGRPCHostURL, ":")
+		if len(s) != 2 {
+			gaia.Cfg.Logger.Error("failed to parse configured gRPC worker host url", "url", gaia.Cfg.WorkerGRPCHostURL)
+			return
+		}
+
 		// Generate certs
-		certTmpPath, keyTmpPath, err := certService.CreateSignedCertWithValidOpts(hoursBeforeValid, hoursAfterValid)
+		certTmpPath, keyTmpPath, err := certService.CreateSignedCertWithValidOpts(s[0], hoursBeforeValid, hoursAfterValid)
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to generate cert pair for gRPC server", "error", err.Error())
 			return

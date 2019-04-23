@@ -367,7 +367,8 @@ func (a *Agent) scheduleWork() {
 		}
 
 		// Check if the pipeline has been already stored
-		pipeline, err := a.store.PipelineGet(pipelineRun.PipelineID)
+		var pipeline *gaia.Pipeline
+		pipeline, err = a.store.PipelineGet(pipelineRun.PipelineID)
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to load pipeline from store", "error", err.Error(), "pipelinerun", pipelineRunPB)
 			reschedulePipeline()
@@ -390,12 +391,11 @@ func (a *Agent) scheduleWork() {
 
 		// Let us try to start the plugin and receive all implemented jobs
 		if err = a.scheduler.SetPipelineJobs(pipeline); err != nil {
-			// Mark that this pipeline is broken.
-			pipeline.IsNotValid = true
 			gaia.Cfg.Logger.Error("cannot get pipeline jobs", "error", err.Error(), "pipelinerun", pipelineRunPB)
 			reschedulePipeline()
 			return
 		}
+		pipelineRun.Jobs = pipeline.Jobs
 
 		// Store pipeline
 		if err = a.store.PipelinePut(pipeline); err != nil {
@@ -403,6 +403,11 @@ func (a *Agent) scheduleWork() {
 			reschedulePipeline()
 			return
 		}
+
+		// The scheduler picks only runs up which are in state "NotScheduled".
+		// Since the scheduler from the Gaia master instance set the state already to "scheduled",
+		// we have to reset the state here so that the scheduler will pick it up.
+		pipelineRun.Status = gaia.RunNotScheduled
 
 		// Store finally pipeline run
 		if err = a.store.PipelinePutRun(pipelineRun); err != nil {
@@ -458,7 +463,9 @@ func (a *Agent) streamBinary(pipelineRunPB *pb.PipelineRun, pipelinePath string)
 			return err
 		}
 	}
-	return nil
+
+	// Set pipeline executable rights
+	return os.Chmod(pipelinePath, 0766)
 }
 
 // updateWork is function that is periodically called and it is used to
@@ -484,6 +491,14 @@ func (a *Agent) updateWork() {
 			ScheduleDate: run.ScheduleDate.Unix(),
 			StartDate:    run.StartDate.Unix(),
 			FinishDate:   run.FinishDate.Unix(),
+		}
+
+		// There is the possibility that we got work from the Gaia master instance
+		// which is currently stored as "NotScheduled" to get picked up by the agent scheduler.
+		// If we resend this run with this state, it would be rescheduled. Let's prevent this
+		// by obfuscating the state.
+		if run.Status == gaia.RunNotScheduled {
+			runPB.Status = string(gaia.RunScheduled)
 		}
 
 		// Transform pipeline run jobs
@@ -549,9 +564,7 @@ func (a *Agent) updateWork() {
 			defer file.Close()
 
 			// Open streaming session to primary instance
-			ctx, cancel := context.WithTimeout(context.Background(), 5*updateTickerSeconds)
-			defer cancel()
-			stream, err := a.client.StreamLogs(ctx)
+			stream, err := a.client.StreamLogs(context.Background())
 			if err != nil {
 				gaia.Cfg.Logger.Warn("failed to open stream session to primary instance to ship logs via updatework", "error", err.Error(), "pipelinerun", run)
 				return
