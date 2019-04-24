@@ -132,10 +132,10 @@ export default {
     },
 
     calculateDuration (startdate, finishdate) {
-      if (!moment(startdate).millisecond()) {
+      if (moment(startdate).valueOf() < 0) {
         startdate = moment()
       }
-      if (!moment(finishdate).millisecond()) {
+      if (moment(finishdate).valueOf() < 0) {
         finishdate = moment()
       }
 

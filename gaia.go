@@ -74,6 +74,9 @@ const (
 	// RunCancelled status
 	RunCancelled PipelineRunStatus = "cancelled"
 
+	// RunReschedule status
+	RunReschedule PipelineRunStatus = "reschedule"
+
 	// JobWaitingExec status
 	JobWaitingExec JobStatus = "waiting for execution"
 

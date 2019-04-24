@@ -316,7 +316,7 @@ func (a *Agent) scheduleWork() {
 
 		// Setup reschedule of pipeline in case something goes wrong
 		reschedulePipeline := func() {
-			pipelineRunPB.Status = string(gaia.RunNotScheduled)
+			pipelineRunPB.Status = string(gaia.RunReschedule)
 			a.client.UpdateWork(context.Background(), pipelineRunPB)
 		}
 
@@ -493,14 +493,6 @@ func (a *Agent) updateWork() {
 			FinishDate:   run.FinishDate.Unix(),
 		}
 
-		// There is the possibility that we got work from the Gaia master instance
-		// which is currently stored as "NotScheduled" to get picked up by the agent scheduler.
-		// If we resend this run with this state, it would be rescheduled. Let's prevent this
-		// by obfuscating the state.
-		if run.Status == gaia.RunNotScheduled {
-			runPB.Status = string(gaia.RunScheduled)
-		}
-
 		// Transform pipeline run jobs
 		jobsMap := make(map[uint32]*pb.Job)
 		for _, job := range run.Jobs {
@@ -515,8 +507,17 @@ func (a *Agent) updateWork() {
 			// Fill helper map for job dependency search
 			jobsMap[j.UniqueId] = j
 
-			// We will not convert arguments here since arguments are only needed before/during execution.
-			// We just send updates here to the primary instance we do not need args.
+			// Convert arguments
+			j.Args = make([]*pb.Argument, 0, len(job.Args))
+			for _, arg := range job.Args {
+				a := &pb.Argument{
+					Description: arg.Description,
+					Type:        arg.Type,
+					Key:         arg.Key,
+					Value:       arg.Value,
+				}
+				j.Args = append(j.Args, a)
+			}
 		}
 
 		// Convert dependencies
@@ -552,51 +553,55 @@ func (a *Agent) updateWork() {
 			}
 		}
 
-		// Find related logs from this pipeline run
+		// Check if log file exists for pipeline run
 		logFilePath := filepath.Join(gaia.Cfg.WorkspacePath, strconv.Itoa(run.PipelineID), strconv.Itoa(run.ID), gaia.LogsFolderName, gaia.LogsFileName)
-		if _, err := os.Stat(logFilePath); err == nil {
-			// Open file handle
-			file, err := os.Open(logFilePath)
+		if _, err := os.Stat(logFilePath); err != nil {
+			continue
+		}
+
+		// Open file handle
+		file, err := os.Open(logFilePath)
+		if err != nil {
+			gaia.Cfg.Logger.Warn("failed to open pipeline run log file via updatework", "error", err.Error(), "pipelinerun", run)
+			continue
+		}
+		defer file.Close()
+
+		// Open streaming session to primary instance
+		stream, err := a.client.StreamLogs(context.Background())
+		if err != nil {
+			gaia.Cfg.Logger.Warn("failed to open stream session to primary instance to ship logs via updatework", "error", err.Error(), "pipelinerun", run)
+			continue
+		}
+
+		chunk := &pb.LogChunk{
+			PipelineId: int64(run.PipelineID),
+			RunId:      int64(run.ID),
+		}
+		buffer := make([]byte, chunkSize)
+		for {
+			bytesread, err := file.Read(buffer)
+
+			// Check for errors
 			if err != nil {
-				gaia.Cfg.Logger.Warn("failed to open pipeline run log file via updatework", "error", err.Error(), "pipelinerun", run)
-				return
-			}
-			defer file.Close()
-
-			// Open streaming session to primary instance
-			stream, err := a.client.StreamLogs(context.Background())
-			if err != nil {
-				gaia.Cfg.Logger.Warn("failed to open stream session to primary instance to ship logs via updatework", "error", err.Error(), "pipelinerun", run)
-				return
-			}
-
-			chunk := &pb.LogChunk{
-				PipelineId: int64(run.PipelineID),
-				RunId:      int64(run.ID),
-			}
-			buffer := make([]byte, chunkSize)
-			for {
-				bytesread, err := file.Read(buffer)
-
-				// Check for errors
-				if err != nil {
-					if err != io.EOF {
-						gaia.Cfg.Logger.Warn("error occurred during pipeline run log disk read", "error", err.Error(), "pipelinerun", run)
-						return
-					}
-					break
+				if err != io.EOF {
+					gaia.Cfg.Logger.Warn("error occurred during pipeline run log disk read", "error", err.Error(), "pipelinerun", run)
+					continue
 				}
-
-				// Set bytes
-				chunk.Chunk = buffer[:bytesread]
-
-				// Stream it to primary instance
-				if err = stream.Send(chunk); err != nil {
-					gaia.Cfg.Logger.Error("failed to stream log chunk to primary instance", "error", err.Error(), "pipelinerun", run)
-					return
-				}
+				break
 			}
-			stream.CloseSend()
+
+			// Set bytes
+			chunk.Chunk = buffer[:bytesread]
+
+			// Stream it to primary instance
+			if err = stream.Send(chunk); err != nil {
+				gaia.Cfg.Logger.Error("failed to stream log chunk to primary instance", "error", err.Error(), "pipelinerun", run)
+				continue
+			}
+		}
+		if err = stream.CloseSend(); err != nil {
+			gaia.Cfg.Logger.Warn("failed to safely close gRPC connection via updatework", "error", err.Error())
 		}
 	}
 }

@@ -48,7 +48,6 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 		if scheduled == nil {
 			return nil
 		}
-		gaia.Cfg.Logger.Info("popped following run", "run", scheduled)
 
 		// Convert pipeline run to gRPC object
 		gRPCPipelineRun := pb.PipelineRun{
@@ -87,10 +86,7 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 
 	// Check the status of the pipeline run
 	switch gaia.PipelineRunStatus(pipelineRun.Status) {
-	case gaia.RunNotScheduled:
-		// Usually, the run is already scheduled when it arrives at a worker.
-		// If it is not scheduled then an error happened right before the worker
-		// had the chance to start the run. We will reschedule the run now.
+	case gaia.RunReschedule:
 		// TODO: Make sure that the same work will not be scheduled on the same node
 		store, err := services.StorageService()
 		if err != nil {
@@ -107,10 +103,11 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 			return e, err
 		}
 
-		// This should actually never happen but lets add a defence-in-depth check here
-		if run.Status != gaia.RunScheduled {
-			gaia.Cfg.Logger.Warn("pipeline run must have scheduled status to be rescheduled", "pipelinerun", pipelineRun)
-			return e, nil
+		// Set new status
+		run.Status = gaia.RunScheduled
+		if err = store.PipelinePutRun(run); err != nil {
+			gaia.Cfg.Logger.Error("failed to store pipeline run via updatework", "error", err.Error(), "pipelinerun", run)
+			return e, err
 		}
 
 		// Get memdb service
@@ -121,10 +118,13 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 		}
 
 		// Put pipeline run back into memdb. This adds the pipeline run to the stack again.
-		db.InsertPipelineRun(run)
+		if err = db.InsertPipelineRun(run); err != nil {
+			gaia.Cfg.Logger.Error("failed to insert pipeline run into memdb via updatework", "error", err.Error())
+			return e, err
+		}
 
 		// Print information output
-		gaia.Cfg.Logger.Debug("failed to execute work at worker. Rescheduling...", "run", run)
+		gaia.Cfg.Logger.Debug("failed to execute work at worker. Run has been rescheduled...", "runid", run.ID)
 	default:
 		// Transform protobuf object to internal struct
 		run := &gaia.PipelineRun{
@@ -137,6 +137,13 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 			FinishDate:   time.Unix(pipelineRun.FinishDate, 0),
 		}
 		run.Jobs = make([]*gaia.Job, 0, len(pipelineRun.Jobs))
+
+		// It can happen that the run is in state "NotScheduled" and waits for the worker
+		// scheduler to be picked up. To prevent a rescheduling here at the primary instance,
+		// we obfuscate the pipeline run state.
+		if run.Status == gaia.RunNotScheduled {
+			run.Status = gaia.RunScheduled
+		}
 
 		// Transform pipeline run jobs
 		jobsMap := make(map[uint32]*gaia.Job)
@@ -152,8 +159,17 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 			// Fill helper map for job dependency search
 			jobsMap[j.ID] = j
 
-			// We will not convert arguments here since arguments are only needed before/during execution.
-			// We just send updates here to the primary instance we do not need args.
+			// Convert arguments
+			j.Args = make([]*gaia.Argument, 0, len(job.Args))
+			for _, arg := range job.Args {
+				a := &gaia.Argument{
+					Description: arg.Description,
+					Type:        arg.Type,
+					Key:         arg.Key,
+					Value:       arg.Value,
+				}
+				j.Args = append(j.Args, a)
+			}
 		}
 
 		// Convert dependencies
@@ -248,12 +264,24 @@ func (w *WorkServer) StreamLogs(stream pb.Worker_StreamLogsServer) error {
 	// Read first chunk which must have content
 	firstLogChunk, err := stream.Recv()
 	if err != nil {
+		if err == io.EOF {
+			return nil
+		}
+
 		gaia.Cfg.Logger.Error("corrupted stream opened via streamlogs", "error", err.Error())
 		return err
 	}
 
+	// Create logs folder for this run
+	logFolderPath := filepath.Join(gaia.Cfg.WorkspacePath, strconv.Itoa(int(firstLogChunk.PipelineId)), strconv.Itoa(int(firstLogChunk.RunId)), gaia.LogsFolderName)
+	err = os.MkdirAll(logFolderPath, 0700)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot create pipeline run log folder", "error", err.Error(), "path", logFolderPath)
+		return err
+	}
+
 	// Open output file
-	logFilePath := filepath.Join(gaia.Cfg.WorkspacePath, strconv.Itoa(int(firstLogChunk.PipelineId)), strconv.Itoa(int(firstLogChunk.RunId)), gaia.LogsFolderName, gaia.LogsFileName)
+	logFilePath := filepath.Join(logFolderPath, gaia.LogsFileName)
 	logFile, err := os.Create(logFilePath)
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to create new log file via streamlogs", "error", err.Error(), "logobj", firstLogChunk)
