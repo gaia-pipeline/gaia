@@ -63,3 +63,41 @@ func (s *BoltStore) WorkerDeleteAll() error {
 		return err
 	})
 }
+
+// WorkerDelete deletes a worker by the given identifier.
+func (s *BoltStore) WorkerDelete(id string) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		// Get bucket
+		b := tx.Bucket(workerBucket)
+
+		// Delete entry
+		return b.Delete([]byte(id))
+	})
+}
+
+// WorkerGet gets a worker by the given identifier.
+func (s *BoltStore) WorkerGet(id string) (*gaia.Worker, error) {
+	var worker *gaia.Worker
+
+	return worker, s.db.View(func(tx *bolt.Tx) error {
+		// Get bucket
+		b := tx.Bucket(workerBucket)
+
+		// Get worker
+		v := b.Get([]byte(id))
+
+		// Check if we found the worker
+		if v == nil {
+			return nil
+		}
+
+		// Unmarshal pipeline object
+		worker = &gaia.Worker{}
+		err := json.Unmarshal(v, worker)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+}

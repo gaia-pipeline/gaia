@@ -57,9 +57,6 @@ message FileChunk {
 }
 
 service Worker {
-    // Ping is used to send a ping response.
-    rpc Ping (WorkerInstance) returns (google.protobuf.Empty);
-
     // GetWork pulls work from the primary instance.
     rpc GetWork (WorkerInstance) returns (stream PipelineRun);
 

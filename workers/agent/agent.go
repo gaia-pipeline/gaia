@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"google.golang.org/grpc/metadata"
 	"io"
 	"io/ioutil"
 	"os"
@@ -37,6 +38,9 @@ const (
 
 	// chunkSize is the size of binary chunks transferred to workers.
 	chunkSize = 64 * 1024 // 64 KiB
+
+	// idMDKey is the key used for the gRPC metadata map.
+	idMDKey = "uniqueid"
 )
 
 // Agent represents an instance of an agent
@@ -233,6 +237,7 @@ func (a *Agent) scheduleWork() {
 
 	// Setup context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), (3*schedulerTickerSeconds)*time.Second)
+	ctx = metadata.AppendToOutgoingContext(ctx, idMDKey, a.self.UniqueId)
 	defer cancel()
 
 	// TODO: Add worker tags to a.self
@@ -427,6 +432,7 @@ func (a *Agent) scheduleWork() {
 func (a *Agent) streamBinary(pipelineRunPB *pb.PipelineRun, pipelinePath string) error {
 	// Create a context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx = metadata.AppendToOutgoingContext(ctx, idMDKey, a.self.UniqueId)
 	defer cancel()
 
 	// Initiate streaming
@@ -538,6 +544,7 @@ func (a *Agent) updateWork() {
 
 		// Create context with timeout
 		ctx, cancel := context.WithTimeout(context.Background(), (updateTickerSeconds*3)*time.Second)
+		ctx = metadata.AppendToOutgoingContext(ctx, idMDKey, a.self.UniqueId)
 		defer cancel()
 
 		// Send to remote instance
@@ -568,7 +575,9 @@ func (a *Agent) updateWork() {
 		defer file.Close()
 
 		// Open streaming session to primary instance
-		stream, err := a.client.StreamLogs(context.Background())
+		streamCtx := context.Background()
+		streamCtx = metadata.AppendToOutgoingContext(streamCtx, idMDKey, a.self.UniqueId)
+		stream, err := a.client.StreamLogs(streamCtx)
 		if err != nil {
 			gaia.Cfg.Logger.Warn("failed to open stream session to primary instance to ship logs via updatework", "error", err.Error(), "pipelinerun", run)
 			continue

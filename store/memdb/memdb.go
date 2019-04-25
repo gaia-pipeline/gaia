@@ -36,6 +36,13 @@ type GaiaMemDB interface {
 	// If persist is true, the given worker will be persisted in the store.
 	UpsertWorker(w *gaia.Worker, persist bool) error
 
+	// GetWorker returns a worker by the given identifier.
+	GetWorker(id string) (*gaia.Worker, error)
+
+	// DeleteWorker deletes a worker by the given identifier.
+	// If persist is true, the worker will also be deleted from the store.
+	DeleteWorker(id string, persist bool) error
+
 	// InsertPipelineRun inserts a pipeline run in the memdb.
 	InsertPipelineRun(p *gaia.PipelineRun) error
 
@@ -141,6 +148,61 @@ func (m *MemDB) UpsertWorker(w *gaia.Worker, persist bool) error {
 	// Commit transaction
 	txn.Commit()
 
+	return nil
+}
+
+// GetWorker returns a worker by the given identifier.
+func (m *MemDB) GetWorker(id string) (*gaia.Worker, error) {
+	// Create read transaction
+	txn := m.db.Txn(false)
+	defer txn.Abort()
+
+	// Get worker
+	raw, err := txn.First(workerTableName, "id", id)
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to get worker from memdb", "error", err.Error(), "id", id)
+		return nil, err
+	}
+
+	// Convert into worker obj
+	w, ok := raw.(*gaia.Worker)
+	if !ok {
+		gaia.Cfg.Logger.Error("failed to convert worker into worker obj", "raw", raw)
+		return nil, errors.New("failed to convert worker into worker obj")
+	}
+	return w, nil
+}
+
+// DeleteWorker deletes a worker from the memdb.
+// If persist is true, the worker will also be deleted from the store.
+func (m *MemDB) DeleteWorker(id string, persist bool) error {
+	// Create write transaction
+	txn := m.db.Txn(true)
+
+	// Find existing entry
+	raw, err := txn.First(workerTableName, "id", id)
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to load worker from memdb", "error", err.Error(), "id", id)
+		return err
+	}
+
+	// Found existing entry
+	if raw != nil {
+		err = txn.Delete(workerTableName, raw)
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to delete worker from memdb", "error", err.Error(), "id", id)
+			return err
+		}
+	}
+
+	// Delete from store
+	if persist {
+		err = m.store.WorkerDelete(id)
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to delete worker from store via memdb delete", "error", err.Error(), "id", id)
+			return err
+		}
+	}
 	return nil
 }
 
