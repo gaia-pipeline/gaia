@@ -18,9 +18,9 @@ const (
 )
 
 type registerWorker struct {
-	Secret string            `json:"secret"`
-	Name   string            `json:"name"`
-	Tags   map[string]string `json:"tags"`
+	Secret string   `json:"secret"`
+	Name   string   `json:"name"`
+	Tags   []string `json:"tags"`
 }
 
 type registerResponse struct {

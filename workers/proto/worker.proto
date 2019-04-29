@@ -7,8 +7,9 @@ import "google/protobuf/empty.proto";
 // WorkerInstance represents the identity of
 // a worker instance.
 message WorkerInstance {
-    string unique_id    = 1;
-    int32  worker_slots = 2;
+    string   unique_id    = 1;
+    int32    worker_slots = 2;
+    repeated string tags  = 3;
 }
 
 // PipelineRun represents one pipeline run.

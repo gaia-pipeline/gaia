@@ -62,6 +62,7 @@ func init() {
 	fs.StringVar(&gaia.Cfg.WorkerGRPCHostURL, "grpchosturl", "localhost:8989", "The host url of an gaia instance gRPC interface used for worker connection. Only used in worker mode")
 	fs.StringVar(&gaia.Cfg.WorkerSecret, "workersecret", "", "The secret which is used to register a worker at an gaia instance")
 	fs.StringVar(&gaia.Cfg.WorkerServerPort, "workerserverport", "8989", "Listen port for gaia worker gRPC communication")
+	fs.StringVar(&gaia.Cfg.WorkerTags, "workertags", "", "Comma separated list of custom tags for this worker")
 
 	// Default values
 	gaia.Cfg.Bolt.Mode = 0600

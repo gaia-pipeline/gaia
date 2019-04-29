@@ -3,23 +3,23 @@ package agent
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"google.golang.org/grpc/metadata"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/helper/filehelper"
 	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/agent/api"
@@ -27,6 +27,7 @@ import (
 	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -92,14 +93,19 @@ func (a *Agent) StartAgent() error {
 	// Register the signal channel
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	// Check if this worker has been already registered at a Gaia instance
+	// Evaluate and summarize all worker tags
+	trimmedTags := strings.ReplaceAll(gaia.Cfg.WorkerTags, " ", "")
+	tags := strings.Split(trimmedTags, ",")
+	tags = append(tags, findLocalBinaries()...)
+
+	// Check if this worker has been already registered at this Gaia primary instance
 	workerID := ""
 	clientTLS, err := a.generateClientTLSCreds()
 	if err != nil {
 		// If there is an error, no matter if no certificates exist or
 		// we cannot load them, we try the registration process to register
 		// the worker again.
-		regResp, err := api.RegisterWorker(gaia.Cfg.WorkerHostURL, gaia.Cfg.WorkerSecret)
+		regResp, err := api.RegisterWorker(gaia.Cfg.WorkerHostURL, gaia.Cfg.WorkerSecret, tags)
 		if err != nil {
 			return fmt.Errorf("failed to register worker: %s", err.Error())
 		}
@@ -176,6 +182,7 @@ func (a *Agent) StartAgent() error {
 	// Setup information object about the current agent
 	a.self = &pb.WorkerInstance{
 		UniqueId: workerID,
+		Tags:     tags,
 	}
 
 	// Start periodic go routine which schedules the worker work
@@ -240,7 +247,6 @@ func (a *Agent) scheduleWork() {
 	ctx = metadata.AppendToOutgoingContext(ctx, idMDKey, a.self.UniqueId)
 	defer cancel()
 
-	// TODO: Add worker tags to a.self
 	// Get actual work from remote Gaia instance
 	stream, err := a.client.GetWork(ctx, a.self)
 	if err != nil {
@@ -337,7 +343,7 @@ func (a *Agent) scheduleWork() {
 		}
 
 		// Validate SHA256 sum to make sure the integrity is provided
-		sha256Sum, err := getSHA256Sum(pipelineFullPath)
+		sha256Sum, err := filehelper.GetSHA256Sum(pipelineFullPath)
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to determine SHA256Sum of pipeline file", "error", err.Error(), "pipelinerun", pipelineRunPB)
 			reschedulePipeline()
@@ -358,7 +364,7 @@ func (a *Agent) scheduleWork() {
 			}
 
 			// Validate SHA256 sum again to make sure the integrity is provided
-			sha256Sum, err := getSHA256Sum(pipelineFullPath)
+			sha256Sum, err := filehelper.GetSHA256Sum(pipelineFullPath)
 			if err != nil {
 				gaia.Cfg.Logger.Error("failed to determine SHA256Sum of pipeline file", "error", err.Error(), "pipelinerun", pipelineRunPB)
 				reschedulePipeline()
@@ -652,26 +658,4 @@ func (a *Agent) generateClientTLSCreds() (credentials.TransportCredentials, erro
 		Certificates: []tls.Certificate{certs},
 		RootCAs:      certPool,
 	}), nil
-}
-
-// --- TODO: move to helper package since this is also used in ticker.go ---
-
-// getSHA256Sum accepts a path to a file.
-// It load's the file and calculates a SHA256 Checksum and returns it.
-func getSHA256Sum(path string) ([]byte, error) {
-	// Open file
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	// Create sha256 obj and insert bytes
-	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return nil, err
-	}
-
-	// return sha256 checksum
-	return h.Sum(nil), nil
 }

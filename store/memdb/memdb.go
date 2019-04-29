@@ -5,6 +5,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/hashicorp/go-memdb"
+	"strings"
 	"time"
 )
 
@@ -224,9 +225,9 @@ func (m *MemDB) InsertPipelineRun(p *gaia.PipelineRun) error {
 }
 
 
-// PopPipelineRun gets the oldest pipeline run and removes it immediately
+// PopPipelineRun gets the oldest pipeline run filtered by tags and removes it immediately
 // from the memdb.
-func (m *MemDB) PopPipelineRun() (*gaia.PipelineRun, error) {
+func (m *MemDB) PopPipelineRun(tags []string) (*gaia.PipelineRun, error) {
 	// Create a read transaction
 	txn := m.db.Txn(false)
 
@@ -250,6 +251,18 @@ func (m *MemDB) PopPipelineRun() (*gaia.PipelineRun, error) {
 		pipelineRun, ok := item.(*gaia.PipelineRun)
 		if !ok {
 			gaia.Cfg.Logger.Error("failed to convert pipeline run to data struct via poppipelinerun", "item", item)
+			continue
+		}
+
+		// Filter by tags
+		validTagFound := false
+		for _, tag := range tags {
+			if strings.EqualFold(tag, pipelineRun.PipelineType.String()) {
+				validTagFound = true
+				break
+			}
+		}
+		if !validTagFound {
 			continue
 		}
 

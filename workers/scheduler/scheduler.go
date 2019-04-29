@@ -358,6 +358,7 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*
 		ScheduleDate: time.Now(),
 		Jobs:         jobs,
 		Status:       gaia.RunNotScheduled,
+		PipelineType: p.Type,
 	}
 
 	// Put run into store

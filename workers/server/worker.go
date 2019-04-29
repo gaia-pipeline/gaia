@@ -53,12 +53,16 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 		return errNotRegistered
 	}
 
-	// Update last contact
+	// Update last contact and worker tags in a separate go routine
+	// to avoid getting blocked here.
 	worker.LastContact = time.Now()
-	if err = db.UpsertWorker(worker, true); err != nil {
-		gaia.Cfg.Logger.Error("failed to upsert worker via getwork", "error", err.Error(), "worker", worker)
-		return err
-	}
+	worker.Tags = workInst.Tags
+	go func () {
+		if err = db.UpsertWorker(worker, true); err != nil {
+			gaia.Cfg.Logger.Error("failed to upsert worker via getwork", "error", err.Error(), "worker", worker)
+			return
+		}
+	}()
 
 	// Get scheduled work from memdb
 	for i := int32(0); i < workInst.WorkerSlots; i++ {

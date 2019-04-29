@@ -247,16 +247,17 @@ type PipelineRun struct {
 	ScheduleDate time.Time         `json:"scheduledate,omitempty"`
 	Status       PipelineRunStatus `json:"status,omitempty"`
 	Jobs         []*Job            `json:"jobs,omitempty"`
+	PipelineType PipelineType      `json:"pipelinetype,omitempty"`
 }
 
 // Worker represents a single registered worker.
 type Worker struct {
-	UniqueID     string            `json:"uniqueid"`
-	Name         string            `json:"name"`
-	Status       WorkerStatus      `json:"status"`
-	RegisterDate time.Time         `json:"registerdate"`
-	LastContact  time.Time         `json:"lastcontact"`
-	Tags         map[string]string `json:"tags"`
+	UniqueID     string       `json:"uniqueid"`
+	Name         string       `json:"name"`
+	Status       WorkerStatus `json:"status"`
+	RegisterDate time.Time    `json:"registerdate"`
+	LastContact  time.Time    `json:"lastcontact"`
+	Tags         []string     `json:"tags"`
 }
 
 // Cfg represents the global config instance
@@ -289,6 +290,7 @@ type Config struct {
 	WorkerHostURL     string
 	WorkerGRPCHostURL string
 	WorkerSecret      string
+	WorkerTags        string
 
 	Bolt struct {
 		Mode os.FileMode
