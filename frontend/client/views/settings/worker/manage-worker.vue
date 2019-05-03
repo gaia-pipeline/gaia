@@ -1,40 +1,53 @@
 <template>
-  <div class="tile is-vertical">
+  <div class="tile is-vertical is-ancestor">
+    <div class="tile is-parent">
+      <a class="button is-primary" style="margin-bottom: -10px;">
+        <span class="icon">
+          <i class="fa fa-trash"></i>
+        </span>
+        <span>Reset registration code</span>
+      </a>
+    </div>
+    <div class="tile">
+      <div class="tile is-parent">
+        <article class="tile is-child notification content-article box">
+          <span>Worker registration code: </span>
+          <message :direction="'down'" :message="registerCode" :duration="0"></message>
+        </article>
+      </div>
+      <div class="tile is-parent">
+        <article class="tile is-child notification content-article box">
+          <span>Number of active worker: </span><b>{{ activeWorker }}</b><br />
+          <span>Number of suspended worker: </span><b>0</b><br />
+          <span>Number of inactive worker: </span><b>0</b>
+        </article>
+      </div>
+      <div class="tile is-parent">
+        <article class="tile is-child notification content-article box">
+          <span>Finished pipeline runs by worker: </span><b>{{ activeWorker }}</b><br />
+          <span>Pipeline queue size: </span><b>0</b>
+        </article>
+      </div>
+    </div>
     <div class="tile is-parent">
       <article class="tile is-child notification content-article box">
-        <div class="tile is-parent">
-          <article class="tile is-child notification content-article box">
-            <span>Worker registration code: {{ registerCode }}</span>
-          </article>
-          <article class="tile is-child notification content-article box">
-            <vue-good-table
-              :columns="settingColumns"
-              :rows="settingRows"
-              :paginate="true"
-              :global-search="true"
-              :defaultSortBy="{field: 'name', type: 'desc'}"
-              globalSearchPlaceholder="Search ..."
-              styleClass="table table-grid table-own-bordered">
-              <template slot="table-row" slot-scope="props">
-                <td>
-                  <span>{{ props.row.display_name }}</span>
-                </td>
-                <td v-tippy="{ arrow : true,  animation : 'shift-away'}">
-                  <toggle-button
-                    v-model="props.row.display_value"
-                    id="deleteworker"
-                    :color="{checked: '#7DCE94', unchecked: '#82C7EB'}"
-                    :labels="{checked: 'On', unchecked: 'Off'}"
-                    @change=""
-                    :sync="true"/>
-                </td>
-              </template>
-              <div slot="emptystate" class="empty-table-text">
-                No worker found.
-              </div>
-            </vue-good-table>
-          </article>
-        </div>
+        <vue-good-table
+          :columns="workerColumns"
+          :rows="workerRows"
+          :paginate="true"
+          :global-search="true"
+          :defaultSortBy="{field: 'name', type: 'desc'}"
+          globalSearchPlaceholder="Search ..."
+          styleClass="table table-grid table-own-bordered">
+          <template slot="table-row" slot-scope="props">
+            <td>
+              <span>{{ props.row.display_name }}</span>
+            </td>
+          </template>
+          <div slot="emptystate" class="empty-table-text">
+            No worker found.
+          </div>
+        </vue-good-table>
       </article>
     </div>
   </div>
@@ -42,22 +55,20 @@
 
 <script>
   import Vue from 'vue'
-  import {ToggleButton} from 'vue-js-toggle-button'
   import {TabPane, Tabs} from 'vue-bulma-tabs'
   import VueGoodTable from 'vue-good-table'
-  import VueTippy from 'vue-tippy'
+  import Message from 'vue-bulma-message-html'
 
   Vue.use(VueGoodTable)
-  Vue.use(VueTippy)
 
   export default {
     name: 'manage-worker',
-    components: {Tabs, TabPane, ToggleButton},
+    components: {Tabs, TabPane, Message},
     data () {
       return {
         registerCode: '',
-        settingsTogglePollerValue: false,
-        settingColumns: [
+        activeWorker: 0,
+        workerColumns: [
           {
             label: 'Name',
             field: 'display_name'
@@ -67,7 +78,7 @@
             field: 'display_value'
           }
         ],
-        settingRows: []
+        workerRows: []
       }
     },
     mounted () {
@@ -87,7 +98,7 @@
   }
 </script>
 
-<style scoped>
+<style>
   .settings-row {
     cursor: pointer;
   }
@@ -109,5 +120,15 @@
   .table-settings td:hover {
     background: #575463;
     cursor: pointer;
+  }
+
+  .message-header {
+    background-color: #4da2fc;
+  }
+
+  .message-body {
+    background-color: black;
+    border: none;
+    color: whitesmoke;
   }
 </style>

@@ -2,11 +2,12 @@ package memdb
 
 import (
 	"errors"
-	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/store"
-	"github.com/hashicorp/go-memdb"
 	"strings"
 	"time"
+
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/store"
+	memdb "github.com/hashicorp/go-memdb"
 )
 
 const (
@@ -47,9 +48,9 @@ type GaiaMemDB interface {
 	// InsertPipelineRun inserts a pipeline run in the memdb.
 	InsertPipelineRun(p *gaia.PipelineRun) error
 
-	// PopPipelineRun gets the oldest pipeline run and removes it immediately
+	// PopPipelineRun gets the oldest pipeline run by tags and removes it immediately
 	// from the memdb.
-	PopPipelineRun() (*gaia.PipelineRun, error)
+	PopPipelineRun(tags []string) (*gaia.PipelineRun, error)
 }
 
 // InitMemDB initiates a new memdb db.
@@ -223,7 +224,6 @@ func (m *MemDB) InsertPipelineRun(p *gaia.PipelineRun) error {
 
 	return nil
 }
-
 
 // PopPipelineRun gets the oldest pipeline run filtered by tags and removes it immediately
 // from the memdb.

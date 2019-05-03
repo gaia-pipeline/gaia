@@ -9,7 +9,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/labstack/echo"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -139,4 +139,14 @@ func getWorkerSecret() (string, error) {
 		return "", err
 	}
 	return string(secret[:]), nil
+}
+
+type workerStatusOverviewRespoonse struct {
+	ActiveWorker    int `json:"activeworker"`
+	SuspendedWorker int ``
+}
+
+// GetWorkerStatusOverview returns general status information about all workers.
+func GetWorkerStatusOverview(c echo.Context) error {
+
 }

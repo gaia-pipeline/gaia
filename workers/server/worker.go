@@ -3,17 +3,18 @@ package server
 import (
 	"context"
 	"errors"
+	"io"
+	"os"
+	"path/filepath"
+	"strconv"
+	"time"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	pb "github.com/gaia-pipeline/gaia/workers/proto"
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/metadata"
-	"io"
-	"os"
-	"path/filepath"
-	"strconv"
-	"time"
 )
 
 // chunkSize is the size of binary chunks transferred to workers.
@@ -57,7 +58,7 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 	// to avoid getting blocked here.
 	worker.LastContact = time.Now()
 	worker.Tags = workInst.Tags
-	go func () {
+	go func() {
 		if err = db.UpsertWorker(worker, true); err != nil {
 			gaia.Cfg.Logger.Error("failed to upsert worker via getwork", "error", err.Error(), "worker", worker)
 			return
@@ -66,8 +67,7 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 
 	// Get scheduled work from memdb
 	for i := int32(0); i < workInst.WorkerSlots; i++ {
-		// TODO: Pop pipeline runs by their tags & worker tags
-		scheduled, err := db.PopPipelineRun()
+		scheduled, err := db.PopPipelineRun(worker.Tags)
 		if err != nil {
 			return err
 		}
