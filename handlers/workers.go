@@ -142,11 +142,50 @@ func getWorkerSecret() (string, error) {
 }
 
 type workerStatusOverviewRespoonse struct {
-	ActiveWorker    int `json:"activeworker"`
-	SuspendedWorker int ``
+	ActiveWorker    int   `json:"activeworker"`
+	SuspendedWorker int   `json:"suspendedworker"`
+	InactiveWorker  int   `json:"inactiveworker"`
+	FinishedRuns    int64 `json:"finishedruns"`
+	QueueSize       int   `json:"queuesize"`
 }
 
 // GetWorkerStatusOverview returns general status information about all workers.
 func GetWorkerStatusOverview(c echo.Context) error {
+	response := workerStatusOverviewRespoonse{}
 
+	// Get memdb service
+	db, err := services.MemDBService(nil)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot get memdb service from service store", "error", err.Error())
+		return err
+	}
+
+	// Get all worker objects
+	workers := db.GetAllWorker()
+	for _, w := range workers {
+		switch w.Status {
+		case gaia.WorkerActive:
+			response.ActiveWorker++
+		case gaia.WorkerInactive:
+			response.InactiveWorker++
+		case gaia.WorkerSuspended:
+			response.SuspendedWorker++
+		}
+
+		// Store overall finished runs
+		response.FinishedRuns += w.FinishedRuns
+	}
+
+	// Get scheduler service
+	scheduler, err := services.SchedulerService()
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot get scheduler service from service store", "error", err.Error())
+		return err
+	}
+
+	// Get pipeline queue size
+	response.QueueSize = scheduler.CountScheduledRuns()
+
+	// Send response back
+	return c.JSON(http.StatusOK, response)
 }

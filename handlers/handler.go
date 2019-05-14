@@ -6,7 +6,7 @@ import (
 
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/auth"
+	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
@@ -85,13 +85,14 @@ func InitHandlers(e *echo.Echo) error {
 	// Worker
 	e.GET(p+"worker/secret", GetWorkerRegisterSecret)
 	e.POST(p+"worker/register", RegisterWorker)
+	e.GET(p+"worker/status", GetWorkerStatusOverview)
 
 	// Middleware
 	e.Use(middleware.Recover())
 	//e.Use(middleware.Logger())
 	e.Use(middleware.BodyLimit("32M"))
 	e.Use(AuthMiddleware(&AuthConfig{
-		RoleCategories: auth.DefaultUserRoles,
+		RoleCategories: rolehelper.DefaultUserRoles,
 	}))
 
 	// Extra options

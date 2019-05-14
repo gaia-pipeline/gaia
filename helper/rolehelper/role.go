@@ -1,4 +1,4 @@
-package auth
+package rolehelper
 
 import "github.com/gaia-pipeline/gaia"
 
@@ -200,6 +200,33 @@ var (
 						NewUserRoleEndpoint("PUT", "/api/v1/user/:username/permissions"),
 					},
 					Description: "Update created users permissions.",
+				},
+			},
+		},
+		{
+			Name:        "Worker",
+			Description: "Managing of worker permissions.",
+			Roles: []*gaia.UserRole{
+				{
+					Name: "GetRegistrationSecret",
+					APIEndpoint: []*gaia.UserRoleEndpoint{
+						NewUserRoleEndpoint("GET", "/api/v1/worker/secret"),
+					},
+					Description: "Get global worker registration secret.",
+				},
+				{
+					Name: "RegisterWorker",
+					APIEndpoint: []*gaia.UserRoleEndpoint{
+						NewUserRoleEndpoint("POST", "/api/v1/worker/register"),
+					},
+					Description: "Register new worker at this Gaia instance.",
+				},
+				{
+					Name: "GetOverview",
+					APIEndpoint: []*gaia.UserRoleEndpoint{
+						NewUserRoleEndpoint("GET", "/api/v1/worker/status"),
+					},
+					Description: "Get status overview of all workers.",
 				},
 			},
 		},

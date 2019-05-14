@@ -15,7 +15,7 @@ import (
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/store/memdb"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -61,6 +61,7 @@ type GaiaScheduler interface {
 	SetPipelineJobs(p *gaia.Pipeline) error
 	StopPipelineRun(p *gaia.Pipeline, runID int) error
 	GetFreeWorkers() int32
+	CountScheduledRuns() int
 }
 
 var _ GaiaScheduler = (*Scheduler)(nil)
@@ -223,7 +224,7 @@ func (s *Scheduler) prepareAndExec(r gaia.PipelineRun) {
 // schedule looks in the store for new work and schedules it.
 func (s *Scheduler) schedule() {
 	// Do we have space left in our buffer?
-	if len(s.scheduledRuns) >= schedulerBufferLimit {
+	if s.CountScheduledRuns() >= schedulerBufferLimit {
 		// No space left. Exit.
 		return
 	}
@@ -249,11 +250,23 @@ func (s *Scheduler) schedule() {
 
 		// If we are a server instance, we will by default give the worker the advantage.
 		// Only in case all workers are busy we will schedule work on the server.
-		// TODO: Check if all are workers are busy and schedule work locally
-		if gaia.Cfg.Mode == gaia.ModeServer && s.memDBService.CountWorker() > 0 {
+		workers := s.memDBService.GetAllWorker()
+		if gaia.Cfg.Mode == gaia.ModeServer && len(workers) > 0 {
+			// Check if all workers are busy
+			busyWorkers := 0
+			for _, w := range workers {
+				if w.Slots == 0 {
+					busyWorkers++
+				}
+			}
+
 			// Insert pipeline run into memdb where all workers get their work from
-			s.memDBService.InsertPipelineRun(scheduled[id])
-			continue
+			if len(workers) > busyWorkers {
+				if err := s.memDBService.InsertPipelineRun(scheduled[id]); err != nil {
+					gaia.Cfg.Logger.Error("failed to insert pipeline run into memdb via schedule", "error", err.Error())
+				}
+				continue
+			}
 		}
 
 		// push scheduled run into our channel
@@ -716,6 +729,11 @@ func (s *Scheduler) SetPipelineJobs(p *gaia.Pipeline) error {
 // GetFreeWorkers returns the number of free workers.
 func (s *Scheduler) GetFreeWorkers() int32 {
 	return atomic.LoadInt32(s.freeWorkers)
+}
+
+// CountScheduledRuns returns the number of scheduled runs.
+func (s *Scheduler) CountScheduledRuns() int {
+	return len(s.scheduledRuns)
 }
 
 // finishPipelineRun finishes the pipeline run and stores the results.

@@ -31,8 +31,8 @@ type GaiaMemDB interface {
 	// SyncStore syncs the memdb with the store.
 	SyncStore() error
 
-	// CountWorker counts the number of stored workers.
-	CountWorker() int
+	// GetAllWorker returns all worker.
+	GetAllWorker() []*gaia.Worker
 
 	// UpsertWorker inserts or updates the given worker in the memdb.
 	// If persist is true, the given worker will be persisted in the store.
@@ -84,9 +84,9 @@ func (m *MemDB) SyncStore() error {
 	return nil
 }
 
-// CountWorker counts all worker objects in the worker table.
-func (m *MemDB) CountWorker() int {
-	count := 0
+// GetAllWorker returns all worker.
+func (m *MemDB) GetAllWorker() []*gaia.Worker {
+	var workers []*gaia.Worker
 
 	// Create a read-only transaction
 	txn := m.db.Txn(false)
@@ -96,18 +96,28 @@ func (m *MemDB) CountWorker() int {
 	iter, err := txn.Get(workerTableName, "id_prefix")
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to get worker objects from memdb via countworker", "error", err.Error())
-		return count
+		return workers
 	}
 
-	// Iterate through all items and count them. Exit when nil is returned.
+	// Iterate through all items and add them
 	for {
-		if item := iter.Next(); item == nil {
+		item := iter.Next()
+
+		if item == nil {
 			break
 		}
-		count++
+
+		// Convert into worker obj
+		w, ok := item.(*gaia.Worker)
+		if !ok {
+			gaia.Cfg.Logger.Error("failed to convert worker into worker obj", "raw", item)
+			continue
+		}
+
+		workers = append(workers, w)
 	}
 
-	return count
+	return workers
 }
 
 // UpsertWorker inserts or updates the given worker in the memdb.

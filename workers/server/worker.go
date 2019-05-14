@@ -30,7 +30,8 @@ type WorkServer struct{}
 // back to the requesting worker. Pipeline runs are filtered by their tags.
 func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWorkServer) error {
 	// Check if worker is registered
-	if !isWorkerRegistered(serv.Context()) {
+	isRegistered, worker := workerRegistered(serv.Context())
+	if !isRegistered {
 		md, _ := metadata.FromIncomingContext(serv.Context())
 		gaia.Cfg.Logger.Warn("worker tries to get work but is not registered", "metadata", md)
 		return errNotRegistered
@@ -43,21 +44,11 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 		return err
 	}
 
-	// Get worker from memdb
-	worker, err := db.GetWorker(workInst.UniqueId)
-	if err != nil {
-		gaia.Cfg.Logger.Error("failed to load worker from memdb via getwork", "error", err.Error())
-		return err
-	}
-	if worker == nil {
-		gaia.Cfg.Logger.Error("cannot find worker in memdb via getwork", "error", err.Error())
-		return errNotRegistered
-	}
-
-	// Update last contact and worker tags in a separate go routine
+	// Update worker information in a separate go routine
 	// to avoid getting blocked here.
 	worker.LastContact = time.Now()
 	worker.Tags = workInst.Tags
+	worker.Slots = workInst.WorkerSlots
 	go func() {
 		if err = db.UpsertWorker(worker, true); err != nil {
 			gaia.Cfg.Logger.Error("failed to upsert worker via getwork", "error", err.Error(), "worker", worker)
@@ -72,7 +63,7 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 			return err
 		}
 
-		// Check if we have actual work
+		// Check if we have work available
 		if scheduled == nil {
 			return nil
 		}
@@ -113,10 +104,18 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 	e := &empty.Empty{}
 
 	// Check if worker is registered
-	if !isWorkerRegistered(ctx) {
+	isRegistered, worker := workerRegistered(ctx)
+	if !isRegistered {
 		md, _ := metadata.FromIncomingContext(ctx)
 		gaia.Cfg.Logger.Warn("worker tries to update work but is not registered", "metadata", md)
 		return e, errNotRegistered
+	}
+
+	// Get memdb service
+	db, err := services.MemDBService(nil)
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to get memdb service via updatework", "error", err.Error())
+		return e, err
 	}
 
 	// Check the status of the pipeline run
@@ -142,13 +141,6 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 		run.Status = gaia.RunScheduled
 		if err = store.PipelinePutRun(run); err != nil {
 			gaia.Cfg.Logger.Error("failed to store pipeline run via updatework", "error", err.Error(), "pipelinerun", run)
-			return e, err
-		}
-
-		// Get memdb service
-		db, err := services.MemDBService(nil)
-		if err != nil {
-			gaia.Cfg.Logger.Error("failed to get memdb service via updatework", "error", err.Error())
 			return e, err
 		}
 
@@ -233,6 +225,20 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 			gaia.Cfg.Logger.Error("failed to store pipeline run via updatework", "error", err.Error())
 			return e, err
 		}
+
+		// Update worker information if needed
+		switch run.Status {
+		case gaia.RunSuccess, gaia.RunFailed, gaia.RunCancelled:
+			worker.FinishedRuns++
+
+			// Store worker object but don't block here
+			go func() {
+				if err = db.UpsertWorker(worker, true); err != nil {
+					gaia.Cfg.Logger.Error("failed to upsert worker via updatework", "error", err.Error(), "worker", worker)
+					return
+				}
+			}()
+		}
 	}
 
 	return e, nil
@@ -241,7 +247,7 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 // StreamBinary streams a pipeline binary in chunks back to the worker.
 func (w *WorkServer) StreamBinary(pipelineRun *pb.PipelineRun, serv pb.Worker_StreamBinaryServer) error {
 	// Check if worker is registered
-	if !isWorkerRegistered(serv.Context()) {
+	if isRegistered, _ := workerRegistered(serv.Context()); !isRegistered {
 		md, _ := metadata.FromIncomingContext(serv.Context())
 		gaia.Cfg.Logger.Warn("worker tries to request for binary but is not registered", "metadata", md)
 		return errNotRegistered
@@ -304,7 +310,7 @@ func (w *WorkServer) StreamLogs(stream pb.Worker_StreamLogsServer) error {
 	defer stream.SendAndClose(&empty.Empty{})
 
 	// Check if worker is registered
-	if !isWorkerRegistered(stream.Context()) {
+	if isRegistered, _ := workerRegistered(stream.Context()); !isRegistered {
 		md, _ := metadata.FromIncomingContext(stream.Context())
 		gaia.Cfg.Logger.Warn("worker tries to stream logs but is not registered", "metadata", md)
 		return errNotRegistered
@@ -376,7 +382,7 @@ func (w *WorkServer) Deregister(ctx context.Context, workInst *pb.WorkerInstance
 	e := &empty.Empty{}
 
 	// Check if worker is registered
-	if !isWorkerRegistered(ctx) {
+	if isRegistered, _ := workerRegistered(ctx); !isRegistered {
 		gaia.Cfg.Logger.Warn("worker tries to deregister but is already unregistered", "id", workInst.UniqueId)
 		return e, errNotRegistered
 	}
@@ -396,40 +402,43 @@ func (w *WorkServer) Deregister(ctx context.Context, workInst *pb.WorkerInstance
 	return e, nil
 }
 
-// isWorkerRegistered checks if a worker by the given context is registered.
-func isWorkerRegistered(ctx context.Context) bool {
+// workerRegistered checks if a worker by the given context is registered.
+// It returns true when the worker is registered and the worker object.
+func workerRegistered(ctx context.Context) (bool, *gaia.Worker) {
+	var w *gaia.Worker
+
 	// Get metadata information
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		gaia.Cfg.Logger.Debug("failed to get metadata from context")
-		return false
+		return false, w
 	}
 
 	// Get identifier
 	id := md.Get("uniqueid")
 	if len(id) != 1 {
 		gaia.Cfg.Logger.Debug("metadata objects contains wrong number of values", "expected", 1, "got", len(id))
-		return false
+		return false, w
 	}
 
 	// Get memdb service
 	db, err := services.MemDBService(nil)
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to get memdb service via isWorkerRegistered", "error", err.Error())
-		return false
+		return false, w
 	}
 
 	// Lookup worker
-	worker, err := db.GetWorker(id[0])
+	w, err = db.GetWorker(id[0])
 	if err != nil {
 		gaia.Cfg.Logger.Debug("failed to load worker from memdb via isWorkerRegistered", "error", err.Error(), "id", id)
-		return false
+		return false, w
 	}
 
 	// Worker not registered
-	if worker == nil {
+	if w == nil {
 		gaia.Cfg.Logger.Debug("worker is not registered at primary instance but has valid mTLS certificates", "id", id)
-		return false
+		return false, w
 	}
-	return true
+	return true, w
 }

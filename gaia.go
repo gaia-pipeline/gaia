@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/hashicorp/go-hclog"
+	hclog "github.com/hashicorp/go-hclog"
 	"github.com/robfig/cron"
 )
 
@@ -255,8 +255,10 @@ type Worker struct {
 	UniqueID     string       `json:"uniqueid"`
 	Name         string       `json:"name"`
 	Status       WorkerStatus `json:"status"`
+	Slots        int32        `json:"slots"`
 	RegisterDate time.Time    `json:"registerdate"`
 	LastContact  time.Time    `json:"lastcontact"`
+	FinishedRuns int64        `json:"finishedruns"`
 	Tags         []string     `json:"tags"`
 }
 

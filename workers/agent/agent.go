@@ -235,12 +235,8 @@ func (a *Agent) scheduleWork() {
 	// Print info output
 	gaia.Cfg.Logger.Debug("try to pull work from Gaia master instance...")
 
-	// Check if the agent is busy. Only ask for work when we have the capacity to do it.
+	// Set available worker slots. Master instance decides if worker needs work.
 	a.self.WorkerSlots = int32(a.scheduler.GetFreeWorkers())
-	if a.self.WorkerSlots == 0 {
-		gaia.Cfg.Logger.Debug("all workers are currently busy. Will try it again after a while...")
-		return
-	}
 
 	// Setup context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), (3*schedulerTickerSeconds)*time.Second)

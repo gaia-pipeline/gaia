@@ -17,15 +17,15 @@
       </div>
       <div class="tile is-parent">
         <article class="tile is-child notification content-article box">
-          <span>Number of active worker: </span><b>{{ activeWorker }}</b><br />
-          <span>Number of suspended worker: </span><b>0</b><br />
-          <span>Number of inactive worker: </span><b>0</b>
+          <span>Number of active worker: </span><b>{{ statusView.activeworker }}</b><br />
+          <span>Number of suspended worker: </span><b>{{ statusView.suspendedworker }}</b><br />
+          <span>Number of inactive worker: </span><b>{{ statusView.inactiveworker }}</b>
         </article>
       </div>
       <div class="tile is-parent">
         <article class="tile is-child notification content-article box">
-          <span>Finished pipeline runs by worker: </span><b>{{ activeWorker }}</b><br />
-          <span>Pipeline queue size: </span><b>0</b>
+          <span>Finished pipeline runs by worker: </span><b>{{ statusView.finishedruns }}</b><br />
+          <span>Pipeline queue size: </span><b>{{ statusView.queuesize }}</b>
         </article>
       </div>
     </div>
@@ -67,7 +67,7 @@
     data () {
       return {
         registerCode: '',
-        activeWorker: 0,
+        statusView: {},
         workerColumns: [
           {
             label: 'Name',
@@ -84,10 +84,22 @@
     mounted () {
       // Get registration code for new worker
       this.$http
-        .get(`/api/v1/worker/secret`)
+        .get('/api/v1/worker/secret')
         .then(response => {
           if (response.data) {
             this.registerCode = response.data
+          }
+        })
+        .catch((error) => {
+          this.$onError(error)
+        })
+
+      // Get status overview of all workers
+      this.$http
+        .get('/api/v1/worker/status')
+        .then(response => {
+          if (response.data) {
+            this.statusView = response.data
           }
         })
         .catch((error) => {
