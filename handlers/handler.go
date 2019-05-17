@@ -86,6 +86,8 @@ func InitHandlers(e *echo.Echo) error {
 	e.GET(p+"worker/secret", GetWorkerRegisterSecret)
 	e.POST(p+"worker/register", RegisterWorker)
 	e.GET(p+"worker/status", GetWorkerStatusOverview)
+	e.GET(p+"worker", GetWorker)
+	e.DELETE(p+"worker/:workerid", DeregisterWorker)
 
 	// Middleware
 	e.Use(middleware.Recover())

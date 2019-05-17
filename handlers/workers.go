@@ -49,6 +49,11 @@ func RegisterWorker(c echo.Context) error {
 		return c.String(http.StatusForbidden, "wrong global worker secret provided")
 	}
 
+	// Generate name if none was given
+	if worker.Name == "" {
+		worker.Name = randomdata.SillyName() + "_" + randomdata.SillyName()
+	}
+
 	w := gaia.Worker{
 		UniqueID:     uuid.Must(uuid.NewV4(), nil).String(),
 		Name:         worker.Name,
@@ -113,6 +118,34 @@ func RegisterWorker(c echo.Context) error {
 	})
 }
 
+// DeregisterWorker deregister a registered worker.
+func DeregisterWorker(c echo.Context) error {
+	workerID := c.Param("workerid")
+	if workerID == "" {
+		return c.String(http.StatusBadRequest, "worker id is missing")
+	}
+
+	// Get memdb service
+	db, err := services.MemDBService(nil)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot get memdb service from store", "error", err.Error())
+		return c.String(http.StatusInternalServerError, "cannot get memdb service from service store")
+	}
+
+	// Check if worker is still registered
+	w, err := db.GetWorker(workerID)
+	if err != nil || w == nil {
+		return c.String(http.StatusBadRequest, "worker is not registered")
+	}
+
+	// Delete worker which basically indicates it is not registered anymore
+	if err := db.DeleteWorker(w.UniqueID, true); err != nil {
+		gaia.Cfg.Logger.Error("failed to delete worker", "error", err.Error())
+		return c.String(http.StatusInternalServerError, "failed to delete worker")
+	}
+	return nil
+}
+
 // GetWorkerRegisterSecret returns the global secret for registering new worker.
 func GetWorkerRegisterSecret(c echo.Context) error {
 	globalSecret, err := getWorkerSecret()
@@ -157,7 +190,7 @@ func GetWorkerStatusOverview(c echo.Context) error {
 	db, err := services.MemDBService(nil)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot get memdb service from service store", "error", err.Error())
-		return err
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
 	// Get all worker objects
@@ -180,7 +213,7 @@ func GetWorkerStatusOverview(c echo.Context) error {
 	scheduler, err := services.SchedulerService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot get scheduler service from service store", "error", err.Error())
-		return err
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
 	// Get pipeline queue size
@@ -188,4 +221,16 @@ func GetWorkerStatusOverview(c echo.Context) error {
 
 	// Send response back
 	return c.JSON(http.StatusOK, response)
+}
+
+// GetWorker returns all workers.
+func GetWorker(c echo.Context) error {
+	// Get memdb service
+	db, err := services.MemDBService(nil)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot get memdb service from service store", "error", err.Error())
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, db.GetAllWorker())
 }

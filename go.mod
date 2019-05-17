@@ -2,6 +2,7 @@ module github.com/gaia-pipeline/gaia
 
 require (
 	github.com/GeertJohan/go.rice v1.0.0
+	github.com/Pallinder/go-randomdata v1.1.0 // indirect
 	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
 	github.com/boltdb/bolt v1.3.1 // indirect

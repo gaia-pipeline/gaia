@@ -41,7 +41,21 @@
           styleClass="table table-grid table-own-bordered">
           <template slot="table-row" slot-scope="props">
             <td>
-              <span>{{ props.row.display_name }}</span>
+              <span>{{ props.row.name }}</span>
+            </td>
+            <td>
+              <div v-if="props.row.status === 'active'" style="color: green;">{{ props.row.status }}</div>
+              <div v-else-if="props.row.status === 'inactive'" style="color: red;">{{ props.row.status }}</div>
+              <div v-else style="color: #4da2fc;">{{ props.row.status }}</div>
+            </td>
+            <td>
+              {{ convertTime(props.row.registerdate) }}
+            </td>
+            <td>
+              {{ convertTime(props.row.lastcontact) }}
+            </td>
+            <td>
+              <a v-on:click="deregisterWorker(props.row.uniqueid)"><i class="fa fa-ban" style="color: whitesmoke;"></i></a>
             </td>
           </template>
           <div slot="emptystate" class="empty-table-text">
@@ -57,6 +71,7 @@
   import Vue from 'vue'
   import {TabPane, Tabs} from 'vue-bulma-tabs'
   import VueGoodTable from 'vue-good-table'
+  import moment from 'moment'
   import Message from 'vue-bulma-message-html'
 
   Vue.use(VueGoodTable)
@@ -71,42 +86,93 @@
         workerColumns: [
           {
             label: 'Name',
-            field: 'display_name'
+            field: 'name'
           },
           {
-            label: 'Value',
-            field: 'display_value'
+            label: 'Status',
+            field: 'status'
+          },
+          {
+            label: 'Register date',
+            field: 'registerdate'
+          },
+          {
+            label: 'Last contact',
+            field: 'lastcontact'
           }
         ],
         workerRows: []
       }
     },
     mounted () {
-      // Get registration code for new worker
-      this.$http
-        .get('/api/v1/worker/secret')
-        .then(response => {
-          if (response.data) {
-            this.registerCode = response.data
-          }
-        })
-        .catch((error) => {
-          this.$onError(error)
-        })
+      // fetch data from API
+      this.fetchData()
 
-      // Get status overview of all workers
-      this.$http
-        .get('/api/v1/worker/status')
-        .then(response => {
-          if (response.data) {
-            this.statusView = response.data
-          }
-        })
-        .catch((error) => {
-          this.$onError(error)
-        })
+      // periodically fetch updated data
+      let intervalID = setInterval(function () {
+        this.fetchData()
+      }.bind(this), 3000)
+
+      // Append interval id to store
+      this.$store.commit('appendInterval', intervalID)
     },
-    methods: {}
+    destroyed () {
+      this.$store.commit('clearIntervals')
+    },
+    watch: {
+      '$route': 'fetchData'
+    },
+    methods: {
+      fetchData () {
+        // Get registration code for new worker
+        this.$http
+          .get('/api/v1/worker/secret')
+          .then(response => {
+            if (response.data) {
+              this.registerCode = response.data
+            }
+          })
+          .catch((error) => {
+            this.$onError(error)
+          })
+
+        // Get status overview of all workers
+        this.$http
+          .get('/api/v1/worker/status')
+          .then(response => {
+            if (response.data) {
+              this.statusView = response.data
+            }
+          })
+          .catch((error) => {
+            this.$onError(error)
+          })
+
+        // Get worker
+        this.$http
+          .get('/api/v1/worker')
+          .then(response => {
+            if (response.data) {
+              this.workerRows = response.data
+            }
+          })
+          .catch((error) => {
+            this.$onError(error)
+          })
+      },
+
+      deregisterWorker (id) {
+        this.$http
+          .delete('/api/v1/worker/' + id)
+          .catch((error) => {
+            this.$onError(error)
+          })
+      },
+
+      convertTime (time) {
+        return moment(time).fromNow()
+      }
+    }
   }
 </script>
 
