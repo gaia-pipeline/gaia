@@ -66,6 +66,9 @@ type Agent struct {
 
 	// Instance of store
 	store store.GaiaStore
+
+	// Signal channel for this agent
+	sigs chan os.Signal
 }
 
 // InitAgent initiates the agent instance
@@ -88,10 +91,10 @@ func InitAgent(scheduler scheduler.GaiaScheduler, store store.GaiaStore) *Agent 
 // signal has been received.
 func (a *Agent) StartAgent() error {
 	// Allocate SIG channel
-	sigs := make(chan os.Signal, 1)
+	a.sigs = make(chan os.Signal, 1)
 
 	// Register the signal channel
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(a.sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	// Evaluate and summarize all worker tags
 	trimmedTags := strings.ReplaceAll(gaia.Cfg.WorkerTags, " ", "")
@@ -111,6 +114,8 @@ func (a *Agent) StartAgent() error {
 		}
 
 		// The registration process was successful.
+		gaia.Cfg.Logger.Debug("Worker has been successfully registered at the Gaia primary instance")
+
 		// Store the generated worker id since we need it later.
 		if err = a.store.WorkerDeleteAll(); err != nil {
 			return fmt.Errorf("failed to clean up worker bucket in store: %s", err.Error())
@@ -218,7 +223,7 @@ func (a *Agent) StartAgent() error {
 	}()
 
 	// Block until signal received
-	<-sigs
+	<-a.sigs
 	gaia.Cfg.Logger.Info("exit signal received. Exiting...")
 
 	// Safely stop scheduler
@@ -233,7 +238,7 @@ func (a *Agent) StartAgent() error {
 // on this machine, the pipeline will be downloaded from the Gaia master instance.
 func (a *Agent) scheduleWork() {
 	// Print info output
-	gaia.Cfg.Logger.Debug("try to pull work from Gaia master instance...")
+	gaia.Cfg.Logger.Trace("try to pull work from Gaia primary instance...")
 
 	// Set available worker slots. Master instance decides if worker needs work.
 	a.self.WorkerSlots = int32(a.scheduler.GetFreeWorkers())
@@ -261,10 +266,29 @@ func (a *Agent) scheduleWork() {
 		}
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to stream work from remote instance", "error", err.Error())
+
+			// In case the worker has been deregistered at the primary instance, we need to stop
+			// the agent here.
+			if strings.Contains(err.Error(), "worker is not registered") {
+				// Since the worker has been deregistered, we should make sure that we
+				// delete the existing certificates for security reasons.
+				if err := os.Remove(a.certFile); err != nil {
+					gaia.Cfg.Logger.Error("failed to remove cert file", "error", err)
+				}
+				if err := os.Remove(a.keyFile); err != nil {
+					gaia.Cfg.Logger.Error("failed to remove key file", "error", err)
+				}
+				if err := os.Remove(a.caCertFile); err != nil {
+					gaia.Cfg.Logger.Error("failed to remove ca cert file", "error", err)
+				}
+
+				// Send quit signal
+				a.sigs <- syscall.SIGTERM
+			}
 			return
 		}
 
-		gaia.Cfg.Logger.Info("received work from Gaia master instance...")
+		gaia.Cfg.Logger.Info("received work from Gaia primary instance...")
 		workCounter++
 
 		// Convert protobuf pipeline run to internal struct
@@ -324,7 +348,9 @@ func (a *Agent) scheduleWork() {
 		// Setup reschedule of pipeline in case something goes wrong
 		reschedulePipeline := func() {
 			pipelineRunPB.Status = string(gaia.RunReschedule)
-			a.client.UpdateWork(context.Background(), pipelineRunPB)
+			if _, err := a.client.UpdateWork(context.Background(), pipelineRunPB); err != nil {
+				gaia.Cfg.Logger.Error("failed to reschedule work at primary instance", "error", err)
+			}
 		}
 
 		// Check if the binary is already stored locally
@@ -426,7 +452,7 @@ func (a *Agent) scheduleWork() {
 
 	// Check if we received work at all
 	if workCounter == 0 {
-		gaia.Cfg.Logger.Debug("got no work from Gaia master instance. Will try it again after a while...")
+		gaia.Cfg.Logger.Trace("got no work from Gaia primary instance. Will try it again after a while...")
 	}
 }
 

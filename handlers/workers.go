@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/labstack/echo"
@@ -143,7 +144,8 @@ func DeregisterWorker(c echo.Context) error {
 		gaia.Cfg.Logger.Error("failed to delete worker", "error", err.Error())
 		return c.String(http.StatusInternalServerError, "failed to delete worker")
 	}
-	return nil
+
+	return c.String(http.StatusOK, "worker has been successfully deregistered")
 }
 
 // GetWorkerRegisterSecret returns the global secret for registering new worker.

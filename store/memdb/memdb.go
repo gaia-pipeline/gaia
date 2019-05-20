@@ -176,12 +176,18 @@ func (m *MemDB) GetWorker(id string) (*gaia.Worker, error) {
 		return nil, err
 	}
 
+	// If nil we couldn't find it
+	if raw == nil {
+		return nil, nil
+	}
+
 	// Convert into worker obj
 	w, ok := raw.(*gaia.Worker)
 	if !ok {
 		gaia.Cfg.Logger.Error("failed to convert worker into worker obj", "raw", raw)
 		return nil, errors.New("failed to convert worker into worker obj")
 	}
+
 	return w, nil
 }
 
@@ -215,6 +221,10 @@ func (m *MemDB) DeleteWorker(id string, persist bool) error {
 			return err
 		}
 	}
+
+	// Commit transaction
+	txn.Commit()
+
 	return nil
 }
 

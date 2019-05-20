@@ -17,14 +17,14 @@
       </div>
       <div class="tile is-parent">
         <article class="tile is-child notification content-article box">
-          <span>Number of active worker: </span><b>{{ statusView.activeworker }}</b><br />
-          <span>Number of suspended worker: </span><b>{{ statusView.suspendedworker }}</b><br />
+          <span>Number of active worker: </span><b>{{ statusView.activeworker }}</b><br/>
+          <span>Number of suspended worker: </span><b>{{ statusView.suspendedworker }}</b><br/>
           <span>Number of inactive worker: </span><b>{{ statusView.inactiveworker }}</b>
         </article>
       </div>
       <div class="tile is-parent">
         <article class="tile is-child notification content-article box">
-          <span>Finished pipeline runs by worker: </span><b>{{ statusView.finishedruns }}</b><br />
+          <span>Finished pipeline runs by worker: </span><b>{{ statusView.finishedruns }}</b><br/>
           <span>Pipeline queue size: </span><b>{{ statusView.queuesize }}</b>
         </article>
       </div>
@@ -49,13 +49,18 @@
               <div v-else style="color: #4da2fc;">{{ props.row.status }}</div>
             </td>
             <td>
-              {{ convertTime(props.row.registerdate) }}
+              <span :title="props.row.registerdate" v-tippy="{ arrow : true,  animation : 'shift-away'}">
+                {{ convertTime(props.row.registerdate) }}
+              </span>
             </td>
             <td>
-              {{ convertTime(props.row.lastcontact) }}
+              <span :title="props.row.lastcontact" v-tippy="{ arrow : true,  animation : 'shift-away'}">
+                {{ convertTime(props.row.lastcontact) }}
+              </span>
             </td>
             <td>
-              <a v-on:click="deregisterWorker(props.row.uniqueid)"><i class="fa fa-ban" style="color: whitesmoke;"></i></a>
+              <a title="Deregister Worker" v-tippy="{ arrow : true,  animation : 'shift-away'}"
+                 v-on:click="deregisterWorkerModal(props.row)"><i class="fa fa-ban" style="color: whitesmoke;"></i></a>
             </td>
           </template>
           <div slot="emptystate" class="empty-table-text">
@@ -64,6 +69,30 @@
         </vue-good-table>
       </article>
     </div>
+
+    <!-- deregister worker modal -->
+    <modal :visible="showDeregisterWorkerModal" class="modal-z-index" @close="close">
+      <div class="box deregister-modal">
+        <article class="media">
+          <div class="media-content">
+            <div class="content">
+              <p>
+                <span
+                  style="color: whitesmoke;">Do you really want to deregister the worker {{ selectedWorker.name }}?</span>
+              </p>
+            </div>
+            <div class="deregister-modal-footer">
+              <div style="float: left;">
+                <button class="button is-primary" v-on:click="deregisterWorker" style="width:150px;">Yes</button>
+              </div>
+              <div style="float: right;">
+                <button class="button is-danger" v-on:click="close" style="width:130px;">No</button>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </modal>
   </div>
 </template>
 
@@ -71,14 +100,35 @@
   import Vue from 'vue'
   import {TabPane, Tabs} from 'vue-bulma-tabs'
   import VueGoodTable from 'vue-good-table'
+  import { Modal } from 'vue-bulma-modal'
   import moment from 'moment'
   import Message from 'vue-bulma-message-html'
+  import VueTippy from 'vue-tippy'
+  import Notification from 'vue-bulma-notification-fixed'
 
   Vue.use(VueGoodTable)
+  Vue.use(VueTippy)
+
+  const NotificationComponent = Vue.extend(Notification)
+  const openNotification = (
+    propsData = {
+      title: '',
+      message: '',
+      type: '',
+      direction: '',
+      duration: 4500,
+      container: '.notifications'
+    }
+  ) => {
+    return new NotificationComponent({
+      el: document.createElement('div'),
+      propsData
+    })
+  }
 
   export default {
     name: 'manage-worker',
-    components: {Tabs, TabPane, Message},
+    components: {Tabs, TabPane, Message, Modal},
     data () {
       return {
         registerCode: '',
@@ -99,9 +149,15 @@
           {
             label: 'Last contact',
             field: 'lastcontact'
+          },
+          {
+            label: 'Action',
+            field: ''
           }
         ],
-        workerRows: []
+        workerRows: [],
+        showDeregisterWorkerModal: false,
+        selectedWorker: {}
       }
     },
     mounted () {
@@ -126,49 +182,73 @@
       fetchData () {
         // Get registration code for new worker
         this.$http
-          .get('/api/v1/worker/secret')
+          .get('/api/v1/worker/secret', {showProgressBar: false})
           .then(response => {
             if (response.data) {
               this.registerCode = response.data
             }
           })
           .catch((error) => {
+            this.$store.commit('clearIntervals')
             this.$onError(error)
           })
 
         // Get status overview of all workers
         this.$http
-          .get('/api/v1/worker/status')
+          .get('/api/v1/worker/status', {showProgressBar: false})
           .then(response => {
             if (response.data) {
               this.statusView = response.data
             }
           })
           .catch((error) => {
+            this.$store.commit('clearIntervals')
             this.$onError(error)
           })
 
         // Get worker
         this.$http
-          .get('/api/v1/worker')
+          .get('/api/v1/worker', {showProgressBar: false})
           .then(response => {
             if (response.data) {
               this.workerRows = response.data
+            } else {
+              this.workerRows = []
             }
           })
           .catch((error) => {
+            this.$store.commit('clearIntervals')
             this.$onError(error)
           })
       },
-
-      deregisterWorker (id) {
+      deregisterWorker () {
         this.$http
-          .delete('/api/v1/worker/' + id)
+          .delete('/api/v1/worker/' + this.selectedWorker.uniqueid)
+          .then(response => {
+            openNotification({
+              title: 'Worker deregistered!',
+              message:
+                'Worker ' +
+                this.selectedWorker.name +
+                ' has been successfully deregistered.',
+              type: 'success'
+            })
+            this.fetchData()
+            this.close()
+          })
           .catch((error) => {
+            this.$store.commit('clearIntervals')
             this.$onError(error)
           })
       },
-
+      deregisterWorkerModal (worker) {
+        this.selectedWorker = worker
+        this.showDeregisterWorkerModal = true
+      },
+      close () {
+        this.selectedWorker = {}
+        this.showDeregisterWorkerModal = false
+      },
       convertTime (time) {
         return moment(time).fromNow()
       }
@@ -208,5 +288,15 @@
     background-color: black;
     border: none;
     color: whitesmoke;
+  }
+
+  .deregister-modal {
+    text-align: center;
+    background-color: #2a2735;
+  }
+
+  .deregister-modal-footer {
+    height: 45px;
+    padding-top: 15px;
   }
 </style>
