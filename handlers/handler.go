@@ -26,6 +26,9 @@ var (
 
 	// errPipelineRename is thrown when a pipeline binary could not be renamed
 	errPipelineRename = errors.New("pipeline could not be renamed")
+
+	// List of secret keys which cannot be modified via the normal Vault API.
+	ignoredVaultKeys []string
 )
 
 // InitHandlers initializes(registers) all handlers
@@ -88,6 +91,7 @@ func InitHandlers(e *echo.Echo) error {
 	e.GET(p+"worker/status", GetWorkerStatusOverview)
 	e.GET(p+"worker", GetWorker)
 	e.DELETE(p+"worker/:workerid", DeregisterWorker)
+	e.POST(p+"worker/secret", ResetWorkerRegisterSecret)
 
 	// Middleware
 	e.Use(middleware.Recover())
@@ -117,6 +121,10 @@ func InitHandlers(e *echo.Echo) error {
 		e.GET("/assets/css/assets/fonts/*", echo.WrapHandler(http.StripPrefix("/assets/css/", assetHandler)))
 		e.GET("/assets/img/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
 	}
+
+	// Setup ignored vault keys which cannot be modified directly via the Vault API
+	ignoredVaultKeys = make([]string, 0, 1)
+	ignoredVaultKeys = append(ignoredVaultKeys, gaia.WorkerRegisterKey)
 
 	return nil
 }

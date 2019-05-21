@@ -1,18 +1,18 @@
 <template>
   <div class="tile is-vertical is-ancestor">
     <div class="tile is-parent">
-      <a class="button is-primary" style="margin-bottom: -10px;">
+      <a class="button is-primary" style="margin-bottom: -10px;" v-on:click="showResetSecretModal">
         <span class="icon">
           <i class="fa fa-trash"></i>
         </span>
-        <span>Reset registration code</span>
+        <span>Reset registration secret</span>
       </a>
     </div>
     <div class="tile">
       <div class="tile is-parent">
         <article class="tile is-child notification content-article box">
-          <span>Worker registration code: </span>
-          <message :direction="'down'" :message="registerCode" :duration="0"></message>
+          <span>Worker registration secret: </span>
+          <message :direction="'down'" :message="registerSecret" :duration="0"></message>
         </article>
       </div>
       <div class="tile is-parent">
@@ -72,7 +72,7 @@
 
     <!-- deregister worker modal -->
     <modal :visible="showDeregisterWorkerModal" class="modal-z-index" @close="close">
-      <div class="box deregister-modal">
+      <div class="box confirmation-modal">
         <article class="media">
           <div class="media-content">
             <div class="content">
@@ -81,9 +81,36 @@
                   style="color: whitesmoke;">Do you really want to deregister the worker {{ selectedWorker.name }}?</span>
               </p>
             </div>
-            <div class="deregister-modal-footer">
+            <div class="confirmation-modal-footer">
               <div style="float: left;">
                 <button class="button is-primary" v-on:click="deregisterWorker" style="width:150px;">Yes</button>
+              </div>
+              <div style="float: right;">
+                <button class="button is-danger" v-on:click="close" style="width:130px;">No</button>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </modal>
+
+    <!-- reset global worker registration secret modal -->
+    <modal :visible="showResetWorkerSecretModal" class="modal-z-index" @close="close">
+      <div class="box confirmation-modal">
+        <article class="media">
+          <div class="media-content">
+            <div class="content">
+              <p>
+                <span style="color: whitesmoke;">
+                  This will reset the global worker registration secret and generates a new one.
+                  Workers which are already registered will not be affected by this action.
+                  Do you really want to reset the global worker registration secret?
+                </span>
+              </p>
+            </div>
+            <div class="confirmation-modal-footer">
+              <div style="float: left;">
+                <button class="button is-primary" v-on:click="resetWorkerSecret" style="width:150px;">Yes</button>
               </div>
               <div style="float: right;">
                 <button class="button is-danger" v-on:click="close" style="width:130px;">No</button>
@@ -131,7 +158,7 @@
     components: {Tabs, TabPane, Message, Modal},
     data () {
       return {
-        registerCode: '',
+        registerSecret: '',
         statusView: {},
         workerColumns: [
           {
@@ -157,6 +184,7 @@
         ],
         workerRows: [],
         showDeregisterWorkerModal: false,
+        showResetWorkerSecretModal: false,
         selectedWorker: {}
       }
     },
@@ -185,7 +213,7 @@
           .get('/api/v1/worker/secret', {showProgressBar: false})
           .then(response => {
             if (response.data) {
-              this.registerCode = response.data
+              this.registerSecret = response.data
             }
           })
           .catch((error) => {
@@ -237,7 +265,22 @@
             this.close()
           })
           .catch((error) => {
-            this.$store.commit('clearIntervals')
+            this.$onError(error)
+          })
+      },
+      resetWorkerSecret () {
+        this.$http
+          .post('/api/v1/worker/secret')
+          .then(response => {
+            openNotification({
+              title: 'Secret reset successful',
+              message: 'Successfully generated and stored a new global worker registration secret.',
+              type: 'success'
+            })
+            this.fetchData()
+            this.close()
+          })
+          .catch((error) => {
             this.$onError(error)
           })
       },
@@ -245,9 +288,13 @@
         this.selectedWorker = worker
         this.showDeregisterWorkerModal = true
       },
+      showResetSecretModal () {
+        this.showResetWorkerSecretModal = true
+      },
       close () {
         this.selectedWorker = {}
         this.showDeregisterWorkerModal = false
+        this.showResetWorkerSecretModal = false
       },
       convertTime (time) {
         return moment(time).fromNow()
@@ -290,12 +337,12 @@
     color: whitesmoke;
   }
 
-  .deregister-modal {
+  .confirmation-modal {
     text-align: center;
     background-color: #2a2735;
   }
 
-  .deregister-modal-footer {
+  .confirmation-modal-footer {
     height: 45px;
     padding-top: 15px;
   }

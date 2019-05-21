@@ -219,7 +219,7 @@ var (
 					APIEndpoint: []*gaia.UserRoleEndpoint{
 						NewUserRoleEndpoint("POST", "/api/v1/worker/register"),
 					},
-					Description: "Register new worker at this Gaia instance.",
+					Description: "Register new worker at this Gaia primary instance.",
 				},
 				{
 					Name: "GetOverview",
@@ -227,6 +227,27 @@ var (
 						NewUserRoleEndpoint("GET", "/api/v1/worker/status"),
 					},
 					Description: "Get status overview of all workers.",
+				},
+				{
+					Name: "GetWorker",
+					APIEndpoint: []*gaia.UserRoleEndpoint{
+						NewUserRoleEndpoint("GET", "/api/v1/worker"),
+					},
+					Description: "Get all worker for the worker overview table.",
+				},
+				{
+					Name: "DeregisterWorker",
+					APIEndpoint: []*gaia.UserRoleEndpoint{
+						NewUserRoleEndpoint("DELETE", "/api/v1/worker/:workerid"),
+					},
+					Description: "Deregister a worker from the Gaia primary instance.",
+				},
+				{
+					Name: "ResetWorkerRegisterSecret",
+					APIEndpoint: []*gaia.UserRoleEndpoint{
+						NewUserRoleEndpoint("POST", "/api/v1/worker/secret"),
+					},
+					Description: "Reset the global worker registration secret.",
 				},
 			},
 		},

@@ -4,12 +4,13 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/gaia-pipeline/gaia/workers/pipeline"
+
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/flag"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
@@ -17,7 +18,7 @@ import (
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/agent"
 	"github.com/gaia-pipeline/gaia/workers/server"
-	"github.com/hashicorp/go-hclog"
+	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
 
@@ -208,8 +209,6 @@ func Start() (err error) {
 			// Secret hasn't been generated yet
 			gaia.Cfg.Logger.Info("global worker registration secret has not been generated yet. Will generate it now...")
 			secret = []byte(security.GenerateRandomUUIDV5())
-			// TODO: Remove below output
-			gaia.Cfg.Logger.Info("global secret", "secret", string(secret))
 
 			// Store secret in vault
 			v.Add(gaia.WorkerRegisterKey, secret)

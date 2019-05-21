@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/security"
+
 	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
@@ -235,4 +237,33 @@ func GetWorker(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, db.GetAllWorker())
+}
+
+// ResetWorkerRegisterSecret generates a new global worker registration secret
+func ResetWorkerRegisterSecret(c echo.Context) error {
+	// Get vault service
+	v, err := services.VaultService(nil)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot get vault service from service store", "error", err)
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	// Load all secrets
+	err = v.LoadSecrets()
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to load secrets from vault", "error", err)
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	// Generate a new global worker secret
+	secret := []byte(security.GenerateRandomUUIDV5())
+
+	// Add secret and store it
+	v.Add(gaia.WorkerRegisterKey, secret)
+	if err := v.SaveSecrets(); err != nil {
+		gaia.Cfg.Logger.Error("failed to store secrets in vault", "error", err)
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.String(http.StatusOK, "global worker registration secret has been successfully reset")
 }
