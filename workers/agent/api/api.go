@@ -20,10 +20,14 @@ type RegisterResponse struct {
 // RegisterWorker registers a new worker at a Gaia instance.
 // It uses the given secret for authentication and returns certs
 // which can be used for a future mTLS connection.
-func RegisterWorker(host, secret string, tags []string) (*RegisterResponse, error) {
+func RegisterWorker(host, secret, name string, tags []string) (*RegisterResponse, error) {
 	fullUrl := fmt.Sprintf("%s/api/v1/worker/register", host)
 	resp, err := http.PostForm(fullUrl,
-		url.Values{"secret": {secret}, "tags": tags})
+		url.Values{
+			"secret": {secret},
+			"tags":   tags,
+			"name":   {name},
+		})
 	if err != nil {
 		return nil, err
 	}

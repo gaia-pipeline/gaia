@@ -108,7 +108,7 @@ func (a *Agent) StartAgent() error {
 		// If there is an error, no matter if no certificates exist or
 		// we cannot load them, we try the registration process to register
 		// the worker again.
-		regResp, err := api.RegisterWorker(gaia.Cfg.WorkerHostURL, gaia.Cfg.WorkerSecret, tags)
+		regResp, err := api.RegisterWorker(gaia.Cfg.WorkerHostURL, gaia.Cfg.WorkerSecret, gaia.Cfg.WorkerName, tags)
 		if err != nil {
 			return fmt.Errorf("failed to register worker: %s", err.Error())
 		}

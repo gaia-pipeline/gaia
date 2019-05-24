@@ -185,6 +185,7 @@ type Pipeline struct {
 	IsNotValid        bool         `json:"notvalid,omitempty"`
 	PeriodicSchedules []string     `json:"periodicschedules,omitempty"`
 	TriggerToken      string       `json:"trigger_token,omitempty"`
+	Tags              []string     `json:"tags,omitempty"`
 	CronInst          *cron.Cron   `json:"-"`
 }
 

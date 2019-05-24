@@ -40,7 +40,7 @@ var fs *flag.FlagSet
 func init() {
 	// set configuration file name for run-time arguments
 
-	// set a prefix for environment properties so they are destinct to Gaia
+	// set a prefix for environment properties so they are distinct to Gaia
 	fs = flag.NewFlagSetWithEnvPrefix(os.Args[0], "GAIA", 0)
 
 	// set the configuration filename
@@ -59,6 +59,7 @@ func init() {
 	fs.BoolVar(&gaia.Cfg.Poll, "poll", false, "Instead of using a Webhook, keep polling git for changes on pipelines")
 	fs.IntVar(&gaia.Cfg.PVal, "pval", 1, "The interval in minutes in which to poll vcs for changes")
 	fs.StringVar(&gaia.Cfg.ModeRaw, "mode", "server", "The mode in which gaia should be started. Possible options are server and worker")
+	fs.StringVar(&gaia.Cfg.WorkerName, "workername", "", "The name of the worker which will be displayed at the primary instance")
 	fs.StringVar(&gaia.Cfg.WorkerHostURL, "hosturl", "http://localhost:8080", "The host url of an gaia instance to connect to. Only used in worker mode")
 	fs.StringVar(&gaia.Cfg.WorkerGRPCHostURL, "grpchosturl", "localhost:8989", "The host url of an gaia instance gRPC interface used for worker connection. Only used in worker mode")
 	fs.StringVar(&gaia.Cfg.WorkerSecret, "workersecret", "", "The secret which is used to register a worker at an gaia instance")
