@@ -381,19 +381,18 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*
 
 // executeJob executes a job and informs via triggerSave that the job can be saved to the store.
 // This method is blocking.
-func executeJob(j *gaia.Job, pS plugin.Plugin, triggerSave chan *gaia.Job) {
-	defer func() {
-		triggerSave <- j
-	}()
-
+func executeJob(j *gaia.Job, pS plugin.Plugin, triggerSave chan gaia.Job) {
 	// Set Job to running and trigger save
 	j.Status = gaia.JobRunning
-	triggerSave <- j
+	triggerSave <- *j
 
 	// Execute job
 	if err := pS.Execute(j); err != nil {
 		gaia.Cfg.Logger.Debug("error during job execution", "error", err.Error(), "job", j)
 	}
+
+	// Trigger another save to store the result of the execute
+	triggerSave <- *j
 }
 
 // checkCircularDep checks for circular dependencies.
@@ -518,15 +517,15 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS plugin.Plugin) {
 
 	// Iterate all jobs from this run
 	mw := newManagedWorkloads()
-	for _, job := range r.Jobs {
+	for id := range r.Jobs {
 		// Create new workload object
 		mw.Append(workload{
-			job:         job,
+			job:         r.Jobs[id],
 			finishedSig: make(chan bool),
 		})
 
 		// Start resolving go routine for this job
-		go s.resolveDependencies(job, mw, executeScheduler, done)
+		go s.resolveDependencies(r.Jobs[id], mw, executeScheduler, done)
 	}
 
 	// Create a new ticker (scheduled go routine) which periodically
@@ -548,7 +547,7 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS plugin.Plugin) {
 	}()
 
 	// Separate channel to save updates about the status of job executions.
-	triggerSave := make(chan *gaia.Job)
+	triggerSave := make(chan gaia.Job)
 
 	// Let's loop until we are done
 	var finalize bool
@@ -579,15 +578,6 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS plugin.Plugin) {
 		case j, ok := <-triggerSave:
 			if !ok {
 				break
-			}
-
-			// Filter out the job
-			for id, job := range r.Jobs {
-				if job.ID == j.ID {
-					r.Jobs[id].Status = j.Status
-					r.Jobs[id].FailPipeline = j.FailPipeline
-					break
-				}
 			}
 
 			// Store status update

@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gaia-pipeline/gaia"
 	proto "github.com/gaia-pipeline/protobuf"
@@ -20,6 +21,9 @@ import (
 
 type fakeCAAPI struct{}
 
+func (c *fakeCAAPI) CreateSignedCertWithValidOpts(hostname string, hoursBeforeValid, hoursAfterValid time.Duration) (string, string, error) {
+	return "", "", nil
+}
 func (c *fakeCAAPI) CreateSignedCert() (string, string, error) { return "", "", nil }
 func (c *fakeCAAPI) GenerateTLSConfig(certPath, keyPath string) (*tls.Config, error) {
 	return &tls.Config{}, nil
@@ -61,7 +65,7 @@ func (jc *fakeJobsClient) SendMsg(m interface{}) error  { return nil }
 func (jc *fakeJobsClient) RecvMsg(m interface{}) error  { return nil }
 
 func TestNewPlugin(t *testing.T) {
-	p := &Plugin{}
+	p := &GoPlugin{}
 	p.NewPlugin(new(fakeCAAPI))
 }
 
@@ -73,7 +77,7 @@ func TestInit(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	emptyPlugin := &Plugin{}
+	emptyPlugin := &GoPlugin{}
 	p := emptyPlugin.NewPlugin(new(fakeCAAPI))
 	logpath := filepath.Join(tmp, "test")
 	err := p.Init(exec.Command("echo", "world"), &logpath)
@@ -92,7 +96,7 @@ func TestValidate(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	p := &Plugin{clientProtocol: new(fakeClientProtocol)}
+	p := &GoPlugin{clientProtocol: new(fakeClientProtocol)}
 	err := p.Validate()
 	if err != nil {
 		t.Fatal(err)
@@ -106,7 +110,7 @@ func TestExecute(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	p := &Plugin{pluginConn: new(fakeGaiaPlugin)}
+	p := &GoPlugin{pluginConn: new(fakeGaiaPlugin)}
 	buf := new(bytes.Buffer)
 	p.writer = bufio.NewWriter(buf)
 	err := p.Execute(&gaia.Job{})
@@ -122,30 +126,12 @@ func TestGetJobs(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	p := &Plugin{pluginConn: new(fakeGaiaPlugin)}
+	p := &GoPlugin{pluginConn: new(fakeGaiaPlugin)}
 	buf := new(bytes.Buffer)
 	p.writer = bufio.NewWriter(buf)
 	_, err := p.GetJobs()
 	if err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestRebuildDepTree(t *testing.T) {
-	l := []gaia.Job{
-		{ID: 12345},
-		{ID: 1234},
-		{ID: 123},
-	}
-	dep := []uint32{1234, 123}
-	depTree := rebuildDepTree(dep, l)
-	if len(depTree) != 2 {
-		t.Fatalf("dependency length should be 2 but is %d", len(depTree))
-	}
-	for _, depJob := range depTree {
-		if depJob.ID != 1234 && depJob.ID != 123 {
-			t.Fatalf("wrong dependency detected %d", depJob.ID)
-		}
 	}
 }
 
@@ -157,7 +143,7 @@ func TestClose(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	emptyPlugin := &Plugin{}
+	emptyPlugin := &GoPlugin{}
 	p := emptyPlugin.NewPlugin(new(fakeCAAPI))
 	logpath := filepath.Join(tmp, "test")
 	p.Init(exec.Command("echo", "world"), &logpath)
@@ -172,7 +158,7 @@ func TestFlushLogs(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	emptyPlugin := &Plugin{}
+	emptyPlugin := &GoPlugin{}
 	p := emptyPlugin.NewPlugin(new(fakeCAAPI))
 	logpath := filepath.Join(tmp, "test")
 	p.Init(exec.Command("echo", "world"), &logpath)

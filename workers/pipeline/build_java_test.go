@@ -111,7 +111,7 @@ func TestCopyBinaryJava(t *testing.T) {
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = gaia.PTypeJava
-	p.Pipeline.Repo.LocalDest = tmp
+	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: tmp}
 	os.Mkdir(filepath.Join(tmp, mavenTargetFolder), 0744)
 	src := filepath.Join(tmp, mavenTargetFolder, javaFinalJarName)
 	dst := appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
@@ -148,7 +148,7 @@ func TestCopyBinarySrcDoesNotExistJava(t *testing.T) {
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = gaia.PTypeJava
-	p.Pipeline.Repo.LocalDest = "/noneexistent"
+	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: "/noneexistent"}
 	err := b.CopyBinary(p)
 	if err == nil {
 		t.Fatal("error was expected when copying binary but none occurred ")

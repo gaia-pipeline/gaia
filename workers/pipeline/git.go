@@ -139,7 +139,11 @@ func UpdateRepository(pipe *gaia.Pipeline) error {
 
 	gaia.Cfg.Logger.Debug("updating pipeline: ", "message", pipe.Name)
 	b := newBuildPipeline(pipe.Type)
-	createPipeline := &gaia.CreatePipeline{}
+	createPipeline := &gaia.CreatePipeline{
+		Pipeline: gaia.Pipeline{
+			Repo: &gaia.GitRepo{},
+		},
+	}
 	createPipeline.Pipeline = *pipe
 	b.ExecuteBuild(createPipeline)
 	b.CopyBinary(createPipeline)

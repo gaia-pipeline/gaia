@@ -41,18 +41,15 @@ func (mw *managedWorkloads) Append(wl workload) {
 
 // GetByID looks up the workload by the given id.
 func (mw *managedWorkloads) GetByID(id uint32) *workload {
-	var foundWorkload workload
+	var foundWorkload *workload
 	for wl := range mw.Iter() {
 		if wl.job.ID == id {
-			foundWorkload = wl
+			copyWL := wl
+			foundWorkload = &copyWL
 		}
 	}
 
-	if foundWorkload.job.Title == "" {
-		return nil
-	}
-
-	return &foundWorkload
+	return foundWorkload
 }
 
 // Replace takes the given workload and replaces it in the managedWorkloads

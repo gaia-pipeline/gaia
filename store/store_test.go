@@ -158,6 +158,9 @@ func TestCreatePipelinePut(t *testing.T) {
 		ID:         uuid.Must(uuid.NewV4(), nil).String(),
 		Created:    time.Now(),
 		StatusType: gaia.CreatePipelineRunning,
+		Pipeline: gaia.Pipeline{
+			Repo: &gaia.GitRepo{},
+		},
 	}
 	err = store.CreatePipelinePut(p)
 	if err != nil {
@@ -178,6 +181,9 @@ func TestCreatePipelineGet(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		p := gaia.CreatePipeline{
 			ID: uuid.Must(uuid.NewV4(), nil).String(),
+			Pipeline: gaia.Pipeline{
+				Repo: &gaia.GitRepo{},
+			},
 		}
 		err = store.CreatePipelinePut(&p)
 		if err != nil {
@@ -490,7 +496,7 @@ func TestPipelineGetAllRuns(t *testing.T) {
 		putUniqueIDs = append(putUniqueIDs, p.UniqueID)
 	}
 
-	pipelineRuns, err := store.PipelineGetAllRuns(1)
+	pipelineRuns, err := store.PipelineGetAllRuns()
 	if err != nil {
 		t.Fatal(err)
 	}

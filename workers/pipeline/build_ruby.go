@@ -42,7 +42,9 @@ func (b *BuildPipelineRuby) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	}
 
 	// Set new generated path in pipeline obj for later usage
-	p.Pipeline.Repo.LocalDest = cloneFolder
+	p.Pipeline.Repo = &gaia.GitRepo{
+		LocalDest: cloneFolder,
+	}
 	p.Pipeline.UUID = uuid.String()
 	return err
 }
@@ -56,10 +58,16 @@ func (b *BuildPipelineRuby) ExecuteBuild(p *gaia.CreatePipeline) error {
 		return err
 	}
 
+	// Set local destination
+	localDest := ""
+	if p.Pipeline.Repo != nil {
+		localDest = p.Pipeline.Repo.LocalDest
+	}
+
 	// Get all gemspec files in cloned folder.
-	gemspec, err := filterPathContentBySuffix(p.Pipeline.Repo.LocalDest, ".gemspec")
+	gemspec, err := filterPathContentBySuffix(localDest, ".gemspec")
 	if err != nil {
-		gaia.Cfg.Logger.Error("cannot find gemspec file in cloned repository folder", "path", p.Pipeline.Repo.LocalDest)
+		gaia.Cfg.Logger.Error("cannot find gemspec file in cloned repository folder", "path", localDest)
 		return err
 	}
 
@@ -89,7 +97,7 @@ func (b *BuildPipelineRuby) ExecuteBuild(p *gaia.CreatePipeline) error {
 
 	// The initial ruby file in the gem must be named like the gem name.
 	// We expect that the init file is always `gemInitFile`.
-	err = os.Rename(filepath.Join(p.Pipeline.Repo.LocalDest, "lib", gemInitFile), filepath.Join(p.Pipeline.Repo.LocalDest, "lib", uuid+".rb"))
+	err = os.Rename(filepath.Join(localDest, "lib", gemInitFile), filepath.Join(localDest, "lib", uuid+".rb"))
 	if err != nil {
 		gaia.Cfg.Logger.Debug("cannot rename initial ruby file", "error", err.Error(), "pipeline", p.Pipeline)
 		return err
@@ -102,7 +110,7 @@ func (b *BuildPipelineRuby) ExecuteBuild(p *gaia.CreatePipeline) error {
 	}
 
 	// Execute and wait until finish or timeout
-	output, err := executeCmd(path, args, os.Environ(), p.Pipeline.Repo.LocalDest)
+	output, err := executeCmd(path, args, os.Environ(), localDest)
 	p.Output = string(output)
 	if err != nil {
 		gaia.Cfg.Logger.Debug("cannot build pipeline", "error", err.Error(), "output", string(output))
@@ -110,7 +118,7 @@ func (b *BuildPipelineRuby) ExecuteBuild(p *gaia.CreatePipeline) error {
 	}
 
 	// Search for resulting gem file.
-	gemfile, err := filterPathContentBySuffix(p.Pipeline.Repo.LocalDest, ".gem")
+	gemfile, err := filterPathContentBySuffix(localDest, ".gem")
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot find final gem file after build", "path", p.Pipeline.Repo.LocalDest)
 		return err

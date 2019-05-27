@@ -37,7 +37,9 @@ func (b *BuildPipelinePython) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	}
 
 	// Set new generated path in pipeline obj for later usage
-	p.Pipeline.Repo.LocalDest = cloneFolder
+	p.Pipeline.Repo = &gaia.GitRepo{
+		LocalDest: cloneFolder,
+	}
 	p.Pipeline.UUID = uuid.String()
 	return err
 }
@@ -57,8 +59,14 @@ func (b *BuildPipelinePython) ExecuteBuild(p *gaia.CreatePipeline) error {
 		"sdist",
 	}
 
+	// Set local destination
+	localDest := ""
+	if p.Pipeline.Repo != nil {
+		localDest = p.Pipeline.Repo.LocalDest
+	}
+
 	// Execute and wait until finish or timeout
-	output, err := executeCmd(path, args, os.Environ(), p.Pipeline.Repo.LocalDest)
+	output, err := executeCmd(path, args, os.Environ(), localDest)
 	if err != nil {
 		gaia.Cfg.Logger.Debug("cannot generate python distribution package", "error", err.Error(), "output", string(output))
 		p.Output = string(output)

@@ -98,7 +98,7 @@ func TestExecuteBuildFailPipelineBuildGo(t *testing.T) {
 	})
 	b := new(BuildPipelineGolang)
 	p := new(gaia.CreatePipeline)
-	p.Pipeline.Repo.LocalDest = tmp
+	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: tmp}
 	err := b.ExecuteBuild(p)
 	if err == nil {
 		t.Fatal("error while running executebuild. none was expected")
@@ -177,7 +177,7 @@ func TestCopyBinaryGo(t *testing.T) {
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = "go"
-	p.Pipeline.Repo.LocalDest = tmp
+	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: tmp}
 	src := filepath.Join(tmp, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
 	dst := appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
 	f, _ := os.Create(src)
@@ -212,7 +212,7 @@ func TestCopyBinarySrcDoesNotExistGo(t *testing.T) {
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = "go"
-	p.Pipeline.Repo.LocalDest = "/noneexistent"
+	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: "/noneexistent"}
 	err := b.CopyBinary(p)
 	if err == nil {
 		t.Fatal("error was expected when copying binary but none occurred ")
