@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/gaia-pipeline/gaia/helper/filehelper"
-	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/gaia-pipeline/gaia/helper/filehelper"
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
@@ -83,6 +84,7 @@ func InitTicker() {
 			select {
 			case <-ticker.C:
 				checkActivePipelines()
+				updateWorker()
 			}
 		}
 	}()
@@ -212,7 +214,7 @@ func checkActivePipelines() {
 
 				// Iterate over all cron schedules.
 				for _, cron := range pipeline.PeriodicSchedules {
-					pipeline.CronInst.AddFunc(cron, func() {
+					err := pipeline.CronInst.AddFunc(cron, func() {
 						_, err := schedulerService.SchedulePipeline(pipeline, []*gaia.Argument{})
 						if err != nil {
 							gaia.Cfg.Logger.Error("cannot schedule pipeline from periodic schedule", "error", err, "pipeline", pipeline)
@@ -222,6 +224,9 @@ func checkActivePipelines() {
 						// Log scheduling information
 						gaia.Cfg.Logger.Info("pipeline has been automatically scheduled by periodic scheduling:", "name", pipeline.Name)
 					})
+					if err != nil {
+						gaia.Cfg.Logger.Error("failed to schedule periodic schedule", "error", err)
+					}
 				}
 
 				// Start schedule process.
@@ -242,6 +247,55 @@ func checkActivePipelines() {
 		}
 	}
 	GlobalActivePipelines.RemoveDeletedPipelines(existingPipelineNames)
+}
+
+// updateWorker checks the latest worker information and determines the status
+// of the worker.
+func updateWorker() {
+	// Get memdb service
+	db, err := services.MemDBService(nil)
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to get memdb service via updateWorker", "error", err)
+		return
+	}
+
+	// Get all worker
+	workers := db.GetAllWorker()
+
+	// The maximum last contact time is time.Now() - 5 minutes.
+	// Workers with older last contact time will be marked inactive.
+	lastContactTime := time.Now().Add(-5 * time.Minute)
+
+	// Iterate all worker
+	for _, worker := range workers {
+		asyncUpdate := false
+		fmt.Printf("lastContactTime: %s\n", lastContactTime.String())
+		if worker.LastContact.Before(lastContactTime) {
+			if worker.Status == gaia.WorkerActive {
+				fmt.Printf("Worker inactive!\n")
+				// Last contact was more than 5 minutes ago.
+				// Worker is now marked as inactive.
+				worker.Status = gaia.WorkerInactive
+
+				asyncUpdate = true
+			}
+		} else if worker.Status == gaia.WorkerInactive {
+			// Worker is marked inactive but we got contact.
+			// Mark it as healthy.
+			worker.Status = gaia.WorkerActive
+
+			asyncUpdate = true
+		}
+
+		// Update async
+		if asyncUpdate {
+			go func() {
+				if err := db.UpsertWorker(worker, true); err != nil {
+					gaia.Cfg.Logger.Error("failed to store update to worker via updateWorker", "error", err)
+				}
+			}()
+		}
+	}
 }
 
 // getPipelineType looks up for specific suffix on the given file name.

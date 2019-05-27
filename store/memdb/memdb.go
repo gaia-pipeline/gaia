@@ -2,8 +2,9 @@ package memdb
 
 import (
 	"errors"
-	"strings"
 	"time"
+
+	"github.com/gaia-pipeline/gaia/helper/stringhelper"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/store"
@@ -261,6 +262,7 @@ func (m *MemDB) PopPipelineRun(tags []string) (*gaia.PipelineRun, error) {
 	// Iterate through all items
 	var oldestPipelineRunID string
 	var oldestPipelineRunDate time.Time
+RUN_LOOP:
 	for {
 		item := iter.Next()
 		if item == nil {
@@ -274,16 +276,17 @@ func (m *MemDB) PopPipelineRun(tags []string) (*gaia.PipelineRun, error) {
 			continue
 		}
 
-		// Filter by tags
-		validTagFound := false
-		for _, tag := range tags {
-			if strings.EqualFold(tag, pipelineRun.PipelineType.String()) {
-				validTagFound = true
-				break
-			}
-		}
-		if !validTagFound {
+		// Filter by pipeline type
+		if !stringhelper.IsContainedInSlice(tags, pipelineRun.PipelineType.String(), true) {
 			continue
+		}
+
+		// Filter by tags
+		for _, pipelineTag := range pipelineRun.PipelineTags {
+			// Find a match
+			if !stringhelper.IsContainedInSlice(tags, pipelineTag, true) {
+				continue RUN_LOOP
+			}
 		}
 
 		// Check if the current pipeline run is older than the previous one

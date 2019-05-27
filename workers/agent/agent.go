@@ -42,6 +42,9 @@ const (
 
 	// idMDKey is the key used for the gRPC metadata map.
 	idMDKey = "uniqueid"
+
+	// defaultHostname is the default hostname set for the mTLS certificate.
+	defaultHostname = "gaia-pipeline.io"
 )
 
 // Agent represents an instance of an agent
@@ -676,7 +679,7 @@ func (a *Agent) generateClientTLSCreds() (credentials.TransportCredentials, erro
 	}
 
 	return credentials.NewTLS(&tls.Config{
-		ServerName:   gaia.Cfg.WorkerName,
+		ServerName:   defaultHostname,
 		Certificates: []tls.Certificate{certs},
 		RootCAs:      certPool,
 	}), nil

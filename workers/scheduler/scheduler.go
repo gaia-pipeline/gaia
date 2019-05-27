@@ -252,16 +252,16 @@ func (s *Scheduler) schedule() {
 		// Only in case all workers are busy we will schedule work on the server.
 		workers := s.memDBService.GetAllWorker()
 		if gaia.Cfg.Mode == gaia.ModeServer && len(workers) > 0 {
-			// Check if all workers are busy
-			busyWorkers := 0
+			// Check if all workers are busy / inactive
+			invalidWorkers := 0
 			for _, w := range workers {
-				if w.Slots == 0 {
-					busyWorkers++
+				if w.Slots == 0 || w.Status != gaia.WorkerActive {
+					invalidWorkers++
 				}
 			}
 
 			// Insert pipeline run into memdb where all workers get their work from
-			if len(workers) > busyWorkers {
+			if len(workers) > invalidWorkers {
 				if err := s.memDBService.InsertPipelineRun(scheduled[id]); err != nil {
 					gaia.Cfg.Logger.Error("failed to insert pipeline run into memdb via schedule", "error", err.Error())
 				}
@@ -372,6 +372,7 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*
 		Jobs:         jobs,
 		Status:       gaia.RunNotScheduled,
 		PipelineType: p.Type,
+		PipelineTags: p.Tags,
 	}
 
 	// Put run into store

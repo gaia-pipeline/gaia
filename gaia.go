@@ -249,6 +249,7 @@ type PipelineRun struct {
 	Status       PipelineRunStatus `json:"status,omitempty"`
 	Jobs         []*Job            `json:"jobs,omitempty"`
 	PipelineType PipelineType      `json:"pipelinetype,omitempty"`
+	PipelineTags []string          `json:"pipelinetags,omitempty"`
 }
 
 // Worker represents a single registered worker.
