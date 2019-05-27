@@ -28,7 +28,7 @@ type mockScheduleService struct {
 	err         error
 }
 
-func (ms *mockScheduleService) SchedulePipeline(p *gaia.Pipeline, args []gaia.Argument) (*gaia.PipelineRun, error) {
+func (ms *mockScheduleService) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error) {
 	return ms.pipelineRun, ms.err
 }
 

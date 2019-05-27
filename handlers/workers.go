@@ -77,6 +77,11 @@ func RegisterWorker(c echo.Context) error {
 		gaia.Cfg.Logger.Error("cannot create signed certificate", "error", err.Error())
 		return c.String(http.StatusInternalServerError, "cannot create signed certificate")
 	}
+	defer func() {
+		if err := cert.CleanupCerts(crtPath, keyPath); err != nil {
+			gaia.Cfg.Logger.Error("failed to remove worker certificates", "error", err)
+		}
+	}()
 
 	// Get public cert from CA (required for mTLS)
 	caCertPath, _ := cert.GetCACertPath()
@@ -98,7 +103,7 @@ func RegisterWorker(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "cannot load key")
 	}
 
-	// Encode all certificates base64 to prevent inconsistency during transport
+	// Encode all certificates base64 to prevent character issues during transportation
 	crtB64 := base64.StdEncoding.EncodeToString([]byte(crt))
 	keyB64 := base64.StdEncoding.EncodeToString([]byte(key))
 	caCertB64 := base64.StdEncoding.EncodeToString([]byte(caCert))
