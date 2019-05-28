@@ -41,11 +41,12 @@ func (b *BuildPipelineJava) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	}
 
 	// Set new generated path in pipeline obj for later usage
-	p.Pipeline.Repo = &gaia.GitRepo{
-		LocalDest: cloneFolder,
+	if p.Pipeline.Repo == nil {
+		p.Pipeline.Repo = &gaia.GitRepo{}
 	}
+	p.Pipeline.Repo.LocalDest = cloneFolder
 	p.Pipeline.UUID = uuid.String()
-	return err
+	return nil
 }
 
 // ExecuteBuild executes the java build process

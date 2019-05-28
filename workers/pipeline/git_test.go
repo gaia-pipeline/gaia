@@ -207,10 +207,12 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 
 	p1 := new(gaia.Pipeline)
 	p1.Name = "main"
+	p1.Repo = &gaia.GitRepo{}
 	p1.Repo.SelectedBranch = "refs/heads/master"
 	p1.Repo.LocalDest = "tmp"
 	p2 := new(gaia.Pipeline)
 	p2.Name = "main"
+	p2.Repo = &gaia.GitRepo{}
 	p2.Repo.SelectedBranch = "refs/heads/master"
 	p2.Repo.LocalDest = "tmp"
 	GlobalActivePipelines = NewActivePipelines()

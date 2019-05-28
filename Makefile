@@ -34,10 +34,10 @@ get:
 	go get ./...
 
 test:
-	go test -v ./...
+	go test -v -timeout 20s ./...
 
 test-cover:
-	go test -v ./... --coverprofile=cover.out
+	go test -v -timeout 20s ./... --coverprofile=cover.out
 
 test-acc:
 	GAIA_RUN_ACC=true GAIA_DEV=true go test -v $(TEST) -timeout=$(TEST_TIMEOUT)
