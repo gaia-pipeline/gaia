@@ -86,8 +86,8 @@ func TestRegisterWorker(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		if err := RegisterWorker(c); err != nil {
-			t.Fatal(err)
+		if err := RegisterWorker(c); err == nil {
+			t.Fatal("error was expected but is nil")
 		}
 
 		if rec.Code != http.StatusForbidden {
