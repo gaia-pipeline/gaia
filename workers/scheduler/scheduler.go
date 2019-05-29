@@ -92,11 +92,6 @@ type Scheduler struct {
 
 // NewScheduler creates a new instance of Scheduler.
 func NewScheduler(store store.GaiaStore, db memdb.GaiaMemDB, pS plugin.Plugin, ca security.CAAPI, vault security.VaultAPI) (*Scheduler, error) {
-	// Defense-in-depth check to make sure all needed services are existing
-	if store == nil {
-		return nil, errors.New("store does not exist")
-	}
-
 	// Create new scheduler
 	s := &Scheduler{
 		scheduledRuns: make(chan gaia.PipelineRun, schedulerBufferLimit),

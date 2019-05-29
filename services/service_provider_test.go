@@ -48,7 +48,9 @@ func TestSchedulerService(t *testing.T) {
 	if schedulerService != nil {
 		t.Fatal("initial service should be nil. was: ", schedulerService)
 	}
-	StorageService()
+	if _, err := StorageService(); err != nil {
+		t.Fatal(err)
+	}
 	sService, err := SchedulerService()
 	if err != nil {
 		t.Fatal(err)
