@@ -56,7 +56,7 @@ var (
 
 // GaiaScheduler is a job scheduler for gaia pipeline runs.
 type GaiaScheduler interface {
-	Init() error
+	Init()
 	SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error)
 	SetPipelineJobs(p *gaia.Pipeline) error
 	StopPipelineRun(p *gaia.Pipeline, runID int) error
@@ -91,7 +91,12 @@ type Scheduler struct {
 }
 
 // NewScheduler creates a new instance of Scheduler.
-func NewScheduler(store store.GaiaStore, db memdb.GaiaMemDB, pS plugin.Plugin, ca security.CAAPI, vault security.VaultAPI) *Scheduler {
+func NewScheduler(store store.GaiaStore, db memdb.GaiaMemDB, pS plugin.Plugin, ca security.CAAPI, vault security.VaultAPI) (*Scheduler, error) {
+	// Defense-in-depth check to make sure all needed services are existing
+	if store == nil {
+		return nil, errors.New("store does not exist")
+	}
+
 	// Create new scheduler
 	s := &Scheduler{
 		scheduledRuns: make(chan gaia.PipelineRun, schedulerBufferLimit),
@@ -103,11 +108,11 @@ func NewScheduler(store store.GaiaStore, db memdb.GaiaMemDB, pS plugin.Plugin, c
 		freeWorkers:   new(int32),
 	}
 
-	return s
+	return s, nil
 }
 
 // Init initializes the scheduler.
-func (s *Scheduler) Init() error {
+func (s *Scheduler) Init() {
 	// Setup worker
 	for i := 0; i < gaia.Cfg.Worker; i++ {
 		go s.work()
@@ -124,8 +129,6 @@ func (s *Scheduler) Init() error {
 			}
 		}
 	}()
-
-	return nil
 }
 
 // work takes work from the scheduled run buffer channel and starts

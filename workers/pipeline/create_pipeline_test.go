@@ -31,7 +31,7 @@ type mockScheduler struct {
 	Error error
 }
 
-func (ms *mockScheduler) Init() error { return nil }
+func (ms *mockScheduler) Init() {}
 func (ms *mockScheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error) {
 	return nil, nil
 }

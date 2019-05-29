@@ -63,12 +63,11 @@ func SchedulerService() (scheduler.GaiaScheduler, error) {
 		return schedulerService, nil
 	}
 	pS := &plugin.GoPlugin{}
-	schedulerService = scheduler.NewScheduler(storeService, memDBService, pS, certificateService, vaultService)
-	err := schedulerService.Init()
+	schedulerService, err := scheduler.NewScheduler(storeService, memDBService, pS, certificateService, vaultService)
 	if err != nil {
-		gaia.Cfg.Logger.Error("cannot initialize scheduler:", "error", err.Error())
-		return schedulerService, err
+		return nil, err
 	}
+	schedulerService.Init()
 	return schedulerService, nil
 }
 
