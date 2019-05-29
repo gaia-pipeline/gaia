@@ -92,7 +92,9 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 			gaia.Cfg.Logger.Error("failed to stream pipeline run to worker instance", "error", err.Error(), "worker", workInst)
 
 			// Insert pipeline run back into memdb since we have popped it
-			db.InsertPipelineRun(scheduled)
+			if errtwo := db.InsertPipelineRun(scheduled); errtwo != nil {
+				gaia.Cfg.Logger.Error("failed to insert pipeline run into memdb", "error", errtwo, "originalerr", err)
+			}
 			return err
 		}
 	}
