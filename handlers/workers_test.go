@@ -71,7 +71,9 @@ func TestRegisterWorker(t *testing.T) {
 
 	// Initialize echo
 	e := echo.New()
-	InitHandlers(e)
+	if err := InitHandlers(e); err != nil {
+		t.Fatal(err)
+	}
 
 	// Test with wrong global secret
 	t.Run("wrong global secret", func(t *testing.T) {
@@ -84,7 +86,9 @@ func TestRegisterWorker(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		RegisterWorker(c)
+		if err := RegisterWorker(c); err != nil {
+			t.Fatal(err)
+		}
 
 		if rec.Code != http.StatusForbidden {
 			t.Fatalf("expected response code %v got %v", http.StatusForbidden, rec.Code)
@@ -111,7 +115,9 @@ func TestRegisterWorker(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		RegisterWorker(c)
+		if err := RegisterWorker(c); err != nil {
+			t.Fatal(err)
+		}
 
 		bodyBytes, err := ioutil.ReadAll(rec.Body)
 		if err != nil {

@@ -205,11 +205,11 @@ func Start() (err error) {
 		}
 
 		// Generate global worker secret if it does not exist
-		secret, err := v.Get(gaia.WorkerRegisterKey)
+		_, err = v.Get(gaia.WorkerRegisterKey)
 		if err != nil {
 			// Secret hasn't been generated yet
 			gaia.Cfg.Logger.Info("global worker registration secret has not been generated yet. Will generate it now...")
-			secret = []byte(security.GenerateRandomUUIDV5())
+			secret := []byte(security.GenerateRandomUUIDV5())
 
 			// Store secret in vault
 			v.Add(gaia.WorkerRegisterKey, secret)
