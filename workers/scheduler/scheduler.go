@@ -381,18 +381,18 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*
 
 // executeJob executes a job and informs via triggerSave that the job can be saved to the store.
 // This method is blocking.
-func executeJob(j *gaia.Job, pS plugin.Plugin, triggerSave chan gaia.Job) {
+func executeJob(j gaia.Job, pS plugin.Plugin, triggerSave chan gaia.Job) {
 	// Set Job to running and trigger save
 	j.Status = gaia.JobRunning
-	triggerSave <- *j
+	triggerSave <- j
 
 	// Execute job
-	if err := pS.Execute(j); err != nil {
+	if err := pS.Execute(&j); err != nil {
 		gaia.Cfg.Logger.Debug("error during job execution", "error", err.Error(), "job", j)
 	}
 
 	// Trigger another save to store the result of the execute
-	triggerSave <- *j
+	triggerSave <- j
 }
 
 // checkCircularDep checks for circular dependencies.
@@ -580,6 +580,15 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS plugin.Plugin) {
 				break
 			}
 
+			// Filter out the job and update the real job
+			for id, job := range r.Jobs {
+				if job.ID == j.ID {
+					r.Jobs[id].Status = j.Status
+					r.Jobs[id].FailPipeline = j.FailPipeline
+					break
+				}
+			}
+
 			// Store status update
 			s.storeService.PipelinePutRun(r)
 
@@ -670,7 +679,7 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS plugin.Plugin) {
 				mw.Replace(*wl)
 
 				// Start execution
-				go executeJob(j, pS, triggerSave)
+				go executeJob(*j, pS, triggerSave)
 			}
 		}
 	}
