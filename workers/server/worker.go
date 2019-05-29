@@ -378,6 +378,7 @@ func (w *WorkServer) StreamLogs(stream pb.Worker_StreamLogsServer) error {
 	return nil
 }
 
+// Deregister removes a worker from this primary instance by deleting the object from store.
 func (w *WorkServer) Deregister(ctx context.Context, workInst *pb.WorkerInstance) (*empty.Empty, error) {
 	e := &empty.Empty{}
 

@@ -352,7 +352,7 @@ func (s *BoltStore) PipelineDelete(id int) error {
 	})
 }
 
-// PipelineRunsDelete deletes the pipeline run with the given id.
+// PipelineRunDelete deletes the pipeline run with the given id.
 func (s *BoltStore) PipelineRunDelete(uniqueID string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		// Get bucket

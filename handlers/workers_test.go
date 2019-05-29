@@ -37,6 +37,7 @@ func TestRegisterWorker(t *testing.T) {
 		DataPath:     tmp,
 		HomePath:     tmp,
 		PipelinePath: tmp,
+		DevMode:      true,
 	}
 
 	// Initialize store
