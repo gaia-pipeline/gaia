@@ -22,7 +22,7 @@ type PipelineRunStatus string
 // JobStatus represents the different status a job can have
 type JobStatus string
 
-// GaiaMode represents the different modes for Gaia
+// Mode represents the different modes for Gaia
 type Mode string
 
 // WorkerStatus represents the different status a worker can have
