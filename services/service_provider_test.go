@@ -246,7 +246,9 @@ func TestCanMockServiceToNil(t *testing.T) {
 			t.Fatalf("want type: '%s' got: '%s'", "testMockMemDBService", reflect.TypeOf(s1).String())
 		}
 		MockMemDBService(nil)
-		s2, _ := MemDBService(nil)
+		msp := new(testMockStorageService)
+		MockStorageService(msp)
+		s2, _ := MemDBService(storeService)
 		if reflect.TypeOf(s2).String() == "*services.testMockMemDBService" {
 			t.Fatalf("got: '%s'", reflect.TypeOf(s2).String())
 		}
