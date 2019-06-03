@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/gaia-pipeline/gaia/store/memdb"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
@@ -111,6 +113,38 @@ func TestCertificateService(t *testing.T) {
 	}
 }
 
+func TestMemDBService(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestMemDBService")
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.HomePath = tmp
+	gaia.Cfg.DataPath = tmp
+	gaia.Cfg.CAPath = tmp
+	gaia.Cfg.VaultPath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
+	if memDBService != nil {
+		t.Fatal("initial service should be nil. was: ", memDBService)
+	}
+	if _, err := StorageService(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := MemDBService(storeService); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		memDBService = nil
+		storeService = nil
+	}()
+
+	if memDBService == nil {
+		t.Fatal("service should not be nil")
+	}
+}
+
 type testMockStorageService struct {
 	store.GaiaStore
 }
@@ -125,6 +159,10 @@ type testMockCertificateService struct {
 
 type testMockVaultService struct {
 	security.VaultAPI
+}
+
+type testMockMemDBService struct {
+	memdb.GaiaMemDB
 }
 
 func TestCanMockServiceToNil(t *testing.T) {
@@ -196,6 +234,20 @@ func TestCanMockServiceToNil(t *testing.T) {
 		MockVaultService(nil)
 		s2, _ := VaultService(nil)
 		if reflect.TypeOf(s2).String() == "*services.testMockVaultService" {
+			t.Fatalf("got: '%s'", reflect.TypeOf(s2).String())
+		}
+	})
+
+	t.Run("can mock memdb to nil", func(t *testing.T) {
+		mcp := new(testMockMemDBService)
+		MockMemDBService(mcp)
+		s1, _ := MemDBService(nil)
+		if reflect.TypeOf(s1).String() != "*services.testMockMemDBService" {
+			t.Fatalf("want type: '%s' got: '%s'", "testMockMemDBService", reflect.TypeOf(s1).String())
+		}
+		MockMemDBService(nil)
+		s2, _ := MemDBService(nil)
+		if reflect.TypeOf(s2).String() == "*services.testMockMemDBService" {
 			t.Fatalf("got: '%s'", reflect.TypeOf(s2).String())
 		}
 	})

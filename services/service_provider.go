@@ -133,3 +133,9 @@ func MemDBService(store store.GaiaStore) (memdb.GaiaMemDB, error) {
 	memDBService = db
 	return memDBService, nil
 }
+
+// MockMemDBService provides a way to create and set a mock
+// for the internal memdb service manager.
+func MockMemDBService(db memdb.GaiaMemDB) {
+	memDBService = db
+}
