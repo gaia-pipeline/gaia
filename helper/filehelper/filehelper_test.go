@@ -23,7 +23,9 @@ func TestGetSHA256Sum(t *testing.T) {
 		t.Fatal(err)
 	}
 	h := sha256.New()
-	h.Write(sumText)
+	if _, err := h.Write(sumText); err != nil {
+		t.Fatal(err)
+	}
 	if bytes.Compare(h.Sum(nil), calcSha) != 0 {
 		t.Fatal("bytes are not identical")
 	}
