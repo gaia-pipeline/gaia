@@ -2,7 +2,7 @@
   <div class="tile is-ancestor">
     <div class="tile is-vertical">
       <tabs type="boxed" :is-fullwidth="false" alignment="centered" size="large">
-        <tab-pane label="Manage Users" icon="fa fa-user-circle">
+        <tab-pane label="Users" icon="fa fa-user-circle">
           <div class="tile is-ancestor">
             <div class="tile is-vertical">
               <div class="tile is-parent">
@@ -51,10 +51,10 @@
             </div>
           </div>
         </tab-pane>
-        <tab-pane label="Manage Permissions" icon="fa fa-users">
+        <tab-pane label="Permissions" icon="fa fa-users">
           <manage-permissions :users="userRows"/>
         </tab-pane>
-        <tab-pane label="Manage Pipelines" icon="fa fa-cog">
+        <tab-pane label="Pipelines" icon="fa fa-cog">
           <div class="tile is-ancestor">
             <div class="tile is-vertical">
               <div class="tile is-parent">
@@ -103,10 +103,10 @@
             </div>
           </div>
         </tab-pane>
-        <tab-pane label="Manage Settings" icon="fa fa-wrench">
+        <tab-pane label="Settings" icon="fa fa-wrench">
           <manage-settings/>
         </tab-pane>
-        <tab-pane label="Manage Worker" icon="fa fa-wrench">
+        <tab-pane label="Worker" icon="fa fa-wrench">
           <manage-worker/>
         </tab-pane>
       </tabs>

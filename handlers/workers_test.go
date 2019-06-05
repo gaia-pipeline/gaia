@@ -88,7 +88,7 @@ func TestRegisterWorker(t *testing.T) {
 			Secret: "random-wrong-secret",
 		}
 		bodyBytes, _ := json.Marshal(body)
-		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/worker/register", bytes.NewBuffer(bodyBytes))
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/worker", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -117,7 +117,7 @@ func TestRegisterWorker(t *testing.T) {
 			Tags:   []string{"first-tag", "second-tag", "third-tag"},
 		}
 		bodyBytes, _ := json.Marshal(body)
-		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/worker/register", bytes.NewBuffer(bodyBytes))
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/worker", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -254,7 +254,7 @@ func TestDeregisterWorker(t *testing.T) {
 			Tags:   []string{"first-tag", "second-tag", "third-tag"},
 		}
 		bodyBytes, _ := json.Marshal(body)
-		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/worker/register", bytes.NewBuffer(bodyBytes))
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/worker", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -457,7 +457,7 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 			Tags:   []string{"first-tag", "second-tag", "third-tag"},
 		}
 		bodyBytes, _ := json.Marshal(body)
-		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/worker/register", bytes.NewBuffer(bodyBytes))
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/worker", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -571,7 +571,7 @@ func TestGetWorker(t *testing.T) {
 			Tags:   []string{"first-tag", "second-tag", "third-tag"},
 		}
 		bodyBytes, _ := json.Marshal(body)
-		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/worker/register", bytes.NewBuffer(bodyBytes))
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/worker", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)

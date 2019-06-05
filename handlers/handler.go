@@ -87,7 +87,7 @@ func InitHandlers(e *echo.Echo) error {
 
 	// Worker
 	e.GET(p+"worker/secret", GetWorkerRegisterSecret)
-	e.POST(p+"worker/register", RegisterWorker)
+	e.POST(p+"worker", RegisterWorker)
 	e.GET(p+"worker/status", GetWorkerStatusOverview)
 	e.GET(p+"worker", GetWorker)
 	e.DELETE(p+"worker/:workerid", DeregisterWorker)

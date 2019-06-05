@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+
+	"github.com/gaia-pipeline/gaia"
 )
 
 // RegisterResponse represents a response from API registration
@@ -21,7 +23,7 @@ type RegisterResponse struct {
 // It uses the given secret for authentication and returns certs
 // which can be used for a future mTLS connection.
 func RegisterWorker(host, secret, name string, tags []string) (*RegisterResponse, error) {
-	fullURL := fmt.Sprintf("%s/api/v1/worker/register", host)
+	fullURL := fmt.Sprintf("%s/api/%s/worker", host, gaia.APIVersion)
 	resp, err := http.PostForm(fullURL,
 		url.Values{
 			"secret": {secret},
