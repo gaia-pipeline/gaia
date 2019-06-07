@@ -55,7 +55,7 @@ func TestSetupConnectionInfo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	caCertBytes, err := ioutil.ReadFile("./fixtures/cacert.pem")
+	caCertBytes, err := ioutil.ReadFile("./fixtures/caCert.pem")
 	if err != nil {
 		t.Fatal(err)
 	}
