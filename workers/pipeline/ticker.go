@@ -269,7 +269,6 @@ func updateWorker() {
 	// Iterate all worker
 	for _, worker := range workers {
 		asyncUpdate := false
-		fmt.Printf("lastContactTime: %s\n", lastContactTime.String())
 		if worker.LastContact.Before(lastContactTime) {
 			if worker.Status == gaia.WorkerActive {
 				fmt.Printf("Worker inactive!\n")

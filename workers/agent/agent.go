@@ -75,16 +75,16 @@ type Agent struct {
 }
 
 // InitAgent initiates the agent instance
-func InitAgent(scheduler scheduler.GaiaScheduler, store store.GaiaStore) *Agent {
+func InitAgent(scheduler scheduler.GaiaScheduler, store store.GaiaStore, certPath string) *Agent {
 	ag := &Agent{
 		scheduler: scheduler,
 		store:     store,
 	}
 
 	// Set path to local certificates
-	ag.certFile = filepath.Join(gaia.Cfg.HomePath, "cert.pem")
-	ag.keyFile = filepath.Join(gaia.Cfg.HomePath, "key.pem")
-	ag.caCertFile = filepath.Join(gaia.Cfg.HomePath, "caCert.pem")
+	ag.certFile = filepath.Join(certPath, "cert.pem")
+	ag.keyFile = filepath.Join(certPath, "key.pem")
+	ag.caCertFile = filepath.Join(certPath, "caCert.pem")
 
 	// return instance
 	return ag
@@ -99,68 +99,13 @@ func (a *Agent) StartAgent() error {
 	// Register the signal channel
 	signal.Notify(a.sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	// Evaluate and summarize all worker tags
-	trimmedTags := strings.ReplaceAll(gaia.Cfg.WorkerTags, " ", "")
-	tags := strings.Split(trimmedTags, ",")
-	tags = append(tags, findLocalBinaries()...)
-
-	// Check if this worker has been already registered at this Gaia primary instance
-	workerID := ""
-	clientTLS, err := a.generateClientTLSCreds()
+	// Setup connection information
+	clientTLS, err := a.setupConnectionInfo()
 	if err != nil {
-		// If there is an error, no matter if no certificates exist or
-		// we cannot load them, we try the registration process to register
-		// the worker again.
-		regResp, err := api.RegisterWorker(gaia.Cfg.WorkerHostURL, gaia.Cfg.WorkerSecret, gaia.Cfg.WorkerName, tags)
-		if err != nil {
-			return fmt.Errorf("failed to register worker: %s", err.Error())
-		}
-
-		// The registration process was successful.
-		gaia.Cfg.Logger.Debug("Worker has been successfully registered at the Gaia primary instance")
-
-		// Store the generated worker id since we need it later.
-		if err = a.store.WorkerDeleteAll(); err != nil {
-			return fmt.Errorf("failed to clean up worker bucket in store: %s", err.Error())
-		}
-		w := &gaia.Worker{UniqueID: regResp.UniqueID}
-		if err = a.store.WorkerPut(w); err != nil {
-			return fmt.Errorf("failed to store worker obj in store: %s", err.Error())
-		}
-		workerID = regResp.UniqueID
-
-		// Decode received certificates
-		cert, err := base64.StdEncoding.DecodeString(regResp.Cert)
-		if err != nil {
-			return fmt.Errorf("cannot decode certificate: %s", err.Error())
-		}
-		key, err := base64.StdEncoding.DecodeString(regResp.Key)
-		if err != nil {
-			return fmt.Errorf("cannot decode key: %s", err.Error())
-		}
-		caCert, err := base64.StdEncoding.DecodeString(regResp.CACert)
-		if err != nil {
-			return fmt.Errorf("cannot decode ca cert: %s", err.Error())
-		}
-
-		// Store received certificates locally
-		if err = ioutil.WriteFile(a.certFile, cert, 0600); err != nil {
-			return fmt.Errorf("cannot write cert to disk: %s", err.Error())
-		}
-		if err = ioutil.WriteFile(a.keyFile, key, 0600); err != nil {
-			return fmt.Errorf("cannot write key to disk: %s", err.Error())
-		}
-		if err = ioutil.WriteFile(a.caCertFile, caCert, 0600); err != nil {
-			return fmt.Errorf("cannot write ca cert to disk: %s", err.Error())
-		}
-
-		// Update the client TLS object
-		clientTLS, err = a.generateClientTLSCreds()
-		if err != nil {
-			return fmt.Errorf("failed to generate TLS credentials: %s", err.Error())
-		}
+		return err
 	}
 
+	// Setup gRPC connection
 	dialOption := grpc.WithTransportCredentials(clientTLS)
 	conn, err := grpc.Dial(gaia.Cfg.WorkerGRPCHostURL, dialOption)
 	if err != nil {
@@ -170,28 +115,6 @@ func (a *Agent) StartAgent() error {
 
 	// Get worker interface
 	a.client = pb.NewWorkerClient(conn)
-
-	// Load worker id from store
-	if workerID == "" {
-		worker, err := a.store.WorkerGetAll()
-		if err != nil {
-			return fmt.Errorf("failed to load worker id from store: %s", err.Error())
-		}
-
-		// Only one worker obj should exist
-		if len(worker) != 1 {
-			return fmt.Errorf("failed to load worker obj from store. Expected one object but got %d", len(worker))
-		}
-
-		// Set worker id
-		workerID = worker[0].UniqueID
-	}
-
-	// Setup information object about the current agent
-	a.self = &pb.WorkerInstance{
-		UniqueId: workerID,
-		Tags:     tags,
-	}
 
 	// Start periodic go routine which schedules the worker work
 	workTicker := time.NewTicker(schedulerTickerSeconds * time.Second)
@@ -236,9 +159,109 @@ func (a *Agent) StartAgent() error {
 	return nil
 }
 
+// setupConnectionInfo setups the connection info object by parsing existing
+// mTLS certificates or registering the worker at the Gaia primary instance
+// and receiving new mTLS certs.
+func (a *Agent) setupConnectionInfo() (credentials.TransportCredentials, error) {
+	// Evaluate and summarize all worker tags
+	trimmedTags := strings.ReplaceAll(gaia.Cfg.WorkerTags, " ", "")
+	tags := strings.Split(trimmedTags, ",")
+	tags = append(tags, findLocalBinaries()...)
+
+	// Check if this worker has been already registered at this Gaia primary instance
+	var regResp *api.RegisterResponse
+	clientTLS, err := a.generateClientTLSCreds()
+	if err != nil {
+		// If there is an error, no matter if no certificates exist or
+		// we cannot load them, we try the registration process to register
+		// the worker again.
+		regResp, err = api.RegisterWorker(gaia.Cfg.WorkerHostURL, gaia.Cfg.WorkerSecret, gaia.Cfg.WorkerName, tags)
+		if err != nil {
+			return nil, fmt.Errorf("failed to register worker: %s", err.Error())
+		}
+
+		// The registration process was successful.
+		gaia.Cfg.Logger.Debug("Worker has been successfully registered at the Gaia primary instance")
+
+		// Decode received certificates
+		cert, err := base64.StdEncoding.DecodeString(regResp.Cert)
+		if err != nil {
+			return nil, fmt.Errorf("cannot decode certificate: %s", err.Error())
+		}
+		key, err := base64.StdEncoding.DecodeString(regResp.Key)
+		if err != nil {
+			return nil, fmt.Errorf("cannot decode key: %s", err.Error())
+		}
+		caCert, err := base64.StdEncoding.DecodeString(regResp.CACert)
+		if err != nil {
+			return nil, fmt.Errorf("cannot decode ca cert: %s", err.Error())
+		}
+
+		// Store received certificates locally
+		if err = ioutil.WriteFile(a.certFile, cert, 0600); err != nil {
+			return nil, fmt.Errorf("cannot write cert to disk: %s", err.Error())
+		}
+		if err = ioutil.WriteFile(a.keyFile, key, 0600); err != nil {
+			return nil, fmt.Errorf("cannot write key to disk: %s", err.Error())
+		}
+		if err = ioutil.WriteFile(a.caCertFile, caCert, 0600); err != nil {
+			return nil, fmt.Errorf("cannot write ca cert to disk: %s", err.Error())
+		}
+
+		// Update the client TLS object
+		clientTLS, err = a.generateClientTLSCreds()
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate TLS credentials: %s", err.Error())
+		}
+	}
+
+	// Setup worker object
+	worker := &gaia.Worker{}
+
+	// Worker has been registered
+	if regResp != nil {
+		worker.UniqueID = regResp.UniqueID
+	} else {
+		// Load existing worker id from store
+		w, err := a.store.WorkerGetAll()
+		if err != nil {
+			return nil, fmt.Errorf("failed to load worker id from store: %s", err.Error())
+		}
+
+		// Only one worker obj should exist
+		if len(w) != 1 {
+			return nil, fmt.Errorf("failed to load worker obj from store. Expected one object but got %d", len(w))
+		}
+
+		// Set unique id from store
+		worker.UniqueID = w[0].UniqueID
+	}
+
+	// Set tags
+	worker.Tags = tags
+
+	// Setup information object about the current agent
+	a.self = &pb.WorkerInstance{
+		UniqueId: worker.UniqueID,
+		Tags:     worker.Tags,
+	}
+
+	// Prevent odd/old data is still in our store.
+	if err = a.store.WorkerDeleteAll(); err != nil {
+		return nil, fmt.Errorf("failed to clean up worker bucket in store: %s", err.Error())
+	}
+
+	// Store updated worker object
+	if err = a.store.WorkerPut(worker); err != nil {
+		return nil, fmt.Errorf("failed to store worker obj in store: %s", err.Error())
+	}
+
+	return clientTLS, nil
+}
+
 // scheduleWork is a periodic go routine which continuously pulls work
 // from the Gaia master instance. In case the pipeline is not available
-// on this machine, the pipeline will be downloaded from the Gaia master instance.
+// on this machine, the pipeline will be downloaded from the Gaia primary instance.
 func (a *Agent) scheduleWork() {
 	// Print info output
 	gaia.Cfg.Logger.Trace("try to pull work from Gaia primary instance...")
@@ -445,7 +468,7 @@ func (a *Agent) scheduleWork() {
 		// we have to reset the state here so that the scheduler will pick it up.
 		pipelineRun.Status = gaia.RunNotScheduled
 
-		// Store finally pipeline run
+		// Store finally the pipeline run
 		if err = a.store.PipelinePutRun(pipelineRun); err != nil {
 			gaia.Cfg.Logger.Error("failed to store pipeline run in store", "error", err.Error(), "pipelinerun", pipelineRunPB)
 			reschedulePipeline()
@@ -506,7 +529,7 @@ func (a *Agent) streamBinary(pipelineRunPB *pb.PipelineRun, pipelinePath string)
 }
 
 // updateWork is function that is periodically called and it is used to
-// send new information about a pipeline run to the Gaia master instance.
+// send new information about a pipeline run to the Gaia primary instance.
 func (a *Agent) updateWork() {
 	// Read all pipeline runs from the store. The number of pipeline runs
 	// should be relatively low since we delete pipeline runs after successful

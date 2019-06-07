@@ -215,13 +215,6 @@ var (
 					Description: "Get global worker registration secret.",
 				},
 				{
-					Name: "RegisterWorker",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("POST", "/api/v1/worker/register"),
-					},
-					Description: "Register new worker at this Gaia primary instance.",
-				},
-				{
 					Name: "GetOverview",
 					APIEndpoint: []*gaia.UserRoleEndpoint{
 						NewUserRoleEndpoint("GET", "/api/v1/worker/status"),
