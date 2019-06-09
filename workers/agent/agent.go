@@ -132,7 +132,7 @@ func (a *Agent) StartAgent() error {
 		}
 	}()
 
-	// Start periodic go routine which sends back information to the Gaia master instance
+	// Start periodic go routine which sends back information to the Gaia primary instance
 	updateTicker := time.NewTicker(updateTickerSeconds * time.Second)
 	quitUpdate := make(chan struct{})
 	go func() {
@@ -260,13 +260,13 @@ func (a *Agent) setupConnectionInfo() (credentials.TransportCredentials, error) 
 }
 
 // scheduleWork is a periodic go routine which continuously pulls work
-// from the Gaia master instance. In case the pipeline is not available
+// from the Gaia primary instance. In case the pipeline is not available
 // on this machine, the pipeline will be downloaded from the Gaia primary instance.
 func (a *Agent) scheduleWork() {
 	// Print info output
 	gaia.Cfg.Logger.Trace("try to pull work from Gaia primary instance...")
 
-	// Set available worker slots. Master instance decides if worker needs work.
+	// Set available worker slots. Primary instance decides if worker needs work.
 	a.self.WorkerSlots = int32(a.scheduler.GetFreeWorkers())
 
 	// Setup context with timeout
@@ -441,6 +441,7 @@ func (a *Agent) scheduleWork() {
 				Name:     pipelinehelper.GetRealPipelineName(pipelineRunPB.PipelineName, pipelineType),
 				Type:     pipelineType,
 				ExecPath: pipelineFullPath,
+				Jobs:     pipelineRun.Jobs,
 			}
 		}
 
@@ -464,7 +465,7 @@ func (a *Agent) scheduleWork() {
 		}
 
 		// The scheduler picks only runs up which are in state "NotScheduled".
-		// Since the scheduler from the Gaia master instance set the state already to "scheduled",
+		// Since the scheduler from the Gaia primary instance set the state already to "scheduled",
 		// we have to reset the state here so that the scheduler will pick it up.
 		pipelineRun.Status = gaia.RunNotScheduled
 
