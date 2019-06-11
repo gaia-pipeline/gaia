@@ -13,7 +13,7 @@ func TestGetSHA256Sum(t *testing.T) {
 	tmp, _ := ioutil.TempDir("", "TestGetSHA256Sum")
 	sumText := []byte("hello world\n")
 	filePath := filepath.Join(tmp, "test.file")
-	err := ioutil.WriteFile(filePath, sumText, 777)
+	err := ioutil.WriteFile(filePath, sumText, 0777)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,7 +26,7 @@ func TestGetSHA256Sum(t *testing.T) {
 	if _, err := h.Write(sumText); err != nil {
 		t.Fatal(err)
 	}
-	if bytes.Compare(h.Sum(nil), calcSha) != 0 {
+	if !bytes.Equal(h.Sum(nil), calcSha) {
 		t.Fatal("bytes are not identical")
 	}
 }

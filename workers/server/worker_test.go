@@ -75,12 +75,12 @@ type mockStreamBinaryServ struct {
 }
 
 func (ms mockStreamBinaryServ) Send(c *pb.FileChunk) error {
-	if bytes.Compare(c.Chunk, []byte("test data")) != 0 {
+	if !bytes.Equal(c.Chunk, []byte("test data")) {
 		return fmt.Errorf("data send is not correct: %s", string(c.Chunk[:]))
 	}
 	return nil
 }
-func (mw mockStreamBinaryServ) Context() context.Context {
+func (ms mockStreamBinaryServ) Context() context.Context {
 	md := make(map[string]string)
 	md["uniqueid"] = "my-unique-id"
 	return metadata.NewIncomingContext(context.Background(), metadata.New(md))
@@ -246,7 +246,7 @@ func TestStreamBinary(t *testing.T) {
 
 	// Create test pipeline file
 	testPipeline := filepath.Join(tmp, "my-pipeline_golang")
-	if err := ioutil.WriteFile(testPipeline, []byte("test data"), 777); err != nil {
+	if err := ioutil.WriteFile(testPipeline, []byte("test data"), 0777); err != nil {
 		t.Fatal(err)
 	}
 
@@ -294,7 +294,7 @@ func TestStreamLogs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if bytes.Compare(content, []byte("test log datatest log data")) != 0 {
+	if !bytes.Equal(content, []byte("test log datatest log data")) {
 		t.Fatalf("expected 'test log datatest log data' but got '%s'", string(content[:]))
 	}
 }
