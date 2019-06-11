@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -136,7 +137,7 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 		}
 		if run == nil {
 			gaia.Cfg.Logger.Error("unable to find pipeline run in store", "pipelinerun", pipelineRun)
-			return e, err
+			return e, fmt.Errorf("unable to find pipeline run in store: %#v", pipelineRun)
 		}
 
 		// Set new status
