@@ -23,7 +23,7 @@ func (ms *mockScheduleService) SetPipelineJobs(p *gaia.Pipeline) error {
 }
 
 type mockMemDBService struct {
-	worker    *gaia.Worker
+	worker    gaia.Worker
 	setWorker *gaia.Worker
 	memdb.GaiaMemDB
 }
@@ -32,7 +32,7 @@ func (mm *mockMemDBService) GetAllWorker() []*gaia.Worker {
 	return []*gaia.Worker{mm.setWorker}
 }
 func (mm *mockMemDBService) UpsertWorker(w *gaia.Worker, persist bool) error {
-	mm.worker = w
+	mm.worker = *w
 	return nil
 }
 
@@ -230,7 +230,7 @@ func TestUpdateWorker(t *testing.T) {
 	updateWorker()
 
 	// Give it some time to finish since it operates async
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	// Validate
 	if db.worker == nil {
@@ -251,7 +251,7 @@ func TestUpdateWorker(t *testing.T) {
 	updateWorker()
 
 	// Give it some time to finish since it operates async
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	// Validate
 	if db.worker == nil {
