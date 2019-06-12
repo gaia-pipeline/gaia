@@ -52,8 +52,9 @@ func (m *mockStore) PipelineGet(id int) (pipeline *gaia.Pipeline, err error) { r
 func (m *mockStore) PipelineGetAllRuns() ([]gaia.PipelineRun, error) {
 	runs := []gaia.PipelineRun{
 		{
-			ID:       1,
-			UniqueID: "first-pipeline-run",
+			ID:         1,
+			UniqueID:   "first-pipeline-run",
+			PipelineID: 1,
 			Jobs: []*gaia.Job{
 				{
 					ID:    1,
@@ -66,8 +67,9 @@ func (m *mockStore) PipelineGetAllRuns() ([]gaia.PipelineRun, error) {
 			},
 		},
 		{
-			ID:       2,
-			UniqueID: "second-pipeline-run",
+			ID:         2,
+			UniqueID:   "second-pipeline-run",
+			PipelineID: 2,
 			Jobs: []*gaia.Job{
 				{
 					ID:    1,
