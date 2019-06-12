@@ -230,7 +230,7 @@ func TestUpdateWorker(t *testing.T) {
 	updateWorker()
 
 	// Give it some time to finish since it operates async
-	time.Sleep(1 * time.Second)
+	time.Sleep(3 * time.Second)
 
 	// Validate
 	if db.worker == nil {
@@ -251,7 +251,7 @@ func TestUpdateWorker(t *testing.T) {
 	updateWorker()
 
 	// Give it some time to finish since it operates async
-	time.Sleep(1 * time.Second)
+	time.Sleep(3 * time.Second)
 
 	// Validate
 	if db.worker == nil {
