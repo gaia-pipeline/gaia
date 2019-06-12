@@ -54,7 +54,8 @@ type BoltStore struct {
 // GaiaStore is the interface that defines methods needed to store
 // pipeline and user related information.
 type GaiaStore interface {
-	Init() error
+	Init(dataPath string) error
+	Close() error
 	CreatePipelinePut(createPipeline *gaia.CreatePipeline) error
 	CreatePipelineGet() (listOfPipelines []gaia.CreatePipeline, err error)
 	PipelinePut(pipeline *gaia.Pipeline) error
@@ -101,9 +102,9 @@ func NewBoltStore() *BoltStore {
 // generates private key and bolt database.
 // This should be called only once per database
 // because bolt holds a lock on the database file.
-func (s *BoltStore) Init() error {
+func (s *BoltStore) Init(dataPath string) error {
 	// Open connection to bolt database
-	path := filepath.Join(gaia.Cfg.DataPath, boltDBFileName)
+	path := filepath.Join(dataPath, boltDBFileName)
 	db, err := bolt.Open(path, gaia.Cfg.Bolt.Mode, nil)
 	if err != nil {
 		return err
@@ -112,6 +113,11 @@ func (s *BoltStore) Init() error {
 
 	// Setup database
 	return s.setupDatabase()
+}
+
+// Close closes the active boltdb connection.
+func (s *BoltStore) Close() error {
+	return s.db.Close()
 }
 
 // setupDatabase create all buckets in the db.

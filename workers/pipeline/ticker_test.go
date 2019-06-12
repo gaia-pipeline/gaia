@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"github.com/gaia-pipeline/gaia/store/memdb"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -9,7 +10,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/scheduler"
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-hclog"
 )
 
 type mockScheduleService struct {
@@ -19,6 +20,20 @@ type mockScheduleService struct {
 
 func (ms *mockScheduleService) SetPipelineJobs(p *gaia.Pipeline) error {
 	return ms.err
+}
+
+type mockMemDBService struct {
+	worker    *gaia.Worker
+	setWorker *gaia.Worker
+	memdb.GaiaMemDB
+}
+
+func (mm *mockMemDBService) GetAllWorker() []*gaia.Worker {
+	return []*gaia.Worker{mm.setWorker}
+}
+func (mm *mockMemDBService) UpsertWorker(w *gaia.Worker, persist bool) error {
+	mm.worker = w
+	return nil
 }
 
 func TestCheckActivePipelines(t *testing.T) {
@@ -34,7 +49,9 @@ func TestCheckActivePipelines(t *testing.T) {
 
 	// Initialize store
 	dataStore, _ := services.StorageService()
-	dataStore.Init()
+	if err := dataStore.Init(tmp); err != nil {
+		t.Fatal(err)
+	}
 	defer func() { services.MockStorageService(nil) }()
 	// Initialize global active pipelines
 	ap := NewActivePipelines()
@@ -183,5 +200,63 @@ func TestTogglePoller(t *testing.T) {
 	err = StopPoller()
 	if err == nil {
 		t.Fatal("stopping the poller again while it's stopped should have failed.")
+	}
+}
+
+func TestUpdateWorker(t *testing.T) {
+	tmp, err := ioutil.TempDir("", "TestUpdateWorker")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmp)
+
+	gaia.Cfg = &gaia.Config{
+		Logger:       hclog.NewNullLogger(),
+		DataPath:     tmp,
+		HomePath:     tmp,
+		PipelinePath: tmp,
+	}
+
+	db := &mockMemDBService{}
+	services.MockMemDBService(db)
+	defer func() { services.MockMemDBService(nil) }()
+	db.setWorker = &gaia.Worker{
+		Status:      gaia.WorkerActive,
+		LastContact: time.Now().Add(-6 * time.Minute),
+	}
+
+	// Run update worker
+	updateWorker()
+
+	// Give it some time to finish since it operates async
+	time.Sleep(1 * time.Second)
+
+	// Validate
+	if db.worker == nil {
+		t.Fatal("worker should not be nil")
+	}
+	if db.worker.Status != gaia.WorkerInactive {
+		t.Fatalf("expected '%s' but got '%s'", string(gaia.WorkerInactive), string(db.worker.Status))
+	}
+	db.worker = nil
+
+	// Set new test data
+	db.setWorker = &gaia.Worker{
+		Status:      gaia.WorkerInactive,
+		LastContact: time.Now(),
+	}
+
+	// Run update worker
+	updateWorker()
+
+	// Give it some time to finish since it operates async
+	time.Sleep(1 * time.Second)
+
+	// Validate
+	if db.worker == nil {
+		t.Fatal("worker should not be nil")
+	}
+	if db.worker.Status != gaia.WorkerActive {
+		t.Fatalf("expected '%s' but got '%s'", string(gaia.WorkerActive), string(db.worker.Status))
 	}
 }

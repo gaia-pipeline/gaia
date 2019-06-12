@@ -72,13 +72,15 @@ func init() {
 
 // Start initiates all components of Gaia and starts the server/agent.
 func Start() (err error) {
-	// Parse command line flgs
-	fs.Parse(os.Args[1:])
+	// Parse command line flags
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		return
+	}
 
 	// Check version switch
 	if gaia.Cfg.VersionSwitch {
 		fmt.Printf("Gaia Version: V%s\n", Version)
-		os.Exit(0)
+		return
 	}
 
 	// Initialize shared logger

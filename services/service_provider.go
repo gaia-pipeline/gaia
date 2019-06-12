@@ -37,7 +37,7 @@ func StorageService() (store.GaiaStore, error) {
 		return storeService, nil
 	}
 	storeService = store.NewBoltStore()
-	err := storeService.Init()
+	err := storeService.Init(gaia.Cfg.DataPath)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize store", "error", err.Error())
 		return storeService, err

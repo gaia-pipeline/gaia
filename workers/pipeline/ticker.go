@@ -67,7 +67,7 @@ func StartPoller() error {
 	return nil
 }
 
-// InitTicker inititates the pipeline ticker.
+// InitTicker initiates the pipeline ticker.
 // This periodic job will check for new pipelines.
 func InitTicker() {
 	// Init global active pipelines slice
@@ -266,33 +266,29 @@ func updateWorker() {
 	// Workers with older last contact time will be marked inactive.
 	lastContactTime := time.Now().Add(-5 * time.Minute)
 
+	// Asynchronous update since we write to disk
+	asyncUpdate := func(w *gaia.Worker) {
+		if err := db.UpsertWorker(w, true); err != nil {
+			gaia.Cfg.Logger.Error("failed to store update to worker via updateWorker", "error", err)
+		}
+	}
+
 	// Iterate all worker
 	for _, worker := range workers {
-		asyncUpdate := false
 		if worker.LastContact.Before(lastContactTime) {
 			if worker.Status == gaia.WorkerActive {
-				fmt.Printf("Worker inactive!\n")
 				// Last contact was more than 5 minutes ago.
 				// Worker is now marked as inactive.
 				worker.Status = gaia.WorkerInactive
 
-				asyncUpdate = true
+				go asyncUpdate(worker)
 			}
 		} else if worker.Status == gaia.WorkerInactive {
 			// Worker is marked inactive but we got contact.
 			// Mark it as healthy.
 			worker.Status = gaia.WorkerActive
 
-			asyncUpdate = true
-		}
-
-		// Update async
-		if asyncUpdate {
-			go func() {
-				if err := db.UpsertWorker(worker, true); err != nil {
-					gaia.Cfg.Logger.Error("failed to store update to worker via updateWorker", "error", err)
-				}
-			}()
+			go asyncUpdate(worker)
 		}
 	}
 }
