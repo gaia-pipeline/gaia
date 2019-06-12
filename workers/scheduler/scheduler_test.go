@@ -76,7 +76,7 @@ func TestInit(t *testing.T) {
 		Name:   "Gaia",
 	})
 	gaia.Cfg.Worker = 2
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
@@ -113,7 +113,7 @@ func TestPrepareAndExecFail(t *testing.T) {
 		Name:   "Gaia",
 	})
 
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
@@ -154,7 +154,7 @@ func TestPrepareAndExecInvalidType(t *testing.T) {
 		Name:   "Gaia",
 	})
 
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
@@ -191,7 +191,7 @@ func TestPrepareAndExecJavaType(t *testing.T) {
 		Name:   "Gaia",
 	})
 
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
@@ -238,7 +238,7 @@ func TestPrepareAndExecPythonType(t *testing.T) {
 		Name:   "Gaia",
 	})
 
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
@@ -285,7 +285,7 @@ func TestPrepareAndExecCppType(t *testing.T) {
 		Name:   "Gaia",
 	})
 
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
@@ -331,7 +331,7 @@ func TestPrepareAndExecRubyType(t *testing.T) {
 		Name:   "Gaia",
 	})
 
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
@@ -380,7 +380,7 @@ func TestSchedulePipeline(t *testing.T) {
 		Name:   "Gaia",
 	})
 	gaia.Cfg.Worker = 2
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, _ := prepareTestData()
@@ -409,7 +409,7 @@ func TestSchedulePipelineParallel(t *testing.T) {
 		Name:   "Gaia",
 	})
 	gaia.Cfg.Worker = 2
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p1 := gaia.Pipeline{
@@ -462,7 +462,7 @@ func TestSchedule(t *testing.T) {
 		Name:   "Gaia",
 	})
 	gaia.Cfg.Worker = 2
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, _ := prepareTestData()
@@ -497,7 +497,7 @@ func TestSetPipelineJobs(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, _ := prepareTestData()
@@ -528,7 +528,7 @@ func TestStopPipelineRunFailIfPipelineNotInRunningState(t *testing.T) {
 		Name:   "Gaia",
 	})
 	gaia.Cfg.Worker = 2
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, _ := prepareTestData()
@@ -571,7 +571,7 @@ func TestStopPipelineRun(t *testing.T) {
 		Name:   "Gaia",
 	})
 	gaia.Cfg.Worker = 2
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()

@@ -172,10 +172,13 @@ func TestPipelineUpdate(t *testing.T) {
 		HomePath:     dataDir,
 		PipelinePath: dataDir,
 	}
+	gaia.Cfg.Bolt.Mode = 0600
 
 	// Initialize store
-	dataStore, _ := services.StorageService()
-	dataStore.Init()
+	dataStore, err := services.StorageService()
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer func() { services.MockStorageService(nil) }()
 	// Initialize global active pipelines
 	ap := pipeline.NewActivePipelines()
@@ -201,7 +204,7 @@ func TestPipelineUpdate(t *testing.T) {
 	}
 
 	// Add to store
-	err := dataStore.PipelinePut(&pipeline1)
+	err = dataStore.PipelinePut(&pipeline1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -316,8 +319,10 @@ func TestPipelineDelete(t *testing.T) {
 	}
 
 	// Initialize store
-	dataStore, _ := services.StorageService()
-	dataStore.Init()
+	dataStore, err := services.StorageService()
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer func() { services.MockStorageService(nil) }()
 
 	// Initialize global active pipelines
@@ -336,7 +341,7 @@ func TestPipelineDelete(t *testing.T) {
 	}
 
 	// Add to store
-	err := dataStore.PipelinePut(&p)
+	err = dataStore.PipelinePut(&p)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -774,8 +779,10 @@ func TestPipelineNameAvailable(t *testing.T) {
 	}
 
 	// Initialize store
-	dataStore, _ := services.StorageService()
-	dataStore.Init()
+	dataStore, err := services.StorageService()
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer func() { services.MockStorageService(nil) }()
 
 	// Initialize global active pipelines
@@ -794,7 +801,7 @@ func TestPipelineNameAvailable(t *testing.T) {
 	}
 
 	// Add to store
-	err := dataStore.PipelinePut(&p)
+	err = dataStore.PipelinePut(&p)
 	if err != nil {
 		t.Fatal(err)
 	}

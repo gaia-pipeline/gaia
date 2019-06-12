@@ -46,10 +46,11 @@ func TestCheckActivePipelines(t *testing.T) {
 		HomePath:     dataDir,
 		PipelinePath: dataDir,
 	}
+	gaia.Cfg.Bolt.Mode = 0600
 
 	// Initialize store
-	dataStore, _ := services.StorageService()
-	if err := dataStore.Init(tmp); err != nil {
+	dataStore, err := services.StorageService()
+	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() { services.MockStorageService(nil) }()
@@ -77,7 +78,7 @@ func TestCheckActivePipelines(t *testing.T) {
 	checkActivePipelines()
 
 	// Check if pipeline was added to store
-	_, err := dataStore.PipelineGet(pipeline1.ID)
+	_, err = dataStore.PipelineGet(pipeline1.ID)
 	if err != nil {
 		t.Error("cannot find pipeline in store")
 	}

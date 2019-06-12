@@ -74,7 +74,7 @@ func init() {
 func Start() (err error) {
 	// Parse command line flags
 	if err := fs.Parse(os.Args[1:]); err != nil {
-		return
+		return err
 	}
 
 	// Check version switch
