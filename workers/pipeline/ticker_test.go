@@ -32,8 +32,7 @@ func (mm *mockMemDBService) GetAllWorker() []*gaia.Worker {
 	return []*gaia.Worker{mm.setWorker}
 }
 func (mm *mockMemDBService) UpsertWorker(w *gaia.Worker, persist bool) error {
-	copyWorker := *w
-	mm.worker = &copyWorker
+	mm.worker = w
 	return nil
 }
 
@@ -230,9 +229,6 @@ func TestUpdateWorker(t *testing.T) {
 	// Run update worker
 	updateWorker()
 
-	// Give it some time to finish since it operates async
-	time.Sleep(2 * time.Second)
-
 	// Validate
 	if db.worker == nil {
 		t.Fatal("worker should not be nil")
@@ -250,9 +246,6 @@ func TestUpdateWorker(t *testing.T) {
 
 	// Run update worker
 	updateWorker()
-
-	// Give it some time to finish since it operates async
-	time.Sleep(2 * time.Second)
 
 	// Validate
 	if db.worker == nil {

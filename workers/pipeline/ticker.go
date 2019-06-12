@@ -266,13 +266,6 @@ func updateWorker() {
 	// Workers with older last contact time will be marked inactive.
 	lastContactTime := time.Now().Add(-5 * time.Minute)
 
-	// Asynchronous update since we write to disk
-	asyncUpdate := func(w *gaia.Worker) {
-		if err := db.UpsertWorker(w, true); err != nil {
-			gaia.Cfg.Logger.Error("failed to store update to worker via updateWorker", "error", err)
-		}
-	}
-
 	// Iterate all worker
 	for _, worker := range workers {
 		if worker.LastContact.Before(lastContactTime) {
@@ -281,14 +274,18 @@ func updateWorker() {
 				// Worker is now marked as inactive.
 				worker.Status = gaia.WorkerInactive
 
-				go asyncUpdate(worker)
+				if err := db.UpsertWorker(worker, true); err != nil {
+					gaia.Cfg.Logger.Error("failed to store update to worker via updateWorker", "error", err)
+				}
 			}
 		} else if worker.Status == gaia.WorkerInactive {
 			// Worker is marked inactive but we got contact.
 			// Mark it as healthy.
 			worker.Status = gaia.WorkerActive
 
-			go asyncUpdate(worker)
+			if err := db.UpsertWorker(worker, true); err != nil {
+				gaia.Cfg.Logger.Error("failed to store update to worker via updateWorker", "error", err)
+			}
 		}
 	}
 }
