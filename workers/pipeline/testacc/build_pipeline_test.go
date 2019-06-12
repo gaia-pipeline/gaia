@@ -32,7 +32,7 @@ func TestBuildPipelineAcceptanceTestTearUp(t *testing.T) {
 		}
 	}()
 
-	// Sleep a bit until all components has been initialized and started.
+	// Sleep a bit until all components are initialized and started.
 	time.Sleep(2 * time.Second)
 
 	// Define acceptance tests here.
