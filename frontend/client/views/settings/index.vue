@@ -103,11 +103,11 @@
             </div>
           </div>
         </tab-pane>
+        <tab-pane label="Worker" icon="fa fa-user-secret">
+          <manage-worker/>
+        </tab-pane>
         <tab-pane label="Settings" icon="fa fa-wrench">
           <manage-settings/>
-        </tab-pane>
-        <tab-pane label="Worker" icon="fa fa-wrench">
-          <manage-worker/>
         </tab-pane>
       </tabs>
     </div>

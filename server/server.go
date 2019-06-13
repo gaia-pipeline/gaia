@@ -65,6 +65,7 @@ func init() {
 	fs.StringVar(&gaia.Cfg.WorkerSecret, "workersecret", "", "The secret which is used to register a worker at an gaia instance")
 	fs.StringVar(&gaia.Cfg.WorkerServerPort, "workerserverport", "8989", "Listen port for gaia worker gRPC communication")
 	fs.StringVar(&gaia.Cfg.WorkerTags, "workertags", "", "Comma separated list of custom tags for this worker")
+	fs.BoolVar(&gaia.Cfg.PreventPrimaryWork, "preventprimarywork", false, "If true, prevents the scheduler to schedule work on this Gaia primary instance")
 
 	// Default values
 	gaia.Cfg.Bolt.Mode = 0600

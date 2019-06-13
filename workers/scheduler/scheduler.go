@@ -236,16 +236,6 @@ func (s *Scheduler) schedule() {
 
 	// Iterate scheduled runs
 	for id := range scheduled {
-		// Mark them as scheduled
-		scheduled[id].Status = gaia.RunScheduled
-
-		// Update entry in store
-		err = s.storeService.PipelinePutRun(scheduled[id])
-		if err != nil {
-			gaia.Cfg.Logger.Debug("could not put pipeline run into store", "error", err.Error())
-			continue
-		}
-
 		// If we are a server instance, we will by default give the worker the advantage.
 		// Only in case all workers are busy we will schedule work on the server.
 		workers := s.memDBService.GetAllWorker()
@@ -260,11 +250,36 @@ func (s *Scheduler) schedule() {
 
 			// Insert pipeline run into memdb where all workers get their work from
 			if len(workers) > invalidWorkers {
+				// Mark them as scheduled
+				scheduled[id].Status = gaia.RunScheduled
+
+				// Update entry in store
+				err = s.storeService.PipelinePutRun(scheduled[id])
+				if err != nil {
+					gaia.Cfg.Logger.Debug("could not put pipeline run into store", "error", err.Error())
+					continue
+				}
+
 				if err := s.memDBService.InsertPipelineRun(scheduled[id]); err != nil {
 					gaia.Cfg.Logger.Error("failed to insert pipeline run into memdb via schedule", "error", err.Error())
 				}
 				continue
 			}
+		}
+
+		// Check if this primary is not allowed to run work
+		if gaia.Cfg.PreventPrimaryWork {
+			continue
+		}
+
+		// Mark them as scheduled
+		scheduled[id].Status = gaia.RunScheduled
+
+		// Update entry in store
+		err = s.storeService.PipelinePutRun(scheduled[id])
+		if err != nil {
+			gaia.Cfg.Logger.Debug("could not put pipeline run into store", "error", err.Error())
+			continue
 		}
 
 		// push scheduled run into our channel

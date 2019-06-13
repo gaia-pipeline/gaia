@@ -59,6 +59,9 @@
               </span>
             </td>
             <td>
+              <span>{{ prettifyTags(props.row.tags) }}</span>
+            </td>
+            <td>
               <a title="Deregister Worker" v-tippy="{ arrow : true,  animation : 'shift-away'}"
                  v-on:click="deregisterWorkerModal(props.row)"><i class="fa fa-ban" style="color: whitesmoke;"></i></a>
             </td>
@@ -176,6 +179,10 @@
           {
             label: 'Last contact',
             field: 'lastcontact'
+          },
+          {
+            label: 'Tags',
+            field: 'tags'
           },
           {
             label: 'Action',
@@ -298,6 +305,17 @@
       },
       convertTime (time) {
         return moment(time).fromNow()
+      },
+      prettifyTags (tags) {
+        let prettyTags = ''
+        for (let i = 0; i < tags.length; i++) {
+          if (i === (tags.length - 1)) {
+            prettyTags += tags[i]
+          } else {
+            prettyTags += tags[i] + ', '
+          }
+        }
+        return prettyTags
       }
     }
   }

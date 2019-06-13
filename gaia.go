@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-hclog"
 	"github.com/robfig/cron"
 )
 
@@ -269,25 +269,26 @@ var Cfg = &Config{}
 
 // Config holds all config options
 type Config struct {
-	DevMode           bool
-	ModeRaw           string
-	Mode              Mode
-	VersionSwitch     bool
-	Poll              bool
-	PVal              int
-	ListenPort        string
-	HomePath          string
-	Hostname          string
-	VaultPath         string
-	DataPath          string
-	PipelinePath      string
-	WorkspacePath     string
-	Worker            int
-	JwtPrivateKeyPath string
-	JWTKey            interface{}
-	Logger            hclog.Logger
-	CAPath            string
-	WorkerServerPort  string
+	DevMode            bool
+	ModeRaw            string
+	Mode               Mode
+	VersionSwitch      bool
+	Poll               bool
+	PVal               int
+	ListenPort         string
+	HomePath           string
+	Hostname           string
+	VaultPath          string
+	DataPath           string
+	PipelinePath       string
+	WorkspacePath      string
+	Worker             int
+	JwtPrivateKeyPath  string
+	JWTKey             interface{}
+	Logger             hclog.Logger
+	CAPath             string
+	WorkerServerPort   string
+	PreventPrimaryWork bool
 
 	// Worker
 	WorkerName        string

@@ -164,8 +164,11 @@ func (a *Agent) StartAgent() error {
 // and receiving new mTLS certs.
 func (a *Agent) setupConnectionInfo() (credentials.TransportCredentials, error) {
 	// Evaluate and summarize all worker tags
-	trimmedTags := strings.ReplaceAll(gaia.Cfg.WorkerTags, " ", "")
-	tags := strings.Split(trimmedTags, ",")
+	var tags []string
+	if gaia.Cfg.WorkerTags != "" {
+		trimmedTags := strings.ReplaceAll(gaia.Cfg.WorkerTags, " ", "")
+		tags = strings.Split(trimmedTags, ",")
+	}
 	tags = append(tags, findLocalBinaries()...)
 
 	// Check if this worker has been already registered at this Gaia primary instance
