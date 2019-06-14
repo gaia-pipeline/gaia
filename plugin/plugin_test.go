@@ -15,7 +15,7 @@ import (
 
 	"github.com/gaia-pipeline/gaia"
 	proto "github.com/gaia-pipeline/protobuf"
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-hclog"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -51,9 +51,18 @@ type fakeJobsClient struct {
 }
 
 func (jc *fakeJobsClient) Recv() (*proto.Job, error) {
+	j := &proto.Job{
+		Args: []*proto.Argument{
+			{
+				Key:   "key",
+				Value: "value",
+			},
+		},
+	}
+
 	if jc.counter == 0 {
 		jc.counter++
-		return &proto.Job{}, nil
+		return j, nil
 	}
 	return nil, io.EOF
 }
@@ -113,7 +122,15 @@ func TestExecute(t *testing.T) {
 	p := &GoPlugin{pluginConn: new(fakeGaiaPlugin)}
 	buf := new(bytes.Buffer)
 	p.writer = bufio.NewWriter(buf)
-	err := p.Execute(&gaia.Job{})
+	j := &gaia.Job{
+		Args: []*gaia.Argument{
+			{
+				Key:   "key",
+				Value: "value",
+			},
+		},
+	}
+	err := p.Execute(j)
 	if err != nil {
 		t.Fatal(err)
 	}

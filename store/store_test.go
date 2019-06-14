@@ -678,5 +678,72 @@ func TestPipelineGetLatestRun(t *testing.T) {
 	if latestRun.UniqueID != pipelineRun2.UniqueID {
 		t.Fatalf("expected unique ID %s, got %s", pipelineRun2.UniqueID, latestRun.UniqueID)
 	}
+}
+
+func TestUserPermissionsPutGetDelete(t *testing.T) {
+	// Create tmp folder
+	tmp, err := ioutil.TempDir("", "TestUserPermissionsPutGetDelete")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmp)
+
+	store := NewBoltStore()
+	gaia.Cfg.Bolt.Mode = 0600
+	err = store.Init(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	// Put user permissions
+	perm := &gaia.UserPermission{
+		Username: "michel",
+		Groups:   []string{"my-group"},
+		Roles:    []string{"my-role"},
+	}
+	if err := store.UserPermissionsPut(perm); err != nil {
+		t.Fatal(err)
+	}
+
+	// Read user permissions
+	storePerm, err := store.UserPermissionsGet("michel")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Validate
+	if storePerm == nil {
+		t.Fatal("expected user permissions but it is nil")
+	}
+	if storePerm.Username != "michel" {
+		t.Fatalf("expected '%s' but got '%s'", "michel", storePerm.Username)
+	}
+	if len(storePerm.Roles) != 1 {
+		t.Fatalf("expected %d but got %d", 1, len(storePerm.Roles))
+	}
+	if storePerm.Roles[0] != "my-role" {
+		t.Fatalf("expected '%s' but got '%s'", "my-role", storePerm.Roles[0])
+	}
+	if len(storePerm.Groups) != 1 {
+		t.Fatalf("expected %d but got %d", 1, len(storePerm.Groups))
+	}
+	if storePerm.Groups[0] != "my-group" {
+		t.Fatalf("expected '%s' but got '%s'", "m-group", storePerm.Groups[0])
+	}
+
+	// Delete
+	if err := store.UserPermissionsDelete("michel"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Validate
+	storePerm, err = store.UserPermissionsGet("michel")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if storePerm != nil {
+		t.Fatalf("expected nil object but it is: %#v", storePerm)
+	}
 
 }

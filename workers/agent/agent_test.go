@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"log"
 	"net"
@@ -13,6 +14,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"syscall"
 	"testing"
 	"time"
 
@@ -46,7 +48,12 @@ func (m *mockStore) WorkerGetAll() ([]*gaia.Worker, error) {
 }
 func (m *mockStore) WorkerDeleteAll() error                                  { return nil }
 func (m *mockStore) WorkerPut(w *gaia.Worker) error                          { m.worker = w; return nil }
-func (m *mockStore) PipelinePutRun(r *gaia.PipelineRun) error                { m.run = r; return nil }
+func (m *mockStore) PipelinePutRun(r *gaia.PipelineRun) error                {
+	if r.ID == 1 {
+		m.run = r
+	}
+	return nil
+}
 func (m *mockStore) PipelinePut(pipeline *gaia.Pipeline) error               { return nil }
 func (m *mockStore) PipelineGet(id int) (pipeline *gaia.Pipeline, err error) { return nil, nil }
 func (m *mockStore) PipelineGetAllRuns() ([]gaia.PipelineRun, error) {
@@ -100,13 +107,33 @@ func (mw *mockWorkerInterface) GetWork(workInst *pb.WorkerInstance, serv pb.Work
 	pipelinePath := filepath.Join(tmpFolder, "my-pipeline_golang")
 
 	// Create a mock pipeline file
-	err := ioutil.WriteFile(pipelinePath, []byte("test pipeline content"), 777)
+	err := ioutil.WriteFile(pipelinePath, []byte("test pipeline content"), 0777)
 	if err != nil {
 		return err
 	}
 
 	// Get SHA-Sum from mock file
 	sha, err := filehelper.GetSHA256Sum(pipelinePath)
+	if err != nil {
+		return err
+	}
+
+	// Create a mock pipeline file
+	cppPipelinePath := filepath.Join(tmpFolder, "my-cpp-pipeline_cpp")
+	err = ioutil.WriteFile(cppPipelinePath, []byte("test pipeline content"), 0777)
+	if err != nil {
+		return err
+	}
+
+	// Create broken test file
+	cppPipelineBrokenPath := filepath.Join(tmpFolder, "my-cpp-pipeline-broken_cpp")
+	err = ioutil.WriteFile(cppPipelineBrokenPath, []byte("tes pip cont"), 0777)
+	if err != nil {
+		return err
+	}
+
+	// Get SHA-Sum from mock file
+	shaCpp, err := filehelper.GetSHA256Sum(cppPipelinePath)
 	if err != nil {
 		return err
 	}
@@ -136,9 +163,22 @@ func (mw *mockWorkerInterface) GetWork(workInst *pb.WorkerInstance, serv pb.Work
 				},
 			},
 		},
+		{
+			UniqueId:     "second-pipeline-run",
+			PipelineType: gaia.PTypeCpp.String(),
+			Status:       string(gaia.RunScheduled),
+			ScheduleDate: time.Now().Unix(),
+			Id:           2,
+			PipelineName: "my-cpp-pipeline-broken_cpp",
+			ShaSum:       shaCpp,
+		},
 	}
 
 	for _, run := range testdata {
+		if workInst.UniqueId == "my-failed-worker" {
+			return errors.New("worker is not registered")
+		}
+
 		if err := serv.Send(run); err != nil {
 			return err
 		}
@@ -152,6 +192,21 @@ func (mw *mockWorkerInterface) UpdateWork(ctx context.Context, pipelineRun *pb.P
 }
 
 func (mw *mockWorkerInterface) StreamBinary(pipelineRun *pb.PipelineRun, serv pb.Worker_StreamBinaryServer) error {
+	if pipelineRun.PipelineName == "my-cpp-pipeline-broken_cpp" {
+		content, err := ioutil.ReadFile(filepath.Join(tmpFolder, "my-cpp-pipeline_cpp"))
+		if err != nil {
+			return err
+		}
+
+		err = serv.Send(&pb.FileChunk{
+			Chunk: content,
+		})
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
 	err := serv.Send(&pb.FileChunk{
 		Chunk: []byte("test byte chunk\n"),
 	})
@@ -354,6 +409,58 @@ func TestScheduleWork(t *testing.T) {
 	}
 	if store.run.Jobs[0].Args[0].Key != "key" {
 		t.Fatalf("expected 'key' but got %s", store.run.Jobs[0].Args[0].Key)
+	}
+}
+
+func TestScheduleWork_RecvError(t *testing.T) {
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	client := pb.NewWorkerClient(conn)
+
+	// Create test certificate files
+	certFilePath := filepath.Join(tmpFolder, "cert.pem")
+	if err := ioutil.WriteFile(certFilePath, []byte("test cert"), 0777); err != nil {
+		t.Fatal(err)
+	}
+	keyFilePath := filepath.Join(tmpFolder, "key.pem")
+	if err := ioutil.WriteFile(keyFilePath, []byte("test key"), 0777); err != nil {
+		t.Fatal(err)
+	}
+	caCertFilePath := filepath.Join(tmpFolder, "caCert.pem")
+	if err := ioutil.WriteFile(caCertFilePath, []byte("test ca cert"), 0777); err != nil {
+		t.Fatal(err)
+	}
+
+	// Init agent
+	store := &mockStore{}
+	scheduler := &mockScheduler{}
+	ag := InitAgent(scheduler, store, tmpFolder)
+	ag.sigs = make(chan os.Signal, 1)
+	ag.client = client
+	ag.self = &pb.WorkerInstance{UniqueId: "my-failed-worker"}
+	gaia.Cfg = &gaia.Config{
+		PipelinePath: tmpFolder,
+	}
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level: hclog.Trace,
+		Name:  "Gaia",
+	})
+
+	// Run scheduler
+	ag.scheduleWork()
+
+	// Validate output from scheduler
+	select {
+	case sig := <-ag.sigs:
+		if sig != syscall.SIGTERM {
+			t.Fatalf("expected SIGTERM syscall but got %#v", sig)
+		}
+	default:
+		t.Fatal("signal channel is empty or blocked")
 	}
 }
 
