@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/gaia-pipeline/gaia/helper/stringhelper"
 	"net/http"
 	"strconv"
 	"time"
@@ -51,6 +52,11 @@ func CreatePipeline(c echo.Context) error {
 	p.Created = time.Now()
 	p.StatusType = gaia.CreatePipelineRunning
 	p.ID = uuid.Must(uuid.NewV4(), nil).String()
+
+	// Add pipeline type tag if not already existent
+	if !stringhelper.IsContainedInSlice(p.Pipeline.Tags, p.Pipeline.Type.String(), true) {
+		p.Pipeline.Tags = append(p.Pipeline.Tags, p.Pipeline.Type.String())
+	}
 
 	// Save this pipeline to our store
 	err := storeService.CreatePipelinePut(p)

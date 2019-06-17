@@ -169,7 +169,7 @@ func (a *Agent) setupConnectionInfo() (credentials.TransportCredentials, error) 
 		trimmedTags := strings.ReplaceAll(gaia.Cfg.WorkerTags, " ", "")
 		tags = strings.Split(trimmedTags, ",")
 	}
-	tags = append(tags, findLocalBinaries()...)
+	tags = findLocalBinaries(tags)
 
 	// Check if this worker has been already registered at this Gaia primary instance
 	var regResp *api.RegisterResponse

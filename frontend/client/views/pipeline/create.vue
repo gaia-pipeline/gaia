@@ -608,7 +608,6 @@
         // Copy related information into the create pipeline struct
         this.createPipeline.pipeline.repo.url = this.giturl
         this.createPipeline.pipeline.name = this.pipelinename
-        this.createPipeline.pipeline.tags = this.selectedPipelineWorkerTags
 
         // Start the create pipeline process in the backend
         this.$http
@@ -701,6 +700,12 @@
         // Add tags to create pipeline object
         for (let i = 0; i < this.selectedPipelineWorkerTags.length; i++) {
           this.createPipeline.pipeline.tags.push(this.selectedPipelineWorkerTags[i].text)
+        }
+
+        // set current tag in case the user forgot to press enter
+        if (this.currentTag !== '') {
+          this.createPipeline.pipeline.tags.push(this.currentTag)
+          this.currentTag = ''
         }
 
         this.close()

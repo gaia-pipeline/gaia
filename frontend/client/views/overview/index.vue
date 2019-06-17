@@ -47,6 +47,16 @@
               <span v-else>
                 unknown
               </span><br />
+              <i class="fa fa-tags"></i>
+              <span style="color: #b1adad;">
+                Tags:
+              </span>
+              <span v-if="pipeline.p.tags">
+                {{ $prettifyTags(pipeline.p.tags) }}
+              </span>
+              <span v-else>
+                unknown
+              </span><br />
               <div class="pipelinegrid-footer">
                 <a class="button is-primary" @click="checkPipelineArgsAndStartPipeline(pipeline.p)" style="width: 100%;">
                   <span class="icon">

@@ -59,7 +59,7 @@
               </span>
             </td>
             <td>
-              <span>{{ prettifyTags(props.row.tags) }}</span>
+              <span>{{ $prettifyTags(props.row.tags) }}</span>
             </td>
             <td>
               <a title="Deregister Worker" v-tippy="{ arrow : true,  animation : 'shift-away'}"
@@ -130,7 +130,7 @@
   import Vue from 'vue'
   import {TabPane, Tabs} from 'vue-bulma-tabs'
   import VueGoodTable from 'vue-good-table'
-  import { Modal } from 'vue-bulma-modal'
+  import {Modal} from 'vue-bulma-modal'
   import moment from 'moment'
   import Message from 'vue-bulma-message-html'
   import VueTippy from 'vue-tippy'
@@ -305,17 +305,6 @@
       },
       convertTime (time) {
         return moment(time).fromNow()
-      },
-      prettifyTags (tags) {
-        let prettyTags = ''
-        for (let i = 0; i < tags.length; i++) {
-          if (i === (tags.length - 1)) {
-            prettyTags += tags[i]
-          } else {
-            prettyTags += tags[i] + ', '
-          }
-        }
-        return prettyTags
       }
     }
   }

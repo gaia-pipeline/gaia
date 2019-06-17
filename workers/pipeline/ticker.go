@@ -174,6 +174,7 @@ func checkActivePipelines() {
 					Type:     pType,
 					ExecPath: filepath.Join(gaia.Cfg.PipelinePath, file.Name()),
 					Created:  time.Now(),
+					Tags:     []string{pType.String()},
 				}
 				shouldStore = true
 			}

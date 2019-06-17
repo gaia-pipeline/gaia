@@ -32,9 +32,9 @@ axiosInstance.interceptors.request.use(function (request) {
 Vue.config.devtools = true
 sync(store, router)
 
-const nprogress = new NProgress({ parent: '.nprogress-container' })
+const nprogress = new NProgress({parent: '.nprogress-container'})
 
-const { state } = store
+const {state} = store
 
 Vue.directive('focus', {
   // When the bound element is inserted into the DOM...
@@ -98,6 +98,7 @@ function handleError (error) {
     console.log(error.response.data)
   }
 }
+
 Vue.prototype.$onError = handleError
 
 Vue.prototype.$onSuccess = (title, message) => {
@@ -107,6 +108,23 @@ Vue.prototype.$onSuccess = (title, message) => {
     type: 'success',
     duration: message > 60 ? 20000 : 4500
   })
+}
+
+Vue.prototype.$prettifyTags = (tags) => {
+  let prettyTags = ''
+  for (let i = 0; i < tags.length; i++) {
+    let tag = tags[i]
+    if (tag === 'cpp') {
+      tag = 'C++'
+    }
+
+    if (i === (tags.length - 1)) {
+      prettyTags += tag
+    } else {
+      prettyTags += tag + ', '
+    }
+  }
+  return prettyTags
 }
 
 router.beforeEach((route, redirect, next) => {
@@ -130,4 +148,4 @@ const app = new Vue({
 // A simple event bus
 export const EventBus = new Vue()
 
-export { app, router, store }
+export {app, router, store}
