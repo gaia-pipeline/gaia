@@ -113,15 +113,10 @@ Vue.prototype.$onSuccess = (title, message) => {
 Vue.prototype.$prettifyTags = (tags) => {
   let prettyTags = ''
   for (let i = 0; i < tags.length; i++) {
-    let tag = tags[i]
-    if (tag === 'cpp') {
-      tag = 'C++'
-    }
-
     if (i === (tags.length - 1)) {
-      prettyTags += tag
+      prettyTags += tags[i]
     } else {
-      prettyTags += tag + ', '
+      prettyTags += tags[i] + ', '
     }
   }
   return prettyTags
