@@ -63,7 +63,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	}
 
 	// Clone git repo
-	err = gitCloneRepo(&p.Pipeline.Repo)
+	err = gitCloneRepo(p.Pipeline.Repo)
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot prepare build: %s", err.Error())
@@ -155,7 +155,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 
 	if !gaia.Cfg.Poll && len(gitToken) > 0 {
 		// if there is a githubtoken provided, that means that a webhook was requested to be added.
-		err = createGithubWebhook(gitToken, &p.Pipeline.Repo, nil)
+		err = createGithubWebhook(gitToken, p.Pipeline.Repo, nil)
 		if err != nil {
 			gaia.Cfg.Logger.Error("error while creating webhook for repository", "error", err.Error())
 			return

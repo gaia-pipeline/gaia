@@ -114,7 +114,7 @@ func TestReplace(t *testing.T) {
 	p1 := gaia.Pipeline{
 		Name: "Pipeline A",
 		Type: gaia.PTypeGolang,
-		Repo: gaia.GitRepo{
+		Repo: &gaia.GitRepo{
 			URL:       "https://github.com/gaia-pipeline/pipeline-test-1",
 			LocalDest: "tmp",
 		},
@@ -125,7 +125,7 @@ func TestReplace(t *testing.T) {
 	p2 := gaia.Pipeline{
 		Name: "Pipeline A",
 		Type: gaia.PTypeGolang,
-		Repo: gaia.GitRepo{
+		Repo: &gaia.GitRepo{
 			URL:       "https://github.com/gaia-pipeline/pipeline-test-2",
 			LocalDest: "tmp",
 		},

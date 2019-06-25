@@ -77,7 +77,7 @@ func TestHookReceive(t *testing.T) {
 		Name:    "Pipeline A",
 		Type:    gaia.PTypeGolang,
 		Created: time.Now(),
-		Repo: gaia.GitRepo{
+		Repo: &gaia.GitRepo{
 			URL: "https://github.com/Codertocat/Hello-World",
 		},
 	}

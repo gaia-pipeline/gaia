@@ -3,6 +3,8 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/gaia-pipeline/gaia/helper/stringhelper"
+
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/labstack/echo"
 )
@@ -37,6 +39,12 @@ func SetSecret(c echo.Context) error {
 		key = s.Key
 		value = s.Value
 	}
+
+	// Handle ignored special keys
+	if stringhelper.IsContainedInSlice(ignoredVaultKeys, key, true) {
+		return c.String(http.StatusBadRequest, "key is reserved and cannot be set/changed")
+	}
+
 	v, err := services.VaultService(nil)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
@@ -66,6 +74,11 @@ func ListSecrets(c echo.Context) error {
 	}
 	kvs := v.GetAll()
 	for _, k := range kvs {
+		// Handle ignored special keys
+		if stringhelper.IsContainedInSlice(ignoredVaultKeys, k, true) {
+			continue
+		}
+
 		s := addSecret{Key: k, Value: "**********"}
 		secrets = append(secrets, s)
 	}
@@ -78,6 +91,12 @@ func RemoveSecret(c echo.Context) error {
 	if key == "" {
 		return c.String(http.StatusBadRequest, "invalid key given")
 	}
+
+	// Handle ignored special keys
+	if stringhelper.IsContainedInSlice(ignoredVaultKeys, key, true) {
+		return c.String(http.StatusBadRequest, "key is reserved and cannot be deleted")
+	}
+
 	v, err := services.VaultService(nil)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())

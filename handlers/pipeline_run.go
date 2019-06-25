@@ -102,7 +102,7 @@ func PipelineGetAllRuns(c echo.Context) error {
 	}
 
 	// Get all runs by the given pipeline id
-	runs, err := storeService.PipelineGetAllRuns(pipelineID)
+	runs, err := storeService.PipelineGetAllRunsByPipelineID(pipelineID)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}

@@ -35,9 +35,12 @@ func (b *BuildPipelineGolang) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	}
 
 	// Set new generated path in pipeline obj for later usage
+	if p.Pipeline.Repo == nil {
+		p.Pipeline.Repo = &gaia.GitRepo{}
+	}
 	p.Pipeline.Repo.LocalDest = cloneFolder
 	p.Pipeline.UUID = uuid.String()
-	return err
+	return nil
 }
 
 // ExecuteBuild executes the golang build process
@@ -59,8 +62,14 @@ func (b *BuildPipelineGolang) ExecuteBuild(p *gaia.CreatePipeline) error {
 
 	env := append(os.Environ(), "GOPATH="+goPath)
 
+	// Set local destination
+	localDest := ""
+	if p.Pipeline.Repo != nil {
+		localDest = p.Pipeline.Repo.LocalDest
+	}
+
 	// Execute and wait until finish or timeout
-	output, err := executeCmd(path, args, env, p.Pipeline.Repo.LocalDest)
+	output, err := executeCmd(path, args, env, localDest)
 	if err != nil {
 		gaia.Cfg.Logger.Debug("cannot get dependencies", "error", err.Error(), "output", string(output))
 		p.Output = string(output)
@@ -75,7 +84,7 @@ func (b *BuildPipelineGolang) ExecuteBuild(p *gaia.CreatePipeline) error {
 	}
 
 	// Execute and wait until finish or timeout
-	output, err = executeCmd(path, args, env, p.Pipeline.Repo.LocalDest)
+	output, err = executeCmd(path, args, env, localDest)
 	p.Output = string(output)
 	if err != nil {
 		gaia.Cfg.Logger.Debug("cannot build pipeline", "error", err.Error(), "output", string(output))
@@ -84,7 +93,7 @@ func (b *BuildPipelineGolang) ExecuteBuild(p *gaia.CreatePipeline) error {
 
 	// Build has been finished. Set execution path to the build result archive.
 	// This will be used during pipeline verification phase which will happen after this step.
-	p.Pipeline.ExecPath = filepath.Join(p.Pipeline.Repo.LocalDest, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
+	p.Pipeline.ExecPath = filepath.Join(localDest, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
 
 	return nil
 }

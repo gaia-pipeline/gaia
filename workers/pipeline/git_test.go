@@ -44,7 +44,7 @@ func TestUpdateAllPipelinesRepositoryNotFound(t *testing.T) {
 	})
 
 	p := new(gaia.Pipeline)
-	p.Repo.LocalDest = tmp
+	p.Repo = &gaia.GitRepo{LocalDest: tmp}
 	GlobalActivePipelines = NewActivePipelines()
 	GlobalActivePipelines.Append(*p)
 	updateAllCurrentPipelines()
@@ -78,6 +78,7 @@ func TestUpdateAllPipelinesAlreadyUpToDate(t *testing.T) {
 
 	p := new(gaia.Pipeline)
 	p.Name = "main"
+	p.Repo = &gaia.GitRepo{}
 	p.Repo.SelectedBranch = "refs/heads/master"
 	p.Repo.LocalDest = "tmp"
 	GlobalActivePipelines = NewActivePipelines()
@@ -167,6 +168,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 
 	p := new(gaia.Pipeline)
 	p.Name = "main"
+	p.Repo = &gaia.GitRepo{}
 	p.Repo.SelectedBranch = "refs/heads/master"
 	p.Repo.LocalDest = "tmp"
 	GlobalActivePipelines = NewActivePipelines()
@@ -205,10 +207,12 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 
 	p1 := new(gaia.Pipeline)
 	p1.Name = "main"
+	p1.Repo = &gaia.GitRepo{}
 	p1.Repo.SelectedBranch = "refs/heads/master"
 	p1.Repo.LocalDest = "tmp"
 	p2 := new(gaia.Pipeline)
 	p2.Name = "main"
+	p2.Repo = &gaia.GitRepo{}
 	p2.Repo.SelectedBranch = "refs/heads/master"
 	p2.Repo.LocalDest = "tmp"
 	GlobalActivePipelines = NewActivePipelines()

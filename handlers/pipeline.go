@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/gaia-pipeline/gaia/helper/stringhelper"
 	"net/http"
 	"strconv"
 	"time"
@@ -51,6 +52,11 @@ func CreatePipeline(c echo.Context) error {
 	p.Created = time.Now()
 	p.StatusType = gaia.CreatePipelineRunning
 	p.ID = uuid.Must(uuid.NewV4(), nil).String()
+
+	// Add pipeline type tag if not already existent
+	if !stringhelper.IsContainedInSlice(p.Pipeline.Tags, p.Pipeline.Type.String(), true) {
+		p.Pipeline.Tags = append(p.Pipeline.Tags, p.Pipeline.Type.String())
+	}
 
 	// Save this pipeline to our store
 	err := storeService.CreatePipelinePut(p)
@@ -180,7 +186,7 @@ func PipelineUpdate(c echo.Context) error {
 		// Iterate over all cron schedules.
 		for _, cron := range p.PeriodicSchedules {
 			err := foundPipeline.CronInst.AddFunc(cron, func() {
-				_, err := schedulerService.SchedulePipeline(&foundPipeline, []gaia.Argument{})
+				_, err := schedulerService.SchedulePipeline(&foundPipeline, []*gaia.Argument{})
 				if err != nil {
 					gaia.Cfg.Logger.Error("cannot schedule pipeline from periodic schedule", "error", err, "pipeline", foundPipeline)
 					return
@@ -308,7 +314,7 @@ func PipelineTrigger(c echo.Context) error {
 	}
 
 	schedulerService, _ := services.SchedulerService()
-	args := []gaia.Argument{}
+	args := []*gaia.Argument{}
 	c.Bind(&args)
 	pipelineRun, err := schedulerService.SchedulePipeline(&foundPipeline, args)
 	if err != nil {
@@ -389,7 +395,7 @@ func PipelineStart(c echo.Context) error {
 
 	// Look for arguments.
 	// We do not check for errors here cause arguments are optional.
-	args := []gaia.Argument{}
+	args := []*gaia.Argument{}
 	c.Bind(&args)
 
 	// Convert string to int because id is int

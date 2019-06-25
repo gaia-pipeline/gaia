@@ -8,7 +8,8 @@
               <label class="label">Copy the link of your
                 <strong>git repo</strong> here.</label>
               <p class="control has-icons-left" v-bind:class="{ 'has-icons-right': gitSuccess }">
-                <input class="input is-medium input-bar" v-focus v-model="giturl" v-on:input="checkGitRepoDebounce" type="text" placeholder="Link to git repo ...">
+                <input class="input is-medium input-bar" v-focus v-model="giturl" v-on:input="checkGitRepoDebounce"
+                       type="text" placeholder="Link to git repo ...">
                 <span class="icon is-small is-left">
                   <i class="fa fa-git"></i>
                 </span>
@@ -44,13 +45,19 @@
 
           <article class="tile is-child notification content-article">
             <div class="content">
-              <p class="control"> 
+              <p class="control">
                 <label class="label">Define custom pipeline options here.</label>
                 <a class="button is-primary" v-on:click="showPeriodicalPipelineScheduleModal">
                   <span class="icon">
                     <i class="fa fa-calendar"></i>
                   </span>
                   <span>Add Pipeline Trigger</span>
+                </a>
+                <a class="button is-primary" v-on:click="showSetPipelineWorkerTags">
+                  <span class="icon">
+                    <i class="fa fa-tags"></i>
+                  </span>
+                  <span>Set Pipeline Worker Tags</span>
                 </a>
               </p>
               <span style="color: red" v-if="periodicSchedulesErr">Periodic schedules invalid: {{ periodicSchedulesErrMsg }}</span>
@@ -61,7 +68,8 @@
             <div class="content">
               <label class="label">Type the name of your pipeline here.</label>
               <p class="control has-icons-left" v-bind:class="{ 'has-icons-right': pipelineNameSuccess }">
-                <input class="input is-medium input-bar" v-model="pipelinename" v-on:input="checkPipelineNameAvailableDebounce" type="text" placeholder="Pipeline name ...">
+                <input class="input is-medium input-bar" v-model="pipelinename"
+                       v-on:input="checkPipelineNameAvailableDebounce" type="text" placeholder="Pipeline name ...">
                 <span class="icon is-small is-left">
                   <i class="fa fa-book"></i>
                 </span>
@@ -78,24 +86,42 @@
           <article class="tile is-child notification content-article box">
             <p class="subtitle">Select pipeline language</p>
             <div class="content" style="display: flex;">
-              <div class="pipelinetype" title="Golang" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-on:click="createPipeline.pipeline.type = 'golang'" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'golang' }" data-tippy-hideOnClick="false">
+              <div class="pipelinetype" title="Golang" v-tippy="{ arrow : true,  animation : 'shift-away'}"
+                   v-on:click="createPipeline.pipeline.type = 'golang'"
+                   v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'golang' }"
+                   data-tippy-hideOnClick="false">
                 <img src="~assets/golang.png" class="typeimage">
               </div>
-              <div class="pipelinetype" title="Java" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-on:click="createPipeline.pipeline.type = 'java'" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'java' }" data-tippy-hideOnClick="false">
+              <div class="pipelinetype" title="Java" v-tippy="{ arrow : true,  animation : 'shift-away'}"
+                   v-on:click="createPipeline.pipeline.type = 'java'"
+                   v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'java' }"
+                   data-tippy-hideOnClick="false">
                 <img src="~assets/java.png" class="typeimage">
               </div>
-              <div class="pipelinetype" title="Python" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-on:click="createPipeline.pipeline.type = 'python'" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'python' }" data-tippy-hideOnClick="false">
+              <div class="pipelinetype" title="Python" v-tippy="{ arrow : true,  animation : 'shift-away'}"
+                   v-on:click="createPipeline.pipeline.type = 'python'"
+                   v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'python' }"
+                   data-tippy-hideOnClick="false">
                 <img src="~assets/python.png" class="typeimage">
               </div>
             </div>
             <div class="content" style="display: flex;">
-              <div class="pipelinetype" title="C++" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-on:click="createPipeline.pipeline.type = 'cpp'" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'cpp' }" data-tippy-hideOnClick="false">
+              <div class="pipelinetype" title="C++" v-tippy="{ arrow : true,  animation : 'shift-away'}"
+                   v-on:click="createPipeline.pipeline.type = 'cpp'"
+                   v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'cpp' }"
+                   data-tippy-hideOnClick="false">
                 <img src="~assets/cpp.png" class="typeimage">
               </div>
-              <div class="pipelinetype" title="Ruby" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-on:click="createPipeline.pipeline.type = 'ruby'" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'ruby' }" data-tippy-hideOnClick="false">
+              <div class="pipelinetype" title="Ruby" v-tippy="{ arrow : true,  animation : 'shift-away'}"
+                   v-on:click="createPipeline.pipeline.type = 'ruby'"
+                   v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'ruby' }"
+                   data-tippy-hideOnClick="false">
                 <img src="~assets/ruby.png" class="typeimage">
               </div>
-              <div class="pipelinetype" title="Node.js (not yet supported)" v-tippy="{ arrow : true,  animation : 'shift-away'}" v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'nodejs' }" data-tippy-hideOnClick="false">
+              <div class="pipelinetype" title="Node.js (not yet supported)"
+                   v-tippy="{ arrow : true,  animation : 'shift-away'}"
+                   v-bind:class="{ pipelinetypeactive: createPipeline.pipeline.type === 'nodejs' }"
+                   data-tippy-hideOnClick="false">
                 <img src="~assets/nodejs.png" class="typeimage typeimagenotyetsupported">
               </div>
             </div>
@@ -105,7 +131,8 @@
 
       <div class="tile is-parent">
         <article class="is-child notification content-article">
-          <a class="button is-green-button" style="margin-left: 13px;" v-on:click="startCreatePipeline" v-bind:class="{ 'is-disabled': !gitSuccess || !pipelineNameSuccess || periodicSchedulesErr }">
+          <a class="button is-green-button" style="margin-left: 13px;" v-on:click="startCreatePipeline"
+             v-bind:class="{ 'is-disabled': !gitSuccess || !pipelineNameSuccess || periodicSchedulesErr }">
             <span class="icon">
               <i class="fa fa-plus"></i>
             </span>
@@ -116,39 +143,43 @@
 
       <div class="tile is-parent is-10">
         <article class="tile is-child notification content-article box">
-            <vue-good-table
-              title="Pipeline history"
-              :columns="historyColumns"
-              :rows="historyRows"
-              :paginate="true"
-              :global-search="true"
-              :defaultSortBy="{field: 'created', type: 'desc'}"
-              globalSearchPlaceholder="Search ..."
-              styleClass="table table-grid table-own-bordered">
-              <template slot="table-row" slot-scope="props">
-                <td>{{ props.row.pipeline.name }}</td>
-                <td class="progress-bar-height">
-                  <div class="progress-bar-middle blink" v-if="props.row.statustype === 'running'">
-                    <progress-bar :type="'info'" :size="'small'" :value="props.row.status" :max="100" :show-label="false"></progress-bar>
-                  </div>
-                  <div v-else-if="props.row.statustype === 'success'" style="color: green;">{{ props.row.statustype }}</div>
-                  <div v-else style="color: red;">{{ props.row.statustype }}</div>
-                </td>
-                <td>{{ prettifyPipelineType(props.row.pipeline.type) }}</td>
-                <td :title="props.row.created" v-tippy="{ arrow : true,  animation : 'shift-away'}">{{ convertTime(props.row.created) }}</td>
-                <td>
-                  <a class="button is-green-button is-small" @click="showStatusOutputModal(props.row.output)">
+          <vue-good-table
+            title="Pipeline history"
+            :columns="historyColumns"
+            :rows="historyRows"
+            :paginate="true"
+            :global-search="true"
+            :defaultSortBy="{field: 'created', type: 'desc'}"
+            globalSearchPlaceholder="Search ..."
+            styleClass="table table-grid table-own-bordered">
+            <template slot="table-row" slot-scope="props">
+              <td>{{ props.row.pipeline.name }}</td>
+              <td class="progress-bar-height">
+                <div class="progress-bar-middle blink" v-if="props.row.statustype === 'running'">
+                  <progress-bar :type="'info'" :size="'small'" :value="props.row.status" :max="100"
+                                :show-label="false"></progress-bar>
+                </div>
+                <div v-else-if="props.row.statustype === 'success'" style="color: green;">{{ props.row.statustype }}
+                </div>
+                <div v-else style="color: red;">{{ props.row.statustype }}</div>
+              </td>
+              <td>{{ prettifyPipelineType(props.row.pipeline.type) }}</td>
+              <td :title="props.row.created" v-tippy="{ arrow : true,  animation : 'shift-away'}">{{
+                convertTime(props.row.created) }}
+              </td>
+              <td>
+                <a class="button is-green-button is-small" @click="showStatusOutputModal(props.row.output)">
                     <span class="icon">
                       <i class="fa fa-align-justify"></i>
                     </span>
-                    <span>Show Output</span>
-                  </a>
-                </td>
-              </template>
-              <div slot="emptystate" class="empty-table-text">
-                No pipelines found in database.
-              </div>
-            </vue-good-table>
+                  <span>Show Output</span>
+                </a>
+              </td>
+            </template>
+            <div slot="emptystate" class="empty-table-text">
+              No pipelines found in database.
+            </div>
+          </vue-good-table>
         </article>
       </div>
     </div>
@@ -162,13 +193,15 @@
               <div class="credentials-modal-content">
                 <label class="label" style="text-align: left;">Add credentials for basic authentication:</label>
                 <p class="control has-icons-left" style="padding-bottom: 5px;">
-                  <input class="input is-medium input-bar" v-focus type="text" v-model="createPipeline.pipeline.repo.user" placeholder="Username">
+                  <input class="input is-medium input-bar" v-focus type="text"
+                         v-model="createPipeline.pipeline.repo.user" placeholder="Username">
                   <span class="icon is-small is-left">
                     <i class="fa fa-user-circle"></i>
                   </span>
                 </p>
                 <p class="control has-icons-left">
-                  <input class="input is-medium input-bar" type="password" v-model="createPipeline.pipeline.repo.password" placeholder="Password">
+                  <input class="input is-medium input-bar" type="password"
+                         v-model="createPipeline.pipeline.repo.password" placeholder="Password">
                   <span class="icon is-small is-left">
                     <i class="fa fa-lock"></i>
                   </span>
@@ -176,7 +209,8 @@
               </div>
             </collapse-item>
             <collapse-item title="SSH Key">
-              <label class="label" style="text-align: left;">Instead of using basic authentication, provide a pem encoded private key.</label>
+              <label class="label" style="text-align: left;">Instead of using basic authentication, provide a pem
+                encoded private key.</label>
               <div class="block credentials-modal-content">
                 <p class="control">
                   <textarea class="textarea input-bar" v-model="createPipeline.pipeline.repo.privatekey.key"></textarea>
@@ -186,13 +220,15 @@
                 <span class="span">Additional:</span>
               </h2>
               <p class="control has-icons-left" style="padding-bottom: 5px;">
-                <input class="input is-medium input-bar" v-focus type="text" v-model="createPipeline.pipeline.repo.privatekey.username" placeholder="Username">
+                <input class="input is-medium input-bar" v-focus type="text"
+                       v-model="createPipeline.pipeline.repo.privatekey.username" placeholder="Username">
                 <span class="icon is-small is-left">
                   <i class="fa fa-user-circle"></i>
                 </span>
               </p>
               <p class="control has-icons-left">
-                <input class="input is-medium input-bar" type="password" v-model="createPipeline.pipeline.repo.privatekey.password" placeholder="Password">
+                <input class="input is-medium input-bar" type="password"
+                       v-model="createPipeline.pipeline.repo.privatekey.password" placeholder="Password">
                 <span class="icon is-small is-left">
                   <i class="fa fa-lock"></i>
                 </span>
@@ -220,7 +256,8 @@
               <div class="credentials-modal-content">
                 <label class="label" style="text-align: left;">Add GitHub token with repo permissions:</label>
                 <p class="control has-icons-left" style="padding-bottom: 5px;">
-                  <input class="input is-medium input-bar" v-focus type="text" v-model="createPipeline.githubtoken" placeholder="Token">
+                  <input class="input is-medium input-bar" v-focus type="text" v-model="createPipeline.githubtoken"
+                         placeholder="Token">
                   <span class="icon is-small is-left">
                     <i class="fas fa-code-branch"></i>
                   </span>
@@ -252,15 +289,54 @@
                 </p>
               </div>
               <label class="label" style="test-align: left;">
-                Use the standard cron syntax. For example to start the pipeline every half hour: 
-                <br />0 30 * * * *<br />
-                Please see <a href="https://godoc.org/github.com/robfig/cron" target="_blank">here</a> for more information.
+                Use the standard cron syntax. For example to start the pipeline every half hour:
+                <br/>0 30 * * * *<br/>
+                Please see <a href="https://godoc.org/github.com/robfig/cron" target="_blank">here</a> for more
+                information.
               </label>
             </collapse-item>
           </collapse>
           <div class="modal-footer">
             <div style="float: left;">
               <button class="button is-primary" v-on:click="addPeriodicalSchedules">Confirm</button>
+            </div>
+            <div style="float: right;">
+              <button class="button is-danger" v-on:click="cancel">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </modal>
+
+    <!-- set pipeline worker tags modal -->
+    <modal :visible="setPipelineWorkerTagsModal" class="modal-z-index" @close="close">
+      <div class="box credentials-modal">
+        <div class="block credentials-modal-content">
+          <collapse accordion is-fullwidth>
+            <collapse-item title="Set pipeline worker tags:" selected>
+              <div class="credentials-modal-content">
+                <message :direction="'down'" style="padding-bottom: 10px;"
+                         message="
+                          Set custom worker tags to this pipeline which will be evaluated during pipeline execution.
+                          WARNING: This pipeline will only be scheduled for worker with the same matching subset of custom tags."
+                         :duration="0">
+                </message>
+                <p class="control has-icons-left" style="padding-bottom: 5px;">
+                  <vue-tags-input :tags="selectedPipelineWorkerTags"
+                                  v-model="currentTag"
+                                  class="input is-medium input-bar"
+                                  @tags-changed="newTags => selectedPipelineWorkerTags = newTags">
+                  </vue-tags-input>
+                  <span class="icon is-small is-left">
+                    <i class="fa fa-tags"></i>
+                  </span>
+                </p>
+              </div>
+            </collapse-item>
+          </collapse>
+          <div class="modal-footer">
+            <div style="float: left;">
+              <button class="button is-primary" v-on:click="setPipelineWorkerTags">Confirm</button>
             </div>
             <div style="float: right;">
               <button class="button is-danger" v-on:click="cancel">Cancel</button>
@@ -287,450 +363,529 @@
 </template>
 
 <script>
-import Vue from 'vue'
-import { Modal } from 'vue-bulma-modal'
-import { Collapse, Item as CollapseItem } from 'vue-bulma-collapse'
-import ProgressBar from 'vue-bulma-progress-bar'
-import VueTippy from 'vue-tippy'
-import VueGoodTable from 'vue-good-table'
-import moment from 'moment'
-import Notification from 'vue-bulma-notification-fixed'
-import Message from 'vue-bulma-message-html'
+  import Vue from 'vue'
+  import {Modal} from 'vue-bulma-modal'
+  import {Collapse, Item as CollapseItem} from 'vue-bulma-collapse'
+  import ProgressBar from 'vue-bulma-progress-bar'
+  import VueTippy from 'vue-tippy'
+  import VueGoodTable from 'vue-good-table'
+  import moment from 'moment'
+  import Notification from 'vue-bulma-notification-fixed'
+  import Message from 'vue-bulma-message-html'
+  import VueTagsInput from '@johmun/vue-tags-input'
 
-const NotificationComponent = Vue.extend(Notification)
-const openNotification = (
-  propsData = {
-    title: '',
-    message: '',
-    type: '',
-    direction: '',
-    duration: 4500,
-    container: '.notifications'
-  }
-) => {
-  return new NotificationComponent({
-    el: document.createElement('div'),
-    propsData
-  })
-}
-
-Vue.use(VueGoodTable)
-Vue.use(VueTippy)
-
-export default {
-  data () {
-    return {
-      gitErrorMsg: '',
-      gitSuccess: false,
-      gitCredentialsModal: false,
-      gitWebHookModal: false,
-      periodicalPipelineScheduleModal: false,
-      gitBranches: [],
-      giturl: '',
-      pipelinename: '',
-      pipelineNameSuccess: false,
-      pipelineErrorMsg: '',
-      periodicSchedules: '',
-      periodicSchedulesErrMsg: '',
-      periodicSchedulesErr: false,
-      createPipeline: {
-        id: '',
-        output: '',
-        status: 0,
-        created: new Date(),
-        githubtoken: '',
-        pipeline: {
-          name: '',
-          type: 'golang',
-          perodicschedules: [],
-          repo: {
-            url: '',
-            user: '',
-            password: '',
-            selectedbranch: '',
-            privatekey: {
-              key: '',
-              username: '',
-              password: ''
-            }
-          }
-        }
-      },
-      historyColumns: [
-        {
-          label: 'Name',
-          field: 'pipeline.name'
-        },
-        {
-          label: 'Status',
-          field: 'status',
-          type: 'number'
-        },
-        {
-          label: 'Type',
-          field: 'pipeline.type'
-        },
-        {
-          label: 'Creation date',
-          field: 'created'
-        },
-        {
-          label: 'Status Output',
-          field: 'output'
-        }
-      ],
-      historyRows: [],
-      statusOutputModal: false,
-      statusOutputMsg: ''
+  const NotificationComponent = Vue.extend(Notification)
+  const openNotification = (
+    propsData = {
+      title: '',
+      message: '',
+      type: '',
+      direction: '',
+      duration: 4500,
+      container: '.notifications'
     }
-  },
+  ) => {
+    return new NotificationComponent({
+      el: document.createElement('div'),
+      propsData
+    })
+  }
 
-  components: {
-    Modal,
-    Collapse,
-    CollapseItem,
-    ProgressBar,
-    Message
-  },
+  Vue.use(VueGoodTable)
+  Vue.use(VueTippy)
 
-  mounted () {
-    // created pipelines history
-    this.fetchData()
-
-    // periodically update history dashboard
-    var intervalID = setInterval(function () {
-      this.fetchData()
-    }.bind(this), 3000)
-
-    // Append interval id to store
-    this.$store.commit('appendInterval', intervalID)
-  },
-
-  destroyed () {
-    this.$store.commit('clearIntervals')
-  },
-
-  watch: {
-    '$route': 'fetchData'
-  },
-
-  methods: {
-    fetchData () {
-      this.$http
-        .get('/api/v1/pipeline/created', { showProgressBar: false })
-        .then(response => {
-          if (response.data) {
-            this.historyRows = response.data
-
-            // Add extra output messages if the pipeline is in creation status.
-            for (var i = 0; i < this.historyRows.length; i++) {
-              if (this.historyRows[i].statustype === 'running' || this.historyRows[i].statustype === 'success') {
-                if (this.historyRows[i].status >= 25) {
-                  this.historyRows[i].output = 'Git repository has been cloned.\n'
-                  this.historyRows[i].output += 'Starting build process. This may take some time...\n'
-                }
-
-                if (this.historyRows[i].status >= 50) {
-                  this.historyRows[i].output += 'Pipeline has been successfully compiled.\n'
-                  this.historyRows[i].output += 'Verifying pipeline...\n'
-                }
-
-                if (this.historyRows[i].status >= 75) {
-                  this.historyRows[i].output += 'Pipeline has been verified.\n'
-                  this.historyRows[i].output += 'Finalizing creation process...\n'
-                }
-
-                if (this.historyRows[i].status === 100) {
-                  this.historyRows[i].output += 'Copy was successful.\n'
-                  this.historyRows[i].output += 'Finished.\n'
-                }
+  export default {
+    data () {
+      return {
+        gitErrorMsg: '',
+        gitSuccess: false,
+        gitCredentialsModal: false,
+        gitWebHookModal: false,
+        periodicalPipelineScheduleModal: false,
+        gitBranches: [],
+        giturl: '',
+        pipelinename: '',
+        pipelineNameSuccess: false,
+        pipelineErrorMsg: '',
+        periodicSchedules: '',
+        periodicSchedulesErrMsg: '',
+        periodicSchedulesErr: false,
+        createPipeline: {
+          id: '',
+          output: '',
+          status: 0,
+          created: new Date(),
+          githubtoken: '',
+          pipeline: {
+            name: '',
+            type: 'golang',
+            perodicschedules: [],
+            tags: [],
+            repo: {
+              url: '',
+              user: '',
+              password: '',
+              selectedbranch: '',
+              privatekey: {
+                key: '',
+                username: '',
+                password: ''
               }
             }
           }
-        })
-        .catch((error) => {
-          this.$store.commit('clearIntervals')
-          this.$onError(error)
-        })
+        },
+        historyColumns: [
+          {
+            label: 'Name',
+            field: 'pipeline.name'
+          },
+          {
+            label: 'Status',
+            field: 'status',
+            type: 'number'
+          },
+          {
+            label: 'Type',
+            field: 'pipeline.type'
+          },
+          {
+            label: 'Creation date',
+            field: 'created'
+          },
+          {
+            label: 'Status Output',
+            field: 'output'
+          }
+        ],
+        historyRows: [],
+        statusOutputModal: false,
+        statusOutputMsg: '',
+        setPipelineWorkerTagsModal: false,
+        selectedPipelineWorkerTags: [],
+        currentTag: ''
+      }
     },
 
-    checkGitRepoDebounce: Vue._.debounce(function () {
-      this.checkGitRepo()
-    }, 500),
+    components: {
+      Modal,
+      Collapse,
+      CollapseItem,
+      ProgressBar,
+      Message,
+      VueTagsInput
+    },
 
-    checkGitRepo () {
-      if (this.giturl === '') {
-        return
-      }
+    mounted () {
+      // created pipelines history
+      this.fetchData()
 
-      // copy giturl into our struct
-      this.createPipeline.pipeline.repo.url = this.giturl
+      // periodically update history dashboard
+      var intervalID = setInterval(function () {
+        this.fetchData()
+      }.bind(this), 3000)
 
-      // Reset last fetches
-      this.gitBranches = []
-      this.createPipeline.pipeline.repo.selectedbranch = ''
-      this.gitSuccess = false
+      // Append interval id to store
+      this.$store.commit('appendInterval', intervalID)
+    },
 
-      this.$http
-        .post('/api/v1/pipeline/gitlsremote', this.createPipeline.pipeline.repo)
-        .then(response => {
-          // Reset error message before
-          this.gitErrorMsg = ''
-          this.gitSuccess = true
+    destroyed () {
+      this.$store.commit('clearIntervals')
+    },
 
-          // Get branches and set to master if available
-          this.gitBranches = response.data
-          for (var i = 0; i < this.gitBranches.length; i++) {
-            if (this.gitBranches[i] === 'refs/heads/master') {
-              this.createPipeline.pipeline.repo.selectedbranch = this.gitBranches[i]
+    watch: {
+      '$route': 'fetchData'
+    },
+
+    methods: {
+      fetchData () {
+        this.$http
+          .get('/api/v1/pipeline/created', {showProgressBar: false})
+          .then(response => {
+            if (response.data) {
+              this.historyRows = response.data
+
+              // Add extra output messages if the pipeline is in creation status.
+              for (var i = 0; i < this.historyRows.length; i++) {
+                if (this.historyRows[i].statustype === 'running' || this.historyRows[i].statustype === 'success') {
+                  if (this.historyRows[i].status >= 25) {
+                    this.historyRows[i].output = 'Git repository has been cloned.\n'
+                    this.historyRows[i].output += 'Starting build process. This may take some time...\n'
+                  }
+
+                  if (this.historyRows[i].status >= 50) {
+                    this.historyRows[i].output += 'Pipeline has been successfully compiled.\n'
+                    this.historyRows[i].output += 'Verifying pipeline...\n'
+                  }
+
+                  if (this.historyRows[i].status >= 75) {
+                    this.historyRows[i].output += 'Pipeline has been verified.\n'
+                    this.historyRows[i].output += 'Finalizing creation process...\n'
+                  }
+
+                  if (this.historyRows[i].status === 100) {
+                    this.historyRows[i].output += 'Copy was successful.\n'
+                    this.historyRows[i].output += 'Finished.\n'
+                  }
+                }
+              }
             }
-          }
-
-          // if we cannot find master
-          if (
-            !this.createPipeline.pipeline.repo.selectedbranch &&
-            this.gitBranches.length > 0
-          ) {
-            this.createPipeline.pipeline.repo.selectedbranch = this.gitBranches[0]
-          }
-        })
-        .catch(error => {
-          // Add error message
-          this.gitErrorMsg = error.response.data
-        })
-    },
-
-    checkPipelineNameAvailableDebounce: Vue._.debounce(function () {
-      this.checkPipelineNameAvailable()
-    }, 500),
-
-    checkPipelineNameAvailable () {
-      // copy pipeline name into struct
-      this.createPipeline.pipeline.name = this.pipelinename
-
-      // Request for availability
-      this.$http
-        .get('/api/v1/pipeline/name', { params: { name: this.pipelinename } })
-        .then(response => {
-          // pipeline name valid and available
-          this.pipelineErrorMsg = ''
-          this.pipelineNameSuccess = true
-        })
-        .catch(error => {
-          this.pipelineErrorMsg = error.response.data
-          this.pipelineNameSuccess = false
-        })
-    },
-
-    startCreatePipeline () {
-      // copy giturl into our struct and pipeline name
-      this.createPipeline.pipeline.repo.url = this.giturl
-      this.createPipeline.pipeline.name = this.pipelinename
-
-      // Start the create pipeline process in the backend
-      this.$http
-        .post('/api/v1/pipeline', this.createPipeline)
-        .then(response => {
-          openNotification({
-            title: 'Pipeline created',
-            message: `Pipeline "${this.createPipeline.pipeline.name}" has been created successfully.`,
-            type: 'success'
           })
-          // Run fetchData to see the pipeline in our history table
-          this.fetchData()
-        })
-        .catch((error) => {
-          this.$onError(error)
-        })
-    },
-
-    convertTime (time) {
-      return moment(time).fromNow()
-    },
-
-    close () {
-      this.checkGitRepo()
-      this.gitCredentialsModal = false
-      this.gitWebHookModal = false
-      this.periodicalPipelineScheduleModal = false
-      this.$emit('close')
-    },
-
-    cancel () {
-      // cancel means reset all stuff
-      this.createPipeline.pipeline.repo.user = ''
-      this.createPipeline.pipeline.repo.password = ''
-      this.createPipeline.pipeline.repo.privatekey.key = ''
-      this.createPipeline.pipeline.repo.privatekey.username = ''
-      this.createPipeline.pipeline.repo.privatekey.password = ''
-      this.periodicSchedules = ''
-
-      this.close()
-    },
-
-    showCredentialsModal () {
-      this.gitCredentialsModal = true
-    },
-
-    showGitHubWebHookModal () {
-      this.gitWebHookModal = true
-    },
-
-    showPeriodicalPipelineScheduleModal () {
-      this.periodicalPipelineScheduleModal = true
-    },
-
-    addPeriodicalSchedules () {
-      // Reset previous errors if there were some.
-      this.periodicSchedulesErr = false
-
-      // Split string by line breaks.
-      this.createPipeline.pipeline.periodicschedules = this.periodicSchedules.split('\n')
-
-      // Check if periodic schedule entries are valid.
-      this.$http
-        .post('/api/v1/pipeline/periodicschedules', this.createPipeline.pipeline.periodicschedules)
-        .then(response => {
-          openNotification({
-            title: 'Periodic schedules valid',
-            message: `All defined periodic schedules are valid!`,
-            type: 'success'
+          .catch((error) => {
+            this.$store.commit('clearIntervals')
+            this.$onError(error)
           })
-        })
-        .catch((error) => {
-          this.periodicSchedulesErr = true
-          this.periodicSchedulesErrMsg = error.response.data
-        })
+      },
 
-      this.close()
-    },
+      checkGitRepoDebounce: Vue._.debounce(function () {
+        this.checkGitRepo()
+      }, 500),
 
-    showStatusOutputModal (msg) {
-      if (!msg) {
-        msg = 'No output found.'
+      checkGitRepo () {
+        if (this.giturl === '') {
+          return
+        }
+
+        // copy giturl into our struct
+        this.createPipeline.pipeline.repo.url = this.giturl
+
+        // Reset last fetches
+        this.gitBranches = []
+        this.createPipeline.pipeline.repo.selectedbranch = ''
+        this.gitSuccess = false
+
+        this.$http
+          .post('/api/v1/pipeline/gitlsremote', this.createPipeline.pipeline.repo)
+          .then(response => {
+            // Reset error message before
+            this.gitErrorMsg = ''
+            this.gitSuccess = true
+
+            // Get branches and set to master if available
+            this.gitBranches = response.data
+            for (var i = 0; i < this.gitBranches.length; i++) {
+              if (this.gitBranches[i] === 'refs/heads/master') {
+                this.createPipeline.pipeline.repo.selectedbranch = this.gitBranches[i]
+              }
+            }
+
+            // if we cannot find master
+            if (
+              !this.createPipeline.pipeline.repo.selectedbranch &&
+              this.gitBranches.length > 0
+            ) {
+              this.createPipeline.pipeline.repo.selectedbranch = this.gitBranches[0]
+            }
+          })
+          .catch(error => {
+            // Add error message
+            this.gitErrorMsg = error.response.data
+          })
+      },
+
+      checkPipelineNameAvailableDebounce: Vue._.debounce(function () {
+        this.checkPipelineNameAvailable()
+      }, 500),
+
+      checkPipelineNameAvailable () {
+        // copy pipeline name into struct
+        this.createPipeline.pipeline.name = this.pipelinename
+
+        // Request for availability
+        this.$http
+          .get('/api/v1/pipeline/name', {params: {name: this.pipelinename}})
+          .then(response => {
+            // pipeline name valid and available
+            this.pipelineErrorMsg = ''
+            this.pipelineNameSuccess = true
+          })
+          .catch(error => {
+            this.pipelineErrorMsg = error.response.data
+            this.pipelineNameSuccess = false
+          })
+      },
+
+      startCreatePipeline () {
+        // Copy related information into the create pipeline struct
+        this.createPipeline.pipeline.repo.url = this.giturl
+        this.createPipeline.pipeline.name = this.pipelinename
+
+        // Start the create pipeline process in the backend
+        this.$http
+          .post('/api/v1/pipeline', this.createPipeline)
+          .then(response => {
+            openNotification({
+              title: 'Pipeline created',
+              message: `Pipeline "${this.createPipeline.pipeline.name}" has been created successfully.`,
+              type: 'success'
+            })
+            // Run fetchData to see the pipeline in our history table
+            this.fetchData()
+          })
+          .catch((error) => {
+            this.$onError(error)
+          })
+      },
+
+      convertTime (time) {
+        return moment(time).fromNow()
+      },
+
+      close () {
+        this.checkGitRepo()
+        this.gitCredentialsModal = false
+        this.gitWebHookModal = false
+        this.periodicalPipelineScheduleModal = false
+        this.setPipelineWorkerTagsModal = false
+        this.$emit('close')
+      },
+
+      cancel () {
+        // cancel means reset all stuff
+        this.createPipeline.pipeline.repo.user = ''
+        this.createPipeline.pipeline.repo.password = ''
+        this.createPipeline.pipeline.repo.privatekey.key = ''
+        this.createPipeline.pipeline.repo.privatekey.username = ''
+        this.createPipeline.pipeline.repo.privatekey.password = ''
+        this.periodicSchedules = ''
+        this.selectedPipelineWorkerTags = []
+
+        this.close()
+      },
+
+      showCredentialsModal () {
+        this.gitCredentialsModal = true
+      },
+
+      showGitHubWebHookModal () {
+        this.gitWebHookModal = true
+      },
+
+      showPeriodicalPipelineScheduleModal () {
+        this.periodicSchedules = ''
+        for (let i = 0; i < this.createPipeline.pipeline.periodicschedules.length; i++) {
+          this.periodicSchedules += this.createPipeline.pipeline.periodicschedules[i]
+        }
+        this.periodicalPipelineScheduleModal = true
+      },
+
+      addPeriodicalSchedules () {
+        // Reset previous errors if there were some.
+        this.periodicSchedulesErr = false
+
+        // Split string by line breaks.
+        this.createPipeline.pipeline.periodicschedules = this.periodicSchedules.split('\n')
+
+        // Check if periodic schedule entries are valid.
+        this.$http
+          .post('/api/v1/pipeline/periodicschedules', this.createPipeline.pipeline.periodicschedules)
+          .then(response => {
+            openNotification({
+              title: 'Periodic schedules valid',
+              message: `All defined periodic schedules are valid!`,
+              type: 'success'
+            })
+          })
+          .catch((error) => {
+            this.periodicSchedulesErr = true
+            this.periodicSchedulesErrMsg = error.response.data
+          })
+
+        this.close()
+      },
+
+      setPipelineWorkerTags () {
+        // Reset old tags
+        this.createPipeline.pipeline.tags = []
+
+        // Add tags to create pipeline object
+        for (let i = 0; i < this.selectedPipelineWorkerTags.length; i++) {
+          this.createPipeline.pipeline.tags.push(this.selectedPipelineWorkerTags[i].text)
+        }
+
+        // set current tag in case the user forgot to press enter
+        if (this.currentTag !== '') {
+          this.createPipeline.pipeline.tags.push(this.currentTag)
+          this.currentTag = ''
+        }
+
+        this.close()
+      },
+
+      showSetPipelineWorkerTags () {
+        this.selectedPipelineWorkerTags = []
+        for (let i = 0; i < this.createPipeline.pipeline.tags.length; i++) {
+          this.selectedPipelineWorkerTags.push({text: this.createPipeline.pipeline.tags[i], tiClasses: ['ti-valid']})
+        }
+        this.setPipelineWorkerTagsModal = true
+      },
+
+      showStatusOutputModal (msg) {
+        if (!msg) {
+          msg = 'No output found.'
+        }
+
+        // LF does not work for HTML. Replace with <br />
+        msg = msg.replace(/\n/g, '<br />')
+
+        this.statusOutputMsg = msg
+        this.statusOutputModal = true
+      },
+
+      closeStatusModal () {
+        this.statusOutputModal = false
+        this.statusOutputMsg = ''
+        this.$emit('close')
+      },
+
+      prettifyPipelineType (type) {
+        if (type === 'cpp') {
+          return 'C++'
+        }
+        return type
       }
-
-      // LF does not work for HTML. Replace with <br />
-      msg = msg.replace(/\n/g, '<br />')
-
-      this.statusOutputMsg = msg
-      this.statusOutputModal = true
-    },
-
-    closeStatusModal () {
-      this.statusOutputModal = false
-      this.statusOutputMsg = ''
-      this.$emit('close')
-    },
-
-    prettifyPipelineType (type) {
-      if (type === 'cpp') {
-        return 'C++'
-      }
-      return type
     }
   }
-}
 </script>
 
 <style lang="scss">
-.credentials-modal {
-  text-align: center;
-  background-color: #2a2735;
-}
+  .credentials-modal {
+    text-align: center;
+    background-color: #2a2735;
+  }
 
-.credentials-modal-content {
-  margin: auto;
-  padding: 10px;
-}
+  .credentials-modal-content {
+    margin: auto;
+    padding: 10px;
+  }
 
-.dotted-line {
-  background-image: linear-gradient(
-    to right,
-    black 33%,
-    rgba(255, 255, 255, 0) 0%
-  );
-  background-position: bottom;
-  background-size: 3px 1px;
-  background-repeat: repeat-x;
-}
+  .dotted-line {
+    background-image: linear-gradient(
+      to right,
+      black 33%,
+      rgba(255, 255, 255, 0) 0%
+    );
+    background-position: bottom;
+    background-size: 3px 1px;
+    background-repeat: repeat-x;
+  }
 
-.separater {
-  width: 100%;
-  text-align: center;
-  border-bottom: 1px solid #4da2fc;
-  line-height: 0.1em;
-  padding-top: 15px;
-  margin: 10px 0 20px;
-}
+  .separater {
+    width: 100%;
+    text-align: center;
+    border-bottom: 1px solid #4da2fc;
+    line-height: 0.1em;
+    padding-top: 15px;
+    margin: 10px 0 20px;
+  }
 
-.separater .span {
-  background: black;
-  color: whitesmoke;
-  padding: 0 10px;
-}
+  .separater .span {
+    background: black;
+    color: whitesmoke;
+    padding: 0 10px;
+  }
 
-.modal-footer {
-  height: 35px;
-  padding-top: 15px;
-}
+  .modal-footer {
+    height: 35px;
+    padding-top: 15px;
+  }
 
-.pipelinetype {
-  height: 80px;
-  width: 80px;
-  border: 1px solid;
-  color: black;
-  margin: 0 5px;
-  box-shadow: 4px 4px 4px 4px rgba(0, 0, 0, 0.2),
+  .pipelinetype {
+    height: 80px;
+    width: 80px;
+    border: 1px solid;
+    color: black;
+    margin: 0 5px;
+    box-shadow: 4px 4px 4px 4px rgba(0, 0, 0, 0.2),
     0 1px 1px 0 rgba(0, 0, 0, 0.19);
-}
+  }
 
-.pipelinetype:hover {
-  -moz-transform: scale(1.1);
-  -webkit-transform: scale(1.1);
-  transform: scale(1.1);
-}
+  .pipelinetype:hover {
+    -moz-transform: scale(1.1);
+    -webkit-transform: scale(1.1);
+    transform: scale(1.1);
+  }
 
-.pipelinetypeactive {
-  color: #4da2fc;
-  border: 2px solid;
-}
+  .pipelinetypeactive {
+    color: #4da2fc;
+    border: 2px solid;
+  }
 
-.typeimage {
-  display: block;
-  margin: 0 auto;
-  height: 100%;
-}
+  .typeimage {
+    display: block;
+    margin: 0 auto;
+    height: 100%;
+  }
 
-.typeimagenotyetsupported {
-  opacity: 0.5;
-}
+  .typeimagenotyetsupported {
+    opacity: 0.5;
+  }
 
-.blink {
-  animation: blink 700ms infinite alternate;
-}
+  .blink {
+    animation: blink 700ms infinite alternate;
+  }
 
-@keyframes blink {
-  from {
+  @keyframes blink {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0.2;
+    }
+  }
+
+  .message-header {
+    background-color: #4da2fc;
+  }
+
+  .message-body {
+    background-color: #19191b;
+    border-radius: 0px;
+    border: none;
+    color: whitesmoke;
+  }
+
+  .statusModal {
+    width: 100%;
+    background-color: rgb(42, 38, 53);
+  }
+
+  .ti-input {
+    background-color: #19191b;
+    color: white;
+    border: none !important;
+    width: 100%;
+    height: 100% !important;
+    padding: 0px !important;
+    caret-color: whitesmoke;
+  }
+
+  .ti-new-tag-input-wrapper {
+    height: 30px !important;
+    border: none !important;
+    margin: auto !important;
+    padding: auto !important;
+  }
+
+  .ti-new-tag-input {
+    background-color: #19191b !important;
+    font-size: 1.25rem;
+    color: whitesmoke !important;
+  }
+
+  .ti-new-tag-input::-webkit-input-placeholder {
+    color: #8c91a0;
+    text-shadow: none;
+    -webkit-text-fill-color: initial;
+  }
+
+  .ti-new-tag-input::-moz-placeholder {
+    color: #8c91a0;
+    text-shadow: none;
     opacity: 1;
   }
-  to {
-    opacity: 0.2;
+
+  .vue-tags-input {
+    background-color: #19191b !important;
+    height: auto !important;
   }
-}
-
-.message-header {
-  background-color: #4da2fc;
-}
-
-.message-body {
-  background-color: black;
-  border: none;
-  color: whitesmoke;
-}
-
-.statusModal {
-  width: 100%;
-  background-color: rgb(42, 38, 53);
-}
 </style>

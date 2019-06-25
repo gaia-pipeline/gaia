@@ -9,7 +9,7 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/auth"
+	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 	"github.com/labstack/echo"
 )
 
@@ -30,7 +30,8 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 				strings.Contains(c.Path(), "/assets/") ||
 				c.Path() == "/favicon.ico" ||
 				strings.Contains(c.Path(), "pipeline/githook") ||
-				strings.Contains(c.Path(), "/trigger") {
+				strings.Contains(c.Path(), "/trigger") ||
+				strings.Contains(c.Path(), "/worker/register") {
 				return next(c)
 			}
 
@@ -86,7 +87,7 @@ func (ra *AuthConfig) getRequiredRole(method, path string) string {
 			for _, endpoint := range role.APIEndpoint {
 				// If the http method & path match then return the role required for this endpoint
 				if method == endpoint.Method && path == endpoint.Path {
-					return auth.FullUserRoleName(category, role)
+					return rolehelper.FullUserRoleName(category, role)
 				}
 			}
 		}

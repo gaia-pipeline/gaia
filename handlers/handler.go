@@ -6,7 +6,7 @@ import (
 
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/auth"
+	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
@@ -26,6 +26,9 @@ var (
 
 	// errPipelineRename is thrown when a pipeline binary could not be renamed
 	errPipelineRename = errors.New("pipeline could not be renamed")
+
+	// List of secret keys which cannot be modified via the normal Vault API.
+	ignoredVaultKeys []string
 )
 
 // InitHandlers initializes(registers) all handlers
@@ -82,12 +85,20 @@ func InitHandlers(e *echo.Echo) error {
 	e.POST(p+"secret", SetSecret)
 	e.PUT(p+"secret/update", SetSecret)
 
+	// Worker
+	e.GET(p+"worker/secret", GetWorkerRegisterSecret)
+	e.POST(p+"worker/register", RegisterWorker)
+	e.GET(p+"worker/status", GetWorkerStatusOverview)
+	e.GET(p+"worker", GetWorker)
+	e.DELETE(p+"worker/:workerid", DeregisterWorker)
+	e.POST(p+"worker/secret", ResetWorkerRegisterSecret)
+
 	// Middleware
 	e.Use(middleware.Recover())
 	//e.Use(middleware.Logger())
 	e.Use(middleware.BodyLimit("32M"))
 	e.Use(AuthMiddleware(&AuthConfig{
-		RoleCategories: auth.DefaultUserRoles,
+		RoleCategories: rolehelper.DefaultUserRoles,
 	}))
 
 	// Extra options
@@ -110,6 +121,10 @@ func InitHandlers(e *echo.Echo) error {
 		e.GET("/assets/css/assets/fonts/*", echo.WrapHandler(http.StripPrefix("/assets/css/", assetHandler)))
 		e.GET("/assets/img/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
 	}
+
+	// Setup ignored vault keys which cannot be modified directly via the Vault API
+	ignoredVaultKeys = make([]string, 0, 1)
+	ignoredVaultKeys = append(ignoredVaultKeys, gaia.WorkerRegisterKey)
 
 	return nil
 }

@@ -32,7 +32,7 @@ func TestBuildPipelineAcceptanceTestTearUp(t *testing.T) {
 		}
 	}()
 
-	// Sleep a bit until all components has been initialized and started.
+	// Sleep a bit until all components are initialized and started.
 	time.Sleep(2 * time.Second)
 
 	// Define acceptance tests here.
@@ -50,7 +50,7 @@ func buildGoPluginTest(t *testing.T) {
 		Pipeline: gaia.Pipeline{
 			Name: "GoTestPipeline",
 			Type: gaia.PTypeGolang,
-			Repo: gaia.GitRepo{URL: "https://github.com/gaia-pipeline/go-example"},
+			Repo: &gaia.GitRepo{URL: "https://github.com/gaia-pipeline/go-example"},
 		},
 	}
 
@@ -70,7 +70,7 @@ func buildJavaPluginTest(t *testing.T) {
 		Pipeline: gaia.Pipeline{
 			Name: "JavaTestPipeline",
 			Type: gaia.PTypeJava,
-			Repo: gaia.GitRepo{URL: "https://github.com/gaia-pipeline/java-example"},
+			Repo: &gaia.GitRepo{URL: "https://github.com/gaia-pipeline/java-example"},
 		},
 	}
 
@@ -90,7 +90,7 @@ func buildPythonPluginTest(t *testing.T) {
 		Pipeline: gaia.Pipeline{
 			Name: "PythonTestPipeline",
 			Type: gaia.PTypePython,
-			Repo: gaia.GitRepo{URL: "https://github.com/gaia-pipeline/python-example"},
+			Repo: &gaia.GitRepo{URL: "https://github.com/gaia-pipeline/python-example"},
 		},
 	}
 
@@ -110,7 +110,7 @@ func buildCppPluginTest(t *testing.T) {
 		Pipeline: gaia.Pipeline{
 			Name: "CppTestPipeline",
 			Type: gaia.PTypeCpp,
-			Repo: gaia.GitRepo{URL: "https://github.com/gaia-pipeline/cpp-example"},
+			Repo: &gaia.GitRepo{URL: "https://github.com/gaia-pipeline/cpp-example"},
 		},
 	}
 
@@ -130,7 +130,7 @@ func buildRubyPluginTest(t *testing.T) {
 		Pipeline: gaia.Pipeline{
 			Name: "RubyTestPipeline",
 			Type: gaia.PTypeRuby,
-			Repo: gaia.GitRepo{URL: "https://github.com/gaia-pipeline/ruby-example"},
+			Repo: &gaia.GitRepo{URL: "https://github.com/gaia-pipeline/ruby-example"},
 		},
 	}
 

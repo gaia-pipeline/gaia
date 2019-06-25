@@ -9,8 +9,10 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
@@ -19,19 +21,22 @@ import (
 
 type PluginFake struct{}
 
-func (p *PluginFake) NewPlugin(ca security.CAAPI) Plugin        { return &PluginFake{} }
+func (p *PluginFake) NewPlugin(ca security.CAAPI) plugin.Plugin { return &PluginFake{} }
 func (p *PluginFake) Init(cmd *exec.Cmd, logPath *string) error { return nil }
 func (p *PluginFake) Validate() error                           { return nil }
 func (p *PluginFake) Execute(j *gaia.Job) error {
 	j.Status = gaia.JobSuccess
 	return nil
 }
-func (p *PluginFake) GetJobs() ([]gaia.Job, error) { return prepareJobs(), nil }
-func (p *PluginFake) FlushLogs() error             { return nil }
-func (p *PluginFake) Close()                       {}
+func (p *PluginFake) GetJobs() ([]*gaia.Job, error) { return prepareJobs(), nil }
+func (p *PluginFake) FlushLogs() error              { return nil }
+func (p *PluginFake) Close()                        {}
 
 type CAFake struct{}
 
+func (c *CAFake) CreateSignedCertWithValidOpts(hostname string, hoursBeforeValid, hoursAfterValid time.Duration) (string, string, error) {
+	return "", "", nil
+}
 func (c *CAFake) CreateSignedCert() (string, string, error)                       { return "", "", nil }
 func (c *CAFake) GenerateTLSConfig(certPath, keyPath string) (*tls.Config, error) { return nil, nil }
 func (c *CAFake) CleanupCerts(crt, key string) error                              { return nil }
@@ -46,6 +51,18 @@ func (v *VaultFake) Add(key string, value []byte)   {}
 func (v *VaultFake) Remove(key string)              {}
 func (v *VaultFake) Get(key string) ([]byte, error) { return []byte{}, nil }
 
+type MemDBFake struct{}
+
+func (m *MemDBFake) SyncStore() error                                { return nil }
+func (m *MemDBFake) GetAllWorker() []*gaia.Worker                    { return []*gaia.Worker{} }
+func (m *MemDBFake) UpsertWorker(w *gaia.Worker, persist bool) error { return nil }
+func (m *MemDBFake) GetWorker(id string) (*gaia.Worker, error)       { return &gaia.Worker{}, nil }
+func (m *MemDBFake) DeleteWorker(id string, persist bool) error      { return nil }
+func (m *MemDBFake) InsertPipelineRun(p *gaia.PipelineRun) error     { return nil }
+func (m *MemDBFake) PopPipelineRun(tags []string) (*gaia.PipelineRun, error) {
+	return &gaia.PipelineRun{}, nil
+}
+
 func TestInit(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
 	storeInstance := store.NewBoltStore()
@@ -58,20 +75,20 @@ func TestInit(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	gaia.Cfg.Worker = "2"
-	if err := storeInstance.Init(); err != nil {
+	gaia.Cfg.Worker = 2
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
-	s := NewScheduler(storeInstance, &PluginFake{}, &CAFake{}, &VaultFake{})
-	err := s.Init()
+	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
 	if err != nil {
 		t.Fatal(err)
 	}
+	s.Init()
 }
 
 type PluginFakeFailed struct{}
 
-func (p *PluginFakeFailed) NewPlugin(ca security.CAAPI) Plugin        { return &PluginFakeFailed{} }
+func (p *PluginFakeFailed) NewPlugin(ca security.CAAPI) plugin.Plugin { return &PluginFakeFailed{} }
 func (p *PluginFakeFailed) Init(cmd *exec.Cmd, logPath *string) error { return nil }
 func (p *PluginFakeFailed) Validate() error                           { return nil }
 func (p *PluginFakeFailed) Execute(j *gaia.Job) error {
@@ -79,9 +96,9 @@ func (p *PluginFakeFailed) Execute(j *gaia.Job) error {
 	j.FailPipeline = true
 	return errors.New("job failed")
 }
-func (p *PluginFakeFailed) GetJobs() ([]gaia.Job, error) { return prepareJobs(), nil }
-func (p *PluginFakeFailed) FlushLogs() error             { return nil }
-func (p *PluginFakeFailed) Close()                       {}
+func (p *PluginFakeFailed) GetJobs() ([]*gaia.Job, error) { return prepareJobs(), nil }
+func (p *PluginFakeFailed) FlushLogs() error              { return nil }
+func (p *PluginFakeFailed) Close()                        {}
 
 func TestPrepareAndExecFail(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}
@@ -96,12 +113,15 @@ func TestPrepareAndExecFail(t *testing.T) {
 		Name:   "Gaia",
 	})
 
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
+	if err != nil {
+		t.Fatal(err)
+	}
 	s.prepareAndExec(r)
 
 	// get pipeline run from store
@@ -134,13 +154,16 @@ func TestPrepareAndExecInvalidType(t *testing.T) {
 		Name:   "Gaia",
 	})
 
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
 	p.Type = gaia.PTypeUnknown
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
+	if err != nil {
+		t.Fatal(err)
+	}
 	s.prepareAndExec(r)
 
 	// get pipeline run from store
@@ -168,14 +191,17 @@ func TestPrepareAndExecJavaType(t *testing.T) {
 		Name:   "Gaia",
 	})
 
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
 	javaExecName = "go"
 	p.Type = gaia.PTypeJava
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFake{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
+	if err != nil {
+		t.Fatal(err)
+	}
 	s.prepareAndExec(r)
 
 	// get pipeline run from store
@@ -212,14 +238,17 @@ func TestPrepareAndExecPythonType(t *testing.T) {
 		Name:   "Gaia",
 	})
 
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
 	pythonExecName = "go"
 	p.Type = gaia.PTypePython
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFake{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
+	if err != nil {
+		t.Fatal(err)
+	}
 	s.prepareAndExec(r)
 
 	// get pipeline run from store
@@ -256,13 +285,16 @@ func TestPrepareAndExecCppType(t *testing.T) {
 		Name:   "Gaia",
 	})
 
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
 	p.Type = gaia.PTypeCpp
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFake{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
+	if err != nil {
+		t.Fatal(err)
+	}
 	s.prepareAndExec(r)
 
 	// get pipeline run from store
@@ -299,7 +331,7 @@ func TestPrepareAndExecRubyType(t *testing.T) {
 		Name:   "Gaia",
 	})
 
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
@@ -308,7 +340,10 @@ func TestPrepareAndExecRubyType(t *testing.T) {
 	rubyGemName = "echo"
 	findRubyGemCommands = []string{"name: rubytest"}
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFake{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
+	if err != nil {
+		t.Fatal(err)
+	}
 	s.prepareAndExec(r)
 
 	// get pipeline run from store
@@ -344,17 +379,17 @@ func TestSchedulePipeline(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	gaia.Cfg.Worker = "2"
-	if err := storeInstance.Init(); err != nil {
+	gaia.Cfg.Worker = 2
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, _ := prepareTestData()
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
-	err := s.Init()
+	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
 	if err != nil {
 		t.Fatal(err)
 	}
+	s.Init()
 	_, err = s.SchedulePipeline(&p, prepareArgs())
 	if err != nil {
 		t.Fatal(err)
@@ -373,8 +408,8 @@ func TestSchedulePipelineParallel(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	gaia.Cfg.Worker = "2"
-	if err := storeInstance.Init(); err != nil {
+	gaia.Cfg.Worker = 2
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p1 := gaia.Pipeline{
@@ -391,11 +426,11 @@ func TestSchedulePipelineParallel(t *testing.T) {
 	}
 	storeInstance.PipelinePut(&p1)
 	storeInstance.PipelinePut(&p2)
-	s := NewScheduler(storeInstance, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
-	err := s.Init()
+	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
 	if err != nil {
 		t.Fatal(err)
 	}
+	s.Init()
 	var run1 *gaia.PipelineRun
 	var run2 *gaia.PipelineRun
 	var wg sync.WaitGroup
@@ -426,14 +461,17 @@ func TestSchedule(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	gaia.Cfg.Worker = "2"
-	if err := storeInstance.Init(); err != nil {
+	gaia.Cfg.Worker = 2
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, _ := prepareTestData()
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
-	_, err := s.SchedulePipeline(&p, prepareArgs())
+	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = s.SchedulePipeline(&p, prepareArgs())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -459,13 +497,16 @@ func TestSetPipelineJobs(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	if err := storeInstance.Init(); err != nil {
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, _ := prepareTestData()
 	p.Jobs = nil
-	s := NewScheduler(storeInstance, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
-	err := s.SetPipelineJobs(&p)
+	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = s.SetPipelineJobs(&p)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -486,14 +527,17 @@ func TestStopPipelineRunFailIfPipelineNotInRunningState(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	gaia.Cfg.Worker = "2"
-	if err := storeInstance.Init(); err != nil {
+	gaia.Cfg.Worker = 2
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, _ := prepareTestData()
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
-	_, err := s.SchedulePipeline(&p, prepareArgs())
+	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = s.SchedulePipeline(&p, prepareArgs())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -526,19 +570,22 @@ func TestStopPipelineRun(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	gaia.Cfg.Worker = "2"
-	if err := storeInstance.Init(); err != nil {
+	gaia.Cfg.Worker = 2
+	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
 	storeInstance.PipelinePut(&p)
-	s := NewScheduler(storeInstance, &PluginFake{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	r.Status = gaia.RunRunning
 	storeInstance.PipelinePutRun(&r)
 
 	run, _ := storeInstance.PipelineGetRunByPipelineIDAndID(p.ID, r.ID)
-	err := s.StopPipelineRun(&p, run.ID)
+	err = s.StopPipelineRun(&p, run.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -548,7 +595,7 @@ func TestStopPipelineRun(t *testing.T) {
 	}
 }
 
-func prepareArgs() []gaia.Argument {
+func prepareArgs() []*gaia.Argument {
 	arg1 := gaia.Argument{
 		Description: "First Arg",
 		Key:         "firstarg",
@@ -564,10 +611,10 @@ func prepareArgs() []gaia.Argument {
 		Key:         "vaultarg",
 		Type:        "vault",
 	}
-	return []gaia.Argument{arg1, arg2, arg3}
+	return []*gaia.Argument{&arg1, &arg2, &arg3}
 }
 
-func prepareJobs() []gaia.Job {
+func prepareJobs() []*gaia.Job {
 	job1 := gaia.Job{
 		ID:        hash("Job1"),
 		Title:     "Job1",
@@ -594,11 +641,11 @@ func prepareJobs() []gaia.Job {
 		Status:    gaia.JobWaitingExec,
 	}
 
-	return []gaia.Job{
-		job1,
-		job2,
-		job3,
-		job4,
+	return []*gaia.Job{
+		&job1,
+		&job2,
+		&job3,
+		&job4,
 	}
 }
 

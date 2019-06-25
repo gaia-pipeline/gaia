@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package protobuf;
+
+import "google/protobuf/empty.proto";
+
+// WorkerInstance represents the identity of
+// a worker instance.
+message WorkerInstance {
+    string   unique_id    = 1;
+    int32    worker_slots = 2;
+    repeated string tags  = 3;
+}
+
+// PipelineRun represents one pipeline run.
+message PipelineRun {
+    string   unique_id     = 1;
+    int64    id            = 2;
+    string   status        = 3;
+    int64    start_date    = 4;
+	int64    finish_date   = 5;
+	int64    schedule_date = 6;
+    int64    pipeline_id   = 7;
+    string   pipeline_name = 8;
+    string   pipeline_type = 9;
+    bytes    sha_sum       = 10;
+    repeated Job jobs      = 11;
+}
+
+// Job represents one job from a pipeline run.
+message Job {
+    uint32   unique_id      = 1;
+	string   title          = 2;
+	string   description    = 3;
+	repeated Job depends_on = 4;
+	string   status         = 5;
+	repeated Argument args  = 6;
+}
+
+// Argument represents one argument from a job.
+message Argument {
+    string description = 1;
+	string type        = 2;
+	string key         = 3;
+	string value       = 4;
+}
+
+// LogChunk represents one chunk of a log file.
+message LogChunk {
+    int64 run_id      = 1;
+    int64 pipeline_id = 2;
+    bytes chunk       = 3;
+}
+
+// FileChunk represents one chunk of a file.
+message FileChunk {
+    bytes chunk = 1;
+}
+
+service Worker {
+    // GetWork pulls work from the primary instance.
+    rpc GetWork (WorkerInstance) returns (stream PipelineRun);
+
+    // UpdateWork updates work information at the primary instance.
+    rpc UpdateWork (PipelineRun) returns (google.protobuf.Empty);
+
+    // StreamBinary streams a pipeline binary back to a worker instance.
+    rpc StreamBinary (PipelineRun) returns (stream FileChunk);
+
+    // StreamLogs streams pipeline run logs to the primary instance.
+    rpc StreamLogs (stream LogChunk) returns (google.protobuf.Empty);
+
+    // Deregister deregister a registered worker from the primary instance.
+    rpc Deregister (WorkerInstance) returns (google.protobuf.Empty);
+}
