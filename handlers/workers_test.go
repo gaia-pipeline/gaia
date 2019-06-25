@@ -50,6 +50,7 @@ func TestRegisterWorker(t *testing.T) {
 	m := &mockStorageService{}
 	services.MockStorageService(m)
 	dataStore, _ := services.StorageService()
+	defer func() { services.MockStorageService(nil) }()
 
 	// Initialize certificate store
 	_, err = services.CertificateService()
@@ -189,6 +190,7 @@ func TestDeregisterWorker(t *testing.T) {
 	m := &mockStorageService{}
 	services.MockStorageService(m)
 	dataStore, _ := services.StorageService()
+	defer func() { services.MockStorageService(nil) }()
 
 	// Initialize certificate store
 	_, err = services.CertificateService()
@@ -380,6 +382,7 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 	m := &mockStorageService{}
 	services.MockStorageService(m)
 	dataStore, _ := services.StorageService()
+	defer func() { services.MockStorageService(nil) }()
 
 	// Initialize certificate store
 	_, err = services.CertificateService()
@@ -531,6 +534,7 @@ func TestGetWorker(t *testing.T) {
 	m := &mockStorageService{}
 	services.MockStorageService(m)
 	dataStore, _ := services.StorageService()
+	defer func() { services.MockStorageService(nil) }()
 
 	// Initialize certificate store
 	_, err = services.CertificateService()
