@@ -50,8 +50,11 @@ var (
 	// Ruby executable name
 	rubyExecName = "ruby"
 
-	// Ruby gem binary name.
+	// Ruby gem binary name
 	rubyGemName = "gem"
+
+	// NodeJS binary name
+	nodeJSExecName = "node"
 )
 
 // GaiaScheduler is a job scheduler for gaia pipeline runs.

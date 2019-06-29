@@ -47,6 +47,9 @@ const (
 	// PTypeRuby ruby plugin type
 	PTypeRuby PipelineType = "ruby"
 
+	// PTypeNodeJS NodeJS plugin type
+	PTypeNodeJS PipelineType = "nodejs"
+
 	// CreatePipelineFailed status
 	CreatePipelineFailed CreatePipelineType = "failed"
 
@@ -127,6 +130,9 @@ const (
 
 	// TmpRubyFolder is the name of the ruby temporary folder
 	TmpRubyFolder = "ruby"
+
+	// TmpNodeJSFolder is the name of the nodejs temporary folder
+	TmpNodeJSFolder = "nodejs"
 
 	// WorkerRegisterKey is the used key for worker registration secret
 	WorkerRegisterKey = "WORKER_REGISTER_KEY"

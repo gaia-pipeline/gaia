@@ -93,6 +93,8 @@ func newBuildPipeline(t gaia.PipelineType) BuildPipeline {
 		bP = &BuildPipelineRuby{
 			Type: t,
 		}
+	case gaia.PTypeNodeJS:
+		// TODO
 	}
 
 	return bP

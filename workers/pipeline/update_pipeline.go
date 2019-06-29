@@ -21,6 +21,12 @@ var (
 
 	// Ruby gem binary name.
 	rubyGemName = "gem"
+
+	// Tar binary name.
+	tarName = "tar"
+
+	// NPM binary name.
+	npmName = "npm"
 )
 
 // updatePipeline executes update steps dependent on the pipeline type.
@@ -52,8 +58,8 @@ func updatePipeline(p *gaia.Pipeline) error {
 		// install plugin in this environment
 		cmd = exec.Command("/bin/sh", "-c", fmt.Sprintf(pythonPipInstallCmd, filepath.Join(virtualEnvPath, p.Name)))
 		cmd.Dir = virtualEnvPath
-		if err := cmd.Run(); err != nil {
-			return err
+		if out, err := cmd.CombinedOutput(); err != nil {
+			return fmt.Errorf("cannot install python plugin: %s", string(out[:]))
 		}
 	case gaia.PTypeRuby:
 		// Find gem binary in path variable.
@@ -79,8 +85,48 @@ func updatePipeline(p *gaia.Pipeline) error {
 		// Install gem forcefully.
 		cmd := exec.Command(path, "install", "-f", pipelineCopyPath)
 		if out, err := cmd.CombinedOutput(); err != nil {
-			gaia.Cfg.Logger.Error("error", string(out[:]))
+			return fmt.Errorf("cannot install ruby gem: %s", string(out[:]))
+		}
+	case gaia.PTypeNodeJS:
+		// Find tar binary in path
+		path, err := exec.LookPath(tarName)
+		if err != nil {
 			return err
+		}
+
+		// Delete old folders if exist
+		tmpFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpNodeJSFolder, p.Name)
+		os.RemoveAll(tmpFolder)
+
+		// Copy nodejs archive to temp folder before we unpack it.
+		if err := os.MkdirAll(tmpFolder, 0700); err != nil {
+			return err
+		}
+		pipelinePath := filepath.Join(tmpFolder, filepath.Base(p.ExecPath))
+		if err := copyFileContents(p.ExecPath, pipelinePath); err != nil {
+			return err
+		}
+
+		// Unpack it
+		cmd := exec.Command(path, "-xzvf", pipelinePath, "-C", tmpFolder)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			return fmt.Errorf("cannot unpack nodejs archive: %s", string(out[:]))
+		}
+
+		// Find npm binary in path
+		path, err = exec.LookPath(npmName)
+		if err != nil {
+			return err
+		}
+
+		// Install dependencies
+		cmd = &exec.Cmd{
+			Path: path,
+			Dir:  tmpFolder,
+			Args: []string{path, "install"},
+		}
+		if out, err := cmd.CombinedOutput(); err != nil {
+			return fmt.Errorf("cannot install dependencies: %s", string(out[:]))
 		}
 	}
 

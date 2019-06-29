@@ -314,6 +314,8 @@ func getPipelineType(n string) (gaia.PipelineType, error) {
 		return gaia.PTypeCpp, nil
 	case gaia.PTypeRuby.String():
 		return gaia.PTypeRuby, nil
+	case gaia.PTypeNodeJS.String():
+		return gaia.PTypeNodeJS, nil
 	}
 
 	return gaia.PTypeUnknown, errMissingType
