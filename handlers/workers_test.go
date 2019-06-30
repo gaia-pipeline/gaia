@@ -13,7 +13,7 @@ import (
 	"github.com/gaia-pipeline/gaia/services"
 	gStore "github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 type mockStorageService struct {

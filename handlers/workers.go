@@ -8,10 +8,10 @@ import (
 
 	"github.com/gaia-pipeline/gaia/security"
 
-	randomdata "github.com/Pallinder/go-randomdata"
+	"github.com/Pallinder/go-randomdata"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	uuid "github.com/satori/go.uuid"
 )
 
