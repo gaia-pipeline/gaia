@@ -6,11 +6,10 @@ import (
 
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/auth"
+	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
-	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 )
 
 var (

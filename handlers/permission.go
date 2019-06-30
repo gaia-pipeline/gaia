@@ -3,9 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/gaia-pipeline/gaia/auth"
-	"github.com/labstack/echo/v4"
 	"github.com/gaia-pipeline/gaia/helper/rolehelper"
+	"github.com/labstack/echo/v4"
 )
 
 // PermissionGetAll simply returns a list of all the roles available.
