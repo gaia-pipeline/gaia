@@ -64,4 +64,30 @@ paths:
           schema:
             type: string
       summary: User Login
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Returns a list of registered users.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/gaia.User'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get all users
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

@@ -18,6 +18,10 @@ import (
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
+// @securityDefinitions.apiKey ApiKeyAuth
+// @in header
+// @name Authorization
+
 // @host gaia-pipeline.io
 // @BasePath /api/v1
 func main() {

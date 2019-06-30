@@ -93,6 +93,14 @@ func UserLogin(c echo.Context) error {
 }
 
 // UserGetAll returns all users stored in store.
+// @Summary Get all users
+// @Description Returns a list of registered users.
+// @Accept json
+// @Produce json
+// @Success 200 {array} gaia.User
+// @Security ApiKeyAuth
+// @Failure 500 {string} Unable to connect to database.
+// @Router /users [get]
 func UserGetAll(c echo.Context) error {
 	// Get all users
 	storeService, _ := services.StorageService()
