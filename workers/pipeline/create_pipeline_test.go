@@ -31,12 +31,14 @@ type mockScheduler struct {
 	Error error
 }
 
-func (ms *mockScheduler) Init() error { return nil }
-func (ms *mockScheduler) SchedulePipeline(p *gaia.Pipeline, args []gaia.Argument) (*gaia.PipelineRun, error) {
+func (ms *mockScheduler) Init() {}
+func (ms *mockScheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error) {
 	return nil, nil
 }
 func (ms *mockScheduler) SetPipelineJobs(p *gaia.Pipeline) error            { return ms.Error }
 func (ms *mockScheduler) StopPipelineRun(p *gaia.Pipeline, runid int) error { return ms.Error }
+func (ms *mockScheduler) GetFreeWorkers() int32                             { return int32(0) }
+func (ms *mockScheduler) CountScheduledRuns() int                           { return 0 }
 
 func TestCreatePipelineUnknownType(t *testing.T) {
 	tmp, _ := ioutil.TempDir("", "TestCreatePipelineUnknownType")
@@ -99,7 +101,7 @@ func TestCreatePipelineFailedToUpdatePipeline(t *testing.T) {
 	defer func() { services.MockStorageService(nil) }()
 	cp := new(gaia.CreatePipeline)
 	cp.Pipeline.Type = gaia.PTypeGolang
-	cp.Pipeline.Repo.URL = "https://github.com/gaia-pipeline/pipeline-test"
+	cp.Pipeline.Repo = &gaia.GitRepo{URL: "https://github.com/gaia-pipeline/pipeline-test"}
 	CreatePipeline(cp)
 	body, _ := ioutil.ReadAll(buf)
 	if !bytes.Contains(body, []byte("cannot put create pipeline into store: error=failed")) {
@@ -127,7 +129,7 @@ func TestCreatePipeline(t *testing.T) {
 	cp := new(gaia.CreatePipeline)
 	cp.Pipeline.Name = "test"
 	cp.Pipeline.Type = gaia.PTypeGolang
-	cp.Pipeline.Repo.URL = "https://github.com/gaia-pipeline/pipeline-test"
+	cp.Pipeline.Repo = &gaia.GitRepo{URL: "https://github.com/gaia-pipeline/pipeline-test"}
 	CreatePipeline(cp)
 	if cp.StatusType != gaia.CreatePipelineSuccess {
 		t.Fatal("pipeline status was not success. was: ", cp.StatusType)
@@ -155,7 +157,7 @@ func TestCreatePipelineSetPipelineJobsFail(t *testing.T) {
 	cp := new(gaia.CreatePipeline)
 	cp.Pipeline.Name = "test"
 	cp.Pipeline.Type = gaia.PTypeGolang
-	cp.Pipeline.Repo.URL = "https://github.com/gaia-pipeline/pipeline-test"
+	cp.Pipeline.Repo = &gaia.GitRepo{URL: "https://github.com/gaia-pipeline/pipeline-test"}
 	CreatePipeline(cp)
 	if !strings.Contains(cp.Output, "cannot validate pipeline") {
 		t.Fatalf("error thrown should contain 'cannot validate pipeline' but its %s", cp.Output)

@@ -7,6 +7,7 @@ import (
 	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
+	"github.com/gaia-pipeline/gaia/store/memdb"
 	"github.com/gaia-pipeline/gaia/workers/scheduler"
 )
 
@@ -23,6 +24,9 @@ var certificateService security.CAAPI
 // vaultService is an instance of the internal Vault.
 var vaultService security.VaultAPI
 
+// memDBService is an instance of the internal memdb.
+var memDBService memdb.GaiaMemDB
+
 // StorageService initializes and keeps track of a storage service.
 // If the internal storage service is a singleton. This function retruns an error
 // but most of the times we don't care about it, because it's only ever
@@ -33,7 +37,7 @@ func StorageService() (store.GaiaStore, error) {
 		return storeService, nil
 	}
 	storeService = store.NewBoltStore()
-	err := storeService.Init()
+	err := storeService.Init(gaia.Cfg.DataPath)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize store", "error", err.Error())
 		return storeService, err
@@ -58,13 +62,13 @@ func SchedulerService() (scheduler.GaiaScheduler, error) {
 	if schedulerService != nil && !reflect.ValueOf(schedulerService).IsNil() {
 		return schedulerService, nil
 	}
-	pS := &plugin.Plugin{}
-	schedulerService = scheduler.NewScheduler(storeService, pS, certificateService, vaultService)
-	err := schedulerService.Init()
+	pS := &plugin.GoPlugin{}
+	s, err := scheduler.NewScheduler(storeService, memDBService, pS, certificateService, vaultService)
 	if err != nil {
-		gaia.Cfg.Logger.Error("cannot initialize scheduler:", "error", err.Error())
-		return schedulerService, err
+		return nil, err
 	}
+	schedulerService = s
+	schedulerService.Init()
 	return schedulerService, nil
 }
 
@@ -114,4 +118,25 @@ func VaultService(vaultStore security.VaultStorer) (security.VaultAPI, error) {
 // for the internal vault service manager.
 func MockVaultService(service security.VaultAPI) {
 	vaultService = service
+}
+
+// MemDBService creates a memdb service instance.
+func MemDBService(store store.GaiaStore) (memdb.GaiaMemDB, error) {
+	if memDBService != nil && !reflect.ValueOf(memDBService).IsNil() {
+		return memDBService, nil
+	}
+
+	db, err := memdb.InitMemDB(store)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot initialize memdb service", "error", err.Error())
+		return nil, err
+	}
+	memDBService = db
+	return memDBService, nil
+}
+
+// MockMemDBService provides a way to create and set a mock
+// for the internal memdb service manager.
+func MockMemDBService(db memdb.GaiaMemDB) {
+	memDBService = db
 }

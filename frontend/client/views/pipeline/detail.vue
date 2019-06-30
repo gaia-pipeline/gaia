@@ -2,7 +2,7 @@
   <div class="tile is-ancestor">
     <div class="tile is-vertical">
       <div class="tile is-parent">
-        <a class="button is-primary" @click="checkPipelineArgs" style="margin-right: 10px;">
+        <a class="button is-primary" @click="checkPipelineArgsAndStartPipeline" style="margin-right: 10px;">
           <span class="icon">
             <i class="fa fa-play-circle"></i>
           </span>
@@ -91,6 +91,7 @@ import Vis from 'vis'
 import { Modal } from 'vue-bulma-modal'
 import VueGoodTable from 'vue-good-table'
 import moment from 'moment'
+import helper from '../../helper'
 
 Vue.use(VueGoodTable)
 
@@ -417,13 +418,12 @@ export default {
     },
 
     calculateDuration (startdate, finishdate) {
-      if (!moment(startdate).millisecond()) {
+      if (moment(startdate).valueOf() < 0) {
         startdate = moment()
       }
-      if (!moment(finishdate).millisecond()) {
+      if (moment(finishdate).valueOf() < 0) {
         finishdate = moment()
       }
-
       // Calculate difference
       var diff = moment(finishdate).diff(moment(startdate), 'seconds')
       if (diff < 60) {
@@ -437,35 +437,8 @@ export default {
       this.$router.push({path: '/pipeline/log', query: { pipelineid: this.pipelineID, runid: this.runID }})
     },
 
-    checkPipelineArgs () {
-      // check if this pipeline has args
-      if (this.pipeline.jobs) {
-        for (let x = 0, y = this.pipeline.jobs.length; x < y; x++) {
-          if (this.pipeline.jobs[x].args && this.pipeline.jobs[x].args.type !== 'vault') {
-            // we found args. Redirect user to params view.
-            this.$router.push({path: '/pipeline/params', query: { pipelineid: this.pipeline.id }})
-            return
-          }
-        }
-      }
-
-      // No args. Just start pipeline.
-      this.startPipeline()
-    },
-
-    startPipeline () {
-      // Send start request
-      this.$http
-        .post('/api/v1/pipeline/' + this.pipeline.id + '/start')
-        .then(response => {
-          if (response.data) {
-            this.$router.push({path: '/pipeline/detail', query: { pipelineid: this.pipeline.id, runid: response.data.id }})
-          }
-        })
-        .catch((error) => {
-          this.$store.commit('clearIntervals')
-          this.$onError(error)
-        })
+    checkPipelineArgsAndStartPipeline () {
+      helper.StartPipelineWithArgsCheck(this, this.pipeline)
     }
   }
 }

@@ -4,15 +4,17 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
+	"github.com/gaia-pipeline/gaia/store/memdb"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -52,38 +54,14 @@ var (
 	rubyGemName = "gem"
 )
 
-// Plugin represents the plugin implementation which is used
-// during scheduling and execution.
-type Plugin interface {
-	// NewPlugin creates a new instance of plugin
-	NewPlugin(ca security.CAAPI) Plugin
-
-	// Init initializes the go-plugin client and generates a
-	// new certificate pair for gaia and the plugin/pipeline.
-	Init(command *exec.Cmd, logPath *string) error
-
-	// Validate validates the plugin interface.
-	Validate() error
-
-	// Execute executes one job of a pipeline.
-	Execute(j *gaia.Job) error
-
-	// GetJobs returns all real jobs from the pipeline.
-	GetJobs() ([]gaia.Job, error)
-
-	// FlushLogs flushes the logs.
-	FlushLogs() error
-
-	// Close closes the connection and cleansup open file writes.
-	Close()
-}
-
 // GaiaScheduler is a job scheduler for gaia pipeline runs.
 type GaiaScheduler interface {
-	Init() error
-	SchedulePipeline(p *gaia.Pipeline, args []gaia.Argument) (*gaia.PipelineRun, error)
+	Init()
+	SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error)
 	SetPipelineJobs(p *gaia.Pipeline) error
 	StopPipelineRun(p *gaia.Pipeline, runID int) error
+	GetFreeWorkers() int32
+	CountScheduledRuns() int
 }
 
 var _ GaiaScheduler = (*Scheduler)(nil)
@@ -94,43 +72,44 @@ type Scheduler struct {
 	scheduledRuns chan gaia.PipelineRun
 
 	// storeService is an instance of store.
-	// Use this to talk to the store.
 	storeService store.GaiaStore
 
+	// memDBService is an instance of the memDB.
+	memDBService memdb.GaiaMemDB
+
 	// pluginSystem is the used plugin system.
-	pluginSystem Plugin
+	pluginSystem plugin.Plugin
 
 	// ca is the instance of the CA used to handle certs.
 	ca security.CAAPI
 
 	// vault is the instance of the vault.
 	vault security.VaultAPI
+
+	// Atomic Counter that represents the current free workers
+	freeWorkers *int32
 }
 
 // NewScheduler creates a new instance of Scheduler.
-func NewScheduler(store store.GaiaStore, pS Plugin, ca security.CAAPI, vault security.VaultAPI) *Scheduler {
+func NewScheduler(store store.GaiaStore, db memdb.GaiaMemDB, pS plugin.Plugin, ca security.CAAPI, vault security.VaultAPI) (*Scheduler, error) {
 	// Create new scheduler
 	s := &Scheduler{
 		scheduledRuns: make(chan gaia.PipelineRun, schedulerBufferLimit),
 		storeService:  store,
+		memDBService:  db,
 		pluginSystem:  pS,
 		ca:            ca,
 		vault:         vault,
+		freeWorkers:   new(int32),
 	}
 
-	return s
+	return s, nil
 }
 
 // Init initializes the scheduler.
-func (s *Scheduler) Init() error {
-	// Get number of worker
-	w, err := strconv.Atoi(gaia.Cfg.Worker)
-	if err != nil {
-		return err
-	}
-
+func (s *Scheduler) Init() {
 	// Setup worker
-	for i := 0; i < w; i++ {
+	for i := 0; i < gaia.Cfg.Worker; i++ {
 		go s.work()
 	}
 
@@ -145,8 +124,6 @@ func (s *Scheduler) Init() error {
 			}
 		}
 	}()
-
-	return nil
 }
 
 // work takes work from the scheduled run buffer channel and starts
@@ -154,8 +131,14 @@ func (s *Scheduler) Init() error {
 func (s *Scheduler) work() {
 	// This worker never stops working.
 	for {
+		// We haven't picked up work yet so mark this worker as free
+		atomic.AddInt32(s.freeWorkers, 1)
+
 		// Take one scheduled run, block if there are no scheduled pipelines
 		r := <-s.scheduledRuns
+
+		// We picked up work and are from now on busy
+		atomic.AddInt32(s.freeWorkers, -1)
 
 		// Prepare execution and start it
 		s.prepareAndExec(r)
@@ -187,7 +170,7 @@ func (s *Scheduler) prepareAndExec(r gaia.PipelineRun) {
 
 	// Check if circular dependency exists
 	for _, job := range r.Jobs {
-		if _, err := s.checkCircularDep(job, []gaia.Job{}, []gaia.Job{}); err != nil {
+		if _, err := s.checkCircularDep(job, []*gaia.Job{}, []*gaia.Job{}); err != nil {
 			gaia.Cfg.Logger.Info("circular dependency detected", "pipeline", pipeline)
 			gaia.Cfg.Logger.Info("information", "info", err.Error())
 
@@ -239,7 +222,7 @@ func (s *Scheduler) prepareAndExec(r gaia.PipelineRun) {
 // schedule looks in the store for new work and schedules it.
 func (s *Scheduler) schedule() {
 	// Do we have space left in our buffer?
-	if len(s.scheduledRuns) >= schedulerBufferLimit {
+	if s.CountScheduledRuns() >= schedulerBufferLimit {
 		// No space left. Exit.
 		return
 	}
@@ -253,8 +236,41 @@ func (s *Scheduler) schedule() {
 
 	// Iterate scheduled runs
 	for id := range scheduled {
-		// push scheduled run into our channel
-		s.scheduledRuns <- (*scheduled[id])
+		// If we are a server instance, we will by default give the worker the advantage.
+		// Only in case all workers are busy we will schedule work on the server.
+		workers := s.memDBService.GetAllWorker()
+		if gaia.Cfg.Mode == gaia.ModeServer && len(workers) > 0 {
+			// Check if all workers are busy / inactive
+			invalidWorkers := 0
+			for _, w := range workers {
+				if w.Slots == 0 || w.Status != gaia.WorkerActive {
+					invalidWorkers++
+				}
+			}
+
+			// Insert pipeline run into memdb where all workers get their work from
+			if len(workers) > invalidWorkers {
+				// Mark them as scheduled
+				scheduled[id].Status = gaia.RunScheduled
+
+				// Update entry in store
+				err = s.storeService.PipelinePutRun(scheduled[id])
+				if err != nil {
+					gaia.Cfg.Logger.Debug("could not put pipeline run into store", "error", err.Error())
+					continue
+				}
+
+				if err := s.memDBService.InsertPipelineRun(scheduled[id]); err != nil {
+					gaia.Cfg.Logger.Error("failed to insert pipeline run into memdb via schedule", "error", err.Error())
+				}
+				continue
+			}
+		}
+
+		// Check if this primary is not allowed to run work
+		if gaia.Cfg.PreventPrimaryWork {
+			continue
+		}
 
 		// Mark them as scheduled
 		scheduled[id].Status = gaia.RunScheduled
@@ -263,7 +279,11 @@ func (s *Scheduler) schedule() {
 		err = s.storeService.PipelinePutRun(scheduled[id])
 		if err != nil {
 			gaia.Cfg.Logger.Debug("could not put pipeline run into store", "error", err.Error())
+			continue
 		}
+
+		// push scheduled run into our channel
+		s.scheduledRuns <- *scheduled[id]
 	}
 }
 
@@ -296,7 +316,7 @@ var schedulerLock = sync.RWMutex{}
 
 // SchedulePipeline schedules a pipeline. We create a new schedule object
 // and save it in our store. The scheduler will later pick this up and will continue the work.
-func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []gaia.Argument) (*gaia.PipelineRun, error) {
+func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error) {
 
 	// Introduce a semaphore locking here because this function can be called
 	// in parallel if multiple users happen to trigger a pipeline run at the same time.
@@ -364,6 +384,8 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []gaia.Argument) (*g
 		ScheduleDate: time.Now(),
 		Jobs:         jobs,
 		Status:       gaia.RunNotScheduled,
+		PipelineType: p.Type,
+		PipelineTags: p.Tags,
 	}
 
 	// Put run into store
@@ -372,11 +394,7 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []gaia.Argument) (*g
 
 // executeJob executes a job and informs via triggerSave that the job can be saved to the store.
 // This method is blocking.
-func executeJob(j gaia.Job, pS Plugin, triggerSave chan gaia.Job) {
-	defer func() {
-		triggerSave <- j
-	}()
-
+func executeJob(j gaia.Job, pS plugin.Plugin, triggerSave chan gaia.Job) {
 	// Set Job to running and trigger save
 	j.Status = gaia.JobRunning
 	triggerSave <- j
@@ -385,11 +403,14 @@ func executeJob(j gaia.Job, pS Plugin, triggerSave chan gaia.Job) {
 	if err := pS.Execute(&j); err != nil {
 		gaia.Cfg.Logger.Debug("error during job execution", "error", err.Error(), "job", j)
 	}
+
+	// Trigger another save to store the result of the execute
+	triggerSave <- j
 }
 
 // checkCircularDep checks for circular dependencies.
 // An error is thrown when one is found.
-func (s *Scheduler) checkCircularDep(j gaia.Job, resolved []gaia.Job, unresolved []gaia.Job) ([]gaia.Job, error) {
+func (s *Scheduler) checkCircularDep(j *gaia.Job, resolved []*gaia.Job, unresolved []*gaia.Job) ([]*gaia.Job, error) {
 	unresolved = append(unresolved, j)
 
 DEPENDSON_LOOP:
@@ -401,7 +422,7 @@ DEPENDSON_LOOP:
 			}
 		}
 
-		// Check if job is alreay in unresolved list
+		// Check if job is already in unresolved list
 		for _, unresolvedJob := range unresolved {
 			if unresolvedJob.ID == job.ID {
 				// Circular dependency detected
@@ -412,7 +433,7 @@ DEPENDSON_LOOP:
 
 		// Resolve job
 		var err error
-		resolved, err = s.checkCircularDep(*job, resolved, unresolved)
+		resolved, err = s.checkCircularDep(job, resolved, unresolved)
 		if err != nil {
 			return nil, err
 		}
@@ -426,7 +447,7 @@ DEPENDSON_LOOP:
 // After a workload has been send to the executeScheduler, the method will
 // block and wait until the workload is done.
 // This method is designed to be called recursive and blocking.
-func (s *Scheduler) resolveDependencies(j gaia.Job, mw *managedWorkloads, executeScheduler chan gaia.Job, done chan bool) {
+func (s *Scheduler) resolveDependencies(j *gaia.Job, mw *managedWorkloads, executeScheduler chan *gaia.Job, done chan bool) {
 	for _, depJob := range j.DependsOn {
 		// Check if this workload is already resolved
 		var resolved bool
@@ -442,7 +463,7 @@ func (s *Scheduler) resolveDependencies(j gaia.Job, mw *managedWorkloads, execut
 		}
 
 		// Resolve job
-		s.resolveDependencies(*depJob, mw, executeScheduler, done)
+		s.resolveDependencies(depJob, mw, executeScheduler, done)
 	}
 
 	// Queue used to signal that the work should be finished soon.
@@ -475,7 +496,7 @@ func (s *Scheduler) resolveDependencies(j gaia.Job, mw *managedWorkloads, execut
 
 // executeScheduledJobs is a small wrapper around executeScheduler which
 // is responsible for finalizing the pipeline run.
-func (s *Scheduler) executeScheduledJobs(r gaia.PipelineRun, pS Plugin) {
+func (s *Scheduler) executeScheduledJobs(r gaia.PipelineRun, pS plugin.Plugin) {
 	// Start the main execute process and wait until finished.
 	s.executeScheduler(&r, pS)
 
@@ -498,9 +519,9 @@ func (s *Scheduler) executeScheduledJobs(r gaia.PipelineRun, pS Plugin) {
 
 // executeScheduler is our main function which coordinates the
 // whole execution process and dependency resolve algorithm.
-func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
+func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS plugin.Plugin) {
 	// Create a queue which is used to execute the resolved workloads.
-	executeScheduler := make(chan gaia.Job)
+	executeScheduler := make(chan *gaia.Job)
 
 	// Done queue to signal go routines to exit.
 	// This is usually used when a job failed and the whole pipeline
@@ -509,15 +530,15 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 
 	// Iterate all jobs from this run
 	mw := newManagedWorkloads()
-	for _, job := range r.Jobs {
+	for id := range r.Jobs {
 		// Create new workload object
 		mw.Append(workload{
-			job:         job,
+			job:         r.Jobs[id],
 			finishedSig: make(chan bool),
 		})
 
 		// Start resolving go routine for this job
-		go s.resolveDependencies(job, mw, executeScheduler, done)
+		go s.resolveDependencies(r.Jobs[id], mw, executeScheduler, done)
 	}
 
 	// Create a new ticker (scheduled go routine) which periodically
@@ -572,7 +593,7 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 				break
 			}
 
-			// Filter out the job
+			// Filter out the job and update the real job
 			for id, job := range r.Jobs {
 				if job.ID == j.ID {
 					r.Jobs[id].Status = j.Status
@@ -671,14 +692,14 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS Plugin) {
 				mw.Replace(*wl)
 
 				// Start execution
-				go executeJob(j, pS, triggerSave)
+				go executeJob(*j, pS, triggerSave)
 			}
 		}
 	}
 }
 
 // getPipelineJobs uses the plugin system to get all jobs from the given pipeline.
-func (s *Scheduler) getPipelineJobs(p *gaia.Pipeline) ([]gaia.Job, error) {
+func (s *Scheduler) getPipelineJobs(p *gaia.Pipeline) ([]*gaia.Job, error) {
 	// Create the start command for the pipeline
 	c := createPipelineCmd(p)
 	if c == nil {
@@ -716,6 +737,16 @@ func (s *Scheduler) SetPipelineJobs(p *gaia.Pipeline) error {
 	p.Jobs = jobs
 
 	return nil
+}
+
+// GetFreeWorkers returns the number of free workers.
+func (s *Scheduler) GetFreeWorkers() int32 {
+	return atomic.LoadInt32(s.freeWorkers)
+}
+
+// CountScheduledRuns returns the number of scheduled runs.
+func (s *Scheduler) CountScheduledRuns() int {
+	return len(s.scheduledRuns)
 }
 
 // finishPipelineRun finishes the pipeline run and stores the results.

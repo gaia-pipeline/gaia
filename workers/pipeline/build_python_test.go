@@ -54,7 +54,7 @@ func TestExecuteBuildPython(t *testing.T) {
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = gaia.PTypePython
-	p.Pipeline.Repo.LocalDest = tmp
+	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: tmp}
 	os.Mkdir(filepath.Join(tmp, "dist"), 0744)
 	src := filepath.Join(tmp, "dist", p.Pipeline.Name+".tar.gz")
 	f, _ := os.Create(src)
@@ -120,7 +120,7 @@ func TestCopyBinaryPython(t *testing.T) {
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = gaia.PTypePython
-	p.Pipeline.Repo.LocalDest = tmp
+	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: tmp}
 	os.Mkdir(filepath.Join(tmp, "dist"), 0744)
 	src := filepath.Join(tmp, "dist", p.Pipeline.Name+".tar.gz")
 	dst := appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
@@ -157,7 +157,7 @@ func TestCopyBinarySrcDoesNotExistPython(t *testing.T) {
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = gaia.PTypePython
-	p.Pipeline.Repo.LocalDest = "/noneexistent"
+	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: "/noneexistent"}
 	err := b.CopyBinary(p)
 	if err == nil {
 		t.Fatal("error was expected when copying binary but none occurred ")

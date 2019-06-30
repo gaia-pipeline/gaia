@@ -34,6 +34,7 @@
     "lint:fix": "eslint 'client/**/*.vue' --fix --ext .js .vue electron.js"
   },
   "dependencies": {
+    "@johmun/vue-tags-input": "^2.0.1",
     "animate.css": "3.5.2",
     "axios": "^0.17.1",
     "bulma": "^0.6.2",

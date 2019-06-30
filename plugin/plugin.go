@@ -12,9 +12,8 @@ import (
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/security"
-	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	proto "github.com/gaia-pipeline/protobuf"
-	plugin "github.com/hashicorp/go-plugin"
+	"github.com/hashicorp/go-plugin"
 )
 
 const (
@@ -40,9 +39,9 @@ var pluginMap = map[string]plugin.Plugin{
 // timeFormat is the logging time format.
 const timeFormat = "2006/01/02 15:04:05"
 
-// Plugin represents a single plugin instance which uses gRPC
+// GoPlugin represents a single plugin instance which uses gRPC
 // to connect to exactly one plugin.
-type Plugin struct {
+type GoPlugin struct {
 	// Client is an instance of the go-plugin client.
 	client *plugin.Client
 
@@ -69,10 +68,35 @@ type Plugin struct {
 	serverKeyPath  string
 }
 
+// Plugin represents the plugin implementation.
+type Plugin interface {
+	// NewPlugin creates a new instance of plugin
+	NewPlugin(ca security.CAAPI) Plugin
+
+	// Init initializes the go-plugin client and generates a
+	// new certificate pair for gaia and the plugin/pipeline.
+	Init(command *exec.Cmd, logPath *string) error
+
+	// Validate validates the plugin interface.
+	Validate() error
+
+	// Execute executes one job of a pipeline.
+	Execute(j *gaia.Job) error
+
+	// GetJobs returns all real jobs from the pipeline.
+	GetJobs() ([]*gaia.Job, error)
+
+	// FlushLogs flushes the logs.
+	FlushLogs() error
+
+	// Close closes the connection and cleans open file writes.
+	Close()
+}
+
 // NewPlugin creates a new instance of Plugin.
 // One Plugin instance represents one connection to a plugin.
-func (p *Plugin) NewPlugin(ca security.CAAPI) scheduler.Plugin {
-	return &Plugin{ca: ca}
+func (p *GoPlugin) NewPlugin(ca security.CAAPI) Plugin {
+	return &GoPlugin{ca: ca}
 }
 
 // Init prepares the log path, set's up new certificates for both gaia and
@@ -83,7 +107,7 @@ func (p *Plugin) NewPlugin(ca security.CAAPI) scheduler.Plugin {
 //
 // It's up to the caller to call plugin.Close to shutdown the plugin
 // and close the gRPC connection.
-func (p *Plugin) Init(command *exec.Cmd, logPath *string) error {
+func (p *GoPlugin) Init(command *exec.Cmd, logPath *string) error {
 	// Create log file and open it.
 	// We will close this file in the close method.
 	if logPath != nil {
@@ -152,7 +176,7 @@ func (p *Plugin) Init(command *exec.Cmd, logPath *string) error {
 }
 
 // Validate validates the interface of the plugin.
-func (p *Plugin) Validate() error {
+func (p *GoPlugin) Validate() error {
 	// Request the plugin
 	raw, err := p.clientProtocol.Dispense(pluginMapKey)
 	if err != nil {
@@ -170,7 +194,7 @@ func (p *Plugin) Validate() error {
 
 // Execute triggers the execution of one single job
 // for the given plugin.
-func (p *Plugin) Execute(j *gaia.Job) error {
+func (p *GoPlugin) Execute(j *gaia.Job) error {
 	// Transform arguments
 	args := []*proto.Argument{}
 	for _, arg := range j.Args {
@@ -221,8 +245,8 @@ func (p *Plugin) Execute(j *gaia.Job) error {
 }
 
 // GetJobs receives all implemented jobs from the given plugin.
-func (p *Plugin) GetJobs() ([]gaia.Job, error) {
-	l := []gaia.Job{}
+func (p *GoPlugin) GetJobs() ([]*gaia.Job, error) {
+	l := make([]*gaia.Job, 0)
 
 	// Get the stream
 	stream, err := p.pluginConn.GetJobs()
@@ -231,7 +255,8 @@ func (p *Plugin) GetJobs() ([]gaia.Job, error) {
 	}
 
 	// receive all jobs
-	pList := []*proto.Job{}
+	pList := make([]*proto.Job, 0)
+	jobsMap := make(map[uint32]*gaia.Job)
 	for {
 		job, err := stream.Recv()
 
@@ -246,9 +271,9 @@ func (p *Plugin) GetJobs() ([]gaia.Job, error) {
 		}
 
 		// Transform arguments
-		args := []gaia.Argument{}
+		args := make([]*gaia.Argument, 0, len(job.Args))
 		for _, arg := range job.Args {
-			a := gaia.Argument{
+			a := &gaia.Argument{
 				Description: arg.Description,
 				Key:         arg.Key,
 				Type:        arg.Type,
@@ -261,7 +286,7 @@ func (p *Plugin) GetJobs() ([]gaia.Job, error) {
 		pList = append(pList, job)
 
 		// Convert proto object to gaia.Job struct
-		j := gaia.Job{
+		j := &gaia.Job{
 			ID:          job.UniqueId,
 			Title:       job.Title,
 			Description: job.Description,
@@ -269,14 +294,22 @@ func (p *Plugin) GetJobs() ([]gaia.Job, error) {
 			Args:        args,
 		}
 		l = append(l, j)
+		jobsMap[j.ID] = j
 	}
 
-	// Rebuild dependency tree
-	for id, job := range l {
-		for _, pJob := range pList {
-			if job.ID == pJob.UniqueId {
-				l[id].DependsOn = rebuildDepTree(pJob.Dependson, l)
-			}
+	// Rebuild dependencies
+	for _, pbJob := range pList {
+		// Get job
+		j := jobsMap[pbJob.UniqueId]
+
+		// Iterate all dependencies
+		j.DependsOn = make([]*gaia.Job, 0, len(pbJob.Dependson))
+		for _, depJob := range pbJob.Dependson {
+			// Get dependency
+			depJ := jobsMap[depJob]
+
+			// Set dependency
+			j.DependsOn = append(j.DependsOn, depJ)
 		}
 	}
 
@@ -285,27 +318,13 @@ func (p *Plugin) GetJobs() ([]gaia.Job, error) {
 }
 
 // FlushLogs flushes the logs.
-func (p *Plugin) FlushLogs() error {
+func (p *GoPlugin) FlushLogs() error {
 	return p.writer.Flush()
-}
-
-// rebuildDepTree resolves related depenendencies and returns
-// list of pointers to dependent jobs.
-func rebuildDepTree(dep []uint32, l []gaia.Job) []*gaia.Job {
-	depTree := []*gaia.Job{}
-	for _, jobHash := range dep {
-		for id, job := range l {
-			if job.ID == jobHash {
-				depTree = append(depTree, &l[id])
-			}
-		}
-	}
-	return depTree
 }
 
 // Close shutdown the plugin and kills the gRPC connection.
 // Remember to call this when you call plugin.Connect.
-func (p *Plugin) Close() {
+func (p *GoPlugin) Close() {
 	// We start the kill command in a goroutine because kill
 	// is blocking until the subprocess successfully exits.
 	// The user should not wait for this.

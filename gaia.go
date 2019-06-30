@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-hclog"
 	"github.com/robfig/cron"
 )
 
@@ -19,8 +19,14 @@ type CreatePipelineType string
 // can have.
 type PipelineRunStatus string
 
-// JobStatus represents the different status a job can have.
+// JobStatus represents the different status a job can have
 type JobStatus string
+
+// Mode represents the different modes for Gaia
+type Mode string
+
+// WorkerStatus represents the different status a worker can have
+type WorkerStatus string
 
 const (
 	// PTypeUnknown unknown plugin type
@@ -68,6 +74,9 @@ const (
 	// RunCancelled status
 	RunCancelled PipelineRunStatus = "cancelled"
 
+	// RunReschedule status
+	RunReschedule PipelineRunStatus = "reschedule"
+
 	// JobWaitingExec status
 	JobWaitingExec JobStatus = "waiting for execution"
 
@@ -79,6 +88,21 @@ const (
 
 	// JobRunning status
 	JobRunning JobStatus = "running"
+
+	// ModeServer mode
+	ModeServer Mode = "server"
+
+	// ModeWorker mode
+	ModeWorker Mode = "worker"
+
+	// WorkerActive status
+	WorkerActive WorkerStatus = "active"
+
+	// WorkerInactive status
+	WorkerInactive WorkerStatus = "inactive"
+
+	// WorkerSuspended status
+	WorkerSuspended WorkerStatus = "suspended"
 
 	// LogsFolderName represents the Name of the logs folder in pipeline run folder
 	LogsFolderName = "logs"
@@ -103,6 +127,9 @@ const (
 
 	// TmpRubyFolder is the name of the ruby temporary folder
 	TmpRubyFolder = "ruby"
+
+	// WorkerRegisterKey is the used key for worker registration secret
+	WorkerRegisterKey = "WORKER_REGISTER_KEY"
 )
 
 // User is the user object
@@ -148,16 +175,17 @@ type UserRoleEndpoint struct {
 type Pipeline struct {
 	ID                int          `json:"id,omitempty"`
 	Name              string       `json:"name,omitempty"`
-	Repo              GitRepo      `json:"repo,omitempty"`
+	Repo              *GitRepo     `json:"repo,omitempty"`
 	Type              PipelineType `json:"type,omitempty"`
 	ExecPath          string       `json:"execpath,omitempty"`
 	SHA256Sum         []byte       `json:"sha256sum,omitempty"`
-	Jobs              []Job        `json:"jobs,omitempty"`
+	Jobs              []*Job       `json:"jobs,omitempty"`
 	Created           time.Time    `json:"created,omitempty"`
 	UUID              string       `json:"uuid,omitempty"`
 	IsNotValid        bool         `json:"notvalid,omitempty"`
 	PeriodicSchedules []string     `json:"periodicschedules,omitempty"`
 	TriggerToken      string       `json:"trigger_token,omitempty"`
+	Tags              []string     `json:"tags,omitempty"`
 	CronInst          *cron.Cron   `json:"-"`
 }
 
@@ -174,13 +202,13 @@ type GitRepo struct {
 
 // Job represents a single job of a pipeline
 type Job struct {
-	ID           uint32     `json:"id,omitempty"`
-	Title        string     `json:"title,omitempty"`
-	Description  string     `json:"desc,omitempty"`
-	DependsOn    []*Job     `json:"dependson,omitempty"`
-	Status       JobStatus  `json:"status,omitempty"`
-	Args         []Argument `json:"args,omitempty"`
-	FailPipeline bool       `json:"failpipeline,omitempty"`
+	ID           uint32      `json:"id,omitempty"`
+	Title        string      `json:"title,omitempty"`
+	Description  string      `json:"desc,omitempty"`
+	DependsOn    []*Job      `json:"dependson,omitempty"`
+	Status       JobStatus   `json:"status,omitempty"`
+	Args         []*Argument `json:"args,omitempty"`
+	FailPipeline bool        `json:"failpipeline,omitempty"`
 }
 
 // Argument represents a single argument of a job
@@ -219,7 +247,21 @@ type PipelineRun struct {
 	FinishDate   time.Time         `json:"finishdate,omitempty"`
 	ScheduleDate time.Time         `json:"scheduledate,omitempty"`
 	Status       PipelineRunStatus `json:"status,omitempty"`
-	Jobs         []Job             `json:"jobs,omitempty"`
+	Jobs         []*Job            `json:"jobs,omitempty"`
+	PipelineType PipelineType      `json:"pipelinetype,omitempty"`
+	PipelineTags []string          `json:"pipelinetags,omitempty"`
+}
+
+// Worker represents a single registered worker.
+type Worker struct {
+	UniqueID     string       `json:"uniqueid"`
+	Name         string       `json:"name"`
+	Status       WorkerStatus `json:"status"`
+	Slots        int32        `json:"slots"`
+	RegisterDate time.Time    `json:"registerdate"`
+	LastContact  time.Time    `json:"lastcontact"`
+	FinishedRuns int64        `json:"finishedruns"`
+	Tags         []string     `json:"tags"`
 }
 
 // Cfg represents the global config instance
@@ -227,22 +269,33 @@ var Cfg = &Config{}
 
 // Config holds all config options
 type Config struct {
-	DevMode           bool
-	VersionSwitch     bool
-	Poll              bool
-	PVal              int
-	ListenPort        string
-	HomePath          string
-	Hostname          string
-	VaultPath         string
-	DataPath          string
-	PipelinePath      string
-	WorkspacePath     string
-	Worker            string
-	JwtPrivateKeyPath string
-	JWTKey            interface{}
-	Logger            hclog.Logger
-	CAPath            string
+	DevMode            bool
+	ModeRaw            string
+	Mode               Mode
+	VersionSwitch      bool
+	Poll               bool
+	PVal               int
+	ListenPort         string
+	HomePath           string
+	Hostname           string
+	VaultPath          string
+	DataPath           string
+	PipelinePath       string
+	WorkspacePath      string
+	Worker             int
+	JwtPrivateKeyPath  string
+	JWTKey             interface{}
+	Logger             hclog.Logger
+	CAPath             string
+	WorkerServerPort   string
+	PreventPrimaryWork bool
+
+	// Worker
+	WorkerName        string
+	WorkerHostURL     string
+	WorkerGRPCHostURL string
+	WorkerSecret      string
+	WorkerTags        string
 
 	Bolt struct {
 		Mode os.FileMode

@@ -133,7 +133,7 @@ func TestCopyBinaryCpp(t *testing.T) {
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = gaia.PTypeCpp
-	p.Pipeline.Repo.LocalDest = tmp
+	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: tmp}
 	src := filepath.Join(tmp, cppFinalBinaryName)
 	dst := appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
 	f, _ := os.Create(src)
@@ -168,7 +168,7 @@ func TestCopyBinarySrcDoesNotExistCpp(t *testing.T) {
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = gaia.PTypeCpp
-	p.Pipeline.Repo.LocalDest = "/noneexistent"
+	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: "/noneexistent"}
 	err := b.CopyBinary(p)
 	if err == nil {
 		t.Fatal("error was expected when copying binary but none occurred ")

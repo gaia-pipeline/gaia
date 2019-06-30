@@ -35,9 +35,12 @@ func (b *BuildPipelineCpp) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	}
 
 	// Set new generated path in pipeline obj for later usage
+	if p.Pipeline.Repo == nil {
+		p.Pipeline.Repo = &gaia.GitRepo{}
+	}
 	p.Pipeline.Repo.LocalDest = cloneFolder
 	p.Pipeline.UUID = uuid.String()
-	return err
+	return nil
 }
 
 // ExecuteBuild executes the c++ build process
@@ -52,8 +55,14 @@ func (b *BuildPipelineCpp) ExecuteBuild(p *gaia.CreatePipeline) error {
 	// Set command args for build
 	args := []string{}
 
+	// Set local destination
+	localDest := ""
+	if p.Pipeline.Repo != nil {
+		localDest = p.Pipeline.Repo.LocalDest
+	}
+
 	// Execute and wait until finish or timeout
-	output, err := executeCmd(path, args, os.Environ(), p.Pipeline.Repo.LocalDest)
+	output, err := executeCmd(path, args, os.Environ(), localDest)
 	p.Output = string(output)
 	if err != nil {
 		gaia.Cfg.Logger.Debug("cannot build pipeline", "error", err.Error(), "output", string(output))
@@ -62,7 +71,7 @@ func (b *BuildPipelineCpp) ExecuteBuild(p *gaia.CreatePipeline) error {
 
 	// Build has been finished. Set execution path to the build result archive.
 	// This will be used during pipeline verification phase which will happen after this step.
-	p.Pipeline.ExecPath = filepath.Join(p.Pipeline.Repo.LocalDest, cppFinalBinaryName)
+	p.Pipeline.ExecPath = filepath.Join(localDest, cppFinalBinaryName)
 
 	return nil
 }

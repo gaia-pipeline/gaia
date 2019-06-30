@@ -4,7 +4,8 @@ NAMESPACE=${NAME}
 RELEASE_NAME=${NAME}
 HELM_DIR=$(shell pwd)/helm
 TEST=$$(go list ./... | grep -v /vendor/ | grep /testacc)
-TEST_TIMEOUT?=20m
+TEST_TIMEOUT_ACC?=20m
+TEST_TIMEOUT?=20s
 
 default: dev
 
@@ -34,13 +35,13 @@ get:
 	go get ./...
 
 test:
-	go test -v ./...
+	go test -v -race -timeout=$(TEST_TIMEOUT) ./...
 
 test-cover:
-	go test -v ./... --coverprofile=cover.out
+	go test -v -timeout=$(TEST_TIMEOUT) ./... --coverprofile=cover.out
 
 test-acc:
-	GAIA_RUN_ACC=true GAIA_DEV=true go test -v $(TEST) -timeout=$(TEST_TIMEOUT)
+	GAIA_RUN_ACC=true GAIA_DEV=true go test -v $(TEST) -timeout=$(TEST_TIMEOUT_ACC)
 
 release: compile_frontend static_assets compile_backend
 

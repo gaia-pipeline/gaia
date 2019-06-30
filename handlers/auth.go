@@ -11,6 +11,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/auth"
 	"github.com/labstack/echo/v4"
+	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 )
 
 var (
@@ -25,7 +26,7 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			// Login, WebHook callback and static resources are open
 			// The webhook callback has it's own authentication method
-			excludeContains := []string{"/login", "/assets/", "pipeline/githook", "/trigger", "/swagger"}
+			excludeContains := []string{"/login", "/assets/", "pipeline/githook", "/trigger", "/swagger", "/worker/register"}
 			for _, e := range excludeContains {
 				if strings.Contains(c.Path(), e) {
 					return next(c)
@@ -87,7 +88,7 @@ func (ra *AuthConfig) getRequiredRole(method, path string) string {
 			for _, endpoint := range role.APIEndpoint {
 				// If the http method & path match then return the role required for this endpoint
 				if method == endpoint.Method && path == endpoint.Path {
-					return auth.FullUserRoleName(category, role)
+					return rolehelper.FullUserRoleName(category, role)
 				}
 			}
 		}

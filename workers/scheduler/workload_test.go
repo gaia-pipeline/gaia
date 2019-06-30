@@ -21,7 +21,7 @@ func TestNewWorkload(t *testing.T) {
 			wl := workload{
 				done:        true,
 				finishedSig: finished,
-				job: gaia.Job{
+				job: &gaia.Job{
 					Description: "Test job",
 					ID:          uint32(j),
 					Title:       "Test " + title,
@@ -55,7 +55,7 @@ func TestReplaceWorkloadFlow(t *testing.T) {
 	wl := workload{
 		done:        true,
 		finishedSig: finished,
-		job: gaia.Job{
+		job: &gaia.Job{
 			Description: "Test job",
 			ID:          1,
 			Title:       "Test",
@@ -67,7 +67,7 @@ func TestReplaceWorkloadFlow(t *testing.T) {
 		replaceWl := workload{
 			done:        true,
 			finishedSig: finished,
-			job: gaia.Job{
+			job: &gaia.Job{
 				Description: "Test job replaced",
 				ID:          1,
 				Title:       "Test replaced",
@@ -88,7 +88,7 @@ func TestReplaceWorkloadFlow(t *testing.T) {
 		replaceWl := workload{
 			done:        true,
 			finishedSig: finished,
-			job: gaia.Job{
+			job: &gaia.Job{
 				Description: "Test job replaced",
 				ID:          2,
 				Title:       "Test replaced",

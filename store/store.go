@@ -30,6 +30,9 @@ var (
 
 	// Name of the bucket where we store information about settings
 	settingsBucket = []byte("Settings")
+
+	// Name of the bucket where we store all worker.
+	workerBucket = []byte("Worker")
 )
 
 const (
@@ -51,7 +54,8 @@ type BoltStore struct {
 // GaiaStore is the interface that defines methods needed to store
 // pipeline and user related information.
 type GaiaStore interface {
-	Init() error
+	Init(dataPath string) error
+	Close() error
 	CreatePipelinePut(createPipeline *gaia.CreatePipeline) error
 	CreatePipelineGet() (listOfPipelines []gaia.CreatePipeline, err error)
 	PipelinePut(pipeline *gaia.Pipeline) error
@@ -61,9 +65,11 @@ type GaiaStore interface {
 	PipelinePutRun(r *gaia.PipelineRun) error
 	PipelineGetScheduled(limit int) ([]*gaia.PipelineRun, error)
 	PipelineGetRunByPipelineIDAndID(pipelineid int, runid int) (*gaia.PipelineRun, error)
-	PipelineGetAllRuns(pipelineID int) ([]gaia.PipelineRun, error)
+	PipelineGetAllRuns() ([]gaia.PipelineRun, error)
+	PipelineGetAllRunsByPipelineID(pipelineID int) ([]gaia.PipelineRun, error)
 	PipelineGetLatestRun(pipelineID int) (*gaia.PipelineRun, error)
 	PipelineDelete(id int) error
+	PipelineRunDelete(uniqueID string) error
 	UserPut(u *gaia.User, encryptPassword bool) error
 	UserAuth(u *gaia.User, updateLastLogin bool) (*gaia.User, error)
 	UserGet(username string) (*gaia.User, error)
@@ -74,6 +80,11 @@ type GaiaStore interface {
 	UserPermissionsDelete(username string) error
 	SettingsPut(config *gaia.StoreConfig) error
 	SettingsGet() (*gaia.StoreConfig, error)
+	WorkerPut(w *gaia.Worker) error
+	WorkerGetAll() ([]*gaia.Worker, error)
+	WorkerDelete(id string) error
+	WorkerDeleteAll() error
+	WorkerGet(id string) (*gaia.Worker, error)
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore
@@ -91,9 +102,9 @@ func NewBoltStore() *BoltStore {
 // generates private key and bolt database.
 // This should be called only once per database
 // because bolt holds a lock on the database file.
-func (s *BoltStore) Init() error {
+func (s *BoltStore) Init(dataPath string) error {
 	// Open connection to bolt database
-	path := filepath.Join(gaia.Cfg.DataPath, boltDBFileName)
+	path := filepath.Join(dataPath, boltDBFileName)
 	db, err := bolt.Open(path, gaia.Cfg.Bolt.Mode, nil)
 	if err != nil {
 		return err
@@ -102,6 +113,11 @@ func (s *BoltStore) Init() error {
 
 	// Setup database
 	return s.setupDatabase()
+}
+
+// Close closes the active boltdb connection.
+func (s *BoltStore) Close() error {
+	return s.db.Close()
 }
 
 // setupDatabase create all buckets in the db.
@@ -144,6 +160,11 @@ func (s *BoltStore) setupDatabase() error {
 		return err
 	}
 	bucketName = settingsBucket
+	err = s.db.Update(c)
+	if err != nil {
+		return err
+	}
+	bucketName = workerBucket
 	err = s.db.Update(c)
 	if err != nil {
 		return err

@@ -76,39 +76,6 @@ func TestExecuteBuildGo(t *testing.T) {
 	}
 }
 
-func TestExecuteBuildFailPipelineBuildGo(t *testing.T) {
-	os.Mkdir("tmp", 0744)
-	ioutil.WriteFile(filepath.Join("tmp", "main.go"), []byte(`package main
-		import "os"
-		func main() {
-			os.Exit(1
-		}`), 0766)
-	wd, _ := os.Getwd()
-	tmp := filepath.Join(wd, "tmp")
-	defer func() {
-		os.RemoveAll(tmp)
-	}()
-	gaia.Cfg = new(gaia.Config)
-	gaia.Cfg.HomePath = tmp
-	buf := new(bytes.Buffer)
-	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
-		Level:  hclog.Trace,
-		Output: buf,
-		Name:   "Gaia",
-	})
-	b := new(BuildPipelineGolang)
-	p := new(gaia.CreatePipeline)
-	p.Pipeline.Repo.LocalDest = tmp
-	err := b.ExecuteBuild(p)
-	if err == nil {
-		t.Fatal("error while running executebuild. none was expected")
-	}
-	expected := "syntax error: unexpected newline, expecting comma or )"
-	if !strings.Contains(p.Output, expected) {
-		t.Fatal("got a different output than expected: ", p.Output)
-	}
-}
-
 func TestExecuteBuildContextTimeoutGo(t *testing.T) {
 	execCommandContext = fakeExecCommandContext
 	buildKillContext = true
@@ -177,7 +144,7 @@ func TestCopyBinaryGo(t *testing.T) {
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = "go"
-	p.Pipeline.Repo.LocalDest = tmp
+	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: tmp}
 	src := filepath.Join(tmp, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
 	dst := appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
 	f, _ := os.Create(src)
@@ -212,7 +179,7 @@ func TestCopyBinarySrcDoesNotExistGo(t *testing.T) {
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = "go"
-	p.Pipeline.Repo.LocalDest = "/noneexistent"
+	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: "/noneexistent"}
 	err := b.CopyBinary(p)
 	if err == nil {
 		t.Fatal("error was expected when copying binary but none occurred ")

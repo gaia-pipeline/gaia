@@ -20,7 +20,7 @@ jobs:
   test_and_coverage:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
-      - image: circleci/golang:1.11.4
+      - image: circleci/golang:1.12.4
         environment:
           GO111MODULE: "on"
     steps:
@@ -32,7 +32,7 @@ jobs:
             echo "" > coverage.txt
 
             for d in $(go list ./... | grep -v vendor | grep -v /testacc); do
-              go test -v -race -coverprofile=profile.out -covermode=atomic $d
+              go test -v -timeout 20s -race -coverprofile=profile.out -covermode=atomic $d
               if [ -f profile.out ]; then
                 cat profile.out >> coverage.txt
                 rm profile.out
@@ -50,7 +50,7 @@ jobs:
   acceptance_tests:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
-        - image: gaiapipeline/circleci:0.0.3
+        - image: gaiapipeline/circleci:0.0.4
           environment:
             GO111MODULE: "on"
     steps:
@@ -64,7 +64,7 @@ jobs:
   compile:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
-      - image: circleci/golang:1.11.4
+      - image: circleci/golang:1.12.4
         environment:
           GO111MODULE: "on"
     steps:
