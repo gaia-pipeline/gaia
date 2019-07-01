@@ -19,8 +19,7 @@ changelog:
     - '^docs:'
     - '^test:'
 dockers:
-  - 
-    image_templates: 
+  - image_templates:
     - "gaiapipeline/gaia:latest"
     - "gaiapipeline/gaia:{{ .Tag }}"
     binaries: 
@@ -29,8 +28,7 @@ dockers:
     extra_files:
     - docker/docker-entrypoint.sh
     - docker/settings-docker.xml
-  - 
-    image_templates: 
+  - image_templates:
     - "gaiapipeline/gaia:latest-go"
     - "gaiapipeline/gaia:{{ .Tag }}-go"
     binaries: 
@@ -38,8 +36,7 @@ dockers:
     dockerfile: docker/Dockerfile.golang
     extra_files:
     - docker/docker-entrypoint.sh
-  - 
-    image_templates: 
+  - image_templates:
     - "gaiapipeline/gaia:latest-java"
     - "gaiapipeline/gaia:{{ .Tag }}-java"
     binaries: 
@@ -48,8 +45,7 @@ dockers:
     extra_files:
     - docker/docker-entrypoint.sh
     - docker/settings-docker.xml
-  - 
-    image_templates: 
+  - image_templates:
     - "gaiapipeline/gaia:latest-python"
     - "gaiapipeline/gaia:{{ .Tag }}-python"
     binaries: 
@@ -57,8 +53,7 @@ dockers:
     dockerfile: docker/Dockerfile.python
     extra_files:
     - docker/docker-entrypoint.sh
-  - 
-    image_templates: 
+  - image_templates:
     - "gaiapipeline/gaia:latest-cpp"
     - "gaiapipeline/gaia:{{ .Tag }}-cpp"
     binaries: 
@@ -66,12 +61,19 @@ dockers:
     dockerfile: docker/Dockerfile.cpp
     extra_files:
     - docker/docker-entrypoint.sh
-  -
-    image_templates:
+  - image_templates:
     - "gaiapipeline/gaia:latest-ruby"
     - "gaiapipeline/gaia:{{ .Tag }}-ruby"
     binaries:
     - gaia-linux-amd64
     dockerfile: docker/Dockerfile.ruby
+    extra_files:
+    - docker/docker-entrypoint.sh
+  - image_templates:
+    - "gaiapipeline/gaia:latest-nodejs"
+    - "gaiapipeline/gaia:{{ .Tag }}-nodejs"
+    binaries:
+    - gaia-linux-amd64
+    dockerfile: docker/Dockerfile.nodejs
     extra_files:
     - docker/docker-entrypoint.sh
