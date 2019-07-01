@@ -98,17 +98,13 @@ func updatePipeline(p *gaia.Pipeline) error {
 		tmpFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpNodeJSFolder, p.Name)
 		os.RemoveAll(tmpFolder)
 
-		// Copy nodejs archive to temp folder before we unpack it.
+		// Recreate the temp folder
 		if err := os.MkdirAll(tmpFolder, 0700); err != nil {
-			return err
-		}
-		pipelinePath := filepath.Join(tmpFolder, filepath.Base(p.ExecPath))
-		if err := copyFileContents(p.ExecPath, pipelinePath); err != nil {
 			return err
 		}
 
 		// Unpack it
-		cmd := exec.Command(path, "-xzvf", pipelinePath, "-C", tmpFolder)
+		cmd := exec.Command(path, "-xzvf", p.ExecPath, "-C", tmpFolder)
 		if out, err := cmd.CombinedOutput(); err != nil {
 			return fmt.Errorf("cannot unpack nodejs archive: %s", string(out[:]))
 		}

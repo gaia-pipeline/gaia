@@ -88,3 +88,40 @@ func TestUpdatePipelineRuby(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestUpdatePipelineNodeJS(t *testing.T) {
+	tmp, err := ioutil.TempDir("", "TestUpdatePipelineNodeJS")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmp)
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.HomePath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
+
+	p1 := gaia.Pipeline{
+		Name:    "PipelinA",
+		Type:    gaia.PTypeNodeJS,
+		Created: time.Now(),
+	}
+
+	// Create fake test nodejs archive file.
+	src := filepath.Join(tmp, "PipelineA_nodejs")
+	p1.ExecPath = src
+	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+
+	// fake execution commands
+	tarName = "echo"
+	npmName = "echo"
+
+	// run
+	err = updatePipeline(&p1)
+	if err != nil {
+		t.Fatal(err)
+	}
+}

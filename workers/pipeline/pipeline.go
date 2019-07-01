@@ -94,7 +94,9 @@ func newBuildPipeline(t gaia.PipelineType) BuildPipeline {
 			Type: t,
 		}
 	case gaia.PTypeNodeJS:
-		// TODO
+		bP = &BuildPipelineNodeJS{
+			Type: t,
+		}
 	}
 
 	return bP
