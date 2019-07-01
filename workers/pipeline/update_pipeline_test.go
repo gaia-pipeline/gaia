@@ -113,7 +113,9 @@ func TestUpdatePipelineNodeJS(t *testing.T) {
 	// Create fake test nodejs archive file.
 	src := filepath.Join(tmp, "PipelineA_nodejs")
 	p1.ExecPath = src
-	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	if err := ioutil.WriteFile(src, []byte("testcontent"), 0666); err != nil {
+		t.Fatal(err)
+	}
 
 	// fake execution commands
 	tarName = "echo"

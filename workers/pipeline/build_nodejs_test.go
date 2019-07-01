@@ -3,6 +3,7 @@ package pipeline
 import (
 	"bytes"
 	"errors"
+	uuid "github.com/satori/go.uuid"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -31,7 +32,7 @@ func TestPrepareEnvironmentNodeJS(t *testing.T) {
 	if err != nil {
 		t.Fatal("error was not expected when preparing environment: ", err)
 	}
-	var expectedDest = regexp.MustCompile(`^/.*/tmp/nodejs/src/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
+	var expectedDest = regexp.MustCompile(`^/.*/tmp/nodejs/src/.*`)
 	if !expectedDest.MatchString(p.Pipeline.Repo.LocalDest) {
 		t.Fatalf("expected destination is '%s', but was '%s'", expectedDest, p.Pipeline.Repo.LocalDest)
 	}
@@ -60,8 +61,15 @@ func TestExecuteBuildNodeJS(t *testing.T) {
 	defer os.RemoveAll(tmp)
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
+	pipelineID := uuid.Must(uuid.NewV4(), nil)
+	buildDir := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpNodeJSFolder, srcFolder, pipelineID.String())
+	if err := os.MkdirAll(buildDir, 0700); err != nil {
+		t.Fatal(err)
+	}
 	b := new(BuildPipelineNodeJS)
 	p := new(gaia.CreatePipeline)
+	p.Pipeline.UUID = pipelineID.String()
+	p.Pipeline.Repo = &gaia.GitRepo{}
 	err = b.ExecuteBuild(p)
 	if err != nil {
 		t.Fatal("error while running executebuild. none was expected")

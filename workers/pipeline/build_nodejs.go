@@ -12,6 +12,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+const nodeJSInternalCloneFolder  = "jsclone"
+
 // BuildPipelineNodeJS is the real implementation of BuildPipeline for NodeJS
 type BuildPipelineNodeJS struct {
 	Type gaia.PipelineType
@@ -23,7 +25,7 @@ func (b *BuildPipelineNodeJS) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	uuid := uuid.Must(uuid.NewV4(), nil)
 
 	// Create local temp folder for clone
-	cloneFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpNodeJSFolder, srcFolder, uuid.String())
+	cloneFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpNodeJSFolder, srcFolder, uuid.String(), nodeJSInternalCloneFolder)
 	err := os.MkdirAll(cloneFolder, 0700)
 	if err != nil {
 		return err
@@ -56,7 +58,7 @@ func (b *BuildPipelineNodeJS) ExecuteBuild(p *gaia.CreatePipeline) error {
 	// Set command args for archive process
 	pipelineFileName := appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
 	args := []string{
-		"--exclude='./.git'",
+		"--exclude=.git",
 		"-czvf",
 		pipelineFileName,
 		"-C",
@@ -65,16 +67,21 @@ func (b *BuildPipelineNodeJS) ExecuteBuild(p *gaia.CreatePipeline) error {
 	}
 
 	// Execute and wait until finish or timeout
-	output, err := executeCmd(path, args, os.Environ(), localDest)
-	p.Output = string(output)
+	uniqueFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpNodeJSFolder, srcFolder, p.Pipeline.UUID)
+	output, err := executeCmd(path, args, os.Environ(), uniqueFolder)
+	p.Output = string(output[:])
 	if err != nil {
-		gaia.Cfg.Logger.Debug("cannot build pipeline", "error", err.Error(), "output", string(output))
+		gaia.Cfg.Logger.Debug("cannot build pipeline", "error", err.Error(), "output", string(output[:]))
 		return err
 	}
 
 	// Build has been finished. Set execution path to the build result archive.
 	// This will be used during pipeline verification phase which will happen after this step.
-	p.Pipeline.ExecPath = filepath.Join(localDest, pipelineFileName)
+	p.Pipeline.ExecPath = filepath.Join(uniqueFolder, pipelineFileName)
+
+	// Set the the local destination variable to the unique folder because this is now the place
+	// where our binary is located.
+	p.Pipeline.Repo.LocalDest = uniqueFolder
 
 	return nil
 }
