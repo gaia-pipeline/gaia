@@ -258,7 +258,31 @@ Ruby
            end
        end
    end
- 
+
+Node.JS
+~~~~
+
+.. code:: javascript
+
+   const nodesdk = require('@gaia-pipeline/nodesdk');
+
+   function DoSomethingAwesome(args) {
+       console.error('This output will be streamed back to gaia and will be displayed in the pipeline logs.');
+
+       // An error occurred? Throw it back so gaia knows that this job failed.
+       // throw new Error('My error message');
+   }
+
+   // Serve
+   try {
+       nodesdk.Serve([{
+           handler: DoSomethingAwesome,
+           title: 'DoSomethingAwesome',
+           description: 'This job does something awesome.'
+       }]);
+   } catch (err) {
+       console.error(err);
+   }
 
 Pipelines are defined by jobs and a function usually represents a job. You can define as many jobs in your pipeline as you want.
 
@@ -301,7 +325,7 @@ The SDK implements the Gaia plugin gRPC interface and offers helper functions li
 
 Which programming languages are supported?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We currently fully support Golang, Java, Python, C++ and Ruby.
+We currently fully support Go, Java, Python, C++, Ruby and Node.JS.
 
 When do you support programming language **XYZ**?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -5,7 +5,7 @@ export default {
     if (pipeline.jobs) {
       for (let pipelineCurr = 0; pipelineCurr < pipeline.jobs.length; pipelineCurr++) {
         if (pipeline.jobs[pipelineCurr].args) {
-          for (let argsCurr = 0; argsCurr < pipeline.jobs[pipelineCurr]; argsCurr++) {
+          for (let argsCurr = 0; argsCurr < pipeline.jobs[pipelineCurr].args.length; argsCurr++) {
             if (pipeline.jobs[pipelineCurr].args[argsCurr].type !== 'vault') {
               // we found args. Redirect user to params view.
               context.$router.push({path: '/pipeline/params', query: {pipelineid: pipeline.id}})
