@@ -67,6 +67,24 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 			"-e",
 			"Main.main",
 		}
+	case gaia.PTypeNodeJS:
+		// Look for node executable
+		path, err := exec.LookPath(nodeJSExecName)
+		if err != nil {
+			gaia.Cfg.Logger.Error("cannot find NodeJS executable", "error", err)
+			return nil
+		}
+
+		// Define the folder where the nodejs plugin is located unpacked
+		unpackedFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpNodeJSFolder, p.Name)
+
+		// Build start command
+		c.Path = path
+		c.Args = []string{
+			path,
+			"index.js",
+		}
+		c.Dir = unpackedFolder
 	default:
 		c = nil
 	}
