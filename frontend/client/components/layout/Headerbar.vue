@@ -11,20 +11,20 @@
 </template>
 
 <script>
-export default {
-  computed: {
-    name () {
-      return this.$route.name
+  export default {
+    computed: {
+      name() {
+        return this.$route.name
+      }
     }
   }
-}
 </script>
 
 <style lang="scss">
 
-.subtitle strong {
-  font-family: 'Lobster', 'Times', 'serif';
-  font-size: 3rem;
-  color: whitesmoke;
-}
+  .subtitle strong {
+    font-family: 'Lobster', 'Times', 'serif';
+    font-size: 3rem;
+    color: whitesmoke;
+  }
 </style>

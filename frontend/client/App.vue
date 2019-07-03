@@ -181,7 +181,7 @@ html {
     -webkit-text-fill-color: initial;
 }
 
-.input-bar::-moz-placeholder { 
+.input-bar::-moz-placeholder {
     color: #8c91a0;
     text-shadow: none;
     opacity: 1;
@@ -238,7 +238,7 @@ html {
   -webkit-transform: translateY(-50%);
   -ms-transform: translateY(-50%);
   transform: translateY(-50%);
-  top: 50%; 
+  top: 50%;
 }
 
 .progress-bar-height {

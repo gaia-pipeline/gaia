@@ -82,14 +82,14 @@
   import helper from '../../helper'
 
   export default {
-    data () {
+    data() {
       return {
         pipelines: [],
         pipeline: null
       }
     },
 
-    mounted () {
+    mounted() {
       // Fetch data from backend
       this.fetchData()
 
@@ -102,7 +102,7 @@
       this.$store.commit('appendInterval', intervalID)
     },
 
-    destroyed () {
+    destroyed() {
       this.$store.commit('clearIntervals')
     },
 
@@ -111,9 +111,13 @@
     },
 
     methods: {
-      fetchData () {
+      fetchData() {
         this.$http
-          .get('/api/v1/pipeline/latest', {showProgressBar: false})
+          .get('/api/v1/pipeline/latest', {
+            meta: {
+              showProgressBar: false
+            }
+          })
           .then(response => {
             if (response.data) {
               this.pipelines = response.data
@@ -125,7 +129,7 @@
           })
       },
 
-      pipelineImageClass (type) {
+      pipelineImageClass(type) {
         switch (type) {
           case 'python':
             return 'outer-box-image-python'
@@ -140,15 +144,15 @@
         }
       },
 
-      checkPipelineArgsAndStartPipeline (pipeline) {
+      checkPipelineArgsAndStartPipeline(pipeline) {
         helper.StartPipelineWithArgsCheck(this, pipeline)
       },
 
-      getImagePath (type) {
+      getImagePath(type) {
         return require('assets/' + type + '.png')
       },
 
-      calculateDuration (startdate, finishdate) {
+      calculateDuration(startdate, finishdate) {
         if (moment(startdate).valueOf() < 0) {
           startdate = moment()
         }
@@ -164,7 +168,7 @@
         return moment.duration(diff, 'seconds').humanize()
       },
 
-      humanizedDate (date) {
+      humanizedDate(date) {
         return moment(date).format('LLL')
       }
     }

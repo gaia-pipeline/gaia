@@ -2,7 +2,7 @@
 
 const path = require('path')
 const config = require('../config')
-const utils = require('./utils')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const projectRoot = path.resolve(__dirname, '../')
 
 module.exports = {
@@ -41,21 +41,10 @@ module.exports = {
     }
   },
   module: {
-    loaders: [
-      {
-        test: /\.(js|vue)$/,
-        loader: 'eslint-loader',
-        include: projectRoot,
-        exclude: /node_modules/,
-        enforce: 'pre',
-        options: {
-          formatter: require('eslint-friendly-formatter')
-        }
-      },
+    rules: [
       {
         test: /\.vue$/,
-        loader: 'vue-loader',
-        options: require('./vue-loader.conf')
+        loader: 'vue-loader'
       },
       {
         test: /\.js$/,
@@ -65,20 +54,47 @@ module.exports = {
         exclude: [new RegExp(`node_modules\\${path.sep}(?!vue-bulma-.*)`)]
       },
       {
-        test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
-        loader: 'url-loader',
-        query: {
-          limit: 10000,
-          name: utils.assetsPath('img/[name].[hash:7].[ext]')
+        test: /\.m?js$/,
+        exclude: /(node_modules|bower_components)/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env']
+          }
         }
       },
       {
-        test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
-        loader: 'url-loader',
-        query: {
-          limit: 10000,
-          name: utils.assetsPath('fonts/[name].[hash:7].[ext]')
-        }
+        test: /\.scss$/,
+        use: [
+          'style-loader',
+          'css-loader',
+          'sass-loader'
+        ]
+      },
+      {
+        test: /\.(png|svg|jpg|gif)$/,
+        use: [
+          'file-loader'
+        ]
+      },
+      {
+        test: /\.(woff|woff2|eot|ttf|otf)$/,
+        use: [
+          'file-loader'
+        ]
+      },
+      {
+        test: /\.css$/,
+        use: [
+          {
+            loader: MiniCssExtractPlugin.loader,
+            options: {
+              publicPath: '../',
+              hmr: process.env.NODE_ENV === 'development'
+            }
+          },
+          'css-loader'
+        ]
       }
     ]
   },

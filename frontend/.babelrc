@@ -1,9 +1,9 @@
 {
   "presets": [
-    ["es2015", { "modules": false }],
-    "stage-2"
+    "@babel/preset-env"
   ],
   "plugins": [
-    "transform-export-extensions"
+    "@babel/plugin-syntax-dynamic-import",
+    "@babel/plugin-proposal-export-default-from"
   ]
 }

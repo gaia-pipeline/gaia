@@ -5,7 +5,8 @@ const merge = require('webpack-merge')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const baseWebpackConfig = require('./webpack.base.conf')
 const config = require('../config')
-const utils = require('./utils')
+const VueLoaderPlugin = require('vue-loader/lib/plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
 // add hot-reload related code to entry chunks
 Object.keys(baseWebpackConfig.entry).forEach(name => {
@@ -13,23 +14,21 @@ Object.keys(baseWebpackConfig.entry).forEach(name => {
 })
 
 module.exports = merge(baseWebpackConfig, {
-  module: {
-    loaders: utils.styleLoaders({ sourceMap: config.dev.cssSourceMap })
-  },
+  mode: 'development',
   // eval-source-map is faster for development
   devtool: '#eval-source-map',
   plugins: [
     new webpack.DefinePlugin({
       'process.env': config.dev.env
     }),
+    new MiniCssExtractPlugin({
+      filename: '[name].css',
+      chunkFilename: '[id].css'
+    }),
+    new VueLoaderPlugin(),
     // https://github.com/glenjamin/webpack-hot-middleware#installation--usage
     new webpack.HotModuleReplacementPlugin(),
     new webpack.NoEmitOnErrorsPlugin(),
-    // extract vendor chunks for better caching
-    new webpack.optimize.CommonsChunkPlugin({
-      name: 'vendor',
-      filename: 'vendor.js'
-    }),
     // https://github.com/ampedandwired/html-webpack-plugin
     new HtmlWebpackPlugin({
       title: 'Gaia - Build powerful pipelines in any programming language.',

@@ -1,12 +1,12 @@
 import Vue from 'vue'
 import axios from 'axios'
 import NProgress from 'vue-nprogress'
-import {sync} from 'vuex-router-sync'
+import { sync } from 'vuex-router-sync'
 import App from './App.vue'
 import router from './router'
 import store from './store'
 import * as filters from './filters'
-import {TOGGLE_SIDEBAR} from 'vuex-store/mutation-types'
+import { TOGGLE_SIDEBAR } from 'vuex-store/mutation-types'
 import Notification from 'vue-bulma-notification-fixed'
 import auth from './auth'
 import lodash from 'lodash'
@@ -32,9 +32,9 @@ axiosInstance.interceptors.request.use(function (request) {
 Vue.config.devtools = true
 sync(store, router)
 
-const nprogress = new NProgress({parent: '.nprogress-container'})
+const nprogress = new NProgress({ parent: '.nprogress-container' })
 
-const {state} = store
+const { state } = store
 
 Vue.directive('focus', {
   // When the bound element is inserted into the DOM...
@@ -143,4 +143,4 @@ const app = new Vue({
 // A simple event bus
 export const EventBus = new Vue()
 
-export {app, router, store}
+export { app, router, store }
