@@ -144,13 +144,17 @@
       <div class="tile is-parent is-10">
         <article class="tile is-child notification content-article box">
           <vue-good-table
-            title="Pipeline history"
             :columns="historyColumns"
             :rows="historyRows"
-            :paginate="true"
-            :global-search="true"
-            :defaultSortBy="{field: 'created', type: 'desc'}"
-            globalSearchPlaceholder="Search ..."
+            :pagination-options="{
+              enabled: true,
+              mode: 'records'
+            }"
+            :search-options="{enabled: false}"
+            :sort-options="{
+              enabled: true,
+              initialSortBy: {field: 'created', type: 'desc'}
+            }"
             styleClass="table table-grid table-own-bordered">
             <template slot="table-row" slot-scope="props">
               <td>{{ props.row.pipeline.name }}</td>
@@ -499,7 +503,7 @@
     methods: {
       fetchData () {
         this.$http
-          .get('/api/v1/pipeline/created', {showProgressBar: false})
+          .get('/api/v1/pipeline/created', { params: { hideProgressBar: true }})
           .then(response => {
             if (response.data) {
               this.historyRows = response.data

@@ -114,8 +114,8 @@
       fetchData() {
         this.$http
           .get('/api/v1/pipeline/latest', {
-            meta: {
-              showProgressBar: false
+            params: {
+              hideProgressBar: true
             }
           })
           .then(response => {

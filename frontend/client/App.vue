@@ -227,10 +227,11 @@ html {
 }
 
 /* Table styles */
-.global-search-input {
+.table {
   background-color: #19191b !important;
   color: white !important;
-  border-color: #2a2735 !important;
+  border-color: whitesmoke;
+  width: 100%;
 }
 
 .progress-bar-middle {
@@ -245,15 +246,15 @@ html {
   height: 50px;
 }
 
-.table-grid td {
+.table thead {
   border: 0 !important;
   color: #8c91a0 !important;
   text-align: center !important;
 }
 
-.table-grid th {
-  border-top: solid black 2px !important;
-  border-bottom: solid black 2px !important;
+.table td  {
+  border-top: solid black 1px !important;
+  border-bottom: solid black 1px !important;
   color: #4da2fc !important;
 }
 

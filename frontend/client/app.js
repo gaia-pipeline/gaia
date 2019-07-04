@@ -19,7 +19,10 @@ const axiosInstance = axios.create({
 Vue.prototype.$http = axiosInstance
 Vue.axios = axiosInstance
 Vue.router = router
-Vue.use(NProgress)
+Vue.use(NProgress, {
+  http: false,
+  router: false
+})
 Vue.use(VueLodash, lodash)
 
 // Auth interceptors
@@ -33,6 +36,16 @@ Vue.config.devtools = true
 sync(store, router)
 
 const nprogress = new NProgress({ parent: '.nprogress-container' })
+axiosInstance.interceptors.request.use(function (config) {
+  if (!config.params || config.params.hideProgressBar !== true) {
+    nprogress.start()
+  }
+  return config
+})
+axiosInstance.interceptors.response.use(function (response) {
+  nprogress.done()
+  return response
+})
 
 const { state } = store
 

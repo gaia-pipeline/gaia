@@ -20,7 +20,7 @@
   }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped="true">
 
   .subtitle strong {
     font-family: 'Lobster', 'Times', 'serif';

@@ -31,7 +31,7 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped="true">
 @import '~bulma/sass/utilities/mixins';
 
 .header-text {
