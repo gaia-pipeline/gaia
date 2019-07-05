@@ -26,35 +26,41 @@
 
       <div class="tile is-parent">
         <article class="tile is-child notification content-article box">
-            <vue-good-table
-              title="Previous runs"
-              :columns="runsColumns"
-              :rows="runsRows"
-              :paginate="true"
-              :global-search="true"
-              :defaultSortBy="{field: 'id', type: 'desc'}"
-              globalSearchPlaceholder="Search ..."
-             styleClass="table table-grid table-own-bordered">
-              <template slot="table-row" slot-scope="props">
-                <td>
-                  <router-link :to="{ path: '/pipeline/detail', query: { pipelineid: pipelineID, runid: props.row.id }}" class="is-blue">
-                    {{ props.row.id }}
-                  </router-link>
-                </td>
-                <td>
-                  <span v-if="props.row.status === 'success'" style="color: green;">{{ props.row.status }}</span>
-                  <span v-else-if="props.row.status === 'failed'" style="color: red;">{{ props.row.status }}</span>
-                  <span v-else>{{ props.row.status }}</span>
-                </td>
-                <td>{{ calculateDuration(props.row.startdate, props.row.finishdate) }}</td>
-                <td>
-                  <a v-on:click="stopPipelineModal(pipelineID, props.row.id)"><i class="fa fa-ban" style="color: whitesmoke;"></i></a>
-                </td>
-              </template>
-              <div slot="emptystate" class="empty-table-text">
-                No pipeline runs found in database.
-              </div>
-            </vue-good-table>
+          <vue-good-table
+            :columns="runsColumns"
+            :rows="runsRows"
+            :pagination-options="{
+              enabled: true,
+              mode: 'records'
+            }"
+            :search-options="{enabled: true, placeholder: 'Search ...'}"
+            :sort-options="{
+              enabled: true,
+              initialSortBy: {field: 'id', type: 'desc'}
+            }"
+            styleClass="table table-grid table-own-bordered">
+            <template slot="table-row" slot-scope="props">
+              <span v-if="props.column.field === 'id'">
+                <router-link :to="{ path: '/pipeline/detail', query: { pipelineid: pipelineID, runid: props.row.id }}"
+                             class="is-blue">
+                  {{ props.row.id }}
+                </router-link>
+              </span>
+              <span v-if="props.column.field === 'status'">
+                <span v-if="props.row.status === 'success'" style="color: green;">{{ props.row.status }}</span>
+                <span v-else-if="props.row.status === 'failed'" style="color: red;">{{ props.row.status }}</span>
+                <span v-else>{{ props.row.status }}</span>
+              </span>
+              <span v-if="props.column.field === 'duration'">{{ calculateDuration(props.row.startdate, props.row.finishdate) }}</span>
+              <span v-if="props.column.field === 'action'">
+                <a v-on:click="stopPipelineModal(pipelineID, props.row.id)"><i class="fa fa-ban"
+                                                                               style="color: whitesmoke;"></i></a>
+              </span>
+            </template>
+            <div slot="emptystate" class="empty-table-text">
+              No pipeline runs found in database.
+            </div>
+          </vue-good-table>
         </article>
 
         <!-- stop pipeline run modal -->
@@ -86,362 +92,366 @@
 </template>
 
 <script>
-import Vue from 'vue'
-import Vis from 'vis'
-import { Modal } from 'vue-bulma-modal'
-import VueGoodTable from 'vue-good-table'
-import moment from 'moment'
-import helper from '../../helper'
+  import Vis from 'vis'
+  import {Modal} from 'vue-bulma-modal'
+  import { VueGoodTable } from 'vue-good-table'
+  import 'vue-good-table/dist/vue-good-table.css'
+  import moment from 'moment'
+  import helper from '../../helper'
 
-Vue.use(VueGoodTable)
+  export default {
+    components: {
+      Modal,
+      VueGoodTable
+    },
 
-export default {
-  components: {
-    Modal
-  },
-
-  data () {
-    return {
-      showStopPipelineModal: false,
-      pipelineID: null,
-      runID: null,
-      nodes: null,
-      edges: null,
-      lastRedraw: false,
-      runsColumns: [
-        {
-          label: 'ID',
-          field: 'id',
-          type: 'number'
-        },
-        {
-          label: 'Status',
-          field: 'status'
-        },
-        {
-          label: 'Duration'
-        },
-        {
-          label: 'Actions'
-        }
-      ],
-      runsRows: [],
-      pipelineViewOptions: {
-        physics: { stabilization: true },
-        layout: {
-          hierarchical: {
-            enabled: true,
-            levelSeparation: 200,
-            direction: 'LR',
-            sortMethod: 'directed'
+    data() {
+      return {
+        showStopPipelineModal: false,
+        pipelineID: null,
+        runID: null,
+        nodes: null,
+        edges: null,
+        lastRedraw: false,
+        runsColumns: [
+          {
+            label: 'ID',
+            field: 'id',
+            type: 'number'
+          },
+          {
+            label: 'Status',
+            field: 'status'
+          },
+          {
+            label: 'Duration',
+            field: 'duration'
+          },
+          {
+            label: 'Action',
+            field: 'action'
+          }
+        ],
+        runsRows: [],
+        pipelineViewOptions: {
+          physics: {stabilization: true},
+          layout: {
+            hierarchical: {
+              enabled: true,
+              levelSeparation: 200,
+              direction: 'LR',
+              sortMethod: 'directed'
+            }
+          },
+          nodes: {
+            borderWidth: 4,
+            size: 40,
+            color: {
+              border: '#222222'
+            },
+            font: {color: '#eeeeee'}
+          },
+          edges: {
+            smooth: {
+              type: 'cubicBezier',
+              forceDirection: 'vertical',
+              roundness: 0.4
+            },
+            color: {
+              color: 'whitesmoke',
+              highlight: '#4da2fc'
+            },
+            arrows: {to: true}
           }
         },
-        nodes: {
-          borderWidth: 4,
-          size: 40,
-          color: {
-            border: '#222222'
-          },
-          font: { color: '#eeeeee' }
-        },
-        edges: {
-          smooth: {
-            type: 'cubicBezier',
-            forceDirection: 'vertical',
-            roundness: 0.4
-          },
-          color: {
-            color: 'whitesmoke',
-            highlight: '#4da2fc'
-          },
-          arrows: {to: true}
-        }
-      },
-      pipeline: null
-    }
-  },
+        pipeline: null
+      }
+    },
 
-  mounted () {
-    // View should be re-rendered
-    this.lastRedraw = false
-
-    // periodically update view
-    this.fetchData()
-    var intervalID = setInterval(function () {
-      this.fetchData()
-    }.bind(this), 3000)
-
-    // Append interval id to store
-    this.$store.commit('appendInterval', intervalID)
-  },
-
-  destroyed () {
-    this.$store.commit('clearIntervals')
-  },
-
-  watch: {
-    '$route': 'locationReload'
-  },
-
-  methods: {
-    locationReload () {
+    mounted() {
       // View should be re-rendered
       this.lastRedraw = false
 
-      // Fetch data
+      // periodically update view
       this.fetchData()
+      var intervalID = setInterval(function () {
+        this.fetchData()
+      }.bind(this), 3000)
+
+      // Append interval id to store
+      this.$store.commit('appendInterval', intervalID)
     },
 
-    fetchData () {
-      // look up url parameters
-      var pipelineID = this.$route.query.pipelineid
-      if (!pipelineID) {
-        return
-      }
-      this.pipelineID = pipelineID
-
-      // runID is optional
-      var runID = this.$route.query.runid
-
-      // If runid was set, look up this run
-      if (runID) {
-        // set run id
-        this.runID = runID
-
-        // Run ID specified. Do concurrent request
-        Promise.all([this.getPipeline(pipelineID), this.getPipelineRun(pipelineID, runID), this.getPipelineRuns(pipelineID)])
-          .then(values => {
-            // We only redraw the pipeline if pipeline is running
-            var pipeline = values[0]
-            var pipelineRun = values[1]
-            var pipelineRuns = values[2]
-            if (pipelineRun.data.status !== 'running' && !this.lastRedraw) {
-              this.drawPipelineDetail(pipeline.data, pipelineRun.data)
-              this.lastRedraw = true
-            } else if (pipelineRun.data.status === 'running') {
-              this.lastRedraw = false
-              this.drawPipelineDetail(pipeline.data, pipelineRun.data)
-            }
-            this.runsRows = pipelineRuns.data
-            this.pipeline = pipeline.data
-          })
-          .catch((error) => {
-            this.$store.commit('clearIntervals')
-            this.$onError(error)
-          })
-      } else {
-        // Do concurrent request
-        Promise.all([this.getPipeline(pipelineID), this.getPipelineRuns(pipelineID)])
-          .then(values => {
-            var pipeline = values[0]
-            var pipelineRuns = values[1]
-            if (!this.lastRedraw) {
-              this.drawPipelineDetail(pipeline.data, null)
-              this.lastRedraw = true
-            }
-
-            // Are runs available?
-            if (pipelineRuns.data) {
-              this.runsRows = pipelineRuns.data
-            }
-            this.pipeline = pipeline.data
-          })
-          .catch((error) => {
-            this.$store.commit('clearIntervals')
-            this.$onError(error)
-          })
-      }
+    destroyed() {
+      this.$store.commit('clearIntervals')
     },
 
-    getPipeline (pipelineID) {
-      return this.$http.get('/api/v1/pipeline/' + pipelineID, { showProgressBar: false })
+    watch: {
+      '$route': 'locationReload'
     },
 
-    getPipelineRun (pipelineID, runID) {
-      return this.$http.get('/api/v1/pipelinerun/' + pipelineID + '/' + runID, { showProgressBar: false })
-    },
+    methods: {
+      locationReload() {
+        // View should be re-rendered
+        this.lastRedraw = false
 
-    stopPipeline () {
-      this.close()
-      this.$http
-        .post('/api/v1/pipelinerun/' + this.pipelineID + '/' + this.runID + '/stop', { showProgressBar: false })
-        .then(response => {
-          if (response.data) {
-            this.$router.push({path: '/pipeline/detail', query: { pipelineid: this.pipeline.id, runid: response.data.id }})
-          }
-        })
-        .catch((error) => {
-          this.$store.commit('clearIntervals')
-          this.$onError(error)
-        })
-    },
+        // Fetch data
+        this.fetchData()
+      },
 
-    stopPipelineModal (pipelineID, runID) {
-      this.pipelineID = pipelineID
-      this.runID = runID
-      this.showStopPipelineModal = true
-    },
-
-    close () {
-      this.showStopPipelineModal = false
-      this.$emit('close')
-    },
-
-    getPipelineRuns (pipelineID) {
-      return this.$http.get('/api/v1/pipelinerun/' + pipelineID, { showProgressBar: false })
-    },
-
-    drawPipelineDetail (pipeline, pipelineRun) {
-      // Check if pipelineRun was set
-      var jobs = null
-      if (pipelineRun) {
-        jobs = pipelineRun.jobs
-      } else {
-        jobs = pipeline.jobs
-      }
-
-      // check if this pipeline has jobs
-      if (!jobs) {
-        return
-      }
-
-      // Check if something has changed
-      if (this.nodes) {
-        var redraw = false
-        for (let i = 0, l = this.nodes.length; i < l; i++) {
-          for (let x = 0, y = jobs.length; x < y; x++) {
-            if (this.nodes._data[i].internalID === jobs[x].id && this.nodes._data[i].internalStatus !== jobs[x].status) {
-              redraw = true
-              break
-            }
-          }
-        }
-
-        // Check if we have to redraw
-        if (!redraw) {
+      fetchData() {
+        // look up url parameters
+        var pipelineID = this.$route.query.pipelineid
+        if (!pipelineID) {
           return
         }
-      }
+        this.pipelineID = pipelineID
 
-      // Initiate data structure
-      var nodesArray = []
-      var edgesArray = []
+        // runID is optional
+        var runID = this.$route.query.runid
 
-      // Iterate all jobs of the pipeline
-      for (let i = 0, l = jobs.length; i < l; i++) {
-        // Choose the image for this node and border color
-        var nodeImage = require('assets/questionmark.png')
-        var borderColor = '#222222'
-        if (jobs[i].status) {
-          switch (jobs[i].status) {
-            case 'success':
-              nodeImage = require('assets/success.png')
-              break
-            case 'failed':
-              nodeImage = require('assets/fail.png')
-              break
-            case 'running':
-              nodeImage = require('assets/inprogress.png')
-              borderColor = '#e8720b'
-              break
-          }
-        }
+        // If runid was set, look up this run
+        if (runID) {
+          // set run id
+          this.runID = runID
 
-        // Create nodes object
-        let node = {
-          id: i,
-          internalID: jobs[i].id,
-          internalStatus: jobs[i].status,
-          shape: 'circularImage',
-          image: nodeImage,
-          label: jobs[i].title,
-          font: {
-            color: '#eeeeee'
-          },
-          color: {
-            border: borderColor
-          }
-        }
-
-        // Add node to nodes list
-        nodesArray.push(node)
-
-        // Check if this job has dependencies
-        let deps = jobs[i].dependson
-        if (!deps) {
-          continue
-        }
-
-        // Iterate all dependent jobs
-        for (let depJobID = 0, depsLength = deps.length; depJobID < depsLength; depJobID++) {
-          // iterate again all jobs
-          for (let jobID = 0, jobsLength = jobs.length; jobID < jobsLength; jobID++) {
-            if (jobs[jobID].id === deps[depJobID].id) {
-              // create edge
-              let edge = {
-                from: jobID,
-                to: i
+          // Run ID specified. Do concurrent request
+          Promise.all([this.getPipeline(pipelineID), this.getPipelineRun(pipelineID, runID), this.getPipelineRuns(pipelineID)])
+            .then(values => {
+              // We only redraw the pipeline if pipeline is running
+              var pipeline = values[0]
+              var pipelineRun = values[1]
+              var pipelineRuns = values[2]
+              if (pipelineRun.data.status !== 'running' && !this.lastRedraw) {
+                this.drawPipelineDetail(pipeline.data, pipelineRun.data)
+                this.lastRedraw = true
+              } else if (pipelineRun.data.status === 'running') {
+                this.lastRedraw = false
+                this.drawPipelineDetail(pipeline.data, pipelineRun.data)
+              }
+              this.runsRows = pipelineRuns.data
+              this.pipeline = pipeline.data
+            })
+            .catch((error) => {
+              this.$store.commit('clearIntervals')
+              this.$onError(error)
+            })
+        } else {
+          // Do concurrent request
+          Promise.all([this.getPipeline(pipelineID), this.getPipelineRuns(pipelineID)])
+            .then(values => {
+              var pipeline = values[0]
+              var pipelineRuns = values[1]
+              if (!this.lastRedraw) {
+                this.drawPipelineDetail(pipeline.data, null)
+                this.lastRedraw = true
               }
 
-              // add edge to edges list
-              edgesArray.push(edge)
+              // Are runs available?
+              if (pipelineRuns.data) {
+                this.runsRows = pipelineRuns.data
+              }
+              this.pipeline = pipeline.data
+            })
+            .catch((error) => {
+              this.$store.commit('clearIntervals')
+              this.$onError(error)
+            })
+        }
+      },
+
+      getPipeline(pipelineID) {
+        return this.$http.get('/api/v1/pipeline/' + pipelineID, { params: { hideProgressBar: true }})
+      },
+
+      getPipelineRun(pipelineID, runID) {
+        return this.$http.get('/api/v1/pipelinerun/' + pipelineID + '/' + runID, { params: { hideProgressBar: true }})
+      },
+
+      stopPipeline() {
+        this.close()
+        this.$http
+          .post('/api/v1/pipelinerun/' + this.pipelineID + '/' + this.runID + '/stop', { params: { hideProgressBar: true }})
+          .then(response => {
+            if (response.data) {
+              this.$router.push({
+                path: '/pipeline/detail',
+                query: {pipelineid: this.pipeline.id, runid: response.data.id}
+              })
+            }
+          })
+          .catch((error) => {
+            this.$store.commit('clearIntervals')
+            this.$onError(error)
+          })
+      },
+
+      stopPipelineModal(pipelineID, runID) {
+        this.pipelineID = pipelineID
+        this.runID = runID
+        this.showStopPipelineModal = true
+      },
+
+      close() {
+        this.showStopPipelineModal = false
+        this.$emit('close')
+      },
+
+      getPipelineRuns(pipelineID) {
+        return this.$http.get('/api/v1/pipelinerun/' + pipelineID, { params: { hideProgressBar: true }})
+      },
+
+      drawPipelineDetail(pipeline, pipelineRun) {
+        // Check if pipelineRun was set
+        var jobs = null
+        if (pipelineRun) {
+          jobs = pipelineRun.jobs
+        } else {
+          jobs = pipeline.jobs
+        }
+
+        // check if this pipeline has jobs
+        if (!jobs) {
+          return
+        }
+
+        // Check if something has changed
+        if (this.nodes) {
+          var redraw = false
+          for (let i = 0, l = this.nodes.length; i < l; i++) {
+            for (let x = 0, y = jobs.length; x < y; x++) {
+              if (this.nodes._data[i].internalID === jobs[x].id && this.nodes._data[i].internalStatus !== jobs[x].status) {
+                redraw = true
+                break
+              }
+            }
+          }
+
+          // Check if we have to redraw
+          if (!redraw) {
+            return
+          }
+        }
+
+        // Initiate data structure
+        var nodesArray = []
+        var edgesArray = []
+
+        // Iterate all jobs of the pipeline
+        for (let i = 0, l = jobs.length; i < l; i++) {
+          // Choose the image for this node and border color
+          var nodeImage = require('assets/questionmark.png')
+          var borderColor = '#222222'
+          if (jobs[i].status) {
+            switch (jobs[i].status) {
+              case 'success':
+                nodeImage = require('assets/success.png')
+                break
+              case 'failed':
+                nodeImage = require('assets/fail.png')
+                break
+              case 'running':
+                nodeImage = require('assets/inprogress.png')
+                borderColor = '#e8720b'
+                break
+            }
+          }
+
+          // Create nodes object
+          let node = {
+            id: i,
+            internalID: jobs[i].id,
+            internalStatus: jobs[i].status,
+            shape: 'circularImage',
+            image: nodeImage,
+            label: jobs[i].title,
+            font: {
+              color: '#eeeeee'
+            },
+            color: {
+              border: borderColor
+            }
+          }
+
+          // Add node to nodes list
+          nodesArray.push(node)
+
+          // Check if this job has dependencies
+          let deps = jobs[i].dependson
+          if (!deps) {
+            continue
+          }
+
+          // Iterate all dependent jobs
+          for (let depJobID = 0, depsLength = deps.length; depJobID < depsLength; depJobID++) {
+            // iterate again all jobs
+            for (let jobID = 0, jobsLength = jobs.length; jobID < jobsLength; jobID++) {
+              if (jobs[jobID].id === deps[depJobID].id) {
+                // create edge
+                let edge = {
+                  from: jobID,
+                  to: i
+                }
+
+                // add edge to edges list
+                edgesArray.push(edge)
+              }
             }
           }
         }
-      }
 
-      // If pipelineView already exist, just update it
-      if (window.pipelineView && this.nodes && this.edges) {
-        // Redraw
-        this.nodes.clear()
-        this.edges.clear()
-        this.nodes.add(nodesArray)
-        this.edges.add(edgesArray)
-      } else {
-        // translate to vis data structure
-        this.nodes = new Vis.DataSet(nodesArray)
-        this.edges = new Vis.DataSet(edgesArray)
+        // If pipelineView already exist, just update it
+        if (window.pipelineView && this.nodes && this.edges) {
+          // Redraw
+          this.nodes.clear()
+          this.edges.clear()
+          this.nodes.add(nodesArray)
+          this.edges.add(edgesArray)
+        } else {
+          // translate to vis data structure
+          this.nodes = new Vis.DataSet(nodesArray)
+          this.edges = new Vis.DataSet(edgesArray)
 
-        // prepare data object for vis
-        var data = {
-          nodes: this.nodes,
-          edges: this.edges
+          // prepare data object for vis
+          var data = {
+            nodes: this.nodes,
+            edges: this.edges
+          }
+
+          // Find container
+          var container = document.getElementById('pipeline-detail')
+
+          // Create vis network
+          // We have to move out the instance out of vue because of https://github.com/almende/vis/issues/2567
+          window.pipelineView = new Vis.Network(container, data, this.pipelineViewOptions)
         }
+      },
 
-        // Find container
-        var container = document.getElementById('pipeline-detail')
+      calculateDuration(startdate, finishdate) {
+        if (moment(startdate).valueOf() < 0) {
+          startdate = moment()
+        }
+        if (moment(finishdate).valueOf() < 0) {
+          finishdate = moment()
+        }
+        // Calculate difference
+        var diff = moment(finishdate).diff(moment(startdate), 'seconds')
+        if (diff < 60) {
+          return diff + ' seconds'
+        }
+        return moment.duration(diff, 'seconds').humanize()
+      },
 
-        // Create vis network
-        // We have to move out the instance out of vue because of https://github.com/almende/vis/issues/2567
-        window.pipelineView = new Vis.Network(container, data, this.pipelineViewOptions)
+      jobLog() {
+        // Route
+        this.$router.push({path: '/pipeline/log', query: {pipelineid: this.pipelineID, runid: this.runID}})
+      },
+
+      checkPipelineArgsAndStartPipeline() {
+        helper.StartPipelineWithArgsCheck(this, this.pipeline)
       }
-    },
-
-    calculateDuration (startdate, finishdate) {
-      if (moment(startdate).valueOf() < 0) {
-        startdate = moment()
-      }
-      if (moment(finishdate).valueOf() < 0) {
-        finishdate = moment()
-      }
-      // Calculate difference
-      var diff = moment(finishdate).diff(moment(startdate), 'seconds')
-      if (diff < 60) {
-        return diff + ' seconds'
-      }
-      return moment.duration(diff, 'seconds').humanize()
-    },
-
-    jobLog () {
-      // Route
-      this.$router.push({path: '/pipeline/log', query: { pipelineid: this.pipelineID, runid: this.runID }})
-    },
-
-    checkPipelineArgsAndStartPipeline () {
-      helper.StartPipelineWithArgsCheck(this, this.pipeline)
     }
   }
-}
 </script>
 
 <style lang="scss">
@@ -450,6 +460,7 @@ export default {
     width: 100%;
     height: 400px;
   }
+
   .stop-pipeline-modal {
     text-align: center;
     background-color: #2a2735;

@@ -256,6 +256,7 @@ html {
   border-top: solid black 1px !important;
   border-bottom: solid black 1px !important;
   color: #4da2fc !important;
+  text-align: center !important;
 }
 
 .table-grid  thead th {
@@ -265,7 +266,7 @@ html {
 
 .table-own-bordered {
   border-collapse: separate !important;
-  border: solid black 2px;
+  border: solid black 1px;
   border-radius: 6px;
 }
 
@@ -273,23 +274,38 @@ html {
   overflow-x: auto !important;
 }
 
-.table-footer {
-  border: solid black 2px !important;
+.vgt-wrap__footer {
+  border: solid black 1px !important;
   border-radius: 6px;
   margin-top: 10px !important;
   color: whitesmoke !important;
+  background: #19191b !important;
 }
 
-.table-footer select {
-  color: #4da2fc !important;
-}
-
-.pagination-controls a span {
-  color: #4da2fc !important;
-}
-
-.pagination-controls .info {
+.vgt-global-search {
+  border: solid black 1px !important;
+  border-radius: 6px;
+  margin-bottom: 10px !important;
   color: whitesmoke !important;
+  background: #19191b !important;
+}
+
+.vgt-input {
+  background-color: #19191b !important;
+  color: white !important;
+  border-color: #2a2735 !important;
+}
+
+.vgt-input::-webkit-input-placeholder {
+  color: #8c91a0 !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: initial !important;
+}
+
+.vgt-input::-moz-placeholder {
+  color: #8c91a0 !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
 }
 
 .empty-table-text {

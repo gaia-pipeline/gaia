@@ -16,22 +16,27 @@
               <vue-good-table
                 :columns="keyColumns"
                 :rows="keyRows"
-                :paginate="true"
-                :global-search="true"
-                :defaultSortBy="{field: 'key', type: 'desc'}"
-                globalSearchPlaceholder="Search ..."
+                :pagination-options="{
+                  enabled: true,
+                  mode: 'records'
+                }"
+                :search-options="{enabled: true, placeholder: 'Search ...'}"
+                :sort-options="{
+                  enabled: true,
+                  initialSortBy: {field: 'key', type: 'desc'}
+                }"
                 styleClass="table table-grid table-own-bordered">
                 <template slot="table-row" slot-scope="props">
-                  <td>
+                  <span v-if="props.column.field === 'key'">
                     <span>{{ props.row.key }}</span>
-                  </td>
-                  <td v-tippy="{ arrow : true,  animation : 'shift-away'}">
+                  </span>
+                  <span v-if="props.column.field === 'secret_value'" v-tippy="{ arrow : true,  animation : 'shift-away'}">
                     <span>*****</span>
-                  </td>
-                  <td>
+                  </span>
+                  <span v-if="props.column.field === 'action'">
                     <a v-on:click="editSecretModal(props.row)"><i class="fa fa-edit" style="color: whitesmoke;"></i></a>
                     <a v-on:click="deleteSecretModal(props.row)"><i class="fa fa-trash" style="color: whitesmoke;"></i></a>
-                  </td>
+                  </span>
                 </template>
                 <div slot="emptystate" class="empty-table-text">
                   No secrets found.
@@ -147,7 +152,8 @@
 import Vue from 'vue'
 import { Modal } from 'vue-bulma-modal'
 import { Collapse, Item as CollapseItem } from 'vue-bulma-collapse'
-import VueGoodTable from 'vue-good-table'
+import { VueGoodTable } from 'vue-good-table'
+import 'vue-good-table/dist/vue-good-table.css'
 import VueTippy from 'vue-tippy'
 import moment from 'moment'
 import Notification from 'vue-bulma-notification-fixed'
@@ -170,14 +176,14 @@ const openNotification = (
   })
 }
 
-Vue.use(VueGoodTable)
 Vue.use(VueTippy)
 
 export default {
   components: {
     Modal,
     Collapse,
-    CollapseItem
+    CollapseItem,
+    VueGoodTable
   },
 
   data () {
@@ -192,7 +198,8 @@ export default {
           field: 'secret_value'
         },
         {
-          label: ''
+          label: 'Action',
+          field: 'action'
         }
       ],
       keyRows: [],
@@ -218,7 +225,7 @@ export default {
   methods: {
     fetchData () {
       this.$http
-        .get('/api/v1/secrets', { showProgressBar: false })
+        .get('/api/v1/secrets', { params: { hideProgressBar: true }})
         .then(response => {
           if (response.data) {
             this.keyRows = response.data

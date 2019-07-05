@@ -34,37 +34,43 @@
         <vue-good-table
           :columns="workerColumns"
           :rows="workerRows"
-          :paginate="true"
-          :global-search="true"
-          :defaultSortBy="{field: 'name', type: 'desc'}"
-          globalSearchPlaceholder="Search ..."
+          :pagination-options="{
+            enabled: true,
+            mode: 'records'
+          }"
+          :search-options="{enabled: true, placeholder: 'Search ...'}"
+          :sort-options="{
+            enabled: true,
+            initialSortBy: {field: 'name', type: 'desc'}
+          }"
           styleClass="table table-grid table-own-bordered">
           <template slot="table-row" slot-scope="props">
-            <td>
+            <span v-if="props.column.field === 'name'">
               <span>{{ props.row.name }}</span>
-            </td>
-            <td>
+            </span>
+            <span v-if="props.column.field === 'status'">
               <div v-if="props.row.status === 'active'" style="color: green;">{{ props.row.status }}</div>
               <div v-else-if="props.row.status === 'inactive'" style="color: red;">{{ props.row.status }}</div>
               <div v-else style="color: #4da2fc;">{{ props.row.status }}</div>
-            </td>
-            <td>
+            </span>
+            <span v-if="props.column.field === 'registerdate'">
               <span :title="props.row.registerdate" v-tippy="{ arrow : true,  animation : 'shift-away'}">
                 {{ convertTime(props.row.registerdate) }}
               </span>
-            </td>
-            <td>
+            </span>
+            <span v-if="props.column.field === 'lastcontact'">
               <span :title="props.row.lastcontact" v-tippy="{ arrow : true,  animation : 'shift-away'}">
                 {{ convertTime(props.row.lastcontact) }}
               </span>
-            </td>
-            <td>
+            </span>
+            <span v-if="props.column.field === 'tags'">
               <span>{{ $prettifyTags(props.row.tags.sort()) }}</span>
-            </td>
-            <td>
+            </span>
+            <span v-if="props.column.field === 'action'">
               <a title="Deregister Worker" v-tippy="{ arrow : true,  animation : 'shift-away'}"
-                 v-on:click="deregisterWorkerModal(props.row)"><i class="fa fa-ban" style="color: whitesmoke;"></i></a>
-            </td>
+                 v-on:click="deregisterWorkerModal(props.row)"><i class="fa fa-ban"
+                                                                  style="color: whitesmoke;"></i></a>
+            </span>
           </template>
           <div slot="emptystate" class="empty-table-text">
             No worker found.
@@ -129,14 +135,14 @@
 <script>
   import Vue from 'vue'
   import {TabPane, Tabs} from 'vue-bulma-tabs'
-  import VueGoodTable from 'vue-good-table'
+  import {VueGoodTable} from 'vue-good-table'
+  import 'vue-good-table/dist/vue-good-table.css'
   import {Modal} from 'vue-bulma-modal'
   import moment from 'moment'
   import Message from 'vue-bulma-message-html'
   import VueTippy from 'vue-tippy'
   import Notification from 'vue-bulma-notification-fixed'
 
-  Vue.use(VueGoodTable)
   Vue.use(VueTippy)
 
   const NotificationComponent = Vue.extend(Notification)
@@ -158,8 +164,8 @@
 
   export default {
     name: 'manage-worker',
-    components: {Tabs, TabPane, Message, Modal},
-    data () {
+    components: {Tabs, TabPane, Message, Modal, VueGoodTable},
+    data() {
       return {
         registerSecret: '',
         statusView: {},
@@ -186,7 +192,7 @@
           },
           {
             label: 'Action',
-            field: ''
+            field: 'action'
           }
         ],
         workerRows: [],
@@ -195,7 +201,7 @@
         selectedWorker: {}
       }
     },
-    mounted () {
+    mounted() {
       // fetch data from API
       this.fetchData()
 
@@ -207,17 +213,17 @@
       // Append interval id to store
       this.$store.commit('appendInterval', intervalID)
     },
-    destroyed () {
+    destroyed() {
       this.$store.commit('clearIntervals')
     },
     watch: {
       '$route': 'fetchData'
     },
     methods: {
-      fetchData () {
+      fetchData() {
         // Get registration code for new worker
         this.$http
-          .get('/api/v1/worker/secret', {showProgressBar: false})
+          .get('/api/v1/worker/secret', {params: {hideProgressBar: true}})
           .then(response => {
             if (response.data) {
               this.registerSecret = response.data
@@ -230,7 +236,7 @@
 
         // Get status overview of all workers
         this.$http
-          .get('/api/v1/worker/status', {showProgressBar: false})
+          .get('/api/v1/worker/status', {params: {hideProgressBar: true}})
           .then(response => {
             if (response.data) {
               this.statusView = response.data
@@ -243,7 +249,7 @@
 
         // Get worker
         this.$http
-          .get('/api/v1/worker', {showProgressBar: false})
+          .get('/api/v1/worker', {params: {hideProgressBar: true}})
           .then(response => {
             if (response.data) {
               this.workerRows = response.data
@@ -256,7 +262,7 @@
             this.$onError(error)
           })
       },
-      deregisterWorker () {
+      deregisterWorker() {
         this.$http
           .delete('/api/v1/worker/' + this.selectedWorker.uniqueid)
           .then(response => {
@@ -275,7 +281,7 @@
             this.$onError(error)
           })
       },
-      resetWorkerSecret () {
+      resetWorkerSecret() {
         this.$http
           .post('/api/v1/worker/secret')
           .then(response => {
@@ -291,19 +297,19 @@
             this.$onError(error)
           })
       },
-      deregisterWorkerModal (worker) {
+      deregisterWorkerModal(worker) {
         this.selectedWorker = worker
         this.showDeregisterWorkerModal = true
       },
-      showResetSecretModal () {
+      showResetSecretModal() {
         this.showResetWorkerSecretModal = true
       },
-      close () {
+      close() {
         this.selectedWorker = {}
         this.showDeregisterWorkerModal = false
         this.showResetWorkerSecretModal = false
       },
-      convertTime (time) {
+      convertTime(time) {
         return moment(time).fromNow()
       }
     }

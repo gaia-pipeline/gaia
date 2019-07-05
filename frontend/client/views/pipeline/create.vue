@@ -150,15 +150,15 @@
               enabled: true,
               mode: 'records'
             }"
-            :search-options="{enabled: false}"
+            :search-options="{enabled: true, placeholder: 'Search ...'}"
             :sort-options="{
               enabled: true,
               initialSortBy: {field: 'created', type: 'desc'}
             }"
             styleClass="table table-grid table-own-bordered">
             <template slot="table-row" slot-scope="props">
-              <td>{{ props.row.pipeline.name }}</td>
-              <td class="progress-bar-height">
+              <span v-if="props.column.field === 'pipeline.name'">{{ props.row.pipeline.name }}</span>
+              <span v-if="props.column.field === 'status'" class="progress-bar-height">
                 <div class="progress-bar-middle blink" v-if="props.row.statustype === 'running'">
                   <progress-bar :type="'info'" :size="'small'" :value="props.row.status" :max="100"
                                 :show-label="false"></progress-bar>
@@ -166,19 +166,19 @@
                 <div v-else-if="props.row.statustype === 'success'" style="color: green;">{{ props.row.statustype }}
                 </div>
                 <div v-else style="color: red;">{{ props.row.statustype }}</div>
-              </td>
-              <td>{{ prettifyPipelineType(props.row.pipeline.type) }}</td>
-              <td :title="props.row.created" v-tippy="{ arrow : true,  animation : 'shift-away'}">{{
+              </span>
+              <span v-if="props.column.field === 'pipeline.type'">{{ prettifyPipelineType(props.row.pipeline.type) }}</span>
+              <span v-if="props.column.field === 'created'" :title="props.row.created" v-tippy="{ arrow : true,  animation : 'shift-away'}">{{
                 convertTime(props.row.created) }}
-              </td>
-              <td>
+              </span>
+              <span v-if="props.column.field === 'output'">
                 <a class="button is-green-button is-small" @click="showStatusOutputModal(props.row.output)">
                     <span class="icon">
                       <i class="fa fa-align-justify"></i>
                     </span>
                   <span>Show Output</span>
                 </a>
-              </td>
+              </span>
             </template>
             <div slot="emptystate" class="empty-table-text">
               No pipelines found in database.
@@ -372,7 +372,8 @@
   import {Collapse, Item as CollapseItem} from 'vue-bulma-collapse'
   import ProgressBar from 'vue-bulma-progress-bar'
   import VueTippy from 'vue-tippy'
-  import VueGoodTable from 'vue-good-table'
+  import { VueGoodTable } from 'vue-good-table'
+  import 'vue-good-table/dist/vue-good-table.css'
   import moment from 'moment'
   import Notification from 'vue-bulma-notification-fixed'
   import Message from 'vue-bulma-message-html'
@@ -395,7 +396,6 @@
     })
   }
 
-  Vue.use(VueGoodTable)
   Vue.use(VueTippy)
 
   export default {
@@ -476,7 +476,8 @@
       CollapseItem,
       ProgressBar,
       Message,
-      VueTagsInput
+      VueTagsInput,
+      VueGoodTable
     },
 
     mounted () {
@@ -581,8 +582,12 @@
             }
           })
           .catch(error => {
-            // Add error message
-            this.gitErrorMsg = error.response.data
+            if (error.response) {
+              // Add error message
+              this.gitErrorMsg = error.response.data
+            } else {
+              this.$onError(error)
+            }
           })
       },
 
@@ -603,8 +608,12 @@
             this.pipelineNameSuccess = true
           })
           .catch(error => {
-            this.pipelineErrorMsg = error.response.data
-            this.pipelineNameSuccess = false
+            if (error.response) {
+              this.pipelineErrorMsg = error.response.data
+              this.pipelineNameSuccess = false
+            } else {
+              this.$onError(error)
+            }
           })
       },
 

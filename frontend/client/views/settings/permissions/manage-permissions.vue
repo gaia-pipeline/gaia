@@ -34,7 +34,7 @@
           <h4 class="title is-4">Permission Roles: {{ this.permissions.username }}</h4>
           <div v-if="this.permissions.roles.length > 0">
             <div v-for="category in permissionOptions" :key="category.name">
-              <p>{{ category.name }}: {{ category.description }}</p><br>
+              <p style="margin-top: 20px;">{{ category.name }}: {{ category.description }}</p><br>
               <table class="table is-narrow is-fullwidth table-general">
                 <thead>
                 <tr>
@@ -54,7 +54,7 @@
                 </tbody>
               </table>
             </div>
-            <div style="float: left;">
+            <div style="float: left;margin-top: 20px;">
               <button class="button is-primary" v-on:click="save">Save</button>
             </div>
           </div>

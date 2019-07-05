@@ -122,7 +122,7 @@ export default {
 
       // Get pipelines and search
       this.$http
-        .get('/api/v1/pipeline/latest', { showProgressBar: false })
+        .get('/api/v1/pipeline/latest', { params: { hideProgressBar: true }})
         .then(response => {
           if (response.data) {
             var pipelines = response.data
@@ -205,6 +205,10 @@ export default {
 
 .navbar-button {
   padding-top: 17px;  
+}
+
+a.navbar-item:hover {
+  background-color: #2a2735;
 }
 
 .avatar {

@@ -75,40 +75,25 @@ Vue.prototype.$notify = openNotification
 
 function handleError (error) {
   // if the server gave a response message, print that
-  if (error.response.data.error) {
+  if (error.response) {
     // duration should be proportional to the error message length
     openNotification({
       title: 'Error: ' + error.response.status,
-      message: error.response.data.error,
-      type: 'danger',
-      duration: error.response.data.error.length > 60 ? 20000 : 4500
+      message: error.response.data,
+      type: 'danger'
     })
-    console.log(error.response.data.error)
+  } else if (error.request) {
+    openNotification({
+      title: 'Error: No response received!',
+      message: error.request,
+      type: 'danger'
+    })
   } else {
-    switch (error.response.status) {
-      case 404:
-        openNotification({
-          title: 'Error: 404',
-          message: 'Not found',
-          type: 'danger'
-        })
-        break
-      case 401:
-        openNotification({
-          title: 'Error: 401',
-          message: 'Not authorized. Please login first.',
-          type: 'danger'
-        })
-        break
-      default:
-        openNotification({
-          title: 'Error: ' + error.response.status.toString(),
-          message: error.response.data,
-          type: 'danger'
-        })
-        break
-    }
-    console.log(error.response.data)
+    openNotification({
+      title: 'Error: Cannot setup request!',
+      message: error.message,
+      type: 'danger'
+    })
   }
 }
 

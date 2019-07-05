@@ -18,29 +18,32 @@
                   <vue-good-table
                     :columns="userColumns"
                     :rows="userRows"
-                    :paginate="true"
-                    :global-search="true"
-                    :defaultSortBy="{field: 'username', type: 'desc'}"
-                    globalSearchPlaceholder="Search ..."
+                    :pagination-options="{
+                      enabled: true,
+                      mode: 'records'
+                    }"
+                    :search-options="{enabled: true, placeholder: 'Search ...'}"
+                    :sort-options="{
+                      enabled: true,
+                      initialSortBy: {field: 'display_name', type: 'desc'}
+                    }"
                     styleClass="table table-grid table-own-bordered">
                     <template slot="table-row" slot-scope="props">
-                      <td>
-                        <span>{{ props.row.display_name }}</span>
-                      </td>
-                      <td :title="props.row.lastlogin" v-tippy="{ arrow : true,  animation : 'shift-away'}">
-                        <span>{{ convertTime(props.row.lastlogin) }}</span>
-                      </td>
-                      <td :title="props.row.trigger_token" v-tippy="{ arrow : true,  animation : 'shift-away'}">
-                        <span>{{ props.row.trigger_token }}</span>
-                      </td>
-                      <td>
+                      <span v-if="props.column.field === 'display_name'">{{ props.row.display_name }}</span>
+                      <span v-if="props.column.field === 'lastlogin'":title="props.row.lastlogin" v-tippy="{ arrow : true,  animation : 'shift-away'}">
+                        {{ convertTime(props.row.lastlogin) }}
+                      </span>
+                      <span v-if="props.column.field === 'trigger_token'" :title="props.row.trigger_token" v-tippy="{ arrow : true,  animation : 'shift-away'}">
+                        {{ props.row.trigger_token }}
+                      </span>
+                      <span v-if="props.column.field === 'action'">
                         <a v-on:click="editUserModal(props.row)"><i class="fa fa-edit"
                                                                     style="color: whitesmoke;"></i></a>
                         <a v-on:click="resetTriggerTokenModal(props.row)" v-if="props.row.username === 'auto'">
                                                                 <i class="fa fa-sliders" style="color: whitesmoke;"></i></a>
                         <a v-on:click="deleteUserModal(props.row)" v-if="props.row.username !== session.username && props.row.username !== 'auto'"><i
                           class="fa fa-trash" style="color: whitesmoke;"></i></a>
-                      </td>
+                      </span>
                     </template>
                     <div slot="emptystate" class="empty-table-text">
                       No users found in database.
@@ -70,29 +73,34 @@
                   <vue-good-table
                     :columns="pipelineColumns"
                     :rows="pipelineRows"
-                    :paginate="true"
-                    :global-search="true"
-                    :defaultSortBy="{field: 'id', type: 'desc'}"
-                    globalSearchPlaceholder="Search ..."
+                    :pagination-options="{
+                      enabled: true,
+                      mode: 'records'
+                    }"
+                    :search-options="{enabled: true, placeholder: 'Search ...'}"
+                    :sort-options="{
+                      enabled: true,
+                      initialSortBy: {field: 'id', type: 'desc'}
+                    }"
                     styleClass="table table-grid table-own-bordered">
                     <template slot="table-row" slot-scope="props">
-                      <td>
+                      <span v-if="props.column.field === 'name'">
                         <span>{{ props.row.name }}</span>
-                      </td>
-                      <td>
+                      </span>
+                      <span v-if="props.column.field === 'type'">
                         <span>{{ props.row.type }}</span>
-                      </td>
-                      <td>
+                      </span>
+                      <span v-if="props.column.field === 'created'">
                         <span>{{ convertTime(props.row.created) }}</span>
-                      </td>
-                      <td>
+                      </span>
+                      <span v-if="props.column.field === 'action'">
                         <a v-on:click="editPipelineModal(props.row)"><i class="fa fa-edit"
                                                                         style="color: whitesmoke;"></i></a>
                         <a v-on:click="resetPipelineTriggerTokenModal(props.row)"><i class="fa fa-sliders"
                                                                         style="color: whitesmoke;"></i></a>
                         <a v-on:click="deletePipelineModal(props.row)"><i class="fa fa-trash"
                                                                           style="color: whitesmoke;"></i></a>
-                      </td>
+                      </span>
                     </template>
                     <div slot="emptystate" class="empty-table-text">
                       No active pipelines.
@@ -355,7 +363,8 @@
   import {TabPane, Tabs} from 'vue-bulma-tabs'
   import {Modal} from 'vue-bulma-modal'
   import {Collapse, Item as CollapseItem} from 'vue-bulma-collapse'
-  import VueGoodTable from 'vue-good-table'
+  import { VueGoodTable } from 'vue-good-table'
+  import 'vue-good-table/dist/vue-good-table.css'
   import VueTippy from 'vue-tippy'
   import moment from 'moment'
   import Notification from 'vue-bulma-notification-fixed'
@@ -380,7 +389,6 @@
     })
   }
 
-  Vue.use(VueGoodTable)
   Vue.use(VueTippy)
 
   export default {
@@ -392,7 +400,8 @@
       Collapse,
       CollapseItem,
       ManageSettings,
-      ManageWorker
+      ManageWorker,
+      VueGoodTable
     },
 
     data () {
@@ -411,7 +420,8 @@
             field: 'trigger_token'
           },
           {
-            label: ''
+            label: 'Action',
+            field: 'action'
           }
         ],
         userRows: [],
@@ -429,7 +439,8 @@
             field: 'created'
           },
           {
-            label: ''
+            label: 'Action',
+            field: 'action'
           }
         ],
         pipelineRows: [],
@@ -461,7 +472,7 @@
     methods: {
       fetchData () {
         this.$http
-          .get('/api/v1/users', {showProgressBar: false})
+          .get('/api/v1/users', { params: { hideProgressBar: true }})
           .then(response => {
             if (response.data) {
               this.userRows = response.data
@@ -471,7 +482,7 @@
             this.$onError(error)
           })
         this.$http
-          .get('/api/v1/pipeline', {showProgressBar: false})
+          .get('/api/v1/pipeline', { params: { hideProgressBar: true }})
           .then(response => {
             if (response.data) {
               this.pipelineRows = response.data

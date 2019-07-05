@@ -64,7 +64,7 @@ export default {
       }
 
       this.$http
-        .get('/api/v1/pipelinerun/' + this.pipelineID + '/' + this.runID + '/log', { showProgressBar: false })
+        .get('/api/v1/pipelinerun/' + this.pipelineID + '/' + this.runID + '/log', { params: { hideProgressBar: true }})
         .then(response => {
           if (response.data) {
             // We add the received log
