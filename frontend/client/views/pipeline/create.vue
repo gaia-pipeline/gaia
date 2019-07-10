@@ -662,8 +662,10 @@
 
       showPeriodicalPipelineScheduleModal () {
         this.periodicSchedules = ''
-        for (let i = 0; i < this.createPipeline.pipeline.periodicschedules.length; i++) {
-          this.periodicSchedules += this.createPipeline.pipeline.periodicschedules[i]
+        if (typeof this.createPipeline.pipeline.periodicschedules !== 'undefined') {
+          for (let i = 0; i < this.createPipeline.pipeline.periodicschedules.length; i++) {
+            this.periodicSchedules += this.createPipeline.pipeline.periodicschedules[i]
+          }
         }
         this.periodicalPipelineScheduleModal = true
       },
