@@ -131,7 +131,7 @@ func (b *BuildPipelinePython) CopyBinary(p *gaia.CreatePipeline) error {
 	}
 
 	// Set +x (execution right) for pipeline
-	return os.Chmod(dest, 0766)
+	return os.Chmod(dest, gaia.ExecutablePermission)
 }
 
 // SavePipeline saves the current pipeline configuration.

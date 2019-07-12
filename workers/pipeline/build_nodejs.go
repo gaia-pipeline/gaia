@@ -12,7 +12,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-const nodeJSInternalCloneFolder  = "jsclone"
+const nodeJSInternalCloneFolder = "jsclone"
 
 // BuildPipelineNodeJS is the real implementation of BuildPipeline for NodeJS
 type BuildPipelineNodeJS struct {
@@ -99,7 +99,7 @@ func (b *BuildPipelineNodeJS) CopyBinary(p *gaia.CreatePipeline) error {
 	}
 
 	// Set +x (execution right) for pipeline
-	return os.Chmod(dest, 0766)
+	return os.Chmod(dest, gaia.ExecutablePermission)
 }
 
 // SavePipeline saves the current pipeline configuration.

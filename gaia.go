@@ -136,6 +136,9 @@ const (
 
 	// WorkerRegisterKey is the used key for worker registration secret
 	WorkerRegisterKey = "WORKER_REGISTER_KEY"
+
+	// ExecutablePermission is the permission used for gaia created executables.
+	ExecutablePermission = 0700
 )
 
 // User is the user object
