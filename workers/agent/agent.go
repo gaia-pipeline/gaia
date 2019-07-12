@@ -529,7 +529,7 @@ func (a *Agent) streamBinary(pipelineRunPB *pb.PipelineRun, pipelinePath string)
 	}
 
 	// Set pipeline executable rights
-	return os.Chmod(pipelinePath, 0766)
+	return os.Chmod(pipelinePath, gaia.ExecutablePermission)
 }
 
 // updateWork is function that is periodically called and it is used to

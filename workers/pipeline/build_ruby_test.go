@@ -67,7 +67,7 @@ func TestExecuteBuildRuby(t *testing.T) {
 		t.Fatal(err)
 	}
 	libFolder := filepath.Join(tmp, "lib")
-	if err := os.MkdirAll(libFolder, 0766); err != nil {
+	if err := os.MkdirAll(libFolder, gaia.ExecutablePermission); err != nil {
 		t.Fatal(err)
 	}
 	initFile := filepath.Join(libFolder, gemInitFile)
@@ -115,7 +115,7 @@ func TestExecuteBuildContextTimeoutRuby(t *testing.T) {
 	}
 	f.Close()
 	libFolder := filepath.Join(tmp, "lib")
-	if err = os.MkdirAll(libFolder, 0766); err != nil {
+	if err = os.MkdirAll(libFolder, gaia.ExecutablePermission); err != nil {
 		t.Fatal(err)
 	}
 	initFile := filepath.Join(libFolder, gemInitFile)
