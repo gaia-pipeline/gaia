@@ -115,6 +115,7 @@ export default {
 .header-text {
   color: #4da2fc;
   padding-bottom: 15px;
-  font-size: 4rem;
+  font-size: 6rem;
+  font-family: 'Lobster', 'Times', 'serif';
 }
 </style>

@@ -362,7 +362,7 @@
   import Vue from 'vue'
   import {TabPane, Tabs} from 'vue-bulma-tabs'
   import {Modal} from 'vue-bulma-modal'
-  import {Collapse, Item as CollapseItem} from 'vue-bulma-collapse'
+  import {Collapse, Item as CollapseItem} from 'vue-bulma-collapse-fixed'
   import { VueGoodTable } from 'vue-good-table'
   import 'vue-good-table/dist/vue-good-table.css'
   import VueTippy from 'vue-tippy'
@@ -744,6 +744,12 @@
     background-color: transparent;
     border-color: transparent;
     border-bottom-color: #4da2fc !important;
+  }
+
+  .tabs.is-boxed a:hover {
+    background-color: black;
+    color: #4da2fc;
+    border-bottom-color: #4da2fc;
   }
 
   .user-modal, .pipeline-modal {

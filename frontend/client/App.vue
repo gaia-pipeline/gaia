@@ -255,7 +255,7 @@ html {
 .table td  {
   border-top: solid black 1px !important;
   border-bottom: solid black 1px !important;
-  color: #4da2fc !important;
+  color: #8c91a0 !important;
   text-align: center !important;
 }
 

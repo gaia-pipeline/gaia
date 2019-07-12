@@ -53,7 +53,7 @@
     "shelljs": "^0.8.3",
     "vis": "^4.21.0",
     "vue": "^2.6.10",
-    "vue-bulma-collapse": "1.0.3",
+    "vue-bulma-collapse-fixed": "^1.0.4",
     "vue-bulma-datepicker": "^1.3.6",
     "vue-bulma-expanding": "^0.0.1",
     "vue-bulma-message-html": "^1.1.2",

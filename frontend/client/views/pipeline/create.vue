@@ -369,7 +369,7 @@
 <script>
   import Vue from 'vue'
   import {Modal} from 'vue-bulma-modal'
-  import {Collapse, Item as CollapseItem} from 'vue-bulma-collapse'
+  import {Collapse, Item as CollapseItem} from 'vue-bulma-collapse-fixed'
   import ProgressBar from 'vue-bulma-progress-bar'
   import VueTippy from 'vue-tippy'
   import { VueGoodTable } from 'vue-good-table'
