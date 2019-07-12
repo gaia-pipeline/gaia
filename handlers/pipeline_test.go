@@ -129,7 +129,10 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 		})
 		hostConfig := "github.comom,1.2.3.4 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
 		knownHostsLocation := filepath.Join(dataDir, ".known_hosts")
-		ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), gaia.ExecutablePermission)
+		err := ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), gaia.ExecutablePermission)
+		if err != nil {
+			t.Fatal(err)
+		}
 		os.Setenv("SSH_KNOWN_HOSTS", knownHostsLocation)
 		repoURL := "github.com:gaia-pipeline/pipeline-test"
 		gr := gaia.GitRepo{
@@ -741,7 +744,10 @@ func TestPipelineCheckPeriodicSchedules(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		PipelineCheckPeriodicSchedules(c)
+		err := PipelineCheckPeriodicSchedules(c)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
@@ -791,7 +797,10 @@ func TestPipelineNameAvailable(t *testing.T) {
 
 	// Initialize echo
 	e := echo.New()
-	InitHandlers(e)
+	err = InitHandlers(e)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	p := gaia.Pipeline{
 		ID:      1,
@@ -818,7 +827,10 @@ func TestPipelineNameAvailable(t *testing.T) {
 		q.Add("name", "pipeline a")
 		req.URL.RawQuery = q.Encode()
 
-		PipelineNameAvailable(c)
+		err := PipelineNameAvailable(c)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)

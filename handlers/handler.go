@@ -31,7 +31,7 @@ var (
 	ignoredVaultKeys []string
 )
 
-// InitHandlers initializes(registers) all handlers
+// InitHandlers initializes(registers) all handlers.
 func InitHandlers(e *echo.Echo) error {
 	// Define prefix
 	p := "/api/" + gaia.APIVersion + "/"
