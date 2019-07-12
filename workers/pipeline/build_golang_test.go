@@ -116,8 +116,8 @@ func TestExecuteBuildBinaryNotFoundErrorGo(t *testing.T) {
 		Name:   "Gaia",
 	})
 	currentPath := os.Getenv("PATH")
-	defer func() { os.Setenv("PATH", currentPath) }()
-	os.Setenv("PATH", "")
+	defer func() { _ = os.Setenv("PATH", currentPath) }()
+	_ = os.Setenv("PATH", "")
 	b := new(BuildPipelineGolang)
 	p := new(gaia.CreatePipeline)
 	err := b.ExecuteBuild(p)
@@ -150,7 +150,7 @@ func TestCopyBinaryGo(t *testing.T) {
 	f, _ := os.Create(src)
 	defer f.Close()
 	defer os.Remove(dst)
-	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	_ = ioutil.WriteFile(src, []byte("testcontent"), 0666)
 	err := b.CopyBinary(p)
 	if err != nil {
 		t.Fatal("error was not expected when copying binary: ", err)

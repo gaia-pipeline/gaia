@@ -262,7 +262,7 @@ func (m *MemDB) PopPipelineRun(tags []string) (*gaia.PipelineRun, error) {
 	// Iterate through all items
 	var oldestPipelineRunID string
 	var oldestPipelineRunDate time.Time
-RUN_LOOP:
+RunLoop:
 	for {
 		item := iter.Next()
 		if item == nil {
@@ -285,7 +285,7 @@ RUN_LOOP:
 		for _, pipelineTag := range pipelineRun.PipelineTags {
 			// Find a match
 			if !stringhelper.IsContainedInSlice(tags, pipelineTag, true) {
-				continue RUN_LOOP
+				continue RunLoop
 			}
 		}
 

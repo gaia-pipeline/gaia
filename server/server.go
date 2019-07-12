@@ -10,7 +10,7 @@ import (
 
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/flag"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
@@ -18,7 +18,7 @@ import (
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/agent"
 	"github.com/gaia-pipeline/gaia/workers/server"
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
 
@@ -74,7 +74,7 @@ func init() {
 // Start initiates all components of Gaia and starts the server/agent.
 func Start() (err error) {
 	// Parse command line flags
-	fs.Parse(os.Args[1:])
+	_ = fs.Parse(os.Args[1:])
 
 	// Check version switch
 	if gaia.Cfg.VersionSwitch {

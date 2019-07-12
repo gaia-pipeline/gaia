@@ -112,14 +112,14 @@ func TestCopyBinaryJava(t *testing.T) {
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = gaia.PTypeJava
 	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: tmp}
-	os.Mkdir(filepath.Join(tmp, mavenTargetFolder), 0744)
+	_ = os.Mkdir(filepath.Join(tmp, mavenTargetFolder), 0744)
 	src := filepath.Join(tmp, mavenTargetFolder, javaFinalJarName)
 	dst := appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
 	f, _ := os.Create(src)
 	defer os.Remove(filepath.Join(tmp, mavenTargetFolder))
 	defer f.Close()
 	defer os.Remove(dst)
-	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	_ = ioutil.WriteFile(src, []byte("testcontent"), 0666)
 	err := b.CopyBinary(p)
 	if err != nil {
 		t.Fatal("error was not expected when copying binary: ", err)

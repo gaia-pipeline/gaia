@@ -14,9 +14,9 @@ import (
 	gStore "github.com/gaia-pipeline/gaia/store"
 	"github.com/pkg/errors"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
 
@@ -39,7 +39,7 @@ func TestUserLoginHMACKey(t *testing.T) {
 	}
 
 	e := echo.New()
-	InitHandlers(e)
+	_ = InitHandlers(e)
 
 	body := map[string]string{
 		"username": "admin",
@@ -56,6 +56,9 @@ func TestUserLoginHMACKey(t *testing.T) {
 	}
 
 	data, err := ioutil.ReadAll(rec.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
 	user := &gaia.User{}
 	err = json.Unmarshal(data, user)
 	if err != nil {
@@ -91,13 +94,13 @@ func TestDeleteUserNotAllowedForAutoUser(t *testing.T) {
 	}
 
 	e := echo.New()
-	InitHandlers(e)
+	_ = InitHandlers(e)
 	req := httptest.NewRequest(echo.DELETE, "/api/"+gaia.APIVersion+"/user/auto", bytes.NewBuffer([]byte("")))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	UserDelete(c)
+	_ = UserDelete(c)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
@@ -144,7 +147,7 @@ func TestResetAutoUserTriggerToken(t *testing.T) {
 		services.MockStorageService(&m)
 		defer services.MockStorageService(nil)
 		e := echo.New()
-		InitHandlers(e)
+		_ = InitHandlers(e)
 		req := httptest.NewRequest(echo.PUT, "/api/"+gaia.APIVersion+"/user/auto/reset-trigger-token", nil)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
@@ -152,7 +155,7 @@ func TestResetAutoUserTriggerToken(t *testing.T) {
 		c.SetParamNames("username")
 		c.SetParamValues("auto")
 
-		UserResetTriggerToken(c)
+		_ = UserResetTriggerToken(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v; error: %s", http.StatusOK, rec.Code, rec.Body.String())
@@ -164,7 +167,7 @@ func TestResetAutoUserTriggerToken(t *testing.T) {
 	})
 	t.Run("only auto user can reset trigger token", func(t *testing.T) {
 		e := echo.New()
-		InitHandlers(e)
+		_ = InitHandlers(e)
 		req := httptest.NewRequest(echo.PUT, "/api/"+gaia.APIVersion+"/user/auto2/reset-trigger-token", nil)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
@@ -172,7 +175,7 @@ func TestResetAutoUserTriggerToken(t *testing.T) {
 		c.SetParamNames("username")
 		c.SetParamValues("auto2")
 
-		UserResetTriggerToken(c)
+		_ = UserResetTriggerToken(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v; error: %s", http.StatusBadRequest, rec.Code, rec.Body.String())
@@ -200,7 +203,7 @@ func TestUserLoginRSAKey(t *testing.T) {
 	}
 
 	e := echo.New()
-	InitHandlers(e)
+	_ = InitHandlers(e)
 
 	body := map[string]string{
 		"username": "admin",
@@ -217,6 +220,9 @@ func TestUserLoginRSAKey(t *testing.T) {
 	}
 
 	data, err := ioutil.ReadAll(rec.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
 	user := &gaia.User{}
 	err = json.Unmarshal(data, user)
 	if err != nil {

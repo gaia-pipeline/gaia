@@ -416,12 +416,12 @@ func executeJob(j gaia.Job, pS plugin.Plugin, triggerSave chan gaia.Job) {
 func (s *Scheduler) checkCircularDep(j *gaia.Job, resolved []*gaia.Job, unresolved []*gaia.Job) ([]*gaia.Job, error) {
 	unresolved = append(unresolved, j)
 
-DEPENDSON_LOOP:
+DependsonLoop:
 	for _, job := range j.DependsOn {
 		// Check if job is already in resolved list
 		for _, resolvedJob := range resolved {
 			if resolvedJob.ID == job.ID {
-				continue DEPENDSON_LOOP
+				continue DependsonLoop
 			}
 		}
 
@@ -506,7 +506,7 @@ func (s *Scheduler) executeScheduledJobs(r gaia.PipelineRun, pS plugin.Plugin) {
 	// Run finished. Set pipeline status.
 	var runFail bool
 	for _, job := range r.Jobs {
-		if job.Status != gaia.JobSuccess && job.FailPipeline == true {
+		if job.Status != gaia.JobSuccess && job.FailPipeline {
 			runFail = true
 		}
 	}
@@ -553,7 +553,7 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS plugin.Plugin) {
 		for {
 			select {
 			case <-ticker.C:
-				pS.FlushLogs()
+				_ = pS.FlushLogs()
 			case _, ok := <-pipelineFinished:
 				if !ok {
 					return
@@ -580,7 +580,7 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS plugin.Plugin) {
 						}
 					}
 					r.Status = gaia.RunCancelled
-					s.storeService.PipelinePutRun(r)
+					_ = s.storeService.PipelinePutRun(r)
 					close(done)
 					close(executeScheduler)
 					finished <- true
@@ -606,7 +606,7 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS plugin.Plugin) {
 			}
 
 			// Store status update
-			s.storeService.PipelinePutRun(r)
+			_ = s.storeService.PipelinePutRun(r)
 
 			// Send signal to resolver that this job is finished.
 			if j.Status == gaia.JobSuccess || j.Status == gaia.JobFailed {

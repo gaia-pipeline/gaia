@@ -36,7 +36,7 @@ func updatePipeline(p *gaia.Pipeline) error {
 	case gaia.PTypePython:
 		// Remove virtual environment if exists
 		virtualEnvPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder, p.Name)
-		os.RemoveAll(virtualEnvPath)
+		_ = os.RemoveAll(virtualEnvPath)
 
 		// Create virtual environment
 		path, err := exec.LookPath(virtualEnvName)
@@ -96,7 +96,7 @@ func updatePipeline(p *gaia.Pipeline) error {
 
 		// Delete old folders if exist
 		tmpFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpNodeJSFolder, p.Name)
-		os.RemoveAll(tmpFolder)
+		_ = os.RemoveAll(tmpFolder)
 
 		// Recreate the temp folder
 		if err := os.MkdirAll(tmpFolder, 0700); err != nil {

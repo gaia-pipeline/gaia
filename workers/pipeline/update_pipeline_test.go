@@ -38,7 +38,7 @@ func TestUpdatePipelinePython(t *testing.T) {
 	src := filepath.Join(tmp, "PipelineA_python")
 	p1.ExecPath = src
 	defer os.RemoveAll(tmp)
-	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	_ = ioutil.WriteFile(src, []byte("testcontent"), 0666)
 
 	// fake execution commands
 	virtualEnvName = "mkdir"
@@ -77,7 +77,7 @@ func TestUpdatePipelineRuby(t *testing.T) {
 	src := filepath.Join(tmp, "PipelineA_ruby")
 	p1.ExecPath = src
 	defer os.RemoveAll(tmp)
-	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	_ = ioutil.WriteFile(src, []byte("testcontent"), 0666)
 
 	// fake execution commands
 	rubyGemName = "echo"

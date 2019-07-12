@@ -12,7 +12,7 @@ import (
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/scheduler"
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-hclog"
 )
 
 func TestStorageService(t *testing.T) {
@@ -29,7 +29,7 @@ func TestStorageService(t *testing.T) {
 	if storeService != nil {
 		t.Fatal("initial service should be nil. was: ", storeService)
 	}
-	StorageService()
+	_, _ = StorageService()
 	defer func() { storeService = nil }()
 	if storeService == nil {
 		t.Fatal("storage service should not be nil")
@@ -78,8 +78,8 @@ func TestVaultService(t *testing.T) {
 	if vaultService != nil {
 		t.Fatal("initial service should be nil. was: ", vaultService)
 	}
-	CertificateService()
-	VaultService(nil)
+	_, _ = CertificateService()
+	_, _ = VaultService(nil)
 	defer func() {
 		certificateService = nil
 		vaultService = nil
@@ -106,7 +106,7 @@ func TestCertificateService(t *testing.T) {
 	if certificateService != nil {
 		t.Fatal("initial service should be nil. was: ", certificateService)
 	}
-	CertificateService()
+	_, _ = CertificateService()
 	defer func() { certificateService = nil }()
 	if certificateService == nil {
 		t.Fatal("service should not be nil")

@@ -14,7 +14,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/store"
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-hclog"
 )
 
 func TestPrepareEnvironmentCpp(t *testing.T) {
@@ -105,8 +105,8 @@ func TestExecuteBuildBinaryNotFoundErrorCpp(t *testing.T) {
 		Name:   "Gaia",
 	})
 	currentPath := os.Getenv("PATH")
-	defer func() { os.Setenv("PATH", currentPath) }()
-	os.Setenv("PATH", "")
+	defer func() { _ = os.Setenv("PATH", currentPath) }()
+	_ = os.Setenv("PATH", "")
 	b := new(BuildPipelineCpp)
 	p := new(gaia.CreatePipeline)
 	err := b.ExecuteBuild(p)
@@ -139,7 +139,7 @@ func TestCopyBinaryCpp(t *testing.T) {
 	f, _ := os.Create(src)
 	defer f.Close()
 	defer os.Remove(dst)
-	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	_ = ioutil.WriteFile(src, []byte("testcontent"), 0666)
 	err := b.CopyBinary(p)
 	if err != nil {
 		t.Fatal("error was not expected when copying binary: ", err)

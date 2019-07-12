@@ -31,11 +31,11 @@ type BuildPipelineRuby struct {
 
 // PrepareEnvironment prepares the environment before we start the build process.
 func (b *BuildPipelineRuby) PrepareEnvironment(p *gaia.CreatePipeline) error {
-	// create uuid for destination folder
-	uuid := uuid.Must(uuid.NewV4(), nil)
+	// create uniqueName for destination folder
+	uniqueName := uuid.Must(uuid.NewV4(), nil)
 
 	// Create local temp folder for clone
-	cloneFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpRubyFolder, srcFolder, uuid.String())
+	cloneFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpRubyFolder, srcFolder, uniqueName.String())
 	err := os.MkdirAll(cloneFolder, 0700)
 	if err != nil {
 		return err
@@ -46,7 +46,7 @@ func (b *BuildPipelineRuby) PrepareEnvironment(p *gaia.CreatePipeline) error {
 		p.Pipeline.Repo = &gaia.GitRepo{}
 	}
 	p.Pipeline.Repo.LocalDest = cloneFolder
-	p.Pipeline.UUID = uuid.String()
+	p.Pipeline.UUID = uniqueName.String()
 	return nil
 }
 

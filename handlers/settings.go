@@ -27,13 +27,13 @@ func SettingsPollOn(c echo.Context) error {
 	gaia.Cfg.Poll = true
 	err = pipeline.StartPoller()
 	if err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	configStore.Poll = true
 	err = storeService.SettingsPut(configStore)
 	if err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+		return c.String(http.StatusBadRequest, err.Error())
 	}
 	return c.String(http.StatusOK, "Polling is turned on.")
 }
@@ -54,10 +54,13 @@ func SettingsPollOff(c echo.Context) error {
 	gaia.Cfg.Poll = false
 	err = pipeline.StopPoller()
 	if err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+		return c.String(http.StatusBadRequest, err.Error())
 	}
 	configStore.Poll = true
 	err = storeService.SettingsPut(configStore)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
 	return c.String(http.StatusOK, "Polling is turned off.")
 }
 

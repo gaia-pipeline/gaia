@@ -6,22 +6,22 @@ import (
 
 var memDBSchema = &memdb.DBSchema{
 	Tables: map[string]*memdb.TableSchema{
-		workerTableName: &memdb.TableSchema{
+		workerTableName: {
 			Name: workerTableName,
 			Indexes: map[string]*memdb.IndexSchema{
-				"id": &memdb.IndexSchema{
-					Name: "id",
-					Unique: true,
+				"id": {
+					Name:    "id",
+					Unique:  true,
 					Indexer: &memdb.StringFieldIndex{Field: "UniqueID"},
 				},
 			},
 		},
-		pipelineRunTable: &memdb.TableSchema{
+		pipelineRunTable: {
 			Name: pipelineRunTable,
 			Indexes: map[string]*memdb.IndexSchema{
-				"id": &memdb.IndexSchema{
-					Name: "id",
-					Unique: true,
+				"id": {
+					Name:    "id",
+					Unique:  true,
 					Indexer: &memdb.StringFieldIndex{Field: "UniqueID"},
 				},
 			},
