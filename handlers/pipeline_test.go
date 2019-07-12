@@ -744,10 +744,7 @@ func TestPipelineCheckPeriodicSchedules(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		err := PipelineCheckPeriodicSchedules(c)
-		if err != nil {
-			t.Fatal(err)
-		}
+		PipelineCheckPeriodicSchedules(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
@@ -797,10 +794,7 @@ func TestPipelineNameAvailable(t *testing.T) {
 
 	// Initialize echo
 	e := echo.New()
-	err = InitHandlers(e)
-	if err != nil {
-		t.Fatal(err)
-	}
+	InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:      1,
@@ -827,10 +821,7 @@ func TestPipelineNameAvailable(t *testing.T) {
 		q.Add("name", "pipeline a")
 		req.URL.RawQuery = q.Encode()
 
-		err := PipelineNameAvailable(c)
-		if err != nil {
-			t.Fatal(err)
-		}
+		_ = PipelineNameAvailable(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
