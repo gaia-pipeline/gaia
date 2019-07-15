@@ -18,7 +18,7 @@
                 </span>
               </p>
               <span style="color: red" v-if="gitErrorMsg">Cannot access git repo: {{ gitErrorMsg }}</span>
-              <div v-if="gitBranches.length > 0">
+              <div v-if="gitBranches.length > 0" style="margin-bottom: 1em;">
                 <span>Branch:</span>
                 <div class="select is-fullwidth">
                   <select v-model="createPipeline.pipeline.repo.selectedbranch">
@@ -27,15 +27,15 @@
                 </div>
               </div>
               <p class="control" style="padding-top: 10px;">
-                <a class="button is-primary" v-on:click="showCredentialsModal">
+                <a class="button is-primary" v-on:click="showCredentialsModal" style="margin-right: 5px;">
                   <span class="icon">
-                    <i class="fa fa-certificate"></i>
+                    <i class="fa fa-key"></i>
                   </span>
                   <span>Add Credentials</span>
                 </a>
                 <a class="button is-primary" v-on:click="showGitHubWebHookModal">
                   <span class="icon">
-                    <i class="fa fa-wrench"></i>
+                    <i class="fa fa-github"></i>
                   </span>
                   <span>Add GitHub WebHook</span>
                 </a>
@@ -47,7 +47,7 @@
             <div class="content">
               <p class="control">
                 <label class="label">Define custom pipeline options here.</label>
-                <a class="button is-primary" v-on:click="showPeriodicalPipelineScheduleModal">
+                <a class="button is-primary" v-on:click="showPeriodicalPipelineScheduleModal" style="margin-right: 5px;">
                   <span class="icon">
                     <i class="fa fa-calendar"></i>
                   </span>
@@ -159,8 +159,8 @@
             <template slot="table-row" slot-scope="props">
               <span v-if="props.column.field === 'pipeline.name'">{{ props.row.pipeline.name }}</span>
               <span v-if="props.column.field === 'status'" class="progress-bar-height">
-                <div class="progress-bar-middle blink" v-if="props.row.statustype === 'running'">
-                  <progress-bar :type="'info'" :size="'small'" :value="props.row.status" :max="100"
+                <div class="blink" v-if="props.row.statustype === 'running'" style="height: 25px;">
+                  <progress-bar class="progress-bar-middle" :type="'info'" :size="'small'" :value="props.row.status" :max="100"
                                 :show-label="false"></progress-bar>
                 </div>
                 <div v-else-if="props.row.statustype === 'success'" style="color: green;">{{ props.row.statustype }}
@@ -263,7 +263,7 @@
                   <input class="input is-medium input-bar" v-focus type="text" v-model="createPipeline.githubtoken"
                          placeholder="Token">
                   <span class="icon is-small is-left">
-                    <i class="fas fa-code-branch"></i>
+                    <i class="fa fa-github"></i>
                   </span>
                 </p>
               </div>

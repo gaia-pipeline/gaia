@@ -68,7 +68,7 @@ func CreatePipeline(c echo.Context) error {
 	// Cloning the repo and compiling the pipeline will be done async
 	go pipeline.CreatePipeline(p)
 
-	return nil
+	return c.JSON(http.StatusOK, nil)
 }
 
 // CreatePipelineGetAll returns a json array of
@@ -95,7 +95,7 @@ func PipelineNameAvailable(c echo.Context) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	return nil
+	return c.JSON(http.StatusOK, nil)
 }
 
 // PipelineGetAll returns all registered pipelines.
@@ -383,7 +383,7 @@ func PipelineTriggerAuth(c echo.Context) error {
 	if username != auto.Username || password != auto.TriggerToken {
 		return c.String(http.StatusBadRequest, "Auto username or password did not match.")
 	}
-	return nil
+	return c.JSON(http.StatusOK, nil)
 }
 
 // PipelineStart starts a pipeline by the given id.
@@ -479,5 +479,5 @@ func PipelineCheckPeriodicSchedules(c echo.Context) error {
 	}
 
 	// All entries are valid.
-	return nil
+	return c.JSON(http.StatusOK, nil)
 }

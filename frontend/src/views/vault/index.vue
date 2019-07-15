@@ -34,7 +34,7 @@
                     <span>*****</span>
                   </span>
                   <span v-if="props.column.field === 'action'">
-                    <a v-on:click="editSecretModal(props.row)"><i class="fa fa-edit" style="color: whitesmoke;"></i></a>
+                    <a v-on:click="editSecretModal(props.row)" style="margin-right: 5px;"><i class="fa fa-edit" style="color: whitesmoke;"></i></a>
                     <a v-on:click="deleteSecretModal(props.row)"><i class="fa fa-trash" style="color: whitesmoke;"></i></a>
                   </span>
                 </template>

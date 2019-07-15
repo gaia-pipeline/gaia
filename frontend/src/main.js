@@ -81,7 +81,7 @@ function handleError (error) {
   } else if (error.request) {
     openNotification({
       title: 'Error: No response received!',
-      message: error.request,
+      message: 'Please verify if the backend is running!',
       type: 'danger'
     })
   } else {

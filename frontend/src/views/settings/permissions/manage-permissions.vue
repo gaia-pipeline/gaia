@@ -48,7 +48,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr v-for="role in category.roles" v-bind:key="role">
+                <tr v-for="role in category.roles" :key="role.name">
                   <td style="text-align: center"><input type="checkbox" :id="getFullName(category, role)"
                                                         :value="getFullName(category, role)"
                                                         v-model="permissions.roles"></td>
@@ -104,7 +104,6 @@ export default {
   },
   methods: {
     clear (username) {
-      console.log(username)
       if (username === this.permissions.username) {
         this.permissions = {
           username: undefined,
@@ -183,12 +182,13 @@ export default {
 
 <style scoped>
   .user-row {
+    width: 320px;
     cursor: pointer;
   }
 
   .table-general {
     background: #413F4A;
-    border: 2px solid #000;
+    border: 1px solid #000;
   }
 
   .table-general th {

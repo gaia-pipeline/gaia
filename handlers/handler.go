@@ -116,10 +116,10 @@ func InitHandlers(e *echo.Echo) error {
 		assetHandler := http.FileServer(staticAssets.HTTPBox())
 		e.GET("/", echo.WrapHandler(assetHandler))
 		e.GET("/favicon.ico", echo.WrapHandler(assetHandler))
-		e.GET("/assets/css/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
-		e.GET("/assets/js/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
-		e.GET("/assets/css/assets/fonts/*", echo.WrapHandler(http.StripPrefix("/assets/css/", assetHandler)))
-		e.GET("/assets/img/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
+		e.GET("/css/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
+		e.GET("/js/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
+		e.GET("/fonts/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
+		e.GET("/img/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
 	}
 
 	// Setup ignored vault keys which cannot be modified directly via the Vault API

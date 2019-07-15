@@ -37,7 +37,7 @@
                         {{ props.row.trigger_token }}
                       </span>
                       <span v-if="props.column.field === 'action'">
-                        <a v-on:click="editUserModal(props.row)"><i class="fa fa-edit"
+                        <a v-on:click="editUserModal(props.row)" style="margin-right: 5px;"><i class="fa fa-edit"
                                                                     style="color: whitesmoke;"></i></a>
                         <a v-on:click="resetTriggerTokenModal(props.row)" v-if="props.row.username === 'auto'">
                                                                 <i class="fa fa-sliders" style="color: whitesmoke;"></i></a>
@@ -80,7 +80,7 @@
                     :search-options="{enabled: true, placeholder: 'Search ...'}"
                     :sort-options="{
                       enabled: true,
-                      initialSortBy: {field: 'id', type: 'desc'}
+                      initialSortBy: {field: 'name', type: 'desc'}
                     }"
                     styleClass="table table-grid table-own-bordered">
                     <template slot="table-row" slot-scope="props">
@@ -94,9 +94,9 @@
                         <span>{{ convertTime(props.row.created) }}</span>
                       </span>
                       <span v-if="props.column.field === 'action'">
-                        <a v-on:click="editPipelineModal(props.row)"><i class="fa fa-edit"
+                        <a v-on:click="editPipelineModal(props.row)" style="margin-right: 5px;"><i class="fa fa-edit"
                                                                         style="color: whitesmoke;"></i></a>
-                        <a v-on:click="resetPipelineTriggerTokenModal(props.row)"><i class="fa fa-sliders"
+                        <a v-on:click="resetPipelineTriggerTokenModal(props.row)" style="margin-right: 5px;"><i class="fa fa-sliders"
                                                                         style="color: whitesmoke;"></i></a>
                         <a v-on:click="deletePipelineModal(props.row)"><i class="fa fa-trash"
                                                                           style="color: whitesmoke;"></i></a>
