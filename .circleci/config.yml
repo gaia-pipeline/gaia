@@ -80,7 +80,7 @@ jobs:
           name: Compile frontend and final binary
           command: |
             cd frontend
-            nvm install v10.5.0
+            nvm install v12.6.0
             npm cache clean --force
             cd ..
             make download
