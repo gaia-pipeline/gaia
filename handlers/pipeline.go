@@ -383,7 +383,7 @@ func PipelineTriggerAuth(c echo.Context) error {
 	if username != auto.Username || password != auto.TriggerToken {
 		return c.String(http.StatusBadRequest, "Auto username or password did not match.")
 	}
-	return c.JSON(http.StatusOK, nil)
+	return nil
 }
 
 // PipelineStart starts a pipeline by the given id.
