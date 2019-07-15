@@ -28,7 +28,7 @@ func fakeExecCommandContext(ctx context.Context, name string, args ...string) *e
 	} else {
 		envArgs = arg
 	}
-	os.Setenv("CMD_ARGS", envArgs)
+	_ = os.Setenv("CMD_ARGS", envArgs)
 	return cmd
 }
 
@@ -36,7 +36,7 @@ func TestExecCommandContextHelper(t *testing.T) {
 	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
 		return
 	}
-	fmt.Fprintf(os.Stdout, os.Getenv("STDOUT"))
+	_, _ = fmt.Fprintf(os.Stdout, os.Getenv("STDOUT"))
 	i, _ := strconv.Atoi(os.Getenv("EXIT_STATUS"))
 	os.Exit(i)
 }

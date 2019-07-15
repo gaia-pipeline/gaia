@@ -187,9 +187,7 @@ func (ap *ActivePipelines) GetAll() []gaia.Pipeline {
 	c := make([]gaia.Pipeline, 0)
 	ap.RLock()
 	defer ap.RUnlock()
-	for _, pipeline := range ap.Pipelines {
-		c = append(c, pipeline)
-	}
+	c = append(c, ap.Pipelines...)
 	return c
 }
 

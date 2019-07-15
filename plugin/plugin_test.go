@@ -90,6 +90,9 @@ func TestInit(t *testing.T) {
 	p := emptyPlugin.NewPlugin(new(fakeCAAPI))
 	logpath := filepath.Join(tmp, "test")
 	err := p.Init(exec.Command("echo", "world"), &logpath)
+	if err == nil {
+		t.Fatal("was expecting an error. non happened")
+	}
 	if !strings.Contains(err.Error(), "Unrecognized remote plugin message") {
 		// Sometimes go-plugin throws this error instead...
 		if !strings.Contains(err.Error(), "plugin exited before we could connect") {
@@ -163,7 +166,7 @@ func TestClose(t *testing.T) {
 	emptyPlugin := &GoPlugin{}
 	p := emptyPlugin.NewPlugin(new(fakeCAAPI))
 	logpath := filepath.Join(tmp, "test")
-	p.Init(exec.Command("echo", "world"), &logpath)
+	_ = p.Init(exec.Command("echo", "world"), &logpath)
 	p.Close()
 }
 
@@ -178,7 +181,7 @@ func TestFlushLogs(t *testing.T) {
 	emptyPlugin := &GoPlugin{}
 	p := emptyPlugin.NewPlugin(new(fakeCAAPI))
 	logpath := filepath.Join(tmp, "test")
-	p.Init(exec.Command("echo", "world"), &logpath)
+	_ = p.Init(exec.Command("echo", "world"), &logpath)
 	err := p.FlushLogs()
 	if err != nil {
 		t.Fatal(err)

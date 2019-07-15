@@ -145,8 +145,8 @@ func UpdateRepository(pipe *gaia.Pipeline) error {
 		},
 	}
 	createPipeline.Pipeline = *pipe
-	b.ExecuteBuild(createPipeline)
-	b.CopyBinary(createPipeline)
+	_ = b.ExecuteBuild(createPipeline)
+	_ = b.CopyBinary(createPipeline)
 	gaia.Cfg.Logger.Debug("successfully updated: ", "message", pipe.Name)
 	return nil
 }
@@ -200,7 +200,7 @@ func updateAllCurrentPipelines() {
 			defer wg.Done()
 			sem <- 1
 			defer func() { <-sem }()
-			UpdateRepository(&pipe)
+			_ = UpdateRepository(&pipe)
 		}(p)
 	}
 	wg.Wait()
@@ -229,10 +229,10 @@ func NewGithubClient(httpClient *gohttp.Client, repoMock GithubRepoService) Gith
 			Repositories: repoMock,
 		}
 	}
-	client := github.NewClient(httpClient)
+	githubClient := github.NewClient(httpClient)
 
 	return GithubClient{
-		Repositories: client.Repositories,
+		Repositories: githubClient.Repositories,
 	}
 }
 
@@ -268,17 +268,17 @@ func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoSer
 	config["secret"] = string(secret)
 	config["content_type"] = "json"
 
-	client := NewGithubClient(tc, gitRepo)
+	githubClient := NewGithubClient(tc, gitRepo)
 	repoName := path.Base(repo.URL)
 	repoName = strings.TrimSuffix(repoName, ".git")
 	// var repoLocation string
-	re := regexp.MustCompile("^(https|git)(:\\/\\/|@)([^\\/:]+)[\\/:]([^\\/:]+)\\/(.+)$")
+	re := regexp.MustCompile("^(https|git)(://|@)([^/:]+)[/:]([^/:]+)/(.+)$")
 	m := re.FindAllStringSubmatch(repo.URL, -1)
 	if m == nil {
 		return errors.New("failed to extract url parameters from git url")
 	}
 	repoUser := m[0][4]
-	hook, resp, err := client.Repositories.CreateHook(context.Background(), repoUser, repoName, &github.Hook{
+	hook, resp, err := githubClient.Repositories.CreateHook(context.Background(), repoUser, repoName, &github.Hook{
 		Events: []string{"push"},
 		Name:   github.String("web"),
 		Active: github.Bool(true),
@@ -295,7 +295,7 @@ func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoSer
 
 func generateWebhookSecret() string {
 	secret := make([]byte, 16)
-	rand.Read(secret)
+	_, _ = rand.Read(secret)
 	based := base64.URLEncoding.EncodeToString(secret)
 	return strings.TrimSuffix(based, "==")
 }

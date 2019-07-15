@@ -168,7 +168,7 @@ func (p *GoPlugin) Init(command *exec.Cmd, logPath *string) error {
 	// Connect via gRPC
 	p.clientProtocol, err = p.client.Client()
 	if err != nil {
-		p.writer.Flush()
+		_ = p.writer.Flush()
 		return fmt.Errorf("%s\n\n--- output ---\n%s", err.Error(), p.buffer.String())
 	}
 
@@ -196,7 +196,7 @@ func (p *GoPlugin) Validate() error {
 // for the given plugin.
 func (p *GoPlugin) Execute(j *gaia.Job) error {
 	// Transform arguments
-	args := []*proto.Argument{}
+	var args []*proto.Argument
 	for _, arg := range j.Args {
 		a := &proto.Argument{
 			Key:   arg.Key,
@@ -227,7 +227,7 @@ func (p *GoPlugin) Execute(j *gaia.Job) error {
 
 		// Generate error message and attach it to logs.
 		timeString := time.Now().Format(timeFormat)
-		p.writer.WriteString(fmt.Sprintf("%s Job '%s' threw an error: %s\n", timeString, j.Title, resultObj.Message))
+		_, _ = p.writer.WriteString(fmt.Sprintf("%s Job '%s' threw an error: %s\n", timeString, j.Title, resultObj.Message))
 	} else if err != nil {
 		// An error occurred during the send or somewhere else.
 		// The job itself usually does not return an error here.
@@ -236,7 +236,7 @@ func (p *GoPlugin) Execute(j *gaia.Job) error {
 
 		// Generate error message and attach it to logs.
 		timeString := time.Now().Format(timeFormat)
-		p.writer.WriteString(fmt.Sprintf("%s Job '%s' threw an error: %s\n", timeString, j.Title, err.Error()))
+		_, _ = p.writer.WriteString(fmt.Sprintf("%s Job '%s' threw an error: %s\n", timeString, j.Title, err.Error()))
 	} else {
 		j.Status = gaia.JobSuccess
 	}
@@ -332,13 +332,13 @@ func (p *GoPlugin) Close() {
 		p.client.Kill()
 
 		// Flush the writer
-		p.writer.Flush()
+		_ = p.writer.Flush()
 
 		// Close log file
-		p.logFile.Close()
+		_ = p.logFile.Close()
 
 		// Cleanup certificates
-		p.ca.CleanupCerts(p.certPath, p.keyPath)
-		p.ca.CleanupCerts(p.serverCertPath, p.serverKeyPath)
+		_ = p.ca.CleanupCerts(p.certPath, p.keyPath)
+		_ = p.ca.CleanupCerts(p.serverCertPath, p.serverKeyPath)
 	}()
 }

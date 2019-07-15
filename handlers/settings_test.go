@@ -46,7 +46,7 @@ func TestSetPollerToggle(t *testing.T) {
 
 	// // Initialize echo
 	e := echo.New()
-	InitHandlers(e)
+	_ = InitHandlers(e)
 	get := func() (*gaia.StoreConfig, error) {
 		return nil, nil
 	}
@@ -66,7 +66,7 @@ func TestSetPollerToggle(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/on")
 
-		SettingsPollOn(c)
+		_ = SettingsPollOn(c)
 		retStatus := http.StatusOK
 		if rec.Code != retStatus {
 			t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -78,7 +78,7 @@ func TestSetPollerToggle(t *testing.T) {
 		c2 := e.NewContext(req2, rec2)
 		c2.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/on")
 
-		SettingsPollOn(c2)
+		_ = SettingsPollOn(c2)
 		secondRetStatus := http.StatusBadRequest
 		if rec2.Code != secondRetStatus {
 			t.Fatalf("expected response code %v got %v", secondRetStatus, rec2.Code)
@@ -98,7 +98,7 @@ func TestSetPollerToggle(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/on")
 
-		SettingsPollOn(c)
+		_ = SettingsPollOn(c)
 		retStatus := http.StatusBadRequest
 		if rec.Code != retStatus {
 			t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -118,7 +118,7 @@ func TestSetPollerToggle(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/off")
 
-		SettingsPollOff(c)
+		_ = SettingsPollOff(c)
 		retStatus := http.StatusOK
 		if rec.Code != retStatus {
 			t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -141,7 +141,7 @@ func TestSetPollerToggle(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/off")
 
-		SettingsPollOff(c)
+		_ = SettingsPollOff(c)
 		retStatus := http.StatusBadRequest
 		if rec.Code != retStatus {
 			t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -161,13 +161,13 @@ func TestSetPollerToggle(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll")
 
-		SettingsPollGet(c)
+		_ = SettingsPollGet(c)
 		retStatus := http.StatusOK
 		if rec.Code != retStatus {
 			t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
 		}
 		var s status
-		json.NewDecoder(rec.Body).Decode(&s)
+		_ = json.NewDecoder(rec.Body).Decode(&s)
 		if s.Status != true {
 			t.Fatalf("expected returned status to be true. was: %v", s.Status)
 		}
@@ -188,7 +188,7 @@ func TestGettingSettingFromDBTakesPrecedence(t *testing.T) {
 
 	// // Initialize echo
 	e := echo.New()
-	InitHandlers(e)
+	_ = InitHandlers(e)
 	get := func() (*gaia.StoreConfig, error) {
 		return &gaia.StoreConfig{
 			Poll: true,
@@ -206,13 +206,13 @@ func TestGettingSettingFromDBTakesPrecedence(t *testing.T) {
 	c := e.NewContext(req, rec)
 	c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/")
 
-	SettingsPollGet(c)
+	_ = SettingsPollGet(c)
 	retStatus := http.StatusOK
 	if rec.Code != retStatus {
 		t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
 	}
 	var s status
-	json.NewDecoder(rec.Body).Decode(&s)
+	_ = json.NewDecoder(rec.Body).Decode(&s)
 	if s.Status != true {
 		t.Fatalf("expected returned status to be true from storage. was: %v", s.Status)
 	}
@@ -232,7 +232,7 @@ func TestSettingPollerOnAlsoSavesSettingsInDB(t *testing.T) {
 
 	// // Initialize echo
 	e := echo.New()
-	InitHandlers(e)
+	_ = InitHandlers(e)
 	get := func() (*gaia.StoreConfig, error) {
 		return &gaia.StoreConfig{
 			Poll: true,
@@ -252,7 +252,7 @@ func TestSettingPollerOnAlsoSavesSettingsInDB(t *testing.T) {
 	c := e.NewContext(req, rec)
 	c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/on")
 
-	SettingsPollOn(c)
+	_ = SettingsPollOn(c)
 	retStatus := http.StatusOK
 	if rec.Code != retStatus {
 		t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -262,7 +262,7 @@ func TestSettingPollerOnAlsoSavesSettingsInDB(t *testing.T) {
 		t.Fatal("SettingPut should have been called. Was not.")
 	}
 	putCalled = false
-	SettingsPollOff(c)
+	_ = SettingsPollOff(c)
 	if putCalled != true {
 		t.Fatal("SettingPut should have been called. Was not.")
 	}

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 	"github.com/gaia-pipeline/gaia/security"
@@ -161,7 +161,7 @@ func UserResetTriggerToken(c echo.Context) error {
 	user.TriggerToken = security.GenerateRandomUUIDV5()
 	err = ss.UserPut(user, true)
 	if err != nil {
-		c.String(http.StatusInternalServerError, "Error while saving user")
+		return c.String(http.StatusInternalServerError, "Error while saving user")
 	}
 
 	return c.String(http.StatusOK, "Token reset")

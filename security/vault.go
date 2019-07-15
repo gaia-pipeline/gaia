@@ -88,12 +88,12 @@ func NewVault(ca CAAPI, storer VaultStorer) (*Vault, error) {
 		return nil, errors.New("key lenght should be longer than 32")
 	}
 	h := sha256.New()
-	h.Write(data)
+	_, _ = h.Write(data)
 	sum := h.Sum(nil)
 	v.storer = storer
 	v.cert = data
 	v.key = sum[:keySize]
-	v.data = make(map[string][]byte, 0)
+	v.data = make(map[string][]byte)
 	return v, nil
 }
 
@@ -119,7 +119,7 @@ func (v *Vault) SaveSecrets() error {
 		return err
 	}
 	// clear the hash after saving so the system always has a fresh view of the vault.
-	v.data = make(map[string][]byte, 0)
+	v.data = make(map[string][]byte)
 	return v.storer.Write([]byte(encryptedData))
 }
 

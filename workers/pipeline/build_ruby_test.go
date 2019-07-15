@@ -113,7 +113,7 @@ func TestExecuteBuildContextTimeoutRuby(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f.Close()
+	_ = f.Close()
 	libFolder := filepath.Join(tmp, "lib")
 	if err = os.MkdirAll(libFolder, gaia.ExecutablePermission); err != nil {
 		t.Fatal(err)
@@ -152,7 +152,7 @@ func TestCopyBinaryRuby(t *testing.T) {
 	f, _ := os.Create(src)
 	defer f.Close()
 	defer os.Remove(dst)
-	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	_ = ioutil.WriteFile(src, []byte("testcontent"), 0666)
 	err := b.CopyBinary(p)
 	if err != nil {
 		t.Fatal("error was not expected when copying binary: ", err)

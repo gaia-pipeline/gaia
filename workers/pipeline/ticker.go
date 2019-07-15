@@ -32,6 +32,7 @@ func StopPoller() error {
 		isPollerRunning = false
 		select {
 		case pollerDone <- struct{}{}:
+		default:
 		}
 		return nil
 	}
@@ -89,7 +90,7 @@ func InitTicker() {
 		}
 	}()
 
-	StartPoller()
+	_ = StartPoller()
 }
 
 // checkActivePipelines looks up all files in the pipeline folder.
@@ -133,10 +134,10 @@ func checkActivePipelines() {
 					}
 
 					// Pipeline has been changed?
-					if bytes.Compare(p.SHA256Sum, checksum) != 0 {
+					if !bytes.Equal(p.SHA256Sum, checksum) {
 						// update pipeline if needed
 						if err = updatePipeline(p); err != nil {
-							storeService.PipelinePut(p)
+							_ = storeService.PipelinePut(p)
 							gaia.Cfg.Logger.Debug("cannot update pipeline", "error", err.Error(), "pipeline", p)
 							continue
 						}
@@ -188,13 +189,13 @@ func checkActivePipelines() {
 			}
 
 			// update pipeline if needed
-			if bytes.Compare(pipeline.SHA256Sum, pipelineCheckSum) != 0 {
+			if !bytes.Equal(pipeline.SHA256Sum, pipelineCheckSum) {
 				if err = updatePipeline(pipeline); err != nil {
-					storeService.PipelinePut(pipeline)
+					_ = storeService.PipelinePut(pipeline)
 					gaia.Cfg.Logger.Error("cannot update pipeline", "error", err.Error(), "pipeline", pipeline)
 					continue
 				}
-				storeService.PipelinePut(pipeline)
+				_ = storeService.PipelinePut(pipeline)
 			}
 
 			// Let us try to start the plugin and receive all implemented jobs
@@ -214,8 +215,8 @@ func checkActivePipelines() {
 				pipeline.CronInst = cron.New()
 
 				// Iterate over all cron schedules.
-				for _, cron := range pipeline.PeriodicSchedules {
-					err := pipeline.CronInst.AddFunc(cron, func() {
+				for _, schedule := range pipeline.PeriodicSchedules {
+					err := pipeline.CronInst.AddFunc(schedule, func() {
 						_, err := schedulerService.SchedulePipeline(pipeline, []*gaia.Argument{})
 						if err != nil {
 							gaia.Cfg.Logger.Error("cannot schedule pipeline from periodic schedule", "error", err, "pipeline", pipeline)
@@ -236,7 +237,7 @@ func checkActivePipelines() {
 
 			// We encountered a drop-in pipeline previously. Now is the time to save it.
 			if shouldStore {
-				storeService.PipelinePut(pipeline)
+				_ = storeService.PipelinePut(pipeline)
 			}
 
 			// We do not update the pipeline in store if it already exists there.

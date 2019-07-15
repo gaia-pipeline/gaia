@@ -41,7 +41,7 @@ type Payload struct {
 
 func signBody(secret, body []byte) []byte {
 	computed := hmac.New(sha1.New, secret)
-	computed.Write(body)
+	_, _ = computed.Write(body)
 	return []byte(computed.Sum(nil))
 }
 
@@ -54,7 +54,7 @@ func verifySignature(secret []byte, signature string, body []byte) bool {
 	}
 
 	actual := make([]byte, 20)
-	hex.Decode(actual, []byte(signature[5:]))
+	_, _ = hex.Decode(actual, []byte(signature[5:]))
 	expected := signBody(secret, body)
 	return hmac.Equal(expected, actual)
 }

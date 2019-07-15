@@ -277,7 +277,7 @@ func TestRenameBinary(t *testing.T) {
 	defer os.Remove(src)
 	defer os.Remove(dst)
 
-	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	_ = ioutil.WriteFile(src, []byte("testcontent"), 0666)
 
 	err := RenameBinary(p, newName)
 	if err != nil {
@@ -312,7 +312,7 @@ func TestDeleteBinary(t *testing.T) {
 	defer f.Close()
 	defer os.Remove(src)
 
-	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	_ = ioutil.WriteFile(src, []byte("testcontent"), 0666)
 
 	err := DeleteBinary(p)
 	if err != nil {

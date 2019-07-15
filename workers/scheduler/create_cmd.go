@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/gaia-pipeline/gaia"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 // createPipelineCmd creates the execute command for the plugin system

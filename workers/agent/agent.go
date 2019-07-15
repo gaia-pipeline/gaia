@@ -400,7 +400,7 @@ func (a *Agent) scheduleWork() {
 			reschedulePipeline()
 			return
 		}
-		if bytes.Compare(sha256Sum, pipelineSHA256SUM) != 0 {
+		if !bytes.Equal(sha256Sum, pipelineSHA256SUM) {
 			// A possible scenario is that the pipeline has been updated and the old binary still exists here.
 			// Let us try to delete the binary and re-download the pipeline.
 			if err := os.Remove(pipelineFullPath); err != nil {
@@ -421,7 +421,7 @@ func (a *Agent) scheduleWork() {
 				reschedulePipeline()
 				return
 			}
-			if bytes.Compare(sha256Sum, pipelineSHA256SUM) != 0 {
+			if !bytes.Equal(sha256Sum, pipelineSHA256SUM) {
 				gaia.Cfg.Logger.Error("pipeline binary SHA256Sum mismatch", "pipelinerun", pipelineRunPB)
 				reschedulePipeline()
 				return

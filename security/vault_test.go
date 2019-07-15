@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/gaia-pipeline/gaia"
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-hclog"
 )
 
 type MockVaultStorer struct {
@@ -74,7 +74,7 @@ func TestAddAndGet(t *testing.T) {
 	}
 	v.Add("key", []byte("value"))
 	val, _ := v.Get("key")
-	if bytes.Compare(val, []byte("value")) != 0 {
+	if !bytes.Equal(val, []byte("value")) {
 		t.Fatal("value didn't match expected of 'value'. was: ", string(val))
 	}
 }
@@ -103,13 +103,13 @@ func TestCloseLoadSecrets(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	v.data = make(map[string][]byte, 0)
+	v.data = make(map[string][]byte)
 	err = v.LoadSecrets()
 	if err != nil {
 		t.Fatal(err)
 	}
 	val, _ := v.Get("key1")
-	if bytes.Compare(val, []byte("value1")) != 0 {
+	if !bytes.Equal(val, []byte("value1")) {
 		t.Fatal("could not properly retrieve value for key1. was:", string(val))
 	}
 }
@@ -139,7 +139,7 @@ func TestCloseLoadSecretsWithInvalidPassword(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	v.data = make(map[string][]byte, 0)
+	v.data = make(map[string][]byte)
 	v.key = []byte("change this pa00word to a secret")
 	err = v.LoadSecrets()
 	if err == nil {
@@ -174,19 +174,16 @@ func TestAnExistingVaultFileIsNotOverwritten(t *testing.T) {
 	defer os.Remove("ca.key")
 	v.key = []byte("change this password to a secret")
 	v.Add("test", []byte("value"))
-	v.SaveSecrets()
+	_ = v.SaveSecrets()
 	v2, _ := NewVault(c, nil)
 	v2.storer = mvs
 	v2.key = []byte("change this password to a secret")
-	v2.LoadSecrets()
-	if err != nil {
-		t.Fatal(err)
-	}
+	_ = v2.LoadSecrets()
 	value, err := v2.Get("test")
 	if err != nil {
 		t.Fatal("couldn't retrieve value: ", err)
 	}
-	if bytes.Compare(value, []byte("value")) != 0 {
+	if !bytes.Equal(value, []byte("value")) {
 		t.Fatal("test value didn't equal expected of 'value'. was:", string(value))
 	}
 }
@@ -215,19 +212,19 @@ func TestRemovingFromTheVault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	v.data = make(map[string][]byte, 0)
+	v.data = make(map[string][]byte)
 	err = v.LoadSecrets()
 	if err != nil {
 		t.Fatal(err)
 	}
-	val, err := v.Get("key1")
-	if bytes.Compare(val, []byte("value1")) != 0 {
+	val, _ := v.Get("key1")
+	if !bytes.Equal(val, []byte("value1")) {
 		t.Fatal("could not properly retrieve value for key1. was:", string(val))
 	}
 	v.Remove("key1")
-	v.SaveSecrets()
-	v.data = make(map[string][]byte, 0)
-	v.LoadSecrets()
+	_ = v.SaveSecrets()
+	v.data = make(map[string][]byte)
+	_ = v.LoadSecrets()
 	_, err = v.Get("key1")
 	if err == nil {
 		t.Fatal("should have failed to retrieve non-existent key")
@@ -288,15 +285,15 @@ func TestEditValueWithAddingItAgain(t *testing.T) {
 	mvs := new(MockVaultStorer)
 	v.storer = mvs
 	v.Add("key1", []byte("value1"))
-	v.SaveSecrets()
-	v.data = make(map[string][]byte, 0)
-	v.LoadSecrets()
+	_ = v.SaveSecrets()
+	v.data = make(map[string][]byte)
+	_ = v.LoadSecrets()
 	v.Add("key1", []byte("value2"))
-	v.SaveSecrets()
-	v.data = make(map[string][]byte, 0)
-	v.LoadSecrets()
+	_ = v.SaveSecrets()
+	v.data = make(map[string][]byte)
+	_ = v.LoadSecrets()
 	val, _ := v.Get("key1")
-	if bytes.Compare(val, []byte("value2")) != 0 {
+	if !bytes.Equal(val, []byte("value2")) {
 		t.Fatal("value should have equaled expected 'value2'. was: ", string(val))
 	}
 }
@@ -417,7 +414,7 @@ func TestEmptyVault(t *testing.T) {
 	})
 	v := Vault{}
 	t.Run("empty vault", func(t *testing.T) {
-		data := []byte{}
+		var data []byte
 		_, err := v.decrypt(data)
 		if err != nil {
 			t.Fatal("was not expecting an error. was: ", err)

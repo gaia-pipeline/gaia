@@ -49,7 +49,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 		// Pipeline type is not supported
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("create pipeline failed. Pipeline type is not supported %s is not supported", p.Pipeline.Type)
-		storeService.CreatePipelinePut(p)
+		_ = storeService.CreatePipelinePut(p)
 		return
 	}
 
@@ -58,7 +58,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot prepare build: %s", err.Error())
-		storeService.CreatePipelinePut(p)
+		_ = storeService.CreatePipelinePut(p)
 		return
 	}
 
@@ -67,7 +67,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot prepare build: %s", err.Error())
-		storeService.CreatePipelinePut(p)
+		_ = storeService.CreatePipelinePut(p)
 		return
 	}
 
@@ -84,7 +84,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	err = bP.ExecuteBuild(p)
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
-		storeService.CreatePipelinePut(p)
+		_ = storeService.CreatePipelinePut(p)
 		return
 	}
 
@@ -102,7 +102,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot update pipeline: %s", err.Error())
-		storeService.CreatePipelinePut(p)
+		_ = storeService.CreatePipelinePut(p)
 		return
 	}
 
@@ -111,7 +111,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	if err = schedulerService.SetPipelineJobs(&p.Pipeline); err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot validate pipeline: %s", err.Error())
-		storeService.CreatePipelinePut(p)
+		_ = storeService.CreatePipelinePut(p)
 		return
 	}
 
@@ -130,7 +130,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("failed to save the created pipeline: %s", err.Error())
-		storeService.CreatePipelinePut(p)
+		_ = storeService.CreatePipelinePut(p)
 		return
 	}
 
@@ -139,7 +139,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot copy compiled binary: %s", err.Error())
-		storeService.CreatePipelinePut(p)
+		_ = storeService.CreatePipelinePut(p)
 		return
 	}
 

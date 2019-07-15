@@ -13,10 +13,6 @@ import (
 	"github.com/labstack/echo"
 )
 
-const (
-	maxMaxBufferLen = 1024
-)
-
 // jobLogs represents the json format which is returned
 // by GetJobLogs.
 type jobLogs struct {
@@ -73,9 +69,9 @@ func PipelineStop(c echo.Context) error {
 
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
-	for _, pipeline := range pipeline.GlobalActivePipelines.GetAll() {
-		if pipeline.ID == p {
-			foundPipeline = pipeline
+	for _, pipe := range pipeline.GlobalActivePipelines.GetAll() {
+		if pipe.ID == p {
+			foundPipeline = pipe
 			break
 		}
 	}

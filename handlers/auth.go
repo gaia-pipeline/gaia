@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 	"github.com/labstack/echo"
@@ -77,7 +77,7 @@ func (ra *AuthConfig) checkRole(userRoles interface{}, method, path string) erro
 			return nil
 		}
 	}
-	return fmt.Errorf("Required permission role %s", perm)
+	return fmt.Errorf("required permission role %s", perm)
 }
 
 // Iterate over each category to find a permission (if existing) for this API endpoint.
