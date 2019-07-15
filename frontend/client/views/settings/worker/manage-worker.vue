@@ -59,7 +59,7 @@
               </span>
             </td>
             <td>
-              <span>{{ $prettifyTags(props.row.tags) }}</span>
+              <span>{{ $prettifyTags(props.row.tags.sort()) }}</span>
             </td>
             <td>
               <a title="Deregister Worker" v-tippy="{ arrow : true,  animation : 'shift-away'}"
