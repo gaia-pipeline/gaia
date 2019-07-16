@@ -16,6 +16,24 @@ import (
 var (
 	// errNotAuthorized is thrown when user wants to access resource which is protected
 	errNotAuthorized = errors.New("no or invalid jwt token provided. You are not authorized")
+
+	// Non-protected URL paths which are prefix checked
+	nonProtectedPathsPrefix = []string {
+		"/login",
+		"/pipeline/githook",
+		"/trigger",
+		"/worker/register",
+		"/js/",
+		"/img/",
+		"/fonts/",
+		"/css/",
+	}
+
+	// Non-protected URL paths which are explicitly checked
+	nonProtectedPaths = []string {
+		"/",
+		"/favicon.ico",
+	}
 )
 
 // AuthMiddleware is middleware used for each request. Includes functionality that validates the JWT tokens and user
@@ -23,16 +41,22 @@ var (
 func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			// Login, WebHook callback and static resources are open
-			// The webhook callback has it's own authentication method
-			if strings.Contains(c.Path(), "/login") ||
-				c.Path() == "/" ||
-				strings.Contains(c.Path(), "/assets/") ||
-				c.Path() == "/favicon.ico" ||
-				strings.Contains(c.Path(), "pipeline/githook") ||
-				strings.Contains(c.Path(), "/trigger") ||
-				strings.Contains(c.Path(), "/worker/register") {
-				return next(c)
+			// Check if it matches an explicit paths
+			for _, paths := range nonProtectedPaths {
+				if paths == c.Path() {
+					return next(c)
+				}
+			}
+
+			// Check if it matches an prefix-based paths
+			p := "/api/" + gaia.APIVersion
+			for _, prefix := range nonProtectedPathsPrefix {
+				switch {
+				case strings.HasPrefix(c.Path(), p+prefix):
+					return next(c)
+				case strings.HasPrefix(c.Path(), prefix):
+					return next(c)
+				}
 			}
 
 			token, err := getToken(c)
