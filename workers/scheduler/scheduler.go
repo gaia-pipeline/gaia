@@ -511,7 +511,7 @@ func (s *Scheduler) executeScheduledJobs(r gaia.PipelineRun, pS plugin.Plugin) {
 		}
 	}
 
-	if runFail {
+	if runFail && r.Status != gaia.RunCancelled {
 		s.finishPipelineRun(&r, gaia.RunFailed)
 	} else if r.Status == gaia.RunCancelled {
 		s.finishPipelineRun(&r, gaia.RunCancelled)

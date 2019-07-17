@@ -49,6 +49,7 @@
               <span v-if="props.column.field === 'status'">
                 <span v-if="props.row.status === 'success'" style="color: green;">{{ props.row.status }}</span>
                 <span v-else-if="props.row.status === 'failed'" style="color: red;">{{ props.row.status }}</span>
+                <span v-else-if="props.row.status === 'cancelled'" style="color: yellow;">{{ props.row.status }}</span>
                 <span v-else>{{ props.row.status }}</span>
               </span>
               <span v-if="props.column.field === 'duration'">{{ calculateDuration(props.row.startdate, props.row.finishdate) }}</span>
