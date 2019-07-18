@@ -20,7 +20,7 @@ RUN git clone -b ${GRPC_RELEASE_TAG} https://github.com/grpc/grpc /var/local/git
 
 # Gaia internal port and data path.
 ENV GAIA_PORT=8080 \
-    GAIA_HOME-PATH=/data
+    GAIA_HOME_PATH=/data
 
 # Directory for the binary
 WORKDIR /app
@@ -35,7 +35,7 @@ RUN chmod +x ./gaia-linux-amd64 \
     && chmod 600 /root/.ssh
 
 # Set homepath as volume
-VOLUME [ "${GAIA_HOME-PATH}" ]
+VOLUME [ "${GAIA_HOME_PATH}" ]
 
 # Expose port
 EXPOSE ${GAIA_PORT}

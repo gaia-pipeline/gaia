@@ -2,7 +2,7 @@ FROM python:2.7-stretch
 
 # Set env variables
 ENV GAIA_PORT=8080 \
-    GAIA_HOME-PATH=/data
+    GAIA_HOME_PATH=/data
 
 # --------------- Start Go Part ---------------
 # gcc for cgo
@@ -306,7 +306,7 @@ RUN chmod +x ./gaia-linux-amd64 \
     && chmod 600 /root/.ssh
 
 # Set homepath as volume
-VOLUME [ "${GAIA_HOME-PATH}" ]
+VOLUME [ "${GAIA_HOME_PATH}" ]
 
 # Expose port
 EXPOSE ${GAIA_PORT}
