@@ -2,8 +2,7 @@ FROM python:2.7-alpine3.8
 
 # Version and other variables which can be changed.
 ENV GAIA_PORT=8080 \
-    GAIA_WORKER=2 \
-    GAIA_HOMEPATH=/data
+    GAIA_HOME_PATH=/data
 
 # install additional deps
 RUN set -ex; \
@@ -23,7 +22,7 @@ RUN chmod +x ./gaia-linux-amd64 \
     && chmod 600 /root/.ssh
 
 # Set homepath as volume
-VOLUME [ "${GAIA_HOMEPATH}" ]
+VOLUME [ "${GAIA_HOME_PATH}" ]
 
 # Expose port
 EXPOSE ${GAIA_PORT}

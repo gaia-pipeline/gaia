@@ -10,7 +10,7 @@ TEST_TIMEOUT?=20s
 default: dev
 
 dev:
-	go run ./cmd/gaia/main.go -homepath=${PWD}/tmp -dev=true
+	go run ./cmd/gaia/main.go -home-path=${PWD}/tmp -dev=true
 
 compile_frontend:
 	cd ./frontend && \

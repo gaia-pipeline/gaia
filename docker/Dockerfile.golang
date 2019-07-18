@@ -1,9 +1,8 @@
-FROM golang:1.11.4-alpine3.8
+FROM golang:1.12.7-alpine3.8
 
 # Version and other variables which can be changed.
 ENV GAIA_PORT=8080 \
-    GAIA_WORKER=2 \
-    GAIA_HOMEPATH=/data
+    GAIA_HOME_PATH=/data
 
 # Directory for the binary
 WORKDIR /app
@@ -20,7 +19,7 @@ RUN chmod +x ./gaia-linux-amd64 \
     && chmod 600 /root/.ssh
 
 # Set homepath as volume
-VOLUME [ "${GAIA_HOMEPATH}" ]
+VOLUME [ "${GAIA_HOME_PATH}" ]
 
 # Expose port
 EXPOSE ${GAIA_PORT}
