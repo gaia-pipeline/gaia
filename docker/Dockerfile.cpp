@@ -5,8 +5,8 @@ RUN apt-get update && apt-get install -y \
     automake libtool curl make g++ unzip \
     && apt-get clean
 
-# install protobuf first, then grpc 
-ENV GRPC_RELEASE_TAG v1.16.x 
+# install protobuf first, then grpc
+ENV GRPC_RELEASE_TAG v1.16.x
 RUN git clone -b ${GRPC_RELEASE_TAG} https://github.com/grpc/grpc /var/local/git/grpc && \
 	            cd /var/local/git/grpc && \
     git submodule update --init && \
@@ -20,7 +20,7 @@ RUN git clone -b ${GRPC_RELEASE_TAG} https://github.com/grpc/grpc /var/local/git
 
 # Gaia internal port and data path.
 ENV GAIA_PORT=8080 \
-    GAIA_HOMEPATH=/data
+    GAIA_HOME-PATH=/data
 
 # Directory for the binary
 WORKDIR /app
@@ -35,7 +35,7 @@ RUN chmod +x ./gaia-linux-amd64 \
     && chmod 600 /root/.ssh
 
 # Set homepath as volume
-VOLUME [ "${GAIA_HOMEPATH}" ]
+VOLUME [ "${GAIA_HOME-PATH}" ]
 
 # Expose port
 EXPOSE ${GAIA_PORT}

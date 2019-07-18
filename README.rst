@@ -80,7 +80,7 @@ Manually
 It is possible to install Gaia directly on the host system.
 This can be achieved by downloading the binary from the `releases page`_.
 
-Gaia will automatically detect the folder of the binary and will place all data next to it. You can change the data directory with the startup parameter *--homepath* if you want.
+Gaia will automatically detect the folder of the binary and will place all data next to it. You can change the data directory with the startup parameter *-home-path* if you want.
 
 Using helm
 ~~~~~~~~~~

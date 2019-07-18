@@ -2,8 +2,7 @@ FROM maven:3-jdk-8
 
 # Version and other variables which can be changed.
 ENV GAIA_PORT=8080 \
-    GAIA_WORKER=2 \
-    GAIA_HOMEPATH=/data
+    GAIA_HOME-PATH=/data
 
 # Directory for the binary
 WORKDIR /app
@@ -18,7 +17,7 @@ RUN chmod +x ./gaia-linux-amd64 \
     && chmod 600 /root/.ssh
 
 # Set homepath as volume
-VOLUME [ "${GAIA_HOMEPATH}" ]
+VOLUME [ "${GAIA_HOME-PATH}" ]
 
 # Expose port
 EXPOSE ${GAIA_PORT}
