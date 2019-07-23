@@ -66,9 +66,9 @@ var execCommandContext = exec.CommandContext
 // Source folder name where the sources are stored
 const srcFolder = "src"
 
-// newBuildPipeline creates a new build pipeline for the given
+// NewBuildPipeline creates a new build pipeline for the given
 // pipeline type.
-func newBuildPipeline(t gaia.PipelineType) BuildPipeline {
+func NewBuildPipeline(t gaia.PipelineType) BuildPipeline {
 	var bP BuildPipeline
 
 	// Create build pipeline for given pipeline type

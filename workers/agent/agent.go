@@ -23,6 +23,7 @@ import (
 	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/agent/api"
+	gp "github.com/gaia-pipeline/gaia/workers/pipeline"
 	pb "github.com/gaia-pipeline/gaia/workers/proto"
 	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	"google.golang.org/grpc"
@@ -454,9 +455,34 @@ func (a *Agent) scheduleWork() {
 
 		// Let us try to start the plugin and receive all implemented jobs
 		if err = a.scheduler.SetPipelineJobs(pipeline); err != nil {
-			gaia.Cfg.Logger.Error("cannot get pipeline jobs", "error", err.Error(), "pipelinerun", pipelineRunPB)
-			reschedulePipeline()
-			return
+			if strings.Contains(err.Error(), "exec format error") {
+				err = nil
+				pCreate := &gaia.CreatePipeline{}
+				pCreate.Pipeline = *pipeline
+				pb := gp.NewBuildPipeline(pipeline.Type)
+				err = pb.PrepareEnvironment(pCreate)
+				if err != nil {
+					gaia.Cfg.Logger.Error("cannot prepare pipeline environment by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
+					reschedulePipeline()
+					return
+				}
+				err = pb.CopyBinary(pCreate)
+				if err != nil {
+					gaia.Cfg.Logger.Error("cannot copy binary by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
+					reschedulePipeline()
+					return
+				}
+				err = pb.ExecuteBuild(pCreate)
+				if err != nil {
+					gaia.Cfg.Logger.Error("cannot execute build by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
+					reschedulePipeline()
+					return
+				}
+			} else {
+				gaia.Cfg.Logger.Error("cannot get pipeline jobs", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				reschedulePipeline()
+				return
+			}
 		}
 		pipelineRun.Jobs = pipeline.Jobs
 
