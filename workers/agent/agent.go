@@ -457,6 +457,12 @@ func (a *Agent) scheduleWork() {
 		if err = a.scheduler.SetPipelineJobs(pipeline); err != nil {
 			if strings.Contains(err.Error(), "exec format error") {
 				err = nil
+				// Try rebuilding the pipeline...
+				if err := os.Remove(pipelineFullPath); err != nil {
+					gaia.Cfg.Logger.Error("failed to remove pipeline binary", "error", err.Error(), "pipelinerun", pipelineRunPB)
+					reschedulePipeline()
+					return
+				}
 				pCreate := &gaia.CreatePipeline{}
 				pCreate.Pipeline = *pipeline
 				pb := gp.NewBuildPipeline(pipeline.Type)
