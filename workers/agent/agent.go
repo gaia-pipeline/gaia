@@ -460,20 +460,23 @@ func (a *Agent) scheduleWork() {
 				pCreate := &gaia.CreatePipeline{}
 				pCreate.Pipeline = *pipeline
 				pb := gp.NewBuildPipeline(pipeline.Type)
-				err = pb.PrepareEnvironment(pCreate)
-				if err != nil {
+				if err = pb.PrepareEnvironment(pCreate); err != nil {
 					gaia.Cfg.Logger.Error("cannot prepare pipeline environment by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
 					reschedulePipeline()
 					return
 				}
-				err = pb.CopyBinary(pCreate)
-				if err != nil {
+				if err = pb.CopyBinary(pCreate); err != nil {
 					gaia.Cfg.Logger.Error("cannot copy binary by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
 					reschedulePipeline()
 					return
 				}
-				err = pb.ExecuteBuild(pCreate)
-				if err != nil {
+
+				if err = pb.ExecuteBuild(pCreate); err != nil {
+					gaia.Cfg.Logger.Error("cannot execute build by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
+					reschedulePipeline()
+					return
+				}
+				if err = a.scheduler.SetPipelineJobs(pipeline); err != nil {
 					gaia.Cfg.Logger.Error("cannot execute build by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
 					reschedulePipeline()
 					return
