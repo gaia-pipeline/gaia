@@ -40,6 +40,7 @@ require (
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/xanzy/ssh-agent v0.2.0 // indirect
 	golang.org/x/crypto v0.0.0-20190211182817-74369b46fc67
+	golang.org/x/net v0.0.0-20180826012351-8a410e7b638d
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 	golang.org/x/sys v0.0.0-20180905080454-ebe1bf3edb33 // indirect
 	google.golang.org/grpc v1.18.0

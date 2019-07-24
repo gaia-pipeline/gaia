@@ -92,6 +92,7 @@ func InitHandlers(e *echo.Echo) error {
 	e.GET(p+"worker", GetWorker)
 	e.DELETE(p+"worker/:workerid", DeregisterWorker)
 	e.POST(p+"worker/secret", ResetWorkerRegisterSecret)
+	e.GET(p+"worker/pipeline-repo/:pipeline-id", GetPipelineRepositoryInformation)
 
 	// Middleware
 	e.Use(middleware.Recover())

@@ -473,7 +473,7 @@ func (a *Agent) scheduleWork() {
 					return
 				}
 
-				// pb := gp.NewBuildPipeline(pipeline.Type)
+				// pb := gp.newBuildPipeline(pipeline.Type)
 				// if err = pb.PrepareEnvironment(pCreate); err != nil {
 				// 	gaia.Cfg.Logger.Error("cannot prepare pipeline environment by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
 				// 	reschedulePipeline()

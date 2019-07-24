@@ -272,3 +272,7 @@ func ResetWorkerRegisterSecret(c echo.Context) error {
 
 	return c.String(http.StatusOK, "global worker registration secret has been successfully reset")
 }
+
+func GetPipelineRepositoryInformation(c echo.Context) error {
+	return c.String(http.StatusOK, "")
+}
