@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gaia-pipeline/gaia/security"
@@ -279,14 +278,9 @@ func GetPipelineRepositoryInformation(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "failed to initialise store")
 	}
-	pipelineIDStr := c.Param("pipeline-id")
+	pipelineName := c.Param("name")
 
-	// Convert string to int because id is int
-	pipelineID, err := strconv.Atoi(pipelineIDStr)
-	if err != nil {
-		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
-	}
-	repo, err := store.PipelineGet(pipelineID)
+	repo, err := store.PipelineGetByName(pipelineName)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "failed to get pipeline")
 	}

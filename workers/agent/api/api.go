@@ -57,8 +57,8 @@ func RegisterWorker(host, secret, name string, tags []string) (*RegisterResponse
 
 // GetPipelineRepositoryInformation retrieves information about the repository
 // a pipeline was created from.
-func GetPipelineRepositoryInformation(host string, id int) (*gaia.GitRepo, error) {
-	fullURL := fmt.Sprintf("%s/api/%s/worker/pipeline-repo/%d", host, gaia.APIVersion, id)
+func GetPipelineRepositoryInformation(host string, name string) (*gaia.GitRepo, error) {
+	fullURL := fmt.Sprintf("%s/api/%s/worker/pipeline-repo/%s", host, gaia.APIVersion, name)
 	resp, err := http.Get(fullURL)
 	if err != nil {
 		return nil, err
