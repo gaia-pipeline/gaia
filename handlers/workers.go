@@ -279,9 +279,10 @@ func GetPipelineRepositoryInformation(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "failed to initialise store")
 	}
 	pipelineName := c.Param("name")
-
+	gaia.Cfg.Logger.Debug("received name for pipeline", "pipelineName", pipelineName)
 	repo, err := store.PipelineGetByName(pipelineName)
 	if err != nil {
+		gaia.Cfg.Logger.Error("failed to get pipeline", "error", err)
 		return c.String(http.StatusInternalServerError, "failed to get pipeline")
 	}
 
