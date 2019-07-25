@@ -45,8 +45,8 @@ message GitRepo {
     string localdest = 7;
 }
 
-message PipelineName {
-    string name = 1;
+message PipelineID {
+    int64 id = 1;
 }
 
 // Job represents one job from a pipeline run.
@@ -96,5 +96,5 @@ service Worker {
     rpc Deregister (WorkerInstance) returns (google.protobuf.Empty);
 
     // GetGitRepo returns git repo information to the worker based on a pipeline name.
-    rpc GetGitRepo (PipelineName) returns (GitRepo);
+    rpc GetGitRepo (PipelineID) returns (GitRepo);
 }

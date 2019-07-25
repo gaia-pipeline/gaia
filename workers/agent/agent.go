@@ -465,7 +465,7 @@ func (a *Agent) scheduleWork() {
 					return
 				}
 				pCreate := &gaia.CreatePipeline{}
-				repo, err := a.client.GetGitRepo(ctx, &pb.PipelineName{Name: pipelineName})
+				repo, err := a.client.GetGitRepo(ctx, &pb.PipelineID{Id: int64(pipeline.ID)})
 				if err != nil {
 					gaia.Cfg.Logger.Error("failed to get pipeline information", "error", err.Error(), "pipelinerun", pipelineRunPB)
 					reschedulePipeline()

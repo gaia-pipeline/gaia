@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -102,7 +103,7 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 	return nil
 }
 
-func (w *WorkServer) GetGitRepo(ctx context.Context, in *pb.PipelineName) (*pb.GitRepo, error) {
+func (w *WorkServer) GetGitRepo(ctx context.Context, in *pb.PipelineID) (*pb.GitRepo, error) {
 	repo := &pb.GitRepo{}
 	// Check if worker is registered
 	isRegistered, _ := workerRegistered(ctx)
@@ -115,10 +116,11 @@ func (w *WorkServer) GetGitRepo(ctx context.Context, in *pb.PipelineName) (*pb.G
 	if err != nil {
 		return repo, err
 	}
-	repoInfo, err := store.PipelineGetByName(in.Name)
+	repoInfo, err := store.PipelineGet(int(in.Id))
 	if err != nil {
 		return repo, err
 	}
+	log.Println(repoInfo)
 	pk := pb.PrivateKey{}
 	pk.Key = repoInfo.Repo.PrivateKey.Key
 	pk.Username = repoInfo.Repo.PrivateKey.Username
