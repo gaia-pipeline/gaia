@@ -498,14 +498,14 @@ func (a *Agent) scheduleWork() {
 					reschedulePipeline()
 					return
 				}
-				if err = pb.CopyBinary(pCreate); err != nil {
-					gaia.Cfg.Logger.Error("cannot copy binary by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				gp.GitCloneRepo(pipeline.Repo)
+				if err = pb.ExecuteBuild(pCreate); err != nil {
+					gaia.Cfg.Logger.Error("cannot execute build by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
 					reschedulePipeline()
 					return
 				}
-
-				if err = pb.ExecuteBuild(pCreate); err != nil {
-					gaia.Cfg.Logger.Error("cannot execute build by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				if err = pb.CopyBinary(pCreate); err != nil {
+					gaia.Cfg.Logger.Error("cannot copy binary by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
 					reschedulePipeline()
 					return
 				}

@@ -23,7 +23,7 @@ func TestGitCloneRepo(t *testing.T) {
 		URL:       "https://github.com/gaia-pipeline/pipeline-test",
 		LocalDest: tmp,
 	}
-	err := gitCloneRepo(repo)
+	err := GitCloneRepo(repo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func TestUpdateAllPipelinesAlreadyUpToDate(t *testing.T) {
 	}
 	// always ensure that tmp folder is cleaned up
 	defer os.RemoveAll("tmp")
-	err := gitCloneRepo(repo)
+	err := GitCloneRepo(repo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +125,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 
 	// always ensure that tmp folder is cleaned up
 	defer os.RemoveAll("tmp")
-	_ = gitCloneRepo(repo)
+	_ = GitCloneRepo(repo)
 	want := "knownhosts: key is unknown"
 	if !strings.Contains(b.String(), want) {
 		t.Fatalf("wanted buf to contain: '%s', got: '%s'", want, b.String())
@@ -170,7 +170,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 
 	// always ensure that tmp folder is cleaned up
 	defer os.RemoveAll("tmp")
-	_ = gitCloneRepo(repo)
+	_ = GitCloneRepo(repo)
 
 	p := new(gaia.Pipeline)
 	p.Name = "main"
@@ -209,7 +209,7 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 	}
 	// always ensure that tmp folder is cleaned up
 	defer os.RemoveAll("tmp")
-	err := gitCloneRepo(repo)
+	err := GitCloneRepo(repo)
 	if err != nil {
 		t.Fatal(err)
 	}

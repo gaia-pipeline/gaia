@@ -63,7 +63,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	}
 
 	// Clone git repo
-	err = gitCloneRepo(p.Pipeline.Repo)
+	err = GitCloneRepo(p.Pipeline.Repo)
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot prepare build: %s", err.Error())

@@ -151,9 +151,9 @@ func UpdateRepository(pipe *gaia.Pipeline) error {
 	return nil
 }
 
-// gitCloneRepo clones the given repo to a local folder.
+// GitCloneRepo clones the given repo to a local folder.
 // The destination will be attached to the given repo obj.
-func gitCloneRepo(repo *gaia.GitRepo) error {
+func GitCloneRepo(repo *gaia.GitRepo) error {
 	// Check if credentials were provided
 	auth, err := getAuthInfo(repo, nil)
 	if err != nil {
