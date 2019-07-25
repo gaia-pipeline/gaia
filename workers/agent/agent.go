@@ -472,12 +472,16 @@ func (a *Agent) scheduleWork() {
 					return
 				}
 				pCreate.Pipeline = *pipeline
+				// Unfortunately, since pb.GitRepo has extra gRPC fields on it
+				// we can't use gaia.GitRepo(repo) here to convert immediately.
 				gitRepo := gaia.GitRepo{}
 				gitRepo.Username = repo.Username
 				gitRepo.Password = repo.Password
-				gitRepo.PrivateKey.Key = repo.Key.Key
-				gitRepo.PrivateKey.Username = repo.Key.Username
-				gitRepo.PrivateKey.Password = repo.Key.Passwrod
+				pk := gaia.PrivateKey{}
+				pk.Password = repo.PrivateKey.Password
+				pk.Username = repo.PrivateKey.Username
+				pk.Key = repo.PrivateKey.Key
+				gitRepo.PrivateKey = pk
 				gitRepo.URL = repo.Url
 				gitRepo.SelectedBranch = repo.SelectedBranch
 				pCreate.Pipeline.Repo = &gitRepo

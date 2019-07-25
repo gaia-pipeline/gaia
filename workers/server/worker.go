@@ -119,9 +119,11 @@ func (w *WorkServer) GetGitRepo(ctx context.Context, in *pb.PipelineName) (*pb.G
 	if err != nil {
 		return repo, err
 	}
-	repo.Key.Key = repoInfo.Repo.PrivateKey.Key
-	repo.Key.Username = repoInfo.Repo.PrivateKey.Username
-	repo.Key.Passwrod = repoInfo.Repo.PrivateKey.Password
+	pk := pb.PrivateKey{}
+	pk.Key = repoInfo.Repo.PrivateKey.Key
+	pk.Username = repoInfo.Repo.PrivateKey.Username
+	pk.Password = repoInfo.Repo.PrivateKey.Password
+	repo.PrivateKey = &pk
 	repo.Username = repoInfo.Repo.Username
 	repo.Password = repoInfo.Repo.Password
 	repo.SelectedBranch = repoInfo.Repo.SelectedBranch

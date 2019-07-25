@@ -31,16 +31,18 @@ message PipelineRun {
 message PrivateKey {
     string key = 1;
     string username = 2;
-    string passwrod = 3;
+    string password = 3;
 }
 
 // GitRepo is a git repo.
 message GitRepo {
-    PrivateKey key = 1;
+    PrivateKey private_key = 1;
     string username = 2;
     string password = 3;
     string url = 4;
     string selected_branch = 5;
+    repeated string branches = 6;
+    string localdest = 7;
 }
 
 message PipelineName {
