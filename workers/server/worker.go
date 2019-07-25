@@ -102,6 +102,33 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 	return nil
 }
 
+func (w *WorkServer) GetGitRepo(ctx context.Context, in *pb.PipelineName) (*pb.GitRepo, error) {
+	repo := &pb.GitRepo{}
+	// Check if worker is registered
+	isRegistered, _ := workerRegistered(ctx)
+	if !isRegistered {
+		md, _ := metadata.FromIncomingContext(ctx)
+		gaia.Cfg.Logger.Warn("worker tries to get work but is not registered", "metadata", md)
+		return repo, errNotRegistered
+	}
+	store, err := services.StorageService()
+	if err != nil {
+		return repo, err
+	}
+	repoInfo, err := store.PipelineGetByName(in.Name)
+	if err != nil {
+		return repo, err
+	}
+	repo.Key.Key = repoInfo.Repo.PrivateKey.Key
+	repo.Key.Username = repoInfo.Repo.PrivateKey.Username
+	repo.Key.Passwrod = repoInfo.Repo.PrivateKey.Password
+	repo.Username = repoInfo.Repo.Username
+	repo.Password = repoInfo.Repo.Password
+	repo.SelectedBranch = repoInfo.Repo.SelectedBranch
+	repo.Url = repoInfo.Repo.URL
+	return repo, err
+}
+
 // UpdateWork updates work from a worker.
 func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun) (*empty.Empty, error) {
 	e := &empty.Empty{}
