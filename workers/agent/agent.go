@@ -514,6 +514,7 @@ func (a *Agent) scheduleWork() {
 					reschedulePipeline()
 					return
 				}
+				pipeline = &pCreate.Pipeline
 				if err = a.scheduler.SetPipelineJobs(pipeline); err != nil {
 					gaia.Cfg.Logger.Error("cannot execute build by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
 					reschedulePipeline()
