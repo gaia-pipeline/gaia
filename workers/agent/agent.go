@@ -485,30 +485,30 @@ func (a *Agent) scheduleWork() {
 				gitRepo.URL = repo.Url
 				gitRepo.SelectedBranch = repo.SelectedBranch
 				pCreate.Pipeline.Repo = &gitRepo
-				gp.CreatePipeline(pCreate)
-				if pCreate.StatusType == gaia.CreatePipelineFailed {
-					gaia.Cfg.Logger.Error("cannot create pipeline", "output", pCreate.Output, "pipelinerun", pipelineRunPB)
+				//gp.CreatePipeline(pCreate)
+				//if pCreate.StatusType == gaia.CreatePipelineFailed {
+				//	gaia.Cfg.Logger.Error("cannot create pipeline", "output", pCreate.Output, "pipelinerun", pipelineRunPB)
+				//	reschedulePipeline()
+				//	return
+				//}
+
+				pb := gp.NewBuildPipeline(pipeline.Type)
+				if err = pb.PrepareEnvironment(pCreate); err != nil {
+					gaia.Cfg.Logger.Error("cannot prepare pipeline environment by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
+					reschedulePipeline()
+					return
+				}
+				if err = pb.CopyBinary(pCreate); err != nil {
+					gaia.Cfg.Logger.Error("cannot copy binary by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
 					reschedulePipeline()
 					return
 				}
 
-				// pb := gp.newBuildPipeline(pipeline.Type)
-				// if err = pb.PrepareEnvironment(pCreate); err != nil {
-				// 	gaia.Cfg.Logger.Error("cannot prepare pipeline environment by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
-				// 	reschedulePipeline()
-				// 	return
-				// }
-				// if err = pb.CopyBinary(pCreate); err != nil {
-				// 	gaia.Cfg.Logger.Error("cannot copy binary by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
-				// 	reschedulePipeline()
-				// 	return
-				// }
-
-				// if err = pb.ExecuteBuild(pCreate); err != nil {
-				// 	gaia.Cfg.Logger.Error("cannot execute build by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
-				// 	reschedulePipeline()
-				// 	return
-				// }
+				if err = pb.ExecuteBuild(pCreate); err != nil {
+					gaia.Cfg.Logger.Error("cannot execute build by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
+					reschedulePipeline()
+					return
+				}
 				if err = a.scheduler.SetPipelineJobs(pipeline); err != nil {
 					gaia.Cfg.Logger.Error("cannot execute build by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
 					reschedulePipeline()

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -120,7 +119,6 @@ func (w *WorkServer) GetGitRepo(ctx context.Context, in *pb.PipelineID) (*pb.Git
 	if err != nil {
 		return repo, err
 	}
-	log.Println(repoInfo)
 	pk := pb.PrivateKey{}
 	pk.Key = repoInfo.Repo.PrivateKey.Key
 	pk.Username = repoInfo.Repo.PrivateKey.Username
