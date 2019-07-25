@@ -54,3 +54,29 @@ func RegisterWorker(host, secret, name string, tags []string) (*RegisterResponse
 
 	return &regResp, nil
 }
+
+type PipelineRepositoryInformationResponse struct {
+}
+
+// RegisterWorker registers a new worker at a Gaia instance.
+// It uses the given secret for authentication and returns certs
+// which can be used for a future mTLS connection.
+func GetPipelineRepositoryInformation(host, id string) (*PipelineRepositoryInformationResponse, error) {
+	fullURL := fmt.Sprintf("%s/api/%s/worker/pipeline-repo/%s", host, gaia.APIVersion, id)
+	resp, err := http.PostForm(fullURL,
+		url.Values{
+			"secret": {secret},
+			"tags":   tags,
+			"name":   {name},
+		})
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	// Read the content
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+}
