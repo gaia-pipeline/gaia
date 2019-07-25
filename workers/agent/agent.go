@@ -498,7 +498,12 @@ func (a *Agent) scheduleWork() {
 					reschedulePipeline()
 					return
 				}
-				gp.GitCloneRepo(pipeline.Repo)
+				if err = gp.GitCloneRepo(pCreate.Pipeline.Repo); err != nil {
+					gaia.Cfg.Logger.Error("error pulling repo", "error", err.Error(), "pipelinerun", pipelineRunPB)
+					reschedulePipeline()
+					return
+				}
+
 				if err = pb.ExecuteBuild(pCreate); err != nil {
 					gaia.Cfg.Logger.Error("cannot execute build by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
 					reschedulePipeline()
