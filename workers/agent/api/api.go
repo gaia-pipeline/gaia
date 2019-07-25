@@ -55,20 +55,11 @@ func RegisterWorker(host, secret, name string, tags []string) (*RegisterResponse
 	return &regResp, nil
 }
 
-type PipelineRepositoryInformationResponse struct {
-}
-
-// RegisterWorker registers a new worker at a Gaia instance.
-// It uses the given secret for authentication and returns certs
-// which can be used for a future mTLS connection.
-func GetPipelineRepositoryInformation(host, id string) (*PipelineRepositoryInformationResponse, error) {
-	fullURL := fmt.Sprintf("%s/api/%s/worker/pipeline-repo/%s", host, gaia.APIVersion, id)
-	resp, err := http.PostForm(fullURL,
-		url.Values{
-			"secret": {secret},
-			"tags":   tags,
-			"name":   {name},
-		})
+// GetPipelineRepositoryInformation retrieves information about the repository
+// a pipeline was created from.
+func GetPipelineRepositoryInformation(host string, id int) (*gaia.GitRepo, error) {
+	fullURL := fmt.Sprintf("%s/api/%s/worker/pipeline-repo/%d", host, gaia.APIVersion, id)
+	resp, err := http.Get(fullURL)
 	if err != nil {
 		return nil, err
 	}
@@ -79,4 +70,9 @@ func GetPipelineRepositoryInformation(host, id string) (*PipelineRepositoryInfor
 	if err != nil {
 		return nil, err
 	}
+	gitRepo := gaia.GitRepo{}
+	if err = json.Unmarshal(body, &gitRepo); err != nil {
+		return nil, fmt.Errorf("cannot unmarshal registration response: %s", string(body))
+	}
+	return &gitRepo, nil
 }

@@ -465,7 +465,14 @@ func (a *Agent) scheduleWork() {
 					return
 				}
 				pCreate := &gaia.CreatePipeline{}
+				repo, err := api.GetPipelineRepositoryInformation(gaia.Cfg.WorkerHostURL, pipeline.ID)
+				if err != nil {
+					gaia.Cfg.Logger.Error("failed to get pipeline information", "error", pCreate.Output, "pipelinerun", pipelineRunPB)
+					reschedulePipeline()
+					return
+				}
 				pCreate.Pipeline = *pipeline
+				pCreate.Pipeline.Repo = repo
 				gp.CreatePipeline(pCreate)
 				if pCreate.StatusType == gaia.CreatePipelineFailed {
 					gaia.Cfg.Logger.Error("cannot create pipeline", "error", pCreate.Output, "pipelinerun", pipelineRunPB)
