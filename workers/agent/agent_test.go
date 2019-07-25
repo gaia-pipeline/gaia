@@ -102,7 +102,7 @@ type mockWorkerInterface struct {
 	pbRuns []*pb.PipelineRun
 }
 
-func (mw *mockWorkerInterface) GetGitRepo(context.Context, *pb.PipelineName) (*pb.GitRepo, error) {
+func (mw *mockWorkerInterface) GetGitRepo(context.Context, *pb.PipelineID) (*pb.GitRepo, error) {
 	return &pb.GitRepo{}, nil
 }
 
