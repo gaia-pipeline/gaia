@@ -465,17 +465,25 @@ func (a *Agent) scheduleWork() {
 					return
 				}
 				pCreate := &gaia.CreatePipeline{}
-				repo, err := api.GetPipelineRepositoryInformation(gaia.Cfg.WorkerHostURL, pipeline.Name)
+				repo, err := a.client.GetGitRepo(ctx, &pb.PipelineName{Name: pipelineName})
 				if err != nil {
 					gaia.Cfg.Logger.Error("failed to get pipeline information", "error", err.Error(), "pipelinerun", pipelineRunPB)
 					reschedulePipeline()
 					return
 				}
 				pCreate.Pipeline = *pipeline
-				pCreate.Pipeline.Repo = repo
+				gitRepo := gaia.GitRepo{}
+				gitRepo.Username = repo.Username
+				gitRepo.Password = repo.Password
+				gitRepo.PrivateKey.Key = repo.Key.Key
+				gitRepo.PrivateKey.Username = repo.Key.Username
+				gitRepo.PrivateKey.Password = repo.Key.Passwrod
+				gitRepo.URL = repo.Url
+				gitRepo.SelectedBranch = repo.SelectedBranch
+				pCreate.Pipeline.Repo = &gitRepo
 				gp.CreatePipeline(pCreate)
 				if pCreate.StatusType == gaia.CreatePipelineFailed {
-					gaia.Cfg.Logger.Error("cannot create pipeline", "output", pCreate.Output, "pipelinerun", pipelineRunPB, "error", err.Error())
+					gaia.Cfg.Logger.Error("cannot create pipeline", "output", pCreate.Output, "pipelinerun", pipelineRunPB)
 					reschedulePipeline()
 					return
 				}

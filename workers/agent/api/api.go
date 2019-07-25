@@ -54,25 +54,3 @@ func RegisterWorker(host, secret, name string, tags []string) (*RegisterResponse
 
 	return &regResp, nil
 }
-
-// GetPipelineRepositoryInformation retrieves information about the repository
-// a pipeline was created from.
-func GetPipelineRepositoryInformation(host string, name string) (*gaia.GitRepo, error) {
-	fullURL := fmt.Sprintf("%s/api/%s/worker/pipeline-repo/%s", host, gaia.APIVersion, name)
-	resp, err := http.Get(fullURL)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	// Read the content
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	gitRepo := gaia.GitRepo{}
-	if err = json.Unmarshal(body, &gitRepo); err != nil {
-		return nil, fmt.Errorf("cannot unmarshal registration response: %s", string(body))
-	}
-	return &gitRepo, nil
-}

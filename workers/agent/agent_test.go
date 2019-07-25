@@ -102,6 +102,10 @@ type mockWorkerInterface struct {
 	pbRuns []*pb.PipelineRun
 }
 
+func (mw *mockWorkerInterface) GetGitRepo(context.Context, *pb.PipelineName) (*pb.GitRepo, error) {
+	return &pb.GitRepo{}, nil
+}
+
 var mW *mockWorkerInterface
 
 func (mw *mockWorkerInterface) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWorkServer) error {

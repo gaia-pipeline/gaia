@@ -272,19 +272,3 @@ func ResetWorkerRegisterSecret(c echo.Context) error {
 
 	return c.String(http.StatusOK, "global worker registration secret has been successfully reset")
 }
-
-func GetPipelineRepositoryInformation(c echo.Context) error {
-	store, err := services.StorageService()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "failed to initialise store")
-	}
-	pipelineName := c.Param("name")
-	gaia.Cfg.Logger.Debug("received name for pipeline", "pipelineName", pipelineName)
-	repo, err := store.PipelineGetByName(pipelineName)
-	if err != nil {
-		gaia.Cfg.Logger.Error("failed to get pipeline", "error", err)
-		return c.String(http.StatusInternalServerError, "failed to get pipeline")
-	}
-
-	return c.JSON(http.StatusOK, repo.Repo)
-}
