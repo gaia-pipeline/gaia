@@ -102,6 +102,7 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 	return nil
 }
 
+// GetGitRepo checks out the code for a git repository.
 func (w *WorkServer) GetGitRepo(ctx context.Context, in *pb.PipelineID) (*pb.GitRepo, error) {
 	repo := &pb.GitRepo{}
 	// Check if worker is registered
