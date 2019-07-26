@@ -105,6 +105,7 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 // GetGitRepo checks out the code for a git repository.
 func (w *WorkServer) GetGitRepo(ctx context.Context, in *pb.PipelineID) (*pb.GitRepo, error) {
 	repo := &pb.GitRepo{}
+
 	// Check if worker is registered
 	isRegistered, _ := workerRegistered(ctx)
 	if !isRegistered {
@@ -112,23 +113,28 @@ func (w *WorkServer) GetGitRepo(ctx context.Context, in *pb.PipelineID) (*pb.Git
 		gaia.Cfg.Logger.Warn("worker tries to get work but is not registered", "metadata", md)
 		return repo, errNotRegistered
 	}
+
 	store, err := services.StorageService()
 	if err != nil {
 		return repo, err
 	}
+
 	repoInfo, err := store.PipelineGet(int(in.Id))
 	if err != nil {
 		return repo, err
 	}
+
 	pk := pb.PrivateKey{}
 	pk.Key = repoInfo.Repo.PrivateKey.Key
 	pk.Username = repoInfo.Repo.PrivateKey.Username
 	pk.Password = repoInfo.Repo.PrivateKey.Password
+
 	repo.PrivateKey = &pk
 	repo.Username = repoInfo.Repo.Username
 	repo.Password = repoInfo.Repo.Password
 	repo.SelectedBranch = repoInfo.Repo.SelectedBranch
 	repo.Url = repoInfo.Repo.URL
+
 	return repo, err
 }
 

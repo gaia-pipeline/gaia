@@ -28,7 +28,7 @@ import (
 	pb "github.com/gaia-pipeline/gaia/workers/proto"
 	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	"google.golang.org/grpc"
-	_ "google.golang.org/grpc/balancer/grpclb"
+	_ "google.golang.org/grpc/balancer/grpclb" // needed because of https://github.com/grpc/grpc-go/issues/2575
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 )
@@ -507,32 +507,39 @@ func (a *Agent) scheduleWork() {
 func (a *Agent) rebuildWorkerBinary(ctx context.Context, pipeline *gaia.Pipeline) error {
 	pCreate := &gaia.CreatePipeline{}
 	pCreate.ID = security.GenerateRandomUUIDV5()
+	pCreate.Pipeline = *pipeline
+
 	repo, err := a.client.GetGitRepo(ctx, &pb.PipelineID{Id: int64(pipeline.ID)})
 	if err != nil {
 		return err
 	}
-	pCreate.Pipeline = *pipeline
+
 	// Unfortunately, since pb.GitRepo has extra gRPC fields on it
 	// we can't use gaia.GitRepo(repo) here to convert immediately.
 	gitRepo := gaia.GitRepo{}
 	gitRepo.Username = repo.Username
 	gitRepo.Password = repo.Password
+
 	pk := gaia.PrivateKey{}
 	pk.Password = repo.PrivateKey.Password
 	pk.Username = repo.PrivateKey.Username
 	pk.Key = repo.PrivateKey.Key
+
 	gitRepo.PrivateKey = pk
 	gitRepo.URL = repo.Url
 	gitRepo.SelectedBranch = repo.SelectedBranch
 	pCreate.Pipeline.Repo = &gitRepo
+
 	gp.CreatePipeline(pCreate)
 	if pCreate.StatusType == gaia.CreatePipelineFailed {
 		return fmt.Errorf("error while creating pipeline: %s", pCreate.Output)
 	}
+
 	pipeline = &pCreate.Pipeline
 	if err = a.scheduler.SetPipelineJobs(pipeline); err != nil {
 		return err
 	}
+
 	return nil
 }
 
