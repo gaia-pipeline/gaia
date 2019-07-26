@@ -138,7 +138,7 @@ func UpdateRepository(pipe *gaia.Pipeline) error {
 	}
 
 	gaia.Cfg.Logger.Debug("updating pipeline: ", "message", pipe.Name)
-	b := NewBuildPipeline(pipe.Type)
+	b := newBuildPipeline(pipe.Type)
 	createPipeline := &gaia.CreatePipeline{
 		Pipeline: gaia.Pipeline{
 			Repo: &gaia.GitRepo{},
@@ -151,9 +151,9 @@ func UpdateRepository(pipe *gaia.Pipeline) error {
 	return nil
 }
 
-// GitCloneRepo clones the given repo to a local folder.
+// gitCloneRepo clones the given repo to a local folder.
 // The destination will be attached to the given repo obj.
-func GitCloneRepo(repo *gaia.GitRepo) error {
+func gitCloneRepo(repo *gaia.GitRepo) error {
 	// Check if credentials were provided
 	auth, err := getAuthInfo(repo, nil)
 	if err != nil {

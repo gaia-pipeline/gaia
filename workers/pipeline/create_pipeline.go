@@ -44,7 +44,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	p.GitHubToken = ""
 	storeService, _ := services.StorageService()
 	// Define build process for the given type
-	bP := NewBuildPipeline(p.Pipeline.Type)
+	bP := newBuildPipeline(p.Pipeline.Type)
 	if bP == nil {
 		// Pipeline type is not supported
 		p.StatusType = gaia.CreatePipelineFailed
@@ -63,7 +63,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	}
 
 	// Clone git repo
-	err = GitCloneRepo(p.Pipeline.Repo)
+	err = gitCloneRepo(p.Pipeline.Repo)
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot prepare build: %s", err.Error())
