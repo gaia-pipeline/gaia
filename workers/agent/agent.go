@@ -21,12 +21,14 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/filehelper"
 	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/agent/api"
 	gp "github.com/gaia-pipeline/gaia/workers/pipeline"
 	pb "github.com/gaia-pipeline/gaia/workers/proto"
 	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	"google.golang.org/grpc"
+	_ "google.golang.org/grpc/balancer/grpclb"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 )
@@ -378,7 +380,7 @@ func (a *Agent) scheduleWork() {
 		// Setup reschedule of pipeline in case something goes wrong
 		reschedulePipeline := func() {
 			pipelineRunPB.Status = string(gaia.RunReschedule)
-			if _, err := a.client.UpdateWork(context.Background(), pipelineRunPB); err != nil {
+			if _, err := a.client.UpdateWork(ctx, pipelineRunPB); err != nil {
 				gaia.Cfg.Logger.Error("failed to reschedule work at primary instance", "error", err)
 			}
 		}
@@ -455,73 +457,21 @@ func (a *Agent) scheduleWork() {
 
 		// Let us try to start the plugin and receive all implemented jobs
 		if err = a.scheduler.SetPipelineJobs(pipeline); err != nil {
-			if strings.Contains(err.Error(), "exec format error") {
-				gaia.Cfg.Logger.Info("pipeline in a different format than worker; attempting to rebuild...")
-				err = nil
-				// Try rebuilding the pipeline...
-				if err := os.Remove(pipelineFullPath); err != nil {
-					gaia.Cfg.Logger.Error("failed to remove pipeline binary", "error", err.Error(), "pipelinerun", pipelineRunPB)
-					reschedulePipeline()
-					return
-				}
-				pCreate := &gaia.CreatePipeline{}
-				repo, err := a.client.GetGitRepo(ctx, &pb.PipelineID{Id: int64(pipeline.ID)})
-				if err != nil {
-					gaia.Cfg.Logger.Error("failed to get pipeline information", "error", err.Error(), "pipelinerun", pipelineRunPB)
-					reschedulePipeline()
-					return
-				}
-				pCreate.Pipeline = *pipeline
-				// Unfortunately, since pb.GitRepo has extra gRPC fields on it
-				// we can't use gaia.GitRepo(repo) here to convert immediately.
-				gitRepo := gaia.GitRepo{}
-				gitRepo.Username = repo.Username
-				gitRepo.Password = repo.Password
-				pk := gaia.PrivateKey{}
-				pk.Password = repo.PrivateKey.Password
-				pk.Username = repo.PrivateKey.Username
-				pk.Key = repo.PrivateKey.Key
-				gitRepo.PrivateKey = pk
-				gitRepo.URL = repo.Url
-				gitRepo.SelectedBranch = repo.SelectedBranch
-				pCreate.Pipeline.Repo = &gitRepo
-				gp.CreatePipeline(pCreate)
-				if pCreate.StatusType == gaia.CreatePipelineFailed {
-					gaia.Cfg.Logger.Error("cannot create pipeline", "output", pCreate.Output, "pipelinerun", pipelineRunPB)
-					reschedulePipeline()
-					return
-				}
-
-				//pb := gp.NewBuildPipeline(pipeline.Type)
-				//if err = pb.PrepareEnvironment(pCreate); err != nil {
-				//	gaia.Cfg.Logger.Error("cannot prepare pipeline environment by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
-				//	reschedulePipeline()
-				//	return
-				//}
-				//if err = gp.GitCloneRepo(pCreate.Pipeline.Repo); err != nil {
-				//	gaia.Cfg.Logger.Error("error pulling repo", "error", err.Error(), "pipelinerun", pipelineRunPB)
-				//	reschedulePipeline()
-				//	return
-				//}
-				//
-				//if err = pb.ExecuteBuild(pCreate); err != nil {
-				//	gaia.Cfg.Logger.Error("cannot execute build by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
-				//	reschedulePipeline()
-				//	return
-				//}
-				//if err = pb.CopyBinary(pCreate); err != nil {
-				//	gaia.Cfg.Logger.Error("cannot copy binary by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
-				//	reschedulePipeline()
-				//	return
-				//}
-				pipeline = &pCreate.Pipeline
-				if err = a.scheduler.SetPipelineJobs(pipeline); err != nil {
-					gaia.Cfg.Logger.Error("cannot execute build by worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
-					reschedulePipeline()
-					return
-				}
-			} else {
+			if !strings.Contains(err.Error(), "exec format error") {
 				gaia.Cfg.Logger.Error("cannot get pipeline jobs", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				reschedulePipeline()
+				return
+			}
+			gaia.Cfg.Logger.Info("pipeline in a different format than worker; attempting to rebuild...")
+			// Try rebuilding the pipeline...
+			if err := os.Remove(pipelineFullPath); err != nil {
+				gaia.Cfg.Logger.Error("failed to remove pipeline binary", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				reschedulePipeline()
+				return
+			}
+			err = a.rebuildWorkerBinary(ctx, pipeline)
+			if err != nil {
+				gaia.Cfg.Logger.Error("failed to rebuild pipeline for worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
 				reschedulePipeline()
 				return
 			}
@@ -552,6 +502,38 @@ func (a *Agent) scheduleWork() {
 	if workCounter == 0 {
 		gaia.Cfg.Logger.Trace("got no work from Gaia primary instance. Will try it again after a while...")
 	}
+}
+
+func (a *Agent) rebuildWorkerBinary(ctx context.Context, pipeline *gaia.Pipeline) error {
+	pCreate := &gaia.CreatePipeline{}
+	pCreate.ID = security.GenerateRandomUUIDV5()
+	repo, err := a.client.GetGitRepo(ctx, &pb.PipelineID{Id: int64(pipeline.ID)})
+	if err != nil {
+		return err
+	}
+	pCreate.Pipeline = *pipeline
+	// Unfortunately, since pb.GitRepo has extra gRPC fields on it
+	// we can't use gaia.GitRepo(repo) here to convert immediately.
+	gitRepo := gaia.GitRepo{}
+	gitRepo.Username = repo.Username
+	gitRepo.Password = repo.Password
+	pk := gaia.PrivateKey{}
+	pk.Password = repo.PrivateKey.Password
+	pk.Username = repo.PrivateKey.Username
+	pk.Key = repo.PrivateKey.Key
+	gitRepo.PrivateKey = pk
+	gitRepo.URL = repo.Url
+	gitRepo.SelectedBranch = repo.SelectedBranch
+	pCreate.Pipeline.Repo = &gitRepo
+	gp.CreatePipeline(pCreate)
+	if pCreate.StatusType == gaia.CreatePipelineFailed {
+		return fmt.Errorf("error while creating pipeline: %s", pCreate.Output)
+	}
+	pipeline = &pCreate.Pipeline
+	if err = a.scheduler.SetPipelineJobs(pipeline); err != nil {
+		return err
+	}
+	return nil
 }
 
 // streamBinary streams the binary in chunks from the remote instance to the given path.
