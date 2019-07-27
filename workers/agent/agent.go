@@ -380,7 +380,7 @@ func (a *Agent) scheduleWork() {
 		// Setup reschedule of pipeline in case something goes wrong
 		reschedulePipeline := func() {
 			pipelineRunPB.Status = string(gaia.RunReschedule)
-			if _, err := a.client.UpdateWork(ctx, pipelineRunPB); err != nil {
+			if _, err := a.client.UpdateWork(context.Background(), pipelineRunPB); err != nil {
 				gaia.Cfg.Logger.Error("failed to reschedule work at primary instance", "error", err)
 			}
 		}
