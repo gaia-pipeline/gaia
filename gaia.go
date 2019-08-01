@@ -249,16 +249,18 @@ type PrivateKey struct {
 
 // PipelineRun represents a single run of a pipeline.
 type PipelineRun struct {
-	UniqueID     string            `json:"uniqueid"`
-	ID           int               `json:"id"`
-	PipelineID   int               `json:"pipelineid"`
-	StartDate    time.Time         `json:"startdate,omitempty"`
-	FinishDate   time.Time         `json:"finishdate,omitempty"`
-	ScheduleDate time.Time         `json:"scheduledate,omitempty"`
-	Status       PipelineRunStatus `json:"status,omitempty"`
-	Jobs         []*Job            `json:"jobs,omitempty"`
-	PipelineType PipelineType      `json:"pipelinetype,omitempty"`
-	PipelineTags []string          `json:"pipelinetags,omitempty"`
+	UniqueID       string            `json:"uniqueid"`
+	ID             int               `json:"id"`
+	PipelineID     int               `json:"pipelineid"`
+	StartDate      time.Time         `json:"startdate,omitempty"`
+	FinishDate     time.Time         `json:"finishdate,omitempty"`
+	ScheduleDate   time.Time         `json:"scheduledate,omitempty"`
+	Status         PipelineRunStatus `json:"status,omitempty"`
+	Jobs           []*Job            `json:"jobs,omitempty"`
+	PipelineType   PipelineType      `json:"pipelinetype,omitempty"`
+	PipelineTags   []string          `json:"pipelinetags,omitempty"`
+	Docker         bool              `json:"docker,omitempty"`
+	DockerWorkerID string            `json:"dockerworkerid,omitempty"`
 }
 
 // Worker represents a single registered worker.

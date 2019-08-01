@@ -8,6 +8,7 @@ require (
 	github.com/boltdb/bolt v1.3.1 // indirect
 	github.com/coreos/bbolt v1.3.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/docker/docker v0.7.3-0.20190731001754-589f1dad8dad // indirect
 	github.com/emirpasic/gods v1.9.0 // indirect
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
 	github.com/gaia-pipeline/flag v1.7.4-pre

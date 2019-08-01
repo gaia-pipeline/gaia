@@ -272,6 +272,25 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 		// Update worker information if needed
 		switch run.Status {
 		case gaia.RunSuccess, gaia.RunFailed, gaia.RunCancelled:
+			// Check if this was a docker worker run
+			if run.Docker {
+				go func() {
+					// Get docker worker object
+					dockerWorker, err := db.GetDockerWorker(run.DockerWorkerID)
+					if err != nil {
+						return
+					}
+
+					// Kill and remove docker worker
+					if err := dockerWorker.KillDockerWorker(); err != nil {
+						return
+					}
+					_ = db.DeleteDockerWorker(run.DockerWorkerID)
+				}()
+				return e, nil
+			}
+
+			// Update statistics
 			worker.FinishedRuns++
 
 			// Store worker object but don't block here
