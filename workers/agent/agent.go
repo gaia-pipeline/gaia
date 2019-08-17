@@ -404,6 +404,10 @@ func (a *Agent) scheduleWork() {
 			return
 		}
 		if !bytes.Equal(sha256Sum, pipelineSHA256SUM) {
+			// TODO: Get the original sha and the local new worker sha.
+			// Compare the original with the incoming sha if that equals. If it does, compare the worker sha
+			// with the local binaries sha to make sure that it equals so it hasn't been altered in the meantime.
+
 			// A possible scenario is that the pipeline has been updated and the old binary still exists here.
 			// Let us try to delete the binary and re-download the pipeline.
 			if err := os.Remove(pipelineFullPath); err != nil {
@@ -475,6 +479,9 @@ func (a *Agent) scheduleWork() {
 				reschedulePipeline()
 				return
 			}
+
+			// TODO: Save the new SHA here as the new worker sha.
+			// Save the original sha as the new original sha.
 		}
 		pipelineRun.Jobs = pipeline.Jobs
 

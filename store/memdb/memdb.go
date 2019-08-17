@@ -52,6 +52,14 @@ type GaiaMemDB interface {
 	// PopPipelineRun gets the oldest pipeline run by tags and removes it immediately
 	// from the memdb.
 	PopPipelineRun(tags []string) (*gaia.PipelineRun, error)
+
+	// InsertSHAPair creates a record for a SHA pair of the original SHA and the
+	// rebuilt Worker SHA for a pipeline.
+	InsertSHAPair(pipelineID string, original string, worker string) error
+
+	// InsertSHAPair creates a record for a SHA pair of the original SHA and the
+	// rebuilt Worker SHA.
+	GetSHAPair(pipelineID string) (original string, worker string, err error)
 }
 
 // InitMemDB initiates a new memdb db.
@@ -332,4 +340,14 @@ RunLoop:
 	}
 
 	return nil, nil
+}
+
+// InsertSHAPair creates a sha pair record for a pipeline id.
+func (m *MemDB) InsertSHAPair(pipelineID string, original string, worker string) error {
+	return nil
+}
+
+// GetSHAPair returns a sha pair for a pipeline id.
+func (m *MemDB) GetSHAPair(pipelineID string) (original string, worker string, err error) {
+	return "", "", nil
 }
