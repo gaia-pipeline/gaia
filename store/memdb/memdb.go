@@ -17,6 +17,9 @@ const (
 
 	// Name of the pipeline run table
 	pipelineRunTable = "pipelinerun"
+
+	// Name of the sha pair table
+	shaPairTable = "shapair"
 )
 
 // MemDB represents the implementation of the MemDB interface.
@@ -53,13 +56,12 @@ type GaiaMemDB interface {
 	// from the memdb.
 	PopPipelineRun(tags []string) (*gaia.PipelineRun, error)
 
-	// InsertSHAPair creates a record for a SHA pair of the original SHA and the
+	// UpsertSHAPair creates or updates a record for a SHA pair of the original SHA and the
 	// rebuilt Worker SHA for a pipeline.
-	InsertSHAPair(pipelineID string, original string, worker string) error
+	UpsertSHAPair(pipelineID string, pair gaia.SHAPair) error
 
-	// InsertSHAPair creates a record for a SHA pair of the original SHA and the
-	// rebuilt Worker SHA.
-	GetSHAPair(pipelineID string) (original string, worker string, err error)
+	// GetSHAPair returns a pair of shas for this pipeline run.
+	GetSHAPair(pipelineID string) (pair gaia.SHAPair, err error)
 }
 
 // InitMemDB initiates a new memdb db.
@@ -342,12 +344,62 @@ RunLoop:
 	return nil, nil
 }
 
-// InsertSHAPair creates a sha pair record for a pipeline id.
-func (m *MemDB) InsertSHAPair(pipelineID string, original string, worker string) error {
+// UpsertSHAPair creates a sha pair record for a pipeline id.
+func (m *MemDB) UpsertSHAPair(pipelineID string, pair gaia.SHAPair) error {
+	// Create a write transaction
+	txn := m.db.Txn(true)
+
+	// Find existing entry
+	raw, err := txn.First(shaPairTable, "id", pipelineID)
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to lookup sha pair record via upsert", "error", err.Error())
+		return err
+	}
+
+	// Delete if it exists
+	if raw != nil {
+		err = txn.Delete(shaPairTable, raw)
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to delete sha pair via upsert", "error", err.Error())
+			return err
+		}
+	}
+
+	// Insert it
+	if err := txn.Insert(shaPairTable, pair); err != nil {
+		gaia.Cfg.Logger.Error("failed to insert sha pair via upsert", "error", err.Error())
+		return err
+	}
+
+	// Commit transaction
+	txn.Commit()
 	return nil
 }
 
 // GetSHAPair returns a sha pair for a pipeline id.
-func (m *MemDB) GetSHAPair(pipelineID string) (original string, worker string, err error) {
-	return "", "", nil
+func (m *MemDB) GetSHAPair(pipelineID string) (pair gaia.SHAPair, err error) {
+	// Create read transaction
+	txn := m.db.Txn(false)
+	defer txn.Abort()
+
+	// Get worker
+	raw, err := txn.First(shaPairTable, "id", pipelineID)
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to get sha pair from memdb", "error", err.Error(), "id", pipelineID)
+		return pair, err
+	}
+
+	// If nil we couldn't find it
+	if raw == nil {
+		return pair, nil
+	}
+
+	// Convert into worker obj
+	pair, ok := raw.(gaia.SHAPair)
+	if !ok {
+		gaia.Cfg.Logger.Error("failed to convert sha pair into worker obj", "raw", raw)
+		return pair, errors.New("failed to convert sha pair into worker obj")
+	}
+
+	return
 }

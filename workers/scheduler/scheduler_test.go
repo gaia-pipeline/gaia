@@ -62,6 +62,12 @@ func (m *MemDBFake) InsertPipelineRun(p *gaia.PipelineRun) error     { return ni
 func (m *MemDBFake) PopPipelineRun(tags []string) (*gaia.PipelineRun, error) {
 	return &gaia.PipelineRun{}, nil
 }
+func (m *MemDBFake) UpsertSHAPair(pipelineID string, pair gaia.SHAPair) error {
+	return nil
+}
+func (m *MemDBFake) GetSHAPair(pipelineID string) (pair gaia.SHAPair, err error) {
+	return
+}
 
 func TestInit(t *testing.T) {
 	gaia.Cfg = &gaia.Config{}

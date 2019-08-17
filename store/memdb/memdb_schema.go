@@ -26,5 +26,15 @@ var memDBSchema = &memdb.DBSchema{
 				},
 			},
 		},
+		shaPairTable: {
+			Name: shaPairTable,
+			Indexes: map[string]*memdb.IndexSchema{
+				"id": {
+					Name:    "id",
+					Unique:  true,
+					Indexer: &memdb.StringFieldIndex{Field: "UniqueID"},
+				},
+			},
+		},
 	},
 }

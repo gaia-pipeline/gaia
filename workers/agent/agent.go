@@ -18,6 +18,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/services"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/filehelper"
 	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
@@ -403,11 +405,24 @@ func (a *Agent) scheduleWork() {
 			reschedulePipeline()
 			return
 		}
-		if !bytes.Equal(sha256Sum, pipelineSHA256SUM) {
-			// TODO: Get the original sha and the local new worker sha.
-			// Compare the original with the incoming sha if that equals. If it does, compare the worker sha
-			// with the local binaries sha to make sure that it equals so it hasn't been altered in the meantime.
 
+		// Let's check if we have a stored sha pair for this pipeline.
+		db, err := services.MemDBService(nil)
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to get memdb service via scheduler", "error", err.Error())
+			reschedulePipeline()
+			return
+		}
+		shaPair, err := db.GetSHAPair(pipelineRun.UniqueID)
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to get sha pair from memdb", "error", err.Error())
+			reschedulePipeline()
+			return
+		}
+
+		if !bytes.Equal(sha256Sum, pipelineSHA256SUM) &&
+			(!bytes.Equal(sha256Sum, shaPair.Worker) &&
+				!bytes.Equal(pipelineSHA256SUM, shaPair.Original)) {
 			// A possible scenario is that the pipeline has been updated and the old binary still exists here.
 			// Let us try to delete the binary and re-download the pipeline.
 			if err := os.Remove(pipelineFullPath); err != nil {
@@ -480,8 +495,25 @@ func (a *Agent) scheduleWork() {
 				return
 			}
 
+			workerSHA256Sum, err := filehelper.GetSHA256Sum(pipelineFullPath)
+			if err != nil {
+				gaia.Cfg.Logger.Error("failed to determine SHA256Sum of pipeline file", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				reschedulePipeline()
+				return
+			}
 			// TODO: Save the new SHA here as the new worker sha.
 			// Save the original sha as the new original sha.
+			shaPair := gaia.SHAPair{
+				Original: pipelineSHA256SUM,
+				Worker:   workerSHA256Sum,
+			}
+
+			err = db.UpsertSHAPair(pipelineRun.UniqueID, shaPair)
+			if err != nil {
+				gaia.Cfg.Logger.Error("failed to upsert new sha pair", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				reschedulePipeline()
+				return
+			}
 		}
 		pipelineRun.Jobs = pipeline.Jobs
 
