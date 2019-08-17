@@ -501,14 +501,14 @@ func (a *Agent) scheduleWork() {
 				reschedulePipeline()
 				return
 			}
-			// TODO: Save the new SHA here as the new worker sha.
-			// Save the original sha as the new original sha.
+
 			shaPair := gaia.SHAPair{
 				Original: pipelineSHA256SUM,
 				Worker:   workerSHA256Sum,
+				UniqueID: pipelineRun.UniqueID,
 			}
 
-			err = db.UpsertSHAPair(pipelineRun.UniqueID, shaPair)
+			err = db.UpsertSHAPair(shaPair)
 			if err != nil {
 				gaia.Cfg.Logger.Error("failed to upsert new sha pair", "error", err.Error(), "pipelinerun", pipelineRunPB)
 				reschedulePipeline()

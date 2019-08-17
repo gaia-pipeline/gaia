@@ -58,7 +58,7 @@ type GaiaMemDB interface {
 
 	// UpsertSHAPair creates or updates a record for a SHA pair of the original SHA and the
 	// rebuilt Worker SHA for a pipeline.
-	UpsertSHAPair(pipelineID string, pair gaia.SHAPair) error
+	UpsertSHAPair(pair gaia.SHAPair) error
 
 	// GetSHAPair returns a pair of shas for this pipeline run.
 	GetSHAPair(pipelineID string) (pair gaia.SHAPair, err error)
@@ -345,12 +345,12 @@ RunLoop:
 }
 
 // UpsertSHAPair creates a sha pair record for a pipeline id.
-func (m *MemDB) UpsertSHAPair(pipelineID string, pair gaia.SHAPair) error {
+func (m *MemDB) UpsertSHAPair(pair gaia.SHAPair) error {
 	// Create a write transaction
 	txn := m.db.Txn(true)
 
 	// Find existing entry
-	raw, err := txn.First(shaPairTable, "id", pipelineID)
+	raw, err := txn.First(shaPairTable, "id", pair.UniqueID)
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to lookup sha pair record via upsert", "error", err.Error())
 		return err

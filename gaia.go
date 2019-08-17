@@ -278,6 +278,7 @@ type Worker struct {
 type SHAPair struct {
 	Original []byte
 	Worker   []byte
+	UniqueID string
 }
 
 // Cfg represents the global config instance
