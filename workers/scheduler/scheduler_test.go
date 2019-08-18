@@ -65,7 +65,7 @@ func (m *MemDBFake) PopPipelineRun(tags []string) (*gaia.PipelineRun, error) {
 func (m *MemDBFake) UpsertSHAPair(pair gaia.SHAPair) error {
 	return nil
 }
-func (m *MemDBFake) GetSHAPair(pipelineID string) (pair gaia.SHAPair, err error) {
+func (m *MemDBFake) GetSHAPair(pipelineID string) (ok bool, pair gaia.SHAPair, err error) {
 	return
 }
 

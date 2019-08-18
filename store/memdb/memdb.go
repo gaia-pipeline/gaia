@@ -61,7 +61,7 @@ type GaiaMemDB interface {
 	UpsertSHAPair(pair gaia.SHAPair) error
 
 	// GetSHAPair returns a pair of shas for this pipeline run.
-	GetSHAPair(pipelineID string) (pair gaia.SHAPair, err error)
+	GetSHAPair(pipelineID string) (ok bool, pair gaia.SHAPair, err error)
 }
 
 // InitMemDB initiates a new memdb db.
@@ -377,7 +377,7 @@ func (m *MemDB) UpsertSHAPair(pair gaia.SHAPair) error {
 }
 
 // GetSHAPair returns a sha pair for a pipeline id.
-func (m *MemDB) GetSHAPair(pipelineID string) (pair gaia.SHAPair, err error) {
+func (m *MemDB) GetSHAPair(pipelineID string) (found bool, pair gaia.SHAPair, err error) {
 	// Create read transaction
 	txn := m.db.Txn(false)
 	defer txn.Abort()
@@ -386,20 +386,20 @@ func (m *MemDB) GetSHAPair(pipelineID string) (pair gaia.SHAPair, err error) {
 	raw, err := txn.First(shaPairTable, "id", pipelineID)
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to get sha pair from memdb", "error", err.Error(), "id", pipelineID)
-		return pair, err
+		return false, pair, err
 	}
 
 	// If nil we couldn't find it
 	if raw == nil {
-		return pair, nil
+		return false, pair, nil
 	}
 
 	// Convert into worker obj
 	pair, ok := raw.(gaia.SHAPair)
 	if !ok {
 		gaia.Cfg.Logger.Error("failed to convert sha pair into worker obj", "raw", raw)
-		return pair, errors.New("failed to convert sha pair into worker obj")
+		return false, pair, errors.New("failed to convert sha pair into worker obj")
 	}
 
-	return
+	return true, pair, err
 }

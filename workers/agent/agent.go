@@ -18,6 +18,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/store/memdb"
+
 	"github.com/gaia-pipeline/gaia/services"
 
 	"github.com/gaia-pipeline/gaia"
@@ -410,20 +412,12 @@ func (a *Agent) scheduleWork() {
 		db, err := services.MemDBService(nil)
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to get memdb service via scheduler", "error", err.Error())
-			reschedulePipeline()
-			return
-		}
-		uID := strconv.Itoa(pipelineRun.PipelineID)
-		shaPair, err := db.GetSHAPair(uID)
-		if err != nil {
-			gaia.Cfg.Logger.Error("failed to get sha pair from memdb", "error", err.Error())
-			reschedulePipeline()
 			return
 		}
 
-		if !bytes.Equal(sha256Sum, pipelineSHA256SUM) &&
-			(!bytes.Equal(sha256Sum, shaPair.Worker) &&
-				!bytes.Equal(pipelineSHA256SUM, shaPair.Original)) {
+		if !bytes.Equal(sha256Sum, pipelineSHA256SUM) && !compareSHAs(db, pipelineRun.PipelineID, sha256Sum, pipelineSHA256SUM) {
+
+			gaia.Cfg.Logger.Debug("sha mismatch... attempting to re-download the binary")
 			// A possible scenario is that the pipeline has been updated and the old binary still exists here.
 			// Let us try to delete the binary and re-download the pipeline.
 			if err := os.Remove(pipelineFullPath); err != nil {
@@ -543,6 +537,24 @@ func (a *Agent) scheduleWork() {
 	if workCounter == 0 {
 		gaia.Cfg.Logger.Trace("got no work from Gaia primary instance. Will try it again after a while...")
 	}
+}
+
+// compareSHAs compares shas of the binaries with possibly stored sha pairs. First it compares the original if they match
+// second it compares the local sha with the new one that the worker possibly rebuilt. If there is no entry,
+// we return false, because we don't know anything about the sha.
+func compareSHAs(db memdb.GaiaMemDB, id int, sha256Sum, pipelineSHA256SUM []byte) bool {
+	uID := strconv.Itoa(id)
+	ok, shaPair, err := db.GetSHAPair(uID)
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to get sha pair from memdb", "error", err.Error())
+		return false
+	}
+
+	if !ok {
+		return false
+	}
+	return !bytes.Equal(sha256Sum, shaPair.Worker) &&
+		!bytes.Equal(pipelineSHA256SUM, shaPair.Original)
 }
 
 func (a *Agent) rebuildWorkerBinary(ctx context.Context, pipeline *gaia.Pipeline) error {
