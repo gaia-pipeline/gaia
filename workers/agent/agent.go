@@ -413,7 +413,8 @@ func (a *Agent) scheduleWork() {
 			reschedulePipeline()
 			return
 		}
-		shaPair, err := db.GetSHAPair(pipelineRun.UniqueID)
+		uID := strconv.Itoa(pipelineRun.PipelineID)
+		shaPair, err := db.GetSHAPair(uID)
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to get sha pair from memdb", "error", err.Error())
 			reschedulePipeline()
@@ -502,10 +503,11 @@ func (a *Agent) scheduleWork() {
 				return
 			}
 
+			uID := strconv.Itoa(pipelineRun.PipelineID)
 			shaPair := gaia.SHAPair{
 				Original: pipelineSHA256SUM,
 				Worker:   workerSHA256Sum,
-				UniqueID: pipelineRun.UniqueID,
+				UniqueID: uID,
 			}
 
 			err = db.UpsertSHAPair(shaPair)
