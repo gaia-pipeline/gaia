@@ -415,33 +415,34 @@ func (a *Agent) scheduleWork() {
 			return
 		}
 
-		if !bytes.Equal(sha256Sum, pipelineSHA256SUM) && !compareSHAs(db, pipelineRun.PipelineID, sha256Sum, pipelineSHA256SUM) {
+		if !bytes.Equal(sha256Sum, pipelineSHA256SUM) {
+			if !compareSHAs(db, pipelineRun.PipelineID, sha256Sum, pipelineSHA256SUM) {
+				gaia.Cfg.Logger.Debug("sha mismatch... attempting to re-download the binary")
+				// A possible scenario is that the pipeline has been updated and the old binary still exists here.
+				// Let us try to delete the binary and re-download the pipeline.
+				if err := os.Remove(pipelineFullPath); err != nil {
+					gaia.Cfg.Logger.Error("failed to remove inconsistent pipeline binary", "error", err.Error(), "pipelinerun", pipelineRunPB)
+					reschedulePipeline()
+					return
+				}
+				if err := a.streamBinary(pipelineRunPB, pipelineFullPath); err != nil {
+					gaia.Cfg.Logger.Error("failed to download pipeline binary from remote instance", "error", err.Error(), "pipelinerun", pipelineRunPB)
+					reschedulePipeline()
+					return
+				}
 
-			gaia.Cfg.Logger.Debug("sha mismatch... attempting to re-download the binary")
-			// A possible scenario is that the pipeline has been updated and the old binary still exists here.
-			// Let us try to delete the binary and re-download the pipeline.
-			if err := os.Remove(pipelineFullPath); err != nil {
-				gaia.Cfg.Logger.Error("failed to remove inconsistent pipeline binary", "error", err.Error(), "pipelinerun", pipelineRunPB)
-				reschedulePipeline()
-				return
-			}
-			if err := a.streamBinary(pipelineRunPB, pipelineFullPath); err != nil {
-				gaia.Cfg.Logger.Error("failed to download pipeline binary from remote instance", "error", err.Error(), "pipelinerun", pipelineRunPB)
-				reschedulePipeline()
-				return
-			}
-
-			// Validate SHA256 sum again to make sure the integrity is provided
-			sha256Sum, err := filehelper.GetSHA256Sum(pipelineFullPath)
-			if err != nil {
-				gaia.Cfg.Logger.Error("failed to determine SHA256Sum of pipeline file", "error", err.Error(), "pipelinerun", pipelineRunPB)
-				reschedulePipeline()
-				return
-			}
-			if !bytes.Equal(sha256Sum, pipelineSHA256SUM) {
-				gaia.Cfg.Logger.Error("pipeline binary SHA256Sum mismatch", "pipelinerun", pipelineRunPB)
-				reschedulePipeline()
-				return
+				// Validate SHA256 sum again to make sure the integrity is provided
+				sha256Sum, err := filehelper.GetSHA256Sum(pipelineFullPath)
+				if err != nil {
+					gaia.Cfg.Logger.Error("failed to determine SHA256Sum of pipeline file", "error", err.Error(), "pipelinerun", pipelineRunPB)
+					reschedulePipeline()
+					return
+				}
+				if !bytes.Equal(sha256Sum, pipelineSHA256SUM) {
+					gaia.Cfg.Logger.Error("pipeline binary SHA256Sum mismatch", "pipelinerun", pipelineRunPB)
+					reschedulePipeline()
+					return
+				}
 			}
 		}
 
@@ -551,10 +552,12 @@ func compareSHAs(db memdb.GaiaMemDB, id int, sha256Sum, pipelineSHA256SUM []byte
 	}
 
 	if !ok {
+		gaia.Cfg.Logger.Debug("no record found for pipeline. skipping this check")
 		return false
 	}
-	return !bytes.Equal(sha256Sum, shaPair.Worker) &&
-		!bytes.Equal(pipelineSHA256SUM, shaPair.Original)
+	gaia.Cfg.Logger.Debug("record found for pipeline... comparing.")
+	return bytes.Equal(sha256Sum, shaPair.Worker) &&
+		bytes.Equal(pipelineSHA256SUM, shaPair.Original)
 }
 
 func (a *Agent) rebuildWorkerBinary(ctx context.Context, pipeline *gaia.Pipeline) error {
