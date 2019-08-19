@@ -17,8 +17,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gaia-pipeline/gaia/security"
-
 	"github.com/gaia-pipeline/gaia/services"
 
 	"github.com/pkg/errors"
@@ -431,43 +429,6 @@ func TestScheduleWorkSHAPairMismatch(t *testing.T) {
 	// Validate output from mScheduler
 	if mStore.run == nil {
 		t.Fatal("run is nil but should exist")
-	}
-}
-
-func testRebuildWorkerBinary(t *testing.T) {
-	ctx := context.Background()
-	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer conn.Close()
-	client := pb.NewWorkerClient(conn)
-
-	// Init agent
-	mStore := &mockStore{}
-	mScheduler := &mockScheduler{}
-	ag := InitAgent(mScheduler, mStore, "")
-	ag.client = client
-	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
-	gaia.Cfg = &gaia.Config{
-		PipelinePath:  tmpFolder,
-		WorkspacePath: tmpFolder,
-		HomePath:      tmpFolder,
-		CAPath:        tmpFolder,
-	}
-	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
-		Level: hclog.Trace,
-		Name:  "Gaia",
-	})
-	p := gaia.Pipeline{
-		Name: "test-pipeline",
-		ID:   1,
-		UUID: security.GenerateRandomUUIDV5(),
-		Type: gaia.PTypeUnknown,
-	}
-	err = ag.rebuildWorkerBinary(ctx, &p)
-	if err == nil {
-		t.Fatal("was expecting unknown pipeline type error... got none.")
 	}
 }
 
