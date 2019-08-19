@@ -583,9 +583,11 @@ func (a *Agent) rebuildWorkerBinary(ctx context.Context, pipeline *gaia.Pipeline
 	gitRepo.Password = repo.Password
 
 	pk := gaia.PrivateKey{}
-	pk.Password = repo.PrivateKey.Password
-	pk.Username = repo.PrivateKey.Username
-	pk.Key = repo.PrivateKey.Key
+	if repo.PrivateKey != nil {
+		pk.Password = repo.PrivateKey.Password
+		pk.Username = repo.PrivateKey.Username
+		pk.Key = repo.PrivateKey.Key
+	}
 
 	gitRepo.PrivateKey = pk
 	gitRepo.URL = repo.Url

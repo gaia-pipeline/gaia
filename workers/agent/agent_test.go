@@ -17,6 +17,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/security"
+
 	"github.com/gaia-pipeline/gaia/services"
 
 	"github.com/pkg/errors"
@@ -101,11 +103,12 @@ var tmpFolder string
 const bufsize = 1024 * 1024
 
 type mockWorkerInterface struct {
-	pbRuns []*pb.PipelineRun
+	pbRuns  []*pb.PipelineRun
+	gitRepo *pb.GitRepo
 }
 
 func (mw *mockWorkerInterface) GetGitRepo(context.Context, *pb.PipelineID) (*pb.GitRepo, error) {
-	return &pb.GitRepo{}, nil
+	return mw.gitRepo, nil
 }
 
 var mW *mockWorkerInterface
@@ -252,6 +255,10 @@ func init() {
 	lis = bufconn.Listen(bufsize)
 	s := grpc.NewServer()
 	mW = &mockWorkerInterface{}
+	mW.gitRepo = &pb.GitRepo{
+		Url:            "https://github.com/gaia-pipeline/go-example",
+		SelectedBranch: "refs/heads/master",
+	}
 	pb.RegisterWorkerServer(s, mW)
 	go func() {
 		if err := s.Serve(lis); err != nil {
@@ -369,7 +376,11 @@ func bufDialer(string, time.Duration) (net.Conn, error) {
 	return lis.Dial()
 }
 
-type memDBFake struct{}
+type memDBFake struct {
+	err  error
+	pair gaia.SHAPair
+	ok   bool
+}
 
 func (m *memDBFake) SyncStore() error                                { return nil }
 func (m *memDBFake) GetAllWorker() []*gaia.Worker                    { return []*gaia.Worker{} }
@@ -381,10 +392,83 @@ func (m *memDBFake) PopPipelineRun(tags []string) (*gaia.PipelineRun, error) {
 	return &gaia.PipelineRun{}, nil
 }
 func (m *memDBFake) UpsertSHAPair(pair gaia.SHAPair) error {
-	return nil
+	return m.err
 }
-func (m *memDBFake) GetSHAPair(pipelineID string) (ok bool, pair gaia.SHAPair, err error) {
-	return
+func (m *memDBFake) GetSHAPair(pipelineID string) (bool, gaia.SHAPair, error) {
+	return m.ok, m.pair, m.err
+}
+
+func TestScheduleWorkSHAPairMismatch(t *testing.T) {
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	client := pb.NewWorkerClient(conn)
+
+	// Init agent
+	mStore := &mockStore{}
+	mScheduler := &mockScheduler{}
+	mDB := memDBFake{}
+	mDB.ok = true
+	mDB.pair = gaia.SHAPair{Original: []byte("test"), Worker: []byte("nottest")}
+	services.MockMemDBService(&mDB)
+	ag := InitAgent(mScheduler, mStore, "")
+	ag.client = client
+	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
+	gaia.Cfg = &gaia.Config{
+		PipelinePath: tmpFolder,
+	}
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level: hclog.Trace,
+		Name:  "Gaia",
+	})
+
+	// Run mScheduler
+	ag.scheduleWork()
+
+	// Validate output from mScheduler
+	if mStore.run == nil {
+		t.Fatal("run is nil but should exist")
+	}
+}
+
+func testRebuildWorkerBinary(t *testing.T) {
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	client := pb.NewWorkerClient(conn)
+
+	// Init agent
+	mStore := &mockStore{}
+	mScheduler := &mockScheduler{}
+	ag := InitAgent(mScheduler, mStore, "")
+	ag.client = client
+	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
+	gaia.Cfg = &gaia.Config{
+		PipelinePath:  tmpFolder,
+		WorkspacePath: tmpFolder,
+		HomePath:      tmpFolder,
+		CAPath:        tmpFolder,
+	}
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level: hclog.Trace,
+		Name:  "Gaia",
+	})
+	p := gaia.Pipeline{
+		Name: "test-pipeline",
+		ID:   1,
+		UUID: security.GenerateRandomUUIDV5(),
+		Type: gaia.PTypeUnknown,
+	}
+	err = ag.rebuildWorkerBinary(ctx, &p)
+	if err == nil {
+		t.Fatal("was expecting unknown pipeline type error... got none.")
+	}
 }
 
 func TestScheduleWork(t *testing.T) {
