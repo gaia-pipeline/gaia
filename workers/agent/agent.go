@@ -280,7 +280,7 @@ func (a *Agent) scheduleWork() {
 	a.self.WorkerSlots = int32(a.scheduler.GetFreeWorkers())
 
 	// Setup context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), (3*schedulerTickerSeconds)*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), (12*schedulerTickerSeconds)*time.Second)
 	ctx = metadata.AppendToOutgoingContext(ctx, idMDKey, a.self.UniqueId)
 	defer cancel()
 
@@ -511,9 +511,15 @@ func (a *Agent) scheduleWork() {
 				reschedulePipeline()
 				return
 			}
+
+			// Try setting the pipeline jobs again.
+			if err = a.scheduler.SetPipelineJobs(pipeline); err != nil {
+				gaia.Cfg.Logger.Error("cannot get pipeline jobs", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				reschedulePipeline()
+				return
+			}
 		}
 		pipelineRun.Jobs = pipeline.Jobs
-
 		// Store pipeline
 		if err = a.store.PipelinePut(pipeline); err != nil {
 			gaia.Cfg.Logger.Error("failed to store pipeline in store", "error", err.Error(), "pipelinerun", pipelineRunPB)
