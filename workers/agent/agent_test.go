@@ -17,6 +17,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/store/memdb"
+
+	"github.com/gaia-pipeline/gaia/security"
+
 	"github.com/gaia-pipeline/gaia/services"
 
 	"github.com/pkg/errors"
@@ -375,20 +379,12 @@ func bufDialer(string, time.Duration) (net.Conn, error) {
 }
 
 type memDBFake struct {
+	memdb.GaiaMemDB
 	err  error
 	pair gaia.SHAPair
 	ok   bool
 }
 
-func (m *memDBFake) SyncStore() error                                { return nil }
-func (m *memDBFake) GetAllWorker() []*gaia.Worker                    { return []*gaia.Worker{} }
-func (m *memDBFake) UpsertWorker(w *gaia.Worker, persist bool) error { return nil }
-func (m *memDBFake) GetWorker(id string) (*gaia.Worker, error)       { return &gaia.Worker{}, nil }
-func (m *memDBFake) DeleteWorker(id string, persist bool) error      { return nil }
-func (m *memDBFake) InsertPipelineRun(p *gaia.PipelineRun) error     { return nil }
-func (m *memDBFake) PopPipelineRun(tags []string) (*gaia.PipelineRun, error) {
-	return &gaia.PipelineRun{}, nil
-}
 func (m *memDBFake) UpsertSHAPair(pair gaia.SHAPair) error {
 	return m.err
 }
@@ -429,6 +425,53 @@ func TestScheduleWorkSHAPairMismatch(t *testing.T) {
 	// Validate output from mScheduler
 	if mStore.run == nil {
 		t.Fatal("run is nil but should exist")
+	}
+}
+
+type mockStorer struct {
+	store.GaiaStore
+	Error error
+}
+
+// PipelinePut is a Mock implementation for pipelines
+func (m *mockStorer) CreatePipelinePut(createPipeline *gaia.CreatePipeline) error {
+	return m.Error
+}
+
+func TestRebuildWorkerBinary(t *testing.T) {
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	client := pb.NewWorkerClient(conn)
+
+	// Init agent
+	mStore := &mockStore{}
+	mScheduler := &mockScheduler{}
+	mStorer := &mockStorer{}
+	services.MockStorageService(mStorer)
+	ag := InitAgent(mScheduler, mStore, "")
+	ag.client = client
+	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
+	gaia.Cfg = &gaia.Config{
+		PipelinePath: tmpFolder,
+	}
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level: hclog.Trace,
+		Name:  "Gaia",
+	})
+	p := gaia.Pipeline{
+		Name: "test-pipeline",
+		ID:   1,
+		UUID: security.GenerateRandomUUIDV5(),
+		// Setting this to avoid testing CreatePipeline again.
+		Type: gaia.PTypeUnknown,
+	}
+	err = ag.rebuildWorkerBinary(ctx, &p)
+	if err == nil {
+		t.Fatal("was expecting unknown pipeline type error... got none.")
 	}
 }
 
