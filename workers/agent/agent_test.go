@@ -17,6 +17,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/services"
+
 	"github.com/pkg/errors"
 
 	"github.com/gaia-pipeline/gaia"
@@ -367,6 +369,24 @@ func bufDialer(string, time.Duration) (net.Conn, error) {
 	return lis.Dial()
 }
 
+type memDBFake struct{}
+
+func (m *memDBFake) SyncStore() error                                { return nil }
+func (m *memDBFake) GetAllWorker() []*gaia.Worker                    { return []*gaia.Worker{} }
+func (m *memDBFake) UpsertWorker(w *gaia.Worker, persist bool) error { return nil }
+func (m *memDBFake) GetWorker(id string) (*gaia.Worker, error)       { return &gaia.Worker{}, nil }
+func (m *memDBFake) DeleteWorker(id string, persist bool) error      { return nil }
+func (m *memDBFake) InsertPipelineRun(p *gaia.PipelineRun) error     { return nil }
+func (m *memDBFake) PopPipelineRun(tags []string) (*gaia.PipelineRun, error) {
+	return &gaia.PipelineRun{}, nil
+}
+func (m *memDBFake) UpsertSHAPair(pair gaia.SHAPair) error {
+	return nil
+}
+func (m *memDBFake) GetSHAPair(pipelineID string) (ok bool, pair gaia.SHAPair, err error) {
+	return
+}
+
 func TestScheduleWork(t *testing.T) {
 	ctx := context.Background()
 	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
@@ -379,6 +399,8 @@ func TestScheduleWork(t *testing.T) {
 	// Init agent
 	mStore := &mockStore{}
 	mScheduler := &mockScheduler{}
+	mDB := memDBFake{}
+	services.MockMemDBService(&mDB)
 	ag := InitAgent(mScheduler, mStore, "")
 	ag.client = client
 	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
@@ -395,7 +417,7 @@ func TestScheduleWork(t *testing.T) {
 
 	// Validate output from mScheduler
 	if mStore.run == nil {
-		t.Fatal("run is nil but should be exist")
+		t.Fatal("run is nil but should exist")
 	}
 	if mStore.run.ID != 1 {
 		t.Fatalf("expected 1 but got %d", mStore.run.ID)
