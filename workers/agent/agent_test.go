@@ -42,18 +42,19 @@ type mockScheduler struct {
 	err error
 }
 
-func (ms *mockScheduler) SetPipelineJobs(p *gaia.Pipeline) error { return nil }
+func (ms *mockScheduler) SetPipelineJobs(p *gaia.Pipeline) error { return ms.err }
 func (ms *mockScheduler) GetFreeWorkers() int32                  { return int32(0) }
 func (ms *mockScheduler) Init()                                  {}
 func (ms *mockScheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error) {
-	return nil, nil
+	return nil, ms.err
 }
 func (ms *mockScheduler) StopPipelineRun(p *gaia.Pipeline, runid int) error { return ms.err }
 func (ms *mockScheduler) CountScheduledRuns() int                           { return 0 }
 
 type mockStore struct {
-	worker *gaia.Worker
-	run    *gaia.PipelineRun
+	worker       *gaia.Worker
+	run          *gaia.PipelineRun
+	mockPipeline *gaia.Pipeline
 	store.GaiaStore
 }
 
@@ -68,8 +69,10 @@ func (m *mockStore) PipelinePutRun(r *gaia.PipelineRun) error {
 	}
 	return nil
 }
-func (m *mockStore) PipelinePut(pipeline *gaia.Pipeline) error               { return nil }
-func (m *mockStore) PipelineGet(id int) (pipeline *gaia.Pipeline, err error) { return nil, nil }
+func (m *mockStore) PipelinePut(pipeline *gaia.Pipeline) error { return nil }
+func (m *mockStore) PipelineGet(id int) (pipeline *gaia.Pipeline, err error) {
+	return m.mockPipeline, nil
+}
 func (m *mockStore) PipelineGetAllRuns() ([]gaia.PipelineRun, error) {
 	runs := []gaia.PipelineRun{
 		{
@@ -104,6 +107,11 @@ func (m *mockStore) PipelineGetAllRuns() ([]gaia.PipelineRun, error) {
 		},
 	}
 	return runs, nil
+}
+
+// PipelinePut is a Mock implementation for pipelines
+func (m *mockStore) CreatePipelinePut(createPipeline *gaia.CreatePipeline) error {
+	return nil
 }
 
 var lis *bufconn.Listener
@@ -435,22 +443,7 @@ func TestScheduleWorkSHAPairMismatch(t *testing.T) {
 	}
 }
 
-type mockStorer struct {
-	store.GaiaStore
-	Error error
-}
-
-// PipelinePut is a Mock implementation for pipelines
-func (m *mockStorer) CreatePipelinePut(createPipeline *gaia.CreatePipeline) error {
-	return m.Error
-}
-
-// PipelinePut is a Mock implementation for pipelines
-func (m *mockStorer) PipelinePut(p *gaia.Pipeline) error {
-	return m.Error
-}
-
-func TestRebuildWorkerBinary(t *testing.T) {
+func TestRebuildWorkerBinaryUnkownPipeline(t *testing.T) {
 	ctx := context.Background()
 	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
 	if err != nil {
@@ -462,8 +455,7 @@ func TestRebuildWorkerBinary(t *testing.T) {
 	// Init agent
 	mStore := &mockStore{}
 	mScheduler := &mockScheduler{}
-	mStorer := &mockStorer{}
-	services.MockStorageService(mStorer)
+	services.MockStorageService(mStore)
 	ag := InitAgent(mScheduler, mStore, "")
 	ag.client = client
 	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
@@ -487,7 +479,7 @@ func TestRebuildWorkerBinary(t *testing.T) {
 	}
 }
 
-func TestRebuildWorkerBinaryWorking(t *testing.T) {
+func TestRebuildWorkerBinary(t *testing.T) {
 	ctx := context.Background()
 	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
 	if err != nil {
@@ -499,8 +491,7 @@ func TestRebuildWorkerBinaryWorking(t *testing.T) {
 	// Init agent
 	mStore := &mockStore{}
 	mScheduler := &mockScheduler{}
-	mStorer := &mockStorer{}
-	services.MockStorageService(mStorer)
+	services.MockStorageService(mStore)
 	ms := new(mockScheduler)
 	services.MockSchedulerService(ms)
 	ag := InitAgent(mScheduler, mStore, "")
@@ -578,6 +569,51 @@ func TestScheduleWork(t *testing.T) {
 	}
 	if mStore.run.Jobs[0].Args[0].Key != "key" {
 		t.Fatalf("expected 'key' but got %s", mStore.run.Jobs[0].Args[0].Key)
+	}
+}
+
+func TestScheduleWorkExecFormatError(t *testing.T) {
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	client := pb.NewWorkerClient(conn)
+
+	// Init agent
+	mStore := &mockStore{}
+	mStore.mockPipeline = &gaia.Pipeline{
+		Name: "test-pipeline",
+		ID:   1,
+		UUID: security.GenerateRandomUUIDV5(),
+		// Setting this to avoid testing CreatePipeline again.
+		Type: gaia.PTypeUnknown,
+	}
+	mScheduler := &mockScheduler{}
+	mScheduler.err = errors.New("exec format error")
+	mDB := memDBFake{}
+	services.MockMemDBService(&mDB)
+	ag := InitAgent(mScheduler, mStore, "")
+	ag.client = client
+	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
+	gaia.Cfg = &gaia.Config{
+		PipelinePath: tmpFolder,
+		HomePath:     tmpFolder,
+		CAPath:       tmpFolder,
+		DataPath:     tmpFolder,
+	}
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level: hclog.Trace,
+		Name:  "Gaia",
+	})
+
+	// Run mScheduler
+	ag.scheduleWork()
+
+	// Validate output from mScheduler
+	if mStore.run != nil {
+		t.Fatal("run should not exist.")
 	}
 }
 
