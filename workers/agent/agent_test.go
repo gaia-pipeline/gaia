@@ -591,9 +591,6 @@ func TestScheduleWorkExecFormatError(t *testing.T) {
 	}
 	mScheduler := &mockScheduler{}
 	mScheduler.err = errors.New("exec format error")
-	mDB := memDBFake{}
-	services.MockMemDBService(&mDB)
-	defer services.MockMemDBService(nil)
 	ag := InitAgent(mScheduler, mStore, "")
 	ag.client = client
 	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
@@ -722,9 +719,6 @@ func TestUpdateWork(t *testing.T) {
 
 	// Init agent
 	mStore := &mockStore{}
-	mStore.mockPipeline = nil
-	services.MockStorageService(nil)
-	services.MockSchedulerService(nil)
 	mScheduler := &mockScheduler{}
 	ag := InitAgent(mScheduler, mStore, "")
 	ag.client = client
@@ -754,19 +748,19 @@ func TestUpdateWork(t *testing.T) {
 	ag.updateWork()
 
 	// Verify the updated work
-	// if len(mW.pbRuns) != 2 {
-	// 	t.Fatalf("updated work should be 2 but is %d", len(mW.pbRuns))
-	// }
-	// if mW.pbRuns[0].UniqueId != "first-pipeline-run" {
-	// 	t.Fatalf("expected 'first-pipeline-run' but got %s", mW.pbRuns[0].UniqueId)
-	// }
-	// if len(mW.pbRuns[0].Jobs) != 2 {
-	// 	t.Fatalf("expected 2 but got %d", len(mW.pbRuns[0].Jobs))
-	// }
-	// if mW.pbRuns[1].UniqueId != "second-pipeline-run" {
-	// 	t.Fatalf("expected 'second-pipeline-run' but got %s", mW.pbRuns[1].UniqueId)
-	// }
-	// if len(mW.pbRuns[1].Jobs) != 2 {
-	// 	t.Fatalf("expected 2 but got %d", len(mW.pbRuns[1].Jobs))
-	// }
+	if len(mW.pbRuns) != 2 {
+		t.Fatalf("updated work should be 2 but is %d", len(mW.pbRuns))
+	}
+	if mW.pbRuns[0].UniqueId != "first-pipeline-run" {
+		t.Fatalf("expected 'first-pipeline-run' but got %s", mW.pbRuns[0].UniqueId)
+	}
+	if len(mW.pbRuns[0].Jobs) != 2 {
+		t.Fatalf("expected 2 but got %d", len(mW.pbRuns[0].Jobs))
+	}
+	if mW.pbRuns[1].UniqueId != "second-pipeline-run" {
+		t.Fatalf("expected 'second-pipeline-run' but got %s", mW.pbRuns[1].UniqueId)
+	}
+	if len(mW.pbRuns[1].Jobs) != 2 {
+		t.Fatalf("expected 2 but got %d", len(mW.pbRuns[1].Jobs))
+	}
 }
