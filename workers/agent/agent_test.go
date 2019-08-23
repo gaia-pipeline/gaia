@@ -571,49 +571,6 @@ func TestScheduleWork(t *testing.T) {
 	}
 }
 
-func TestScheduleWorkExecFormatError(t *testing.T) {
-	ctx := context.Background()
-	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer conn.Close()
-	client := pb.NewWorkerClient(conn)
-
-	// Init agent
-	mStore := &mockStore{}
-	mStore.mockPipeline = &gaia.Pipeline{
-		Name: "test-pipeline",
-		ID:   1,
-		UUID: security.GenerateRandomUUIDV5(),
-		// Setting this to avoid testing CreatePipeline again.
-		Type: gaia.PTypeUnknown,
-	}
-	mScheduler := &mockScheduler{}
-	mScheduler.err = errors.New("exec format error")
-	ag := InitAgent(mScheduler, mStore, "")
-	ag.client = client
-	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
-	gaia.Cfg = &gaia.Config{
-		PipelinePath: tmpFolder,
-		HomePath:     tmpFolder,
-		CAPath:       tmpFolder,
-		DataPath:     tmpFolder,
-	}
-	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
-		Level: hclog.Trace,
-		Name:  "Gaia",
-	})
-
-	// Run mScheduler
-	ag.scheduleWork()
-
-	// Validate output from mScheduler
-	if mStore.run != nil {
-		t.Fatal("run should not exist.")
-	}
-}
-
 func TestScheduleWork_RecvError(t *testing.T) {
 	ctx := context.Background()
 	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
@@ -762,5 +719,51 @@ func TestUpdateWork(t *testing.T) {
 	}
 	if len(mW.pbRuns[1].Jobs) != 2 {
 		t.Fatalf("expected 2 but got %d", len(mW.pbRuns[1].Jobs))
+	}
+}
+
+func TestScheduleWorkExecFormatError(t *testing.T) {
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	client := pb.NewWorkerClient(conn)
+
+	// Init agent
+	mStore := &mockStore{}
+	mStore.mockPipeline = &gaia.Pipeline{
+		Name: "test-pipeline",
+		ID:   1,
+		UUID: security.GenerateRandomUUIDV5(),
+		// Setting this to avoid testing CreatePipeline again.
+		Type: gaia.PTypeUnknown,
+	}
+	mScheduler := &mockScheduler{}
+	mScheduler.err = errors.New("exec format error")
+	mDB := memDBFake{}
+	services.MockMemDBService(&mDB)
+	defer services.MockMemDBService(nil)
+	ag := InitAgent(mScheduler, mStore, "")
+	ag.client = client
+	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
+	gaia.Cfg = &gaia.Config{
+		PipelinePath: tmpFolder,
+		HomePath:     tmpFolder,
+		CAPath:       tmpFolder,
+		DataPath:     tmpFolder,
+	}
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level: hclog.Trace,
+		Name:  "Gaia",
+	})
+
+	// Run mScheduler
+	ag.scheduleWork()
+
+	// Validate output from mScheduler
+	if mStore.run != nil {
+		t.Fatal("run should not exist.")
 	}
 }
