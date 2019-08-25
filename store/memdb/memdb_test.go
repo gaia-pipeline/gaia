@@ -1,6 +1,7 @@
 package memdb
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/gaia-pipeline/gaia"
@@ -238,5 +239,81 @@ func TestPopPipelineRun(t *testing.T) {
 	}
 	if pRun != nil {
 		t.Fatalf("run should be nil but is %#v", pRun)
+	}
+}
+
+func TestUpsertSHAPair(t *testing.T) {
+	mockStore := mockStore{}
+	db, err := InitMemDB(mockStore)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := db.SyncStore(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := db.UpsertSHAPair(gaia.SHAPair{
+		Original: []byte("original"),
+		Worker:   []byte("worker"),
+		UniqueID: "this-is-a-very-unique-id",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSHAPair(gaia.SHAPair{
+		Original: []byte("original2"),
+		Worker:   []byte("worker2"),
+		UniqueID: "this-is-a-very-unique-id2",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	ok, pair1, err := db.GetSHAPair("this-is-a-very-unique-id")
+	if err != nil || !ok {
+		t.Fatal(err, ok)
+	}
+	ok, _, err = db.GetSHAPair("this-is-a-very-unique-id2")
+	if err != nil || !ok {
+		t.Fatal(err, ok)
+	}
+
+	if err := db.UpsertSHAPair(gaia.SHAPair{
+		Original: []byte("original_UPDATED"),
+		Worker:   []byte("worker_UPDATE"),
+		UniqueID: "this-is-a-very-unique-id",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	ok, pairUpdated, err := db.GetSHAPair("this-is-a-very-unique-id")
+	if err != nil || !ok {
+		t.Fatal(err, ok)
+	}
+	if bytes.Equal(pair1.Original, pairUpdated.Original) {
+		t.Fatal("pair should have been updated")
+	}
+	if bytes.Equal(pair1.Worker, pairUpdated.Worker) {
+		t.Fatal("pair should have been updated")
+	}
+}
+
+func TestGetSHAPairNotFound(t *testing.T) {
+	mockStore := mockStore{}
+	db, err := InitMemDB(mockStore)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := db.SyncStore(); err != nil {
+		t.Fatal(err)
+	}
+
+	ok, _, err := db.GetSHAPair("nnnoooooopppppeeeee")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if ok {
+		t.Fatal("ok should have been false as the sha pair does not exist")
 	}
 }
