@@ -102,7 +102,7 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 	return nil
 }
 
-// GetGitRepo checks out the code for a git repository.
+// GetGitRepo retrieves repository information associated with a pipline.
 func (w *WorkServer) GetGitRepo(ctx context.Context, in *pb.PipelineID) (*pb.GitRepo, error) {
 	repo := &pb.GitRepo{}
 
@@ -122,6 +122,10 @@ func (w *WorkServer) GetGitRepo(ctx context.Context, in *pb.PipelineID) (*pb.Git
 	repoInfo, err := store.PipelineGet(int(in.Id))
 	if err != nil {
 		return repo, err
+	}
+
+	if repoInfo == nil {
+		return nil, fmt.Errorf("pipeline for id %d not found", int(in.Id))
 	}
 
 	pk := pb.PrivateKey{}
