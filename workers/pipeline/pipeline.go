@@ -120,19 +120,27 @@ func (ap *ActivePipelines) Append(p gaia.Pipeline) {
 }
 
 // Update updates a pipeline at the given index with the given pipeline.
-func (ap *ActivePipelines) Update(index int, p gaia.Pipeline) {
+func (ap *ActivePipelines) Update(index int, p gaia.Pipeline) error {
 	ap.Lock()
 	defer ap.Unlock()
 
+	if index > len(ap.Pipelines) || index < 0 {
+		return fmt.Errorf("invalid index for len %d. index was: %d", len(ap.Pipelines), index)
+	}
 	ap.Pipelines[index] = p
+	return nil
 }
 
 // Remove removes a pipeline at the given index from ActivePipelines.
-func (ap *ActivePipelines) Remove(index int) {
+func (ap *ActivePipelines) Remove(index int) error {
 	ap.Lock()
 	defer ap.Unlock()
 
+	if index > len(ap.Pipelines) {
+		return fmt.Errorf("invalid index for len %d. index was: %d", len(ap.Pipelines), index)
+	}
 	ap.Pipelines = append(ap.Pipelines[:index], ap.Pipelines[index+1:]...)
+	return nil
 }
 
 // GetByName looks up the pipeline by the given name.
@@ -175,7 +183,9 @@ func (ap *ActivePipelines) Replace(p gaia.Pipeline) bool {
 func (ap *ActivePipelines) ReplaceByName(n string, p gaia.Pipeline) bool {
 	for index, pipeline := range ap.GetAll() {
 		if pipeline.Name == n {
-			ap.Update(index, p)
+			if err := ap.Update(index, p); err != nil {
+				return false
+			}
 			return true
 		}
 	}
@@ -220,7 +230,10 @@ func (ap *ActivePipelines) RemoveDeletedPipelines(existingPipelineNames []string
 		}
 	}
 	for _, idx := range deletedPipelineIndices {
-		ap.Remove(idx)
+		if err := ap.Remove(idx); err != nil {
+			gaia.Cfg.Logger.Error("failed to remove pipeline with index: ", idx, "error", err.Error())
+			break
+		}
 	}
 }
 

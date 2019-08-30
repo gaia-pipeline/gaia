@@ -272,7 +272,9 @@ func PipelineDelete(c echo.Context) error {
 	}
 
 	// Remove from active pipelines
-	pipeline.GlobalActivePipelines.Remove(deletedPipelineIndex)
+	if err := pipeline.GlobalActivePipelines.Remove(deletedPipelineIndex); err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
 
 	return c.String(http.StatusOK, "Pipeline has been deleted")
 }
