@@ -86,6 +86,29 @@ func TestRemove(t *testing.T) {
 	}
 }
 
+func TestRemoveInvalidIndex(t *testing.T) {
+	ap := NewActivePipelines()
+
+	p1 := gaia.Pipeline{
+		Name:    "Pipeline A",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+	ap.Append(p1)
+
+	p2 := gaia.Pipeline{
+		Name:    "Pipeline B",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+	ap.Append(p2)
+
+	err := ap.Remove(2)
+	if err == nil {
+		t.Fatal("expected error when accessing something outside the length ")
+	}
+}
+
 func TestGetByName(t *testing.T) {
 	ap := NewActivePipelines()
 
