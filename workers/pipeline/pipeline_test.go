@@ -135,6 +135,11 @@ func TestRemoveInvalidIndex(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error when accessing something outside the length ")
 	}
+
+	err = ap.Remove(3)
+	if err == nil {
+		t.Fatal("expected error when accessing something outside the length ")
+	}
 }
 
 func TestGetByName(t *testing.T) {

@@ -184,9 +184,9 @@ func (ap *ActivePipelines) Replace(p gaia.Pipeline) bool {
 func (ap *ActivePipelines) ReplaceByName(n string, p gaia.Pipeline) bool {
 	for index, pipeline := range ap.GetAll() {
 		if pipeline.Name == n {
-			if err := ap.Update(index, p); err != nil {
-				return false
-			}
+			// We can safely ignore the error here, since it wouldn't even
+			// come this far if it didn't find what to update.
+			_ = ap.Update(index, p)
 			return true
 		}
 	}
