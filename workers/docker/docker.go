@@ -9,23 +9,24 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/security"
-	"github.com/gaia-pipeline/gaia/services"
 )
 
-type Worker struct {
-	Host        string
-	WorkerID    string
-	ContainerID string
+// DockerWorker represents the data structure of a docker worker.
+type DockerWorker struct {
+	Host          string
+	WorkerID      string
+	ContainerID   string
+	PipelineRunID string
 }
 
-// NewWorker initiates a new worker instance.
-func NewWorker(host string) *Worker {
-	return &Worker{Host: host}
+// NewDockerWorker initiates a new worker instance.
+func NewDockerWorker(host string, pipelineRunID string) *DockerWorker {
+	return &DockerWorker{Host: host, PipelineRunID: pipelineRunID}
 }
 
 // SetupDockerWorker starts a Gaia worker inside a docker container, automatically
 // connects it with this Gaia instance and sets a unique tag.
-func (w *Worker) SetupDockerWorker(workerImage string) error {
+func (w *DockerWorker) SetupDockerWorker(workerImage string, workerSecret string) error {
 	// Generate a unique id for this worker
 	w.WorkerID = security.GenerateRandomUUIDV5()
 
@@ -38,40 +39,40 @@ func (w *Worker) SetupDockerWorker(workerImage string) error {
 	}
 	cli.NegotiateAPIVersion(ctx)
 
-	// Pull worker image from docker hub
-	_, err = cli.ImagePull(ctx, workerImage, types.ImagePullOptions{})
-	if err != nil {
-		gaia.Cfg.Logger.Error("failed to pull worker image", "error", err)
-		return err
-	}
-
-	// Retrieve the global worker registration secret
-	v, err := services.VaultService(nil)
-	if err != nil {
-		gaia.Cfg.Logger.Error("failed to access vault", "error", err)
-		return err
-	}
-	if err = v.LoadSecrets(); err != nil {
-		gaia.Cfg.Logger.Error("failed to load secrets from vault", "error", err)
-		return err
-	}
-	workerSecret, err := v.Get(gaia.WorkerRegisterKey)
-	if err != nil {
-		gaia.Cfg.Logger.Error("failed to get global worker registration secret from vault", "error", err)
-		return err
+	// Define small helper function which creates the docker container
+	createContainer := func() (container.ContainerCreateCreatedBody, error) {
+		return cli.ContainerCreate(ctx, &container.Config{
+			Image: workerImage,
+			Env: []string{
+				"GAIA_WORKER_HOST_URL=" + gaia.Cfg.WorkerHostURL,
+				"GAIA_MODE=worker",
+				"GAIA_WORKER_GRPC_HOST_URL=" + gaia.Cfg.WorkerGRPCHostURL,
+				"GAIA_WORKER_TAGS=" + fmt.Sprintf("%s,dockerworker", w.WorkerID),
+				"GAIA_WORKER_SECRET=" + workerSecret,
+			},
+		}, &container.HostConfig{}, nil, "")
 	}
 
 	// Create container
-	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image: workerImage,
-		Env: []string{
-			"GAIA_HOST_URL=" + gaia.Cfg.WorkerHostURL,
-			"GAIA_MODE=worker",
-			"GAIA_WORKER_GRPC_HOST_URL=" + gaia.Cfg.WorkerGRPCHostURL,
-			"GAIA_WORKER_TAGS=" + fmt.Sprintf("%s,dockerworker", w.WorkerID),
-			"GAIA_WORKER_SECRET=" + string(workerSecret[:]),
-		},
-	}, &container.HostConfig{}, nil, "")
+	resp, err := createContainer()
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to create worker container", "error", err)
+		gaia.Cfg.Logger.Info("try to pull docker image and then try it again...")
+
+		// Pull worker image
+		_, err = cli.ImagePull(ctx, workerImage, types.ImagePullOptions{})
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to pull worker image", "error", err)
+			return err
+		}
+
+		// Create container again
+		resp, err = createContainer()
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to create worker container after pull", "error", err)
+			return err
+		}
+	}
 
 	// Start container
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
@@ -84,9 +85,32 @@ func (w *Worker) SetupDockerWorker(workerImage string) error {
 	return nil
 }
 
+// IsDockerWorkerRunning checks if the docker worker is running.
+func (w *DockerWorker) IsDockerWorkerRunning() bool {
+	// Setup docker client
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.WithHost(w.Host))
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to setup docker client", "error", err)
+		return false
+	}
+	cli.NegotiateAPIVersion(ctx)
+
+	// Check if docker worker container is still running
+	resp, err := cli.ContainerInspect(ctx, w.ContainerID)
+	if err != nil {
+		return false
+	}
+
+	if resp.State.Running {
+		return true
+	}
+	return false
+}
+
 // KillDockerWorker disconnects the existing docker worker and
 // kills the docker container.
-func (w *Worker) KillDockerWorker() error {
+func (w *DockerWorker) KillDockerWorker() error {
 	// Setup docker client
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.WithHost(w.Host))
@@ -95,27 +119,6 @@ func (w *Worker) KillDockerWorker() error {
 		return err
 	}
 	cli.NegotiateAPIVersion(ctx)
-
-	// Get memdb service
-	db, err := services.MemDBService(nil)
-	if err != nil {
-		gaia.Cfg.Logger.Error("cannot get memdb service from store", "error", err)
-		return err
-	}
-
-	// Check if worker is still registered
-	worker, err := db.GetWorker(w.WorkerID)
-	if err != nil || worker == nil {
-		gaia.Cfg.Logger.Warn("failed to deregister docker worker. It has been already deregistered!")
-	}
-
-	// Delete worker which basically indicates it is not registered anymore
-	if worker != nil {
-		if err := db.DeleteWorker(worker.UniqueID, true); err != nil {
-			gaia.Cfg.Logger.Error("failed to delete docker worker", "error", err)
-			return err
-		}
-	}
 
 	// Kill container
 	if err := cli.ContainerRemove(ctx, w.ContainerID, types.ContainerRemoveOptions{

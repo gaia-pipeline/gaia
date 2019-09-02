@@ -282,10 +282,10 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 					}
 
 					// Kill and remove docker worker
+					_ = db.DeleteDockerWorker(run.DockerWorkerID)
 					if err := dockerWorker.KillDockerWorker(); err != nil {
 						return
 					}
-					_ = db.DeleteDockerWorker(run.DockerWorkerID)
 				}()
 				return e, nil
 			}

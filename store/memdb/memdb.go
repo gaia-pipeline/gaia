@@ -2,13 +2,12 @@ package memdb
 
 import (
 	"errors"
-	"github.com/gaia-pipeline/gaia/workers/docker"
 	"time"
 
-	"github.com/gaia-pipeline/gaia/helper/stringhelper"
-
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/helper/stringhelper"
 	"github.com/gaia-pipeline/gaia/store"
+	"github.com/gaia-pipeline/gaia/workers/docker"
 	memdb "github.com/hashicorp/go-memdb"
 )
 
@@ -57,14 +56,20 @@ type GaiaMemDB interface {
 	// from the memdb.
 	PopPipelineRun(tags []string) (*gaia.PipelineRun, error)
 
+	// DeletePipelineRun deletes the given pipeline run from the memdb.
+	DeletePipelineRun(runID string) error
+
 	// InsertDockerWorker inserts a docker worker into the memdb.
-	InsertDockerWorker(w *docker.Worker) error
+	InsertDockerWorker(w *docker.DockerWorker) error
 
 	// GetDockerWorker gets the docker worker by the given worker id.
-	GetDockerWorker(workerID string) (*docker.Worker, error)
+	GetDockerWorker(workerID string) (*docker.DockerWorker, error)
 
 	// DeleteDockerWorker deletes the docker worker by then given worker id.
 	DeleteDockerWorker(workerID string) error
+
+	// GetAllDockerWorker gets all docker worker.
+	GetAllDockerWorker() ([]*docker.DockerWorker, error)
 }
 
 // InitMemDB initiates a new memdb db.
@@ -110,7 +115,7 @@ func (m *MemDB) GetAllWorker() []*gaia.Worker {
 	// Get all objects from the worker table
 	iter, err := txn.Get(workerTableName, "id_prefix")
 	if err != nil {
-		gaia.Cfg.Logger.Error("failed to get worker objects from memdb via countworker", "error", err.Error())
+		gaia.Cfg.Logger.Error("failed to get worker objects from memdb via getallworker", "error", err.Error())
 		return workers
 	}
 
@@ -348,8 +353,35 @@ RunLoop:
 	return nil, nil
 }
 
+// DeletePipelineRun deletes the given pipeline run from the memdb.
+func (m *MemDB) DeletePipelineRun(runID string) error {
+	// Create write transaction
+	txn := m.db.Txn(true)
+
+	// Find existing entry
+	raw, err := txn.First(pipelineRunTable, "id", runID)
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to load pipeline run from memdb", "error", err.Error(), "id", runID)
+		return err
+	}
+
+	// Found existing entry
+	if raw != nil {
+		err = txn.Delete(pipelineRunTable, raw)
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to delete pipeline run from memdb", "error", err.Error(), "id", runID)
+			return err
+		}
+	}
+
+	// Commit transaction
+	txn.Commit()
+
+	return nil
+}
+
 // InsertDockerWorker inserts a docker worker into the memdb.
-func (m *MemDB) InsertDockerWorker(w *docker.Worker) error {
+func (m *MemDB) InsertDockerWorker(w *docker.DockerWorker) error {
 	// Create a write transaction
 	txn := m.db.Txn(true)
 
@@ -366,7 +398,7 @@ func (m *MemDB) InsertDockerWorker(w *docker.Worker) error {
 }
 
 // GetDockerWorker returns the docker worker by the given worker id.
-func (m *MemDB) GetDockerWorker(workerID string) (*docker.Worker, error) {
+func (m *MemDB) GetDockerWorker(workerID string) (*docker.DockerWorker, error) {
 	// Create read transaction
 	txn := m.db.Txn(false)
 	defer txn.Abort()
@@ -384,7 +416,7 @@ func (m *MemDB) GetDockerWorker(workerID string) (*docker.Worker, error) {
 	}
 
 	// Convert into docker worker obj
-	w, ok := raw.(*docker.Worker)
+	w, ok := raw.(*docker.DockerWorker)
 	if !ok {
 		gaia.Cfg.Logger.Error("failed to convert docker worker into docker worker obj", "raw", raw)
 		return nil, errors.New("failed to convert docker worker into docker worker obj")
@@ -418,4 +450,40 @@ func (m *MemDB) DeleteDockerWorker(workerID string) error {
 	txn.Commit()
 
 	return nil
+}
+
+// GetAllDockerWorker gets all docker worker.
+func (m *MemDB) GetAllDockerWorker() ([]*docker.DockerWorker, error) {
+	var dockerWorkers []*docker.DockerWorker
+
+	// Create a read-only transaction
+	txn := m.db.Txn(false)
+	defer txn.Abort()
+
+	// Get all objects from the docker worker table
+	iter, err := txn.Get(dockerWorkerTableName, "id_prefix")
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to get docker worker objects from memdb via getalldockerworker", "error", err.Error())
+		return dockerWorkers, nil
+	}
+
+	// Iterate through all items and add them
+	for {
+		item := iter.Next()
+
+		if item == nil {
+			break
+		}
+
+		// Convert into docker worker obj
+		w, ok := item.(*docker.DockerWorker)
+		if !ok {
+			gaia.Cfg.Logger.Error("failed to convert docker worker into docker worker obj", "raw", item)
+			continue
+		}
+
+		dockerWorkers = append(dockerWorkers, w)
+	}
+
+	return dockerWorkers, nil
 }

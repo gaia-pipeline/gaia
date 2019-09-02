@@ -3,8 +3,6 @@ package scheduler
 import (
 	"errors"
 	"fmt"
-	"github.com/gaia-pipeline/gaia/helper/stringhelper"
-	"github.com/gaia-pipeline/gaia/workers/docker"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -13,10 +11,12 @@ import (
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/helper/stringhelper"
 	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/store/memdb"
+	"github.com/gaia-pipeline/gaia/workers/docker"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -259,9 +259,10 @@ func (s *Scheduler) schedule() {
 			for _, w := range workers {
 				switch {
 				case w.Slots == 0:
+					invalidWorkers++
 				case w.Status != gaia.WorkerActive:
+					invalidWorkers++
 				case stringhelper.IsContainedInSlice(w.Tags, "dockerworker", true):
-				default:
 					invalidWorkers++
 				}
 			}
@@ -283,10 +284,21 @@ func (s *Scheduler) schedule() {
 		}
 
 		// Check if this pipeline run is a docker run
-		if scheduled[id].Docker {
+		if scheduled[id].Docker || gaia.Cfg.AutoDockerMode {
+			// Retrieve the global worker registration secret
+			if err = s.vault.LoadSecrets(); err != nil {
+				gaia.Cfg.Logger.Error("failed to load secrets from vault", "error", err)
+				continue
+			}
+			workerSecret, err := s.vault.Get(gaia.WorkerRegisterKey)
+			if err != nil {
+				gaia.Cfg.Logger.Error("failed to get global worker registration secret from vault", "error", err)
+				continue
+			}
+
 			// Start docker worker for this pipeline run
-			worker := docker.NewWorker("test")
-			if err := worker.SetupDockerWorker("image"); err != nil {
+			worker := docker.NewDockerWorker(gaia.Cfg.DockerHostURL, scheduled[id].UniqueID)
+			if err := worker.SetupDockerWorker(gaia.Cfg.DockerRunImage, string(workerSecret[:])); err != nil {
 				gaia.Cfg.Logger.Error("failed to setup docker worker for pipeline run", "error", err)
 				continue
 			}
@@ -417,6 +429,7 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*
 		Status:       gaia.RunNotScheduled,
 		PipelineType: p.Type,
 		PipelineTags: p.Tags,
+		Docker:       p.Docker,
 	}
 
 	// Put run into store

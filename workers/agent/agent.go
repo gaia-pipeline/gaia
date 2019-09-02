@@ -720,7 +720,7 @@ func (a *Agent) updateWork() {
 		}
 
 		// Remove pipeline run from store when the state is finalized
-		if run.Status == gaia.RunFailed || run.Status == gaia.RunSuccess || run.Status == gaia.RunCancelled {
+		if run.Status == gaia.RunFailed || run.Status == gaia.RunSuccess || run.Status == gaia.RunCancelled || run.Status == gaia.RunReschedule {
 			if err = a.store.PipelineRunDelete(run.UniqueID); err != nil {
 				gaia.Cfg.Logger.Error("failed to remove pipeline run from store", "error", err.Error(), "pipelinerun", run)
 			}

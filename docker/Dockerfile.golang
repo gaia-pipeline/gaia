@@ -1,4 +1,4 @@
-FROM golang:1.12.7-alpine3.8
+FROM golang:1.12.7-alpine
 
 # Version and other variables which can be changed.
 ENV GAIA_PORT=8080 \

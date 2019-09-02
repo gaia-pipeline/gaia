@@ -10,7 +10,7 @@ import (
 
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/flag"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
@@ -18,7 +18,7 @@ import (
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/agent"
 	"github.com/gaia-pipeline/gaia/workers/server"
-	"github.com/hashicorp/go-hclog"
+	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
 
@@ -59,13 +59,18 @@ func init() {
 	fs.BoolVar(&gaia.Cfg.Poll, "pipeline-poll", false, "If true, Gaia will periodically poll pipeline repositories, watch for changes and rebuild them accordingly")
 	fs.IntVar(&gaia.Cfg.PVal, "pipeline-poll-interval", 1, "The interval in minutes in which to poll source repositories for changes")
 	fs.StringVar(&gaia.Cfg.ModeRaw, "mode", "server", "The mode which Gaia should be started in. Possible options are server and worker")
-	fs.StringVar(&gaia.Cfg.WorkerName, "worker-name", "", "The name of the worker which will be displayed at the primary instance. Only used in worker mode")
-	fs.StringVar(&gaia.Cfg.WorkerHostURL, "worker-host-url", "http://localhost:8080", "The host url of an Gaia primary instance to connect to. Only used in worker mode")
-	fs.StringVar(&gaia.Cfg.WorkerGRPCHostURL, "worker-grpc-host-url", "localhost:8989", "The host url of an Gaia primary instance gRPC interface used for worker connection. Only used in worker mode")
+	fs.StringVar(&gaia.Cfg.WorkerName, "worker-name", "", "The name of the worker which will be displayed at the primary instance. Only used in worker mode or for docker runs")
+	fs.StringVar(&gaia.Cfg.WorkerHostURL, "worker-host-url", "http://192.168.1.123:8080", "The host url of an Gaia primary instance to connect to. Only used in worker mode or for docker runs")
+	fs.StringVar(&gaia.Cfg.WorkerGRPCHostURL, "worker-grpc-host-url", "192.168.1.123:8989", "The host url of an Gaia primary instance gRPC interface used for worker connection. Only used in worker mode or for docker runs")
 	fs.StringVar(&gaia.Cfg.WorkerSecret, "worker-secret", "", "The secret which is used to register a worker at an Gaia primary instance. Only used in worker mode")
 	fs.StringVar(&gaia.Cfg.WorkerServerPort, "worker-server-port", "8989", "Listen port for Gaia primary worker gRPC communication. Only used in server mode")
 	fs.StringVar(&gaia.Cfg.WorkerTags, "worker-tags", "", "Comma separated list of custom tags for this worker. Only used in worker mode")
 	fs.BoolVar(&gaia.Cfg.PreventPrimaryWork, "prevent-primary-work", false, "If true, prevents the scheduler to schedule work on this Gaia primary instance. Only used in server mode")
+	//fs.BoolVar(&gaia.Cfg.AutoDockerMode, "auto-docker-mode", false, "If true, by default runs all pipelines in a docker container")
+	fs.BoolVar(&gaia.Cfg.AutoDockerMode, "auto-docker-mode", true, "If true, by default runs all pipelines in a docker container")
+	fs.StringVar(&gaia.Cfg.DockerHostURL, "docker-host-url", "unix:///var/run/docker.sock", "Docker daemon host url which is used to build and run pipelines in a docker container")
+	//fs.StringVar(&gaia.Cfg.DockerRunImage, "docker-run-image", "gaiapipeline/gaia:latest", "Docker image repository name with tag which will be used for running pipelines in a docker container")
+	fs.StringVar(&gaia.Cfg.DockerRunImage, "docker-run-image", "gaia-go:latest", "Docker image repository name with tag which will be used for running pipelines in a docker container")
 
 	// Default values
 	gaia.Cfg.Bolt.Mode = 0600
