@@ -232,7 +232,7 @@ func (ap *ActivePipelines) RemoveDeletedPipelines(existingPipelineNames []string
 	}
 	for _, idx := range deletedPipelineIndices {
 		if err := ap.Remove(idx); err != nil {
-			gaia.Cfg.Logger.Error("failed to remove pipeline with index: ", idx, "error", err.Error())
+			gaia.Cfg.Logger.Error("failed to remove pipeline with index", "index", idx, "error", err.Error())
 			break
 		}
 	}
