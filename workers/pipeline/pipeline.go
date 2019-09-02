@@ -137,7 +137,7 @@ func (ap *ActivePipelines) Remove(index int) error {
 	defer ap.Unlock()
 
 	l := len(ap.Pipelines)
-	if index >= l || index+1 > l {
+	if index >= l || index+1 > l || index < 0 {
 		return fmt.Errorf("invalid index for len %d. index was: %d", len(ap.Pipelines), index)
 	}
 	ap.Pipelines = append(ap.Pipelines[:index], ap.Pipelines[index+1:]...)
