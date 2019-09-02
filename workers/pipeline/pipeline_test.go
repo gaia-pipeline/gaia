@@ -44,7 +44,10 @@ func TestUpdate(t *testing.T) {
 		Created: time.Now(),
 	}
 
-	ap.Update(0, p2)
+	err := ap.Update(0, p2)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	ret := ap.GetByName("Pipeline B")
 
@@ -52,6 +55,28 @@ func TestUpdate(t *testing.T) {
 		t.Fatalf("Pipeline should have been updated.")
 	}
 
+}
+
+func TestUpdateIndexOutOfBounds(t *testing.T) {
+	ap := NewActivePipelines()
+
+	p1 := gaia.Pipeline{
+		Name:    "Pipeline A",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+	ap.Append(p1)
+
+	p2 := gaia.Pipeline{
+		Name:    "Pipeline B",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+
+	err := ap.Update(1, p2)
+	if err == nil {
+		t.Fatal("expected error to occur since we are out of bounds")
+	}
 }
 
 func TestRemove(t *testing.T) {
@@ -71,7 +96,10 @@ func TestRemove(t *testing.T) {
 	}
 	ap.Append(p2)
 
-	ap.Remove(1)
+	err := ap.Remove(1)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	count := 0
 	for _, pipeline := range ap.GetAll() {
@@ -83,6 +111,34 @@ func TestRemove(t *testing.T) {
 
 	if count != 1 {
 		t.Fatalf("Expected pipeline count to be %v. Got %v.", 1, count)
+	}
+}
+
+func TestRemoveInvalidIndex(t *testing.T) {
+	ap := NewActivePipelines()
+
+	p1 := gaia.Pipeline{
+		Name:    "Pipeline A",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+	ap.Append(p1)
+
+	p2 := gaia.Pipeline{
+		Name:    "Pipeline B",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+	ap.Append(p2)
+
+	err := ap.Remove(2)
+	if err == nil {
+		t.Fatal("expected error when accessing something outside the length ")
+	}
+
+	err = ap.Remove(3)
+	if err == nil {
+		t.Fatal("expected error when accessing something outside the length ")
 	}
 }
 
