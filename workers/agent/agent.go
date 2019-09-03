@@ -405,7 +405,7 @@ func (a *Agent) scheduleWork() {
 		}
 
 		if !bytes.Equal(sha256Sum, pipelineSHA256SUM) {
-			if !a.compareSHAs(pipelineRun.PipelineID, sha256Sum, pipelineSHA256SUM) {
+			if !a.compareSHAs([]byte(pipelineRun.UniqueID), sha256Sum, pipelineSHA256SUM) {
 				gaia.Cfg.Logger.Debug("sha mismatch... attempting to re-download the binary")
 				// A possible scenario is that the pipeline has been updated and the old binary still exists here.
 				// Let us try to delete the binary and re-download the pipeline.
@@ -538,7 +538,7 @@ func (a *Agent) scheduleWork() {
 // compareSHAs compares shas of the binaries with possibly stored sha pairs. First it compares the original if they match
 // second it compares the local sha with the new one that the worker possibly rebuilt. If there is no entry,
 // we return false, because we don't know anything about the sha.
-func (a *Agent) compareSHAs(id int, sha256Sum, pipelineSHA256SUM []byte) bool {
+func (a *Agent) compareSHAs(id []byte, sha256Sum, pipelineSHA256SUM []byte) bool {
 	ok, shaPair, err := a.store.GetSHAPair(id)
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to get sha pair from memdb", "error", err.Error())

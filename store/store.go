@@ -89,7 +89,7 @@ type GaiaStore interface {
 	WorkerDeleteAll() error
 	WorkerGet(id string) (*gaia.Worker, error)
 	UpsertSHAPair(pair gaia.SHAPair) error
-	GetSHAPair(pipelineID int) (bool, gaia.SHAPair, error)
+	GetSHAPair(pipelineID []byte) (bool, gaia.SHAPair, error)
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore
