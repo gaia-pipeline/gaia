@@ -17,8 +17,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gaia-pipeline/gaia/store/memdb"
-
 	"github.com/gaia-pipeline/gaia/security"
 
 	"github.com/gaia-pipeline/gaia/services"
@@ -52,7 +50,17 @@ type mockStore struct {
 	worker       *gaia.Worker
 	run          *gaia.PipelineRun
 	mockPipeline *gaia.Pipeline
+	pair         gaia.SHAPair
+	ok           bool
+	err          error
 	store.GaiaStore
+}
+
+func (m *mockStore) UpsertSHAPair(pair gaia.SHAPair) error {
+	return m.err
+}
+func (m *mockStore) GetSHAPair(pipelineID int) (bool, gaia.SHAPair, error) {
+	return m.ok, m.pair, m.err
 }
 
 func (m *mockStore) WorkerGetAll() ([]*gaia.Worker, error) {
@@ -390,20 +398,6 @@ func bufDialer(string, time.Duration) (net.Conn, error) {
 	return lis.Dial()
 }
 
-type memDBFake struct {
-	memdb.GaiaMemDB
-	err  error
-	pair gaia.SHAPair
-	ok   bool
-}
-
-func (m *memDBFake) UpsertSHAPair(pair gaia.SHAPair) error {
-	return m.err
-}
-func (m *memDBFake) GetSHAPair(pipelineID string) (bool, gaia.SHAPair, error) {
-	return m.ok, m.pair, m.err
-}
-
 func TestScheduleWorkSHAPairMismatch(t *testing.T) {
 	ctx := context.Background()
 	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
@@ -416,11 +410,8 @@ func TestScheduleWorkSHAPairMismatch(t *testing.T) {
 	// Init agent
 	mStore := &mockStore{}
 	mScheduler := &mockScheduler{}
-	mDB := memDBFake{}
-	mDB.ok = true
-	mDB.pair = gaia.SHAPair{Original: []byte("test"), Worker: []byte("nottest")}
-	services.MockMemDBService(&mDB)
-	defer services.MockMemDBService(nil)
+	mStore.ok = true
+	mStore.pair = gaia.SHAPair{Original: []byte("test"), Worker: []byte("nottest")}
 	ag := InitAgent(mScheduler, mStore, "")
 	ag.client = client
 	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
@@ -530,9 +521,6 @@ func TestScheduleWork(t *testing.T) {
 	// Init agent
 	mStore := &mockStore{}
 	mScheduler := &mockScheduler{}
-	mDB := memDBFake{}
-	services.MockMemDBService(&mDB)
-	defer services.MockMemDBService(nil)
 	ag := InitAgent(mScheduler, mStore, "")
 	ag.client = client
 	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
@@ -742,9 +730,6 @@ func TestScheduleWorkExecFormatError(t *testing.T) {
 	}
 	mScheduler := &mockScheduler{}
 	mScheduler.err = errors.New("exec format error")
-	mDB := memDBFake{}
-	services.MockMemDBService(&mDB)
-	defer services.MockMemDBService(nil)
 	ag := InitAgent(mScheduler, mStore, "")
 	ag.client = client
 	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}

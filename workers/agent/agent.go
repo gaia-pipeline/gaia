@@ -18,10 +18,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gaia-pipeline/gaia/store/memdb"
-
-	"github.com/gaia-pipeline/gaia/services"
-
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/filehelper"
 	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
@@ -408,15 +404,8 @@ func (a *Agent) scheduleWork() {
 			return
 		}
 
-		// Let's check if we have a stored sha pair for this pipeline.
-		db, err := services.MemDBService(nil)
-		if err != nil {
-			gaia.Cfg.Logger.Error("failed to get memdb service via scheduler", "error", err.Error())
-			return
-		}
-
 		if !bytes.Equal(sha256Sum, pipelineSHA256SUM) {
-			if !compareSHAs(db, pipelineRun.PipelineID, sha256Sum, pipelineSHA256SUM) {
+			if !a.compareSHAs(pipelineRun.PipelineID, sha256Sum, pipelineSHA256SUM) {
 				gaia.Cfg.Logger.Debug("sha mismatch... attempting to re-download the binary")
 				// A possible scenario is that the pipeline has been updated and the old binary still exists here.
 				// Let us try to delete the binary and re-download the pipeline.
@@ -505,7 +494,7 @@ func (a *Agent) scheduleWork() {
 				UniqueID: uID,
 			}
 
-			err = db.UpsertSHAPair(shaPair)
+			err = a.store.UpsertSHAPair(shaPair)
 			if err != nil {
 				gaia.Cfg.Logger.Error("failed to upsert new sha pair", "error", err.Error(), "pipelinerun", pipelineRunPB)
 				reschedulePipeline()
@@ -549,9 +538,8 @@ func (a *Agent) scheduleWork() {
 // compareSHAs compares shas of the binaries with possibly stored sha pairs. First it compares the original if they match
 // second it compares the local sha with the new one that the worker possibly rebuilt. If there is no entry,
 // we return false, because we don't know anything about the sha.
-func compareSHAs(db memdb.GaiaMemDB, id int, sha256Sum, pipelineSHA256SUM []byte) bool {
-	uID := strconv.Itoa(id)
-	ok, shaPair, err := db.GetSHAPair(uID)
+func (a *Agent) compareSHAs(id int, sha256Sum, pipelineSHA256SUM []byte) bool {
+	ok, shaPair, err := a.store.GetSHAPair(id)
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to get sha pair from memdb", "error", err.Error())
 		return false
