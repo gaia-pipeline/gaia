@@ -278,7 +278,7 @@ type Worker struct {
 type SHAPair struct {
 	Original []byte `json:"original"`
 	Worker   []byte `json:"worker"`
-	UniqueID string `json:"uniqueid"`
+	UniqueID int    `json:"pipelineid"`
 }
 
 // Cfg represents the global config instance

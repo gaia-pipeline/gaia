@@ -21,18 +21,18 @@ func (s *BoltStore) UpsertSHAPair(pair gaia.SHAPair) error {
 		}
 
 		// Put user
-		return b.Put([]byte(pair.UniqueID), m)
+		return b.Put(itob(pair.UniqueID), m)
 	})
 }
 
 // GetSHAPair returns a pair of shas for this pipeline run.
-func (s *BoltStore) GetSHAPair(pipelineID []byte) (ok bool, pair gaia.SHAPair, err error) {
+func (s *BoltStore) GetSHAPair(pipelineID int) (ok bool, pair gaia.SHAPair, err error) {
 	return ok, pair, s.db.View(func(tx *bolt.Tx) error {
 		// Get bucket
 		b := tx.Bucket(shaPairBucket)
 
 		// Get pipeline
-		v := b.Get(pipelineID)
+		v := b.Get(itob(pipelineID))
 
 		// Check if we found the pipeline
 		if v == nil {

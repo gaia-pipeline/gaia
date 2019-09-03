@@ -26,7 +26,7 @@ func TestGetSHAPair(t *testing.T) {
 	defer store.Close()
 
 	pair := gaia.SHAPair{}
-	pair.UniqueID = "unique-id"
+	pair.UniqueID = 1
 	pair.Original = []byte("original")
 	pair.Worker = []byte("worker")
 	err = store.UpsertSHAPair(pair)
@@ -34,7 +34,7 @@ func TestGetSHAPair(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ok, p, err := store.GetSHAPair([]byte(pair.UniqueID))
+	ok, p, err := store.GetSHAPair(1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,7 +43,7 @@ func TestGetSHAPair(t *testing.T) {
 	}
 
 	if p.UniqueID != pair.UniqueID {
-		t.Fatalf("unique id match error. want %s got %s", pair.UniqueID, p.UniqueID)
+		t.Fatalf("unique id match error. want %d got %d", pair.UniqueID, p.UniqueID)
 	}
 	if !bytes.Equal(p.Worker, pair.Worker) {
 		t.Fatalf("worker sha match error. want %s got %s", pair.Worker, p.Worker)
@@ -70,7 +70,7 @@ func TestUpsertSHAPair(t *testing.T) {
 	defer store.Close()
 
 	pair := gaia.SHAPair{}
-	pair.UniqueID = "unique-id"
+	pair.UniqueID = 1
 	pair.Original = []byte("original")
 	pair.Worker = []byte("worker")
 	err = store.UpsertSHAPair(pair)
@@ -84,7 +84,7 @@ func TestUpsertSHAPair(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ok, p, err := store.GetSHAPair([]byte(pair.UniqueID))
+	ok, p, err := store.GetSHAPair(1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,7 +93,7 @@ func TestUpsertSHAPair(t *testing.T) {
 	}
 
 	if p.UniqueID != pair.UniqueID {
-		t.Fatalf("unique id match error. want %s got %s", pair.UniqueID, p.UniqueID)
+		t.Fatalf("unique id match error. want %d got %d", pair.UniqueID, p.UniqueID)
 	}
 	if !bytes.Equal(p.Worker, pair.Worker) {
 		t.Fatalf("worker sha match error. want %s got %s", pair.Worker, p.Worker)

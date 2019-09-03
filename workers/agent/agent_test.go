@@ -59,7 +59,7 @@ type mockStore struct {
 func (m *mockStore) UpsertSHAPair(pair gaia.SHAPair) error {
 	return m.err
 }
-func (m *mockStore) GetSHAPair(pipelineID []byte) (bool, gaia.SHAPair, error) {
+func (m *mockStore) GetSHAPair(pipelineID int) (bool, gaia.SHAPair, error) {
 	return m.ok, m.pair, m.err
 }
 
