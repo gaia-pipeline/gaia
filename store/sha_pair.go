@@ -14,7 +14,7 @@ func (s *BoltStore) UpsertSHAPair(pair gaia.SHAPair) error {
 		// Get bucket
 		b := tx.Bucket(shaPairBucket)
 
-		// Marshal user object
+		// Marshal SHAPair struct
 		m, err := json.Marshal(pair)
 		if err != nil {
 			return err
@@ -31,16 +31,16 @@ func (s *BoltStore) GetSHAPair(pipelineID int) (ok bool, pair gaia.SHAPair, err 
 		// Get bucket
 		b := tx.Bucket(shaPairBucket)
 
-		// Get pipeline
+		// Get SHAPair
 		v := b.Get(itob(pipelineID))
 
-		// Check if we found the pipeline
+		// Check if we found the SHAPair
 		if v == nil {
 			ok = false
 			return nil
 		}
 
-		// Unmarshal pipeline object
+		// Unmarshal SHAPair struct
 		err := json.Unmarshal(v, &pair)
 		if err != nil {
 			return err
