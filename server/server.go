@@ -74,8 +74,10 @@ func init() {
 // Start initiates all components of Gaia and starts the server/agent.
 func Start() (err error) {
 	// Parse command line flags
-	if err := fs.Parse(os.Args[1:]); err.Error() == "flag: help requested" {
-		return nil
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		if err.Error() == "flag: help requested" {
+			return nil
+		}
 	}
 
 	// Check version switch
