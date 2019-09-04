@@ -21,11 +21,14 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/filehelper"
 	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/agent/api"
+	gp "github.com/gaia-pipeline/gaia/workers/pipeline"
 	pb "github.com/gaia-pipeline/gaia/workers/proto"
 	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	"google.golang.org/grpc"
+	_ "google.golang.org/grpc/balancer/grpclb" // needed because of https://github.com/grpc/grpc-go/issues/2575
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 )
@@ -273,7 +276,7 @@ func (a *Agent) scheduleWork() {
 	a.self.WorkerSlots = int32(a.scheduler.GetFreeWorkers())
 
 	// Setup context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), (3*schedulerTickerSeconds)*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), (12*schedulerTickerSeconds)*time.Second)
 	ctx = metadata.AppendToOutgoingContext(ctx, idMDKey, a.self.UniqueId)
 	defer cancel()
 
@@ -400,31 +403,35 @@ func (a *Agent) scheduleWork() {
 			reschedulePipeline()
 			return
 		}
-		if !bytes.Equal(sha256Sum, pipelineSHA256SUM) {
-			// A possible scenario is that the pipeline has been updated and the old binary still exists here.
-			// Let us try to delete the binary and re-download the pipeline.
-			if err := os.Remove(pipelineFullPath); err != nil {
-				gaia.Cfg.Logger.Error("failed to remove inconsistent pipeline binary", "error", err.Error(), "pipelinerun", pipelineRunPB)
-				reschedulePipeline()
-				return
-			}
-			if err := a.streamBinary(pipelineRunPB, pipelineFullPath); err != nil {
-				gaia.Cfg.Logger.Error("failed to download pipeline binary from remote instance", "error", err.Error(), "pipelinerun", pipelineRunPB)
-				reschedulePipeline()
-				return
-			}
 
-			// Validate SHA256 sum again to make sure the integrity is provided
-			sha256Sum, err := filehelper.GetSHA256Sum(pipelineFullPath)
-			if err != nil {
-				gaia.Cfg.Logger.Error("failed to determine SHA256Sum of pipeline file", "error", err.Error(), "pipelinerun", pipelineRunPB)
-				reschedulePipeline()
-				return
-			}
-			if !bytes.Equal(sha256Sum, pipelineSHA256SUM) {
-				gaia.Cfg.Logger.Error("pipeline binary SHA256Sum mismatch", "pipelinerun", pipelineRunPB)
-				reschedulePipeline()
-				return
+		if !bytes.Equal(sha256Sum, pipelineSHA256SUM) {
+			if !a.compareSHAs(pipelineRun.PipelineID, sha256Sum, pipelineSHA256SUM) {
+				gaia.Cfg.Logger.Debug("sha mismatch... attempting to re-download the binary")
+				// A possible scenario is that the pipeline has been updated and the old binary still exists here.
+				// Let us try to delete the binary and re-download the pipeline.
+				if err := os.Remove(pipelineFullPath); err != nil {
+					gaia.Cfg.Logger.Error("failed to remove inconsistent pipeline binary", "error", err.Error(), "pipelinerun", pipelineRunPB)
+					reschedulePipeline()
+					return
+				}
+				if err := a.streamBinary(pipelineRunPB, pipelineFullPath); err != nil {
+					gaia.Cfg.Logger.Error("failed to download pipeline binary from remote instance", "error", err.Error(), "pipelinerun", pipelineRunPB)
+					reschedulePipeline()
+					return
+				}
+
+				// Validate SHA256 sum again to make sure the integrity is provided
+				sha256Sum, err := filehelper.GetSHA256Sum(pipelineFullPath)
+				if err != nil {
+					gaia.Cfg.Logger.Error("failed to determine SHA256Sum of pipeline file", "error", err.Error(), "pipelinerun", pipelineRunPB)
+					reschedulePipeline()
+					return
+				}
+				if !bytes.Equal(sha256Sum, pipelineSHA256SUM) {
+					gaia.Cfg.Logger.Error("pipeline binary SHA256Sum mismatch", "pipelinerun", pipelineRunPB)
+					reschedulePipeline()
+					return
+				}
 			}
 		}
 
@@ -454,12 +461,53 @@ func (a *Agent) scheduleWork() {
 
 		// Let us try to start the plugin and receive all implemented jobs
 		if err = a.scheduler.SetPipelineJobs(pipeline); err != nil {
-			gaia.Cfg.Logger.Error("cannot get pipeline jobs", "error", err.Error(), "pipelinerun", pipelineRunPB)
-			reschedulePipeline()
-			return
+			if !strings.Contains(err.Error(), "exec format error") {
+				gaia.Cfg.Logger.Error("cannot get pipeline jobs", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				reschedulePipeline()
+				return
+			}
+			gaia.Cfg.Logger.Info("pipeline in a different format than worker; attempting to rebuild...")
+			// Try rebuilding the pipeline...
+			if err := os.Remove(pipelineFullPath); err != nil {
+				gaia.Cfg.Logger.Error("failed to remove pipeline binary", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				reschedulePipeline()
+				return
+			}
+			err = a.rebuildWorkerBinary(ctx, pipeline)
+			if err != nil {
+				gaia.Cfg.Logger.Error("failed to rebuild pipeline for worker", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				reschedulePipeline()
+				return
+			}
+
+			workerSHA256Sum, err := filehelper.GetSHA256Sum(pipelineFullPath)
+			if err != nil {
+				gaia.Cfg.Logger.Error("failed to determine SHA256Sum of pipeline file", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				reschedulePipeline()
+				return
+			}
+
+			shaPair := gaia.SHAPair{
+				Original:   pipelineSHA256SUM,
+				Worker:     workerSHA256Sum,
+				PipelineID: pipelineRun.PipelineID,
+			}
+
+			err = a.store.UpsertSHAPair(shaPair)
+			if err != nil {
+				gaia.Cfg.Logger.Error("failed to upsert new sha pair", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				reschedulePipeline()
+				return
+			}
+
+			// Try setting the pipeline jobs again.
+			if err = a.scheduler.SetPipelineJobs(pipeline); err != nil {
+				gaia.Cfg.Logger.Error("cannot get pipeline jobs", "error", err.Error(), "pipelinerun", pipelineRunPB)
+				reschedulePipeline()
+				return
+			}
 		}
 		pipelineRun.Jobs = pipeline.Jobs
-
 		// Store pipeline
 		if err = a.store.PipelinePut(pipeline); err != nil {
 			gaia.Cfg.Logger.Error("failed to store pipeline in store", "error", err.Error(), "pipelinerun", pipelineRunPB)
@@ -484,6 +532,66 @@ func (a *Agent) scheduleWork() {
 	if workCounter == 0 {
 		gaia.Cfg.Logger.Trace("got no work from Gaia primary instance. Will try it again after a while...")
 	}
+}
+
+// compareSHAs compares shas of the binaries with possibly stored sha pairs. First it compares the original if they match
+// second it compares the local sha with the new one that the worker possibly rebuilt. If there is no entry,
+// we return false, because we don't know anything about the sha.
+func (a *Agent) compareSHAs(id int, sha256Sum, pipelineSHA256SUM []byte) bool {
+	ok, shaPair, err := a.store.GetSHAPair(id)
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to get sha pair from memdb", "error", err.Error())
+		return false
+	}
+
+	if !ok {
+		gaia.Cfg.Logger.Debug("no record found for pipeline. skipping this check")
+		return false
+	}
+	gaia.Cfg.Logger.Debug("record found for pipeline... comparing.")
+	return bytes.Equal(sha256Sum, shaPair.Worker) &&
+		bytes.Equal(pipelineSHA256SUM, shaPair.Original)
+}
+
+func (a *Agent) rebuildWorkerBinary(ctx context.Context, pipeline *gaia.Pipeline) error {
+	pCreate := &gaia.CreatePipeline{}
+	pCreate.ID = security.GenerateRandomUUIDV5()
+	pCreate.Pipeline = *pipeline
+
+	repo, err := a.client.GetGitRepo(ctx, &pb.PipelineID{Id: int64(pipeline.ID)})
+	if err != nil {
+		return err
+	}
+
+	// Unfortunately, since pb.GitRepo has extra gRPC fields on it
+	// we can't use gaia.GitRepo(repo) here to convert immediately.
+	gitRepo := gaia.GitRepo{}
+	gitRepo.Username = repo.Username
+	gitRepo.Password = repo.Password
+
+	pk := gaia.PrivateKey{}
+	if repo.PrivateKey != nil {
+		pk.Password = repo.PrivateKey.Password
+		pk.Username = repo.PrivateKey.Username
+		pk.Key = repo.PrivateKey.Key
+	}
+
+	gitRepo.PrivateKey = pk
+	gitRepo.URL = repo.Url
+	gitRepo.SelectedBranch = repo.SelectedBranch
+	pCreate.Pipeline.Repo = &gitRepo
+
+	gp.CreatePipeline(pCreate)
+	if pCreate.StatusType == gaia.CreatePipelineFailed {
+		return fmt.Errorf("error while creating pipeline: %s", pCreate.Output)
+	}
+
+	pipeline = &pCreate.Pipeline
+	if err = a.scheduler.SetPipelineJobs(pipeline); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // streamBinary streams the binary in chunks from the remote instance to the given path.

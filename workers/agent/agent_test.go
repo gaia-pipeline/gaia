@@ -17,6 +17,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/security"
+
+	"github.com/gaia-pipeline/gaia/services"
+
 	"github.com/pkg/errors"
 
 	"github.com/gaia-pipeline/gaia"
@@ -33,15 +37,30 @@ import (
 
 type mockScheduler struct {
 	scheduler.GaiaScheduler
+	err error
 }
 
-func (ms *mockScheduler) SetPipelineJobs(p *gaia.Pipeline) error { return nil }
+func (ms *mockScheduler) SetPipelineJobs(p *gaia.Pipeline) error { return ms.err }
 func (ms *mockScheduler) GetFreeWorkers() int32                  { return int32(0) }
+func (ms *mockScheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error) {
+	return nil, ms.err
+}
 
 type mockStore struct {
-	worker *gaia.Worker
-	run    *gaia.PipelineRun
+	worker       *gaia.Worker
+	run          *gaia.PipelineRun
+	mockPipeline *gaia.Pipeline
+	pair         gaia.SHAPair
+	ok           bool
+	err          error
 	store.GaiaStore
+}
+
+func (m *mockStore) UpsertSHAPair(pair gaia.SHAPair) error {
+	return m.err
+}
+func (m *mockStore) GetSHAPair(pipelineID int) (bool, gaia.SHAPair, error) {
+	return m.ok, m.pair, m.err
 }
 
 func (m *mockStore) WorkerGetAll() ([]*gaia.Worker, error) {
@@ -55,8 +74,10 @@ func (m *mockStore) PipelinePutRun(r *gaia.PipelineRun) error {
 	}
 	return nil
 }
-func (m *mockStore) PipelinePut(pipeline *gaia.Pipeline) error               { return nil }
-func (m *mockStore) PipelineGet(id int) (pipeline *gaia.Pipeline, err error) { return nil, nil }
+func (m *mockStore) PipelinePut(pipeline *gaia.Pipeline) error { return nil }
+func (m *mockStore) PipelineGet(id int) (pipeline *gaia.Pipeline, err error) {
+	return m.mockPipeline, nil
+}
 func (m *mockStore) PipelineGetAllRuns() ([]gaia.PipelineRun, error) {
 	runs := []gaia.PipelineRun{
 		{
@@ -93,13 +114,23 @@ func (m *mockStore) PipelineGetAllRuns() ([]gaia.PipelineRun, error) {
 	return runs, nil
 }
 
+// PipelinePut is a Mock implementation for pipelines
+func (m *mockStore) CreatePipelinePut(createPipeline *gaia.CreatePipeline) error {
+	return nil
+}
+
 var lis *bufconn.Listener
 var tmpFolder string
 
 const bufsize = 1024 * 1024
 
 type mockWorkerInterface struct {
-	pbRuns []*pb.PipelineRun
+	pbRuns  []*pb.PipelineRun
+	gitRepo *pb.GitRepo
+}
+
+func (mw *mockWorkerInterface) GetGitRepo(context.Context, *pb.PipelineID) (*pb.GitRepo, error) {
+	return mw.gitRepo, nil
 }
 
 var mW *mockWorkerInterface
@@ -246,6 +277,10 @@ func init() {
 	lis = bufconn.Listen(bufsize)
 	s := grpc.NewServer()
 	mW = &mockWorkerInterface{}
+	mW.gitRepo = &pb.GitRepo{
+		Url:            "https://github.com/gaia-pipeline/go-example",
+		SelectedBranch: "refs/heads/master",
+	}
 	pb.RegisterWorkerServer(s, mW)
 	go func() {
 		if err := s.Serve(lis); err != nil {
@@ -363,6 +398,117 @@ func bufDialer(string, time.Duration) (net.Conn, error) {
 	return lis.Dial()
 }
 
+func TestScheduleWorkSHAPairMismatch(t *testing.T) {
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	client := pb.NewWorkerClient(conn)
+
+	// Init agent
+	mStore := &mockStore{}
+	mScheduler := &mockScheduler{}
+	mStore.ok = true
+	mStore.pair = gaia.SHAPair{Original: []byte("test"), Worker: []byte("nottest")}
+	ag := InitAgent(mScheduler, mStore, "")
+	ag.client = client
+	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
+	gaia.Cfg = &gaia.Config{
+		PipelinePath: tmpFolder,
+	}
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level: hclog.Trace,
+		Name:  "Gaia",
+	})
+
+	// Run mScheduler
+	ag.scheduleWork()
+
+	// Validate output from mScheduler
+	if mStore.run == nil {
+		t.Fatal("run is nil but should exist")
+	}
+}
+
+func TestRebuildWorkerBinaryUnkownPipeline(t *testing.T) {
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	client := pb.NewWorkerClient(conn)
+
+	// Init agent
+	mStore := &mockStore{}
+	mScheduler := &mockScheduler{}
+	services.MockStorageService(mStore)
+	ag := InitAgent(mScheduler, mStore, "")
+	ag.client = client
+	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
+	gaia.Cfg = &gaia.Config{
+		PipelinePath: tmpFolder,
+	}
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level: hclog.Trace,
+		Name:  "Gaia",
+	})
+	p := gaia.Pipeline{
+		Name: "test-pipeline",
+		ID:   1,
+		UUID: security.GenerateRandomUUIDV5(),
+		// Setting this to avoid testing CreatePipeline again.
+		Type: gaia.PTypeUnknown,
+	}
+	err = ag.rebuildWorkerBinary(ctx, &p)
+	if err == nil {
+		t.Fatal("was expecting unknown pipeline type error... got none.")
+	}
+}
+
+func TestRebuildWorkerBinary(t *testing.T) {
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	client := pb.NewWorkerClient(conn)
+
+	// Init agent
+	mStore := &mockStore{}
+	mScheduler := &mockScheduler{}
+	services.MockStorageService(mStore)
+	ms := new(mockScheduler)
+	services.MockSchedulerService(ms)
+	ag := InitAgent(mScheduler, mStore, "")
+	ag.client = client
+	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
+	gaia.Cfg = &gaia.Config{
+		PipelinePath: tmpFolder,
+		HomePath:     tmpFolder,
+		CAPath:       tmpFolder,
+		DataPath:     tmpFolder,
+	}
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level: hclog.Trace,
+		Name:  "Gaia",
+	})
+	p := gaia.Pipeline{
+		Name: "test-pipeline",
+		ID:   1,
+		UUID: security.GenerateRandomUUIDV5(),
+		// Setting this to avoid testing CreatePipeline again.
+		Type: gaia.PTypeGolang,
+	}
+	err = ag.rebuildWorkerBinary(ctx, &p)
+	if err != nil {
+		t.Fatal("was not expecting error, got one: ", err)
+	}
+}
+
 func TestScheduleWork(t *testing.T) {
 	ctx := context.Background()
 	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
@@ -391,7 +537,7 @@ func TestScheduleWork(t *testing.T) {
 
 	// Validate output from mScheduler
 	if mStore.run == nil {
-		t.Fatal("run is nil but should be exist")
+		t.Fatal("run is nil but should exist")
 	}
 	if mStore.run.ID != 1 {
 		t.Fatalf("expected 1 but got %d", mStore.run.ID)
@@ -561,5 +707,48 @@ func TestUpdateWork(t *testing.T) {
 	}
 	if len(mW.pbRuns[1].Jobs) != 2 {
 		t.Fatalf("expected 2 but got %d", len(mW.pbRuns[1].Jobs))
+	}
+}
+
+func TestScheduleWorkExecFormatError(t *testing.T) {
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	client := pb.NewWorkerClient(conn)
+
+	// Init agent
+	mStore := &mockStore{}
+	mStore.mockPipeline = &gaia.Pipeline{
+		Name: "test-pipeline",
+		ID:   1,
+		UUID: security.GenerateRandomUUIDV5(),
+		// Setting this to avoid testing CreatePipeline again.
+		Type: gaia.PTypeUnknown,
+	}
+	mScheduler := &mockScheduler{}
+	mScheduler.err = errors.New("exec format error")
+	ag := InitAgent(mScheduler, mStore, "")
+	ag.client = client
+	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
+	gaia.Cfg = &gaia.Config{
+		PipelinePath: tmpFolder,
+		HomePath:     tmpFolder,
+		CAPath:       tmpFolder,
+		DataPath:     tmpFolder,
+	}
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level: hclog.Trace,
+		Name:  "Gaia",
+	})
+
+	// Run mScheduler
+	ag.scheduleWork()
+
+	// Validate output from mScheduler
+	if mStore.run != nil {
+		t.Fatal("run should not exist.")
 	}
 }

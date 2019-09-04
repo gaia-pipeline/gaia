@@ -27,6 +27,28 @@ message PipelineRun {
     repeated Job jobs      = 11;
 }
 
+// PrivateKey represents a key.
+message PrivateKey {
+    string key = 1;
+    string username = 2;
+    string password = 3;
+}
+
+// GitRepo is a git repo.
+message GitRepo {
+    PrivateKey private_key = 1;
+    string username = 2;
+    string password = 3;
+    string url = 4;
+    string selected_branch = 5;
+    repeated string branches = 6;
+    string localdest = 7;
+}
+
+message PipelineID {
+    int64 id = 1;
+}
+
 // Job represents one job from a pipeline run.
 message Job {
     uint32   unique_id      = 1;
@@ -72,4 +94,7 @@ service Worker {
 
     // Deregister deregister a registered worker from the primary instance.
     rpc Deregister (WorkerInstance) returns (google.protobuf.Empty);
+
+    // GetGitRepo returns git repo information to the worker based on a pipeline name.
+    rpc GetGitRepo (PipelineID) returns (GitRepo);
 }
