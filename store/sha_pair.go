@@ -20,8 +20,8 @@ func (s *BoltStore) UpsertSHAPair(pair gaia.SHAPair) error {
 			return err
 		}
 
-		// Put user
-		return b.Put(itob(pair.UniqueID), m)
+		// Put SHAPair
+		return b.Put(itob(pair.PipelineID), m)
 	})
 }
 

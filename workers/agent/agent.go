@@ -488,9 +488,9 @@ func (a *Agent) scheduleWork() {
 			}
 
 			shaPair := gaia.SHAPair{
-				Original: pipelineSHA256SUM,
-				Worker:   workerSHA256Sum,
-				UniqueID: pipelineRun.PipelineID,
+				Original:   pipelineSHA256SUM,
+				Worker:     workerSHA256Sum,
+				PipelineID: pipelineRun.PipelineID,
 			}
 
 			err = a.store.UpsertSHAPair(shaPair)

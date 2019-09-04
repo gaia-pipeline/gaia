@@ -276,9 +276,9 @@ type Worker struct {
 // SHAPair struct contains the original sha of a pipeline executable and the
 // new sha which was created when the worker had to rebuild it.
 type SHAPair struct {
-	Original []byte `json:"original"`
-	Worker   []byte `json:"worker"`
-	UniqueID int    `json:"pipelineid"`
+	Original   []byte `json:"original"`
+	Worker     []byte `json:"worker"`
+	PipelineID int    `json:"pipelineid"`
 }
 
 // Cfg represents the global config instance
