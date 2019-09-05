@@ -1,15 +1,17 @@
 package server
 
 import (
+	"io"
+	"net"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	pb "github.com/gaia-pipeline/gaia/workers/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"net"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 const (
@@ -65,12 +67,20 @@ func (w *WorkerServer) Start() {
 		}
 
 		// Move certs to correct place
-		if err = os.Rename(certTmpPath, certPath); err != nil {
-			gaia.Cfg.Logger.Error("failed to move gRPC server cert to data folder", "error", err.Error())
+		if err = copyFileContents(certTmpPath, certPath); err != nil {
+			gaia.Cfg.Logger.Error("failed to copy gRPC server cert to data folder", "error", err.Error())
 			return
 		}
-		if err = os.Rename(keyTmpPath, keyPath); err != nil {
-			gaia.Cfg.Logger.Error("failed to move gRPC server key to data folder", "error", err.Error())
+		if err = copyFileContents(keyTmpPath, keyPath); err != nil {
+			gaia.Cfg.Logger.Error("failed to copy gRPC server key to data folder", "error", err.Error())
+			return
+		}
+		if err = os.Remove(certTmpPath); err != nil {
+			gaia.Cfg.Logger.Error("failed to remove temporary server cert file", "error", err)
+			return
+		}
+		if err = os.Remove(keyTmpPath); err != nil {
+			gaia.Cfg.Logger.Error("failed to remove temporary key cert file", "error", err)
 			return
 		}
 	}
@@ -88,4 +98,28 @@ func (w *WorkerServer) Start() {
 		gaia.Cfg.Logger.Error("cannot start worker gRPC server", "error", err)
 		return
 	}
+}
+
+// copyFileContents copies the content from source to destination.
+func copyFileContents(src, dst string) (err error) {
+	in, err := os.Open(src)
+	if err != nil {
+		return
+	}
+	defer in.Close()
+	out, err := os.Create(dst)
+	if err != nil {
+		return
+	}
+	defer func() {
+		cerr := out.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
+	if _, err = io.Copy(out, in); err != nil {
+		return
+	}
+	err = out.Sync()
+	return
 }

@@ -640,7 +640,7 @@ func (a *Agent) streamBinary(pipelineRunPB *pb.PipelineRun, pipelinePath string)
 	return os.Chmod(pipelinePath, gaia.ExecutablePermission)
 }
 
-// updateWork is function that is periodically called and it is used to
+// updateWork is periodically called and it is used to
 // send new information about a pipeline run to the Gaia primary instance.
 func (a *Agent) updateWork() {
 	// Read all pipeline runs from the store. The number of pipeline runs

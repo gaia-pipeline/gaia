@@ -315,6 +315,7 @@ func (s *Scheduler) schedule() {
 
 			// If it is a docker run, pipeline will be executed by a worker inside a container
 			scheduled[id].DockerWorkerID = worker.WorkerID
+			scheduled[id].PipelineTags = append(scheduled[id].PipelineTags, []string{worker.WorkerID, "dockerworker"}...)
 			if err := s.memDBService.InsertPipelineRun(scheduled[id]); err != nil {
 				gaia.Cfg.Logger.Error("failed to insert pipeline run into memdb via schedule", "error", err.Error())
 				continue
