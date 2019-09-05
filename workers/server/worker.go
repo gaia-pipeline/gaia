@@ -164,7 +164,6 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 	// Check the status of the pipeline run
 	switch gaia.PipelineRunStatus(pipelineRun.Status) {
 	case gaia.RunReschedule:
-		// TODO: Make sure that the same work will not be scheduled on the same node
 		store, err := services.StorageService()
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to get storage service via updatework", "error", err.Error())

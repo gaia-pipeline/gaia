@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/gaia-pipeline/gaia/workers/server"
+
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -17,7 +19,6 @@ import (
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/agent"
-	"github.com/gaia-pipeline/gaia/workers/server"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
@@ -71,6 +72,8 @@ func init() {
 	fs.StringVar(&gaia.Cfg.DockerHostURL, "docker-host-url", "unix:///var/run/docker.sock", "Docker daemon host url which is used to build and run pipelines in a docker container")
 	//fs.StringVar(&gaia.Cfg.DockerRunImage, "docker-run-image", "gaiapipeline/gaia:latest", "Docker image repository name with tag which will be used for running pipelines in a docker container")
 	fs.StringVar(&gaia.Cfg.DockerRunImage, "docker-run-image", "gaia-go:latest", "Docker image repository name with tag which will be used for running pipelines in a docker container")
+	fs.StringVar(&gaia.Cfg.DockerWorkerHostURL, "docker-worker-host-url", "http://127.0.0.1:8080", "The host url of the primary/worker API endpoint used for docker worker communication")
+	fs.StringVar(&gaia.Cfg.DockerWorkerGRPCHostURL, "docker-worker-grpc-host-url", "127.0.0.1:8989", "The host url of the primary/worker gRPC endpoint used for docker worker communication")
 
 	// Default values
 	gaia.Cfg.Bolt.Mode = 0600
@@ -171,70 +174,68 @@ func Start() (err error) {
 		return err
 	}
 
-	if gaia.Cfg.Mode == gaia.ModeServer {
-		var jwtKey interface{}
-		// Check JWT key is set
-		if gaia.Cfg.JwtPrivateKeyPath == "" {
-			gaia.Cfg.Logger.Warn("using auto-generated key to sign jwt tokens, do not use in production")
-			jwtKey = make([]byte, 64)
-			_, err = rand.Read(jwtKey.([]byte))
-			if err != nil {
-				gaia.Cfg.Logger.Error("error auto-generating jwt key", "error", err.Error())
-				return
-			}
-		} else {
-			keyData, err := ioutil.ReadFile(gaia.Cfg.JwtPrivateKeyPath)
-			if err != nil {
-				gaia.Cfg.Logger.Error("could not read jwt key file", "error", err.Error())
-				return err
-			}
-			jwtKey, err = jwt.ParseRSAPrivateKeyFromPEM(keyData)
-			if err != nil {
-				gaia.Cfg.Logger.Error("could not parse jwt key file", "error", err.Error())
-				return err
-			}
-		}
-		gaia.Cfg.JWTKey = jwtKey
-
-		// Initialize echo instance
-		echoInstance = echo.New()
-
-		// Initiating Vault
-		if gaia.Cfg.VaultPath == "" {
-			// Set default to data folder
-			gaia.Cfg.VaultPath = gaia.Cfg.DataPath
-		}
-		v, err := services.DefaultVaultService()
+	var jwtKey interface{}
+	// Check JWT key is set
+	if gaia.Cfg.JwtPrivateKeyPath == "" {
+		gaia.Cfg.Logger.Warn("using auto-generated key to sign jwt tokens, do not use in production")
+		jwtKey = make([]byte, 64)
+		_, err = rand.Read(jwtKey.([]byte))
 		if err != nil {
-			gaia.Cfg.Logger.Error("error initiating vault")
+			gaia.Cfg.Logger.Error("error auto-generating jwt key", "error", err.Error())
+			return
+		}
+	} else {
+		keyData, err := ioutil.ReadFile(gaia.Cfg.JwtPrivateKeyPath)
+		if err != nil {
+			gaia.Cfg.Logger.Error("could not read jwt key file", "error", err.Error())
 			return err
 		}
-		if err = v.LoadSecrets(); err != nil {
-			gaia.Cfg.Logger.Error("error loading secrets from vault")
+		jwtKey, err = jwt.ParseRSAPrivateKeyFromPEM(keyData)
+		if err != nil {
+			gaia.Cfg.Logger.Error("could not parse jwt key file", "error", err.Error())
 			return err
 		}
+	}
+	gaia.Cfg.JWTKey = jwtKey
 
-		// Generate global worker secret if it does not exist
-		_, err = v.Get(gaia.WorkerRegisterKey)
-		if err != nil {
-			// Secret hasn't been generated yet
-			gaia.Cfg.Logger.Info("global worker registration secret has not been generated yet. Will generate it now...")
-			secret := []byte(security.GenerateRandomUUIDV5())
+	// Initialize echo instance
+	echoInstance = echo.New()
 
-			// Store secret in vault
-			v.Add(gaia.WorkerRegisterKey, secret)
-			if err := v.SaveSecrets(); err != nil {
-				gaia.Cfg.Logger.Error("failed to store secret into vault", "error", err.Error())
-				return err
-			}
-		}
+	// Initiating Vault
+	if gaia.Cfg.VaultPath == "" {
+		// Set default to data folder
+		gaia.Cfg.VaultPath = gaia.Cfg.DataPath
+	}
+	v, err := services.DefaultVaultService()
+	if err != nil {
+		gaia.Cfg.Logger.Error("error initiating vault")
+		return err
+	}
+	if err = v.LoadSecrets(); err != nil {
+		gaia.Cfg.Logger.Error("error loading secrets from vault")
+		return err
+	}
 
-		// Initialize handlers
-		err = handlers.InitHandlers(echoInstance)
-		if err != nil {
-			gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
+	// Generate global worker secret if it does not exist
+	_, err = v.Get(gaia.WorkerRegisterKey)
+	if err != nil {
+		// Secret hasn't been generated yet
+		gaia.Cfg.Logger.Info("global worker registration secret has not been generated yet. Will generate it now...")
+		secret := []byte(security.GenerateRandomUUIDV5())
+
+		// Store secret in vault
+		v.Add(gaia.WorkerRegisterKey, secret)
+		if err := v.SaveSecrets(); err != nil {
+			gaia.Cfg.Logger.Error("failed to store secret into vault", "error", err.Error())
 			return err
 		}
+	}
+
+	// Initialize handlers
+	err = handlers.InitHandlers(echoInstance)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
+		return err
 	}
 
 	// Initialize scheduler
@@ -243,18 +244,22 @@ func Start() (err error) {
 		return
 	}
 
+	// Start worker gRPC server.
+	// We need this in both modes (server and worker) for docker worker to run.
+	workerServer := server.InitWorkerServer()
+	go workerServer.Start()
+
 	switch gaia.Cfg.Mode {
 	case gaia.ModeServer:
 		// Start ticker. Periodic job to check for new plugins.
 		pipeline.InitTicker()
 
-		// Start worker gRPC server
-		workerServer := server.InitWorkerServer()
-		go workerServer.Start()
-
-		// Start listen
+		// Start API server
 		echoInstance.Logger.Fatal(echoInstance.Start(":" + gaia.Cfg.ListenPort))
 	case gaia.ModeWorker:
+		// Start API server
+		go echoInstance.Start(":" + gaia.Cfg.ListenPort)
+
 		// Start worker main loop and block until SIGINT or SIGTERM has been received
 		ag := agent.InitAgent(scheduler, store, gaia.Cfg.HomePath)
 		err := ag.StartAgent()

@@ -44,9 +44,9 @@ func (w *DockerWorker) SetupDockerWorker(workerImage string, workerSecret string
 		return cli.ContainerCreate(ctx, &container.Config{
 			Image: workerImage,
 			Env: []string{
-				"GAIA_WORKER_HOST_URL=" + gaia.Cfg.WorkerHostURL,
+				"GAIA_WORKER_HOST_URL=" + gaia.Cfg.DockerWorkerHostURL,
 				"GAIA_MODE=worker",
-				"GAIA_WORKER_GRPC_HOST_URL=" + gaia.Cfg.WorkerGRPCHostURL,
+				"GAIA_WORKER_GRPC_HOST_URL=" + gaia.Cfg.DockerWorkerGRPCHostURL,
 				"GAIA_WORKER_TAGS=" + fmt.Sprintf("%s,dockerworker", w.WorkerID),
 				"GAIA_WORKER_SECRET=" + workerSecret,
 			},
@@ -66,7 +66,7 @@ func (w *DockerWorker) SetupDockerWorker(workerImage string, workerSecret string
 			return err
 		}
 
-		// Create container again
+		// Try to create the container again
 		resp, err = createContainer()
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to create worker container after pull", "error", err)

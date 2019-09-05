@@ -290,11 +290,12 @@ func (s *Scheduler) schedule() {
 				gaia.Cfg.Logger.Error("failed to load secrets from vault", "error", err)
 				continue
 			}
-			workerSecret, err := s.vault.Get(gaia.WorkerRegisterKey)
+			workerSecretBytes, err := s.vault.Get(gaia.WorkerRegisterKey)
 			if err != nil {
 				gaia.Cfg.Logger.Error("failed to get global worker registration secret from vault", "error", err)
 				continue
 			}
+			workerSecret := string(workerSecretBytes[:])
 
 			// Start docker worker for this pipeline run
 			worker := docker.NewDockerWorker(gaia.Cfg.DockerHostURL, scheduled[id].UniqueID)
@@ -312,7 +313,7 @@ func (s *Scheduler) schedule() {
 				continue
 			}
 
-			// If it is a docker run, pipeline will be executed by a worker inside of a container
+			// If it is a docker run, pipeline will be executed by a worker inside a container
 			scheduled[id].DockerWorkerID = worker.WorkerID
 			if err := s.memDBService.InsertPipelineRun(scheduled[id]); err != nil {
 				gaia.Cfg.Logger.Error("failed to insert pipeline run into memdb via schedule", "error", err.Error())
