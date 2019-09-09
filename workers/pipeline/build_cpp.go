@@ -7,6 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/helper/filehelper"
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	uuid "github.com/satori/go.uuid"
@@ -81,10 +84,10 @@ func (b *BuildPipelineCpp) ExecuteBuild(p *gaia.CreatePipeline) error {
 func (b *BuildPipelineCpp) CopyBinary(p *gaia.CreatePipeline) error {
 	// Define src and destination
 	src := filepath.Join(p.Pipeline.Repo.LocalDest, cppFinalBinaryName)
-	dest := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
+	dest := filepath.Join(gaia.Cfg.PipelinePath, pipelinehelper.AppendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
 
 	// Copy binary
-	if err := copyFileContents(src, dest); err != nil {
+	if err := filehelper.CopyFileContents(src, dest); err != nil {
 		return err
 	}
 
@@ -94,7 +97,7 @@ func (b *BuildPipelineCpp) CopyBinary(p *gaia.CreatePipeline) error {
 
 // SavePipeline saves the current pipeline configuration.
 func (b *BuildPipelineCpp) SavePipeline(p *gaia.Pipeline) error {
-	dest := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
+	dest := filepath.Join(gaia.Cfg.PipelinePath, pipelinehelper.AppendTypeToName(p.Name, p.Type))
 	p.ExecPath = dest
 	p.Type = gaia.PTypeCpp
 	p.Name = strings.TrimSuffix(filepath.Base(dest), typeDelimiter+gaia.PTypeCpp.String())

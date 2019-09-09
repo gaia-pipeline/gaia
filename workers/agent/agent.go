@@ -330,6 +330,8 @@ func (a *Agent) scheduleWork() {
 			Status:       gaia.PipelineRunStatus(pipelineRunPB.Status),
 			PipelineID:   int(pipelineRunPB.PipelineId),
 			ScheduleDate: time.Unix(pipelineRunPB.ScheduleDate, 0),
+			PipelineType: gaia.PipelineType(pipelineRunPB.PipelineType),
+			Docker:       pipelineRunPB.Docker,
 		}
 
 		// Convert jobs
@@ -374,7 +376,7 @@ func (a *Agent) scheduleWork() {
 		}
 
 		// Get pipeline binary name and SHA256SUM
-		pipelineName := pipelineRunPB.PipelineName
+		pipelineName := pipelinehelper.AppendTypeToName(pipelineRunPB.PipelineName, gaia.PipelineType(pipelineRunPB.PipelineType))
 		pipelineSHA256SUM := pipelineRunPB.ShaSum
 
 		// Setup reschedule of pipeline in case something goes wrong
@@ -448,7 +450,7 @@ func (a *Agent) scheduleWork() {
 			pipelineType := gaia.PipelineType(pipelineRunPB.PipelineType)
 			pipeline = &gaia.Pipeline{
 				ID:       pipelineRun.PipelineID,
-				Name:     pipelinehelper.GetRealPipelineName(pipelineRunPB.PipelineName, pipelineType),
+				Name:     pipelineRunPB.PipelineName,
 				Type:     pipelineType,
 				ExecPath: pipelineFullPath,
 				Jobs:     pipelineRun.Jobs,
@@ -663,6 +665,7 @@ func (a *Agent) updateWork() {
 			ScheduleDate: run.ScheduleDate.Unix(),
 			StartDate:    run.StartDate.Unix(),
 			FinishDate:   run.FinishDate.Unix(),
+			Docker:       run.Docker,
 		}
 
 		// Transform pipeline run jobs

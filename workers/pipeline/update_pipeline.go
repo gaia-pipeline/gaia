@@ -51,7 +51,7 @@ func updatePipeline(p *gaia.Pipeline) error {
 
 		// copy distribution file to environment and remove pipeline type at the end.
 		// we have to do this otherwise pip will fail.
-		err = copyFileContents(p.ExecPath, filepath.Join(virtualEnvPath, p.Name+".tar.gz"))
+		err = filehelper.CopyFileContents(p.ExecPath, filepath.Join(virtualEnvPath, p.Name+".tar.gz"))
 		if err != nil {
 			return err
 		}
@@ -77,7 +77,7 @@ func updatePipeline(p *gaia.Pipeline) error {
 			return err
 		}
 		pipelineCopyPath := filepath.Join(tmpFolder, filepath.Base(p.ExecPath)+".gem")
-		err = copyFileContents(p.ExecPath, pipelineCopyPath)
+		err = filehelper.CopyFileContents(p.ExecPath, pipelineCopyPath)
 		if err != nil {
 			return err
 		}

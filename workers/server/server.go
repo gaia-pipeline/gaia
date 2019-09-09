@@ -1,11 +1,12 @@
 package server
 
 import (
-	"io"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/gaia-pipeline/gaia/helper/filehelper"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
@@ -67,11 +68,11 @@ func (w *WorkerServer) Start() {
 		}
 
 		// Move certs to correct place
-		if err = copyFileContents(certTmpPath, certPath); err != nil {
+		if err = filehelper.CopyFileContents(certTmpPath, certPath); err != nil {
 			gaia.Cfg.Logger.Error("failed to copy gRPC server cert to data folder", "error", err.Error())
 			return
 		}
-		if err = copyFileContents(keyTmpPath, keyPath); err != nil {
+		if err = filehelper.CopyFileContents(keyTmpPath, keyPath); err != nil {
 			gaia.Cfg.Logger.Error("failed to copy gRPC server key to data folder", "error", err.Error())
 			return
 		}
@@ -98,28 +99,4 @@ func (w *WorkerServer) Start() {
 		gaia.Cfg.Logger.Error("cannot start worker gRPC server", "error", err)
 		return
 	}
-}
-
-// copyFileContents copies the content from source to destination.
-func copyFileContents(src, dst string) (err error) {
-	in, err := os.Open(src)
-	if err != nil {
-		return
-	}
-	defer in.Close()
-	out, err := os.Create(dst)
-	if err != nil {
-		return
-	}
-	defer func() {
-		cerr := out.Close()
-		if err == nil {
-			err = cerr
-		}
-	}()
-	if _, err = io.Copy(out, in); err != nil {
-		return
-	}
-	err = out.Sync()
-	return
 }

@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 
 	"github.com/gaia-pipeline/gaia"
 )
@@ -240,26 +241,20 @@ func (ap *ActivePipelines) RemoveDeletedPipelines(existingPipelineNames []string
 
 // RenameBinary renames the binary file for the given pipeline.
 func RenameBinary(p gaia.Pipeline, newName string) error {
-	currentBinaryName := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
-	newBinaryName := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(newName, p.Type))
+	currentBinaryName := filepath.Join(gaia.Cfg.PipelinePath, pipelinehelper.AppendTypeToName(p.Name, p.Type))
+	newBinaryName := filepath.Join(gaia.Cfg.PipelinePath, pipelinehelper.AppendTypeToName(newName, p.Type))
 	return os.Rename(currentBinaryName, newBinaryName)
 }
 
 // DeleteBinary deletes the binary for the given pipeline.
 func DeleteBinary(p gaia.Pipeline) error {
-	binaryFile := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
+	binaryFile := filepath.Join(gaia.Cfg.PipelinePath, pipelinehelper.AppendTypeToName(p.Name, p.Type))
 	return os.Remove(binaryFile)
 }
 
 // GetExecPath returns the path to the executable for the given pipeline.
 func GetExecPath(p gaia.Pipeline) string {
-	return filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
-}
-
-// appendTypeToName appends the type to the output binary name.
-// This allows us later to define the pipeline type by the name.
-func appendTypeToName(n string, pType gaia.PipelineType) string {
-	return fmt.Sprintf("%s%s%s", n, typeDelimiter, pType.String())
+	return filepath.Join(gaia.Cfg.PipelinePath, pipelinehelper.AppendTypeToName(p.Name, p.Type))
 }
 
 // executeCmd wraps a context around the command and executes it.
@@ -275,28 +270,4 @@ func executeCmd(path string, args []string, env []string, dir string) ([]byte, e
 
 	// Execute command
 	return cmd.CombinedOutput()
-}
-
-// copyFileContents copies the content from source to destination.
-func copyFileContents(src, dst string) (err error) {
-	in, err := os.Open(src)
-	if err != nil {
-		return
-	}
-	defer in.Close()
-	out, err := os.Create(dst)
-	if err != nil {
-		return
-	}
-	defer func() {
-		cerr := out.Close()
-		if err == nil {
-			err = cerr
-		}
-	}()
-	if _, err = io.Copy(out, in); err != nil {
-		return
-	}
-	err = out.Sync()
-	return
 }

@@ -44,6 +44,11 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 		gaia.Cfg.Logger.Error("failed to get memdb service via GetWork", "error", err.Error())
 		return err
 	}
+	store, err := services.StorageService()
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to get storage service via GetWork", "error", err.Error())
+		return err
+	}
 
 	// Update worker information in a separate go routine
 	// to avoid getting blocked here.
@@ -78,14 +83,41 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 			ScheduleDate: scheduled.ScheduleDate.Unix(),
 		}
 
-		// Lookup pipeline from run
-		for _, p := range pipeline.GlobalActivePipelines.GetAll() {
-			if p.ID == scheduled.PipelineID {
-				gRPCPipelineRun.ShaSum = p.SHA256Sum
-				gRPCPipelineRun.PipelineName = filepath.Base(p.ExecPath)
-				gRPCPipelineRun.PipelineType = string(p.Type)
-				break
+		// Lookup pipeline from run dependent on the current mode
+		switch gaia.Cfg.Mode {
+		case gaia.ModeServer:
+			for _, p := range pipeline.GlobalActivePipelines.GetAll() {
+				if p.ID == scheduled.PipelineID {
+					gRPCPipelineRun.ShaSum = p.SHA256Sum
+					gRPCPipelineRun.PipelineName = p.Name
+					gRPCPipelineRun.PipelineType = string(p.Type)
+					break
+				}
 			}
+		case gaia.ModeWorker:
+			// Get information directly from the storage
+			p, err := store.PipelineGet(scheduled.PipelineID)
+			if err != nil {
+				gaia.Cfg.Logger.Error("failed to get pipeline via GetWork", "error", err.Error(), "pipeline", scheduled)
+				return err
+			}
+			if p == nil {
+				gaia.Cfg.Logger.Error("failed to find related pipeline via GetWork", "error", err.Error(), "pipeline", scheduled)
+				return errors.New("failed to find related pipeline in storage")
+			}
+			shaSum := p.SHA256Sum
+			ok, rebuildShaSum, err := store.GetSHAPair(scheduled.PipelineID)
+			if err == nil && ok {
+				shaSum = rebuildShaSum.Worker
+			}
+
+			// Set information
+			gRPCPipelineRun.ShaSum = shaSum
+			gRPCPipelineRun.PipelineName = p.Name
+			gRPCPipelineRun.PipelineType = string(p.Type)
+		default:
+			gaia.Cfg.Logger.Error("unsupported mode detected via GetWork", "mode", gaia.Cfg.Mode)
+			return errors.New("unsupported mode detected")
 		}
 
 		// Stream pipeline run back to worker
@@ -204,6 +236,7 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 			ScheduleDate: time.Unix(pipelineRun.ScheduleDate, 0),
 			StartDate:    time.Unix(pipelineRun.StartDate, 0),
 			FinishDate:   time.Unix(pipelineRun.FinishDate, 0),
+			Docker:       pipelineRun.Docker,
 		}
 		run.Jobs = make([]*gaia.Job, 0, len(pipelineRun.Jobs))
 
@@ -257,12 +290,19 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 			}
 		}
 
-		// Store pipeline run
+		// Get old pipeline run object first
 		store, err := services.StorageService()
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to get storage service via updatework", "error", err.Error())
 			return e, err
 		}
+		oldPipelineRun, err := store.PipelineGetRunByID(run.UniqueID)
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to get old pipeline run from storage vbia updatework", "error", err.Error())
+			return e, err
+		}
+
+		// Store pipeline run
 		if err = store.PipelinePutRun(run); err != nil {
 			gaia.Cfg.Logger.Error("failed to store pipeline run via updatework", "error", err.Error())
 			return e, err
@@ -272,7 +312,7 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 		switch run.Status {
 		case gaia.RunSuccess, gaia.RunFailed, gaia.RunCancelled:
 			// Check if this was a docker worker run
-			if run.Docker {
+			if oldPipelineRun.Docker {
 				go func() {
 					// Get docker worker object
 					dockerWorker, err := db.GetDockerWorker(run.DockerWorkerID)
@@ -314,13 +354,29 @@ func (w *WorkServer) StreamBinary(pipelineRun *pb.PipelineRun, serv pb.Worker_St
 		return errNotRegistered
 	}
 
+	// Get storage service
+	store, err := services.StorageService()
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to get storage service via StreamBinary", "error", err)
+		return err
+	}
+
 	// Lookup related pipeline
 	var foundPipeline *gaia.Pipeline
-	pipelines := pipeline.GlobalActivePipelines.GetAll()
-	for id := range pipelines {
-		if pipelines[id].ID == int(pipelineRun.PipelineId) {
-			foundPipeline = &pipelines[id]
-			break
+	switch gaia.Cfg.Mode {
+	case gaia.ModeServer:
+		pipelines := pipeline.GlobalActivePipelines.GetAll()
+		for id := range pipelines {
+			if pipelines[id].ID == int(pipelineRun.PipelineId) {
+				foundPipeline = &pipelines[id]
+				break
+			}
+		}
+	case gaia.ModeWorker:
+		// Load pipeline object from storage
+		foundPipeline, err = store.PipelineGet(int(pipelineRun.PipelineId))
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to load pipeline object from store via StreamBinary", "error", err)
 		}
 	}
 

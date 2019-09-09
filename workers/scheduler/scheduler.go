@@ -313,6 +313,9 @@ func (s *Scheduler) schedule() {
 				continue
 			}
 
+			// Prevent the docker worker to start another docker worker container
+			scheduled[id].Docker = false
+
 			// If it is a docker run, pipeline will be executed by a worker inside a container
 			scheduled[id].DockerWorkerID = worker.WorkerID
 			scheduled[id].PipelineTags = append(scheduled[id].PipelineTags, []string{worker.WorkerID, "dockerworker"}...)
@@ -320,6 +323,10 @@ func (s *Scheduler) schedule() {
 				gaia.Cfg.Logger.Error("failed to insert pipeline run into memdb via schedule", "error", err.Error())
 				continue
 			}
+
+			// Reset the docker status manipulation
+			scheduled[id].Docker = true
+
 			storeUpdate(gaia.RunScheduled)
 			continue
 		}
