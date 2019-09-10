@@ -40,24 +40,28 @@ var pluginMap = map[string]plugin.Plugin{
 // timeFormat is the logging time format.
 const timeFormat = "2006/01/02 15:04:05"
 
+// GaiaLogWriter represents a concurrent safe log writer which can be shared with go-plugin.
 type GaiaLogWriter struct {
 	mu     sync.RWMutex
 	buffer *bytes.Buffer
 	writer *bufio.Writer
 }
 
+// Write locks and writes to the underlying writer.
 func (g *GaiaLogWriter) Write(p []byte) (n int, err error) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	return g.writer.Write(p)
 }
 
+// Flush locks and flushes the underlying writer.
 func (g *GaiaLogWriter) Flush() error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	return g.writer.Flush()
 }
 
+// WriteString locks and passes on the string to write to the underlying writer.
 func (g *GaiaLogWriter) WriteString(s string) (int, error) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
