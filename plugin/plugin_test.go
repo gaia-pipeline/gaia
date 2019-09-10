@@ -124,7 +124,8 @@ func TestExecute(t *testing.T) {
 	})
 	p := &GoPlugin{pluginConn: new(fakeGaiaPlugin)}
 	buf := new(bytes.Buffer)
-	p.writer = bufio.NewWriter(buf)
+	p.logger = GaiaLogWriter{}
+	p.logger.writer = bufio.NewWriter(buf)
 	j := &gaia.Job{
 		Args: []*gaia.Argument{
 			{
@@ -148,7 +149,8 @@ func TestGetJobs(t *testing.T) {
 	})
 	p := &GoPlugin{pluginConn: new(fakeGaiaPlugin)}
 	buf := new(bytes.Buffer)
-	p.writer = bufio.NewWriter(buf)
+	p.logger = GaiaLogWriter{}
+	p.logger.writer = bufio.NewWriter(buf)
 	_, err := p.GetJobs()
 	if err != nil {
 		t.Fatal(err)

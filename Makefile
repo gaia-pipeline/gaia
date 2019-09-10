@@ -5,7 +5,7 @@ RELEASE_NAME=${NAME}
 HELM_DIR=$(shell pwd)/helm
 TEST=$$(go list ./... | grep -v /vendor/ | grep /testacc)
 TEST_TIMEOUT_ACC?=20m
-TEST_TIMEOUT?=20s
+TEST_TIMEOUT?=50s
 
 default: dev
 
