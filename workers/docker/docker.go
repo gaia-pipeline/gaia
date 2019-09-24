@@ -13,10 +13,10 @@ import (
 
 // DockerWorker represents the data structure of a docker worker.
 type DockerWorker struct {
-	Host          string
-	WorkerID      string
-	ContainerID   string
-	PipelineRunID string
+	Host          string `json:"host"`
+	WorkerID      string `json:"worker_id"`
+	ContainerID   string `json:"container_id"`
+	PipelineRunID string `json:"pipeline_run_id"`
 }
 
 // NewDockerWorker initiates a new worker instance.
@@ -123,7 +123,6 @@ func (w *DockerWorker) KillDockerWorker() error {
 	// Kill container
 	if err := cli.ContainerRemove(ctx, w.ContainerID, types.ContainerRemoveOptions{
 		RemoveVolumes: true,
-		RemoveLinks:   true,
 		Force:         true,
 	}); err != nil {
 		gaia.Cfg.Logger.Error("failed to remove docker worker", "error", err, "containerid", w.ContainerID)

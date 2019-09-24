@@ -268,6 +268,7 @@ func (s *BoltStore) PipelineGetRunByID(runID string) (*gaia.PipelineRun, error) 
 		}
 
 		// Unmarshal pipeline object
+		pipelineRun = &gaia.PipelineRun{}
 		err := json.Unmarshal(v, pipelineRun)
 		if err != nil {
 			return err

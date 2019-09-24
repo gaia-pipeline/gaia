@@ -242,11 +242,11 @@ func (s *Scheduler) schedule() {
 	// Iterate scheduled runs
 	for id := range scheduled {
 		// Small helper function to update the pipeline run status in the store
-		storeUpdate := func(status gaia.PipelineRunStatus) {
+		storeUpdate := func(run *gaia.PipelineRun, status gaia.PipelineRunStatus) {
 			// Update entry in store
-			scheduled[id].Status = status
-			if err := s.storeService.PipelinePutRun(scheduled[id]); err != nil {
-				gaia.Cfg.Logger.Debug("could not put pipeline run into store", "error", err.Error())
+			run.Status = status
+			if err := s.storeService.PipelinePutRun(run); err != nil {
+				gaia.Cfg.Logger.Debug("could not put pipeline run into store via schedule", "error", err.Error(), "run", run)
 			}
 		}
 
@@ -273,7 +273,7 @@ func (s *Scheduler) schedule() {
 					gaia.Cfg.Logger.Error("failed to insert pipeline run into memdb via schedule", "error", err.Error())
 					continue
 				}
-				storeUpdate(gaia.RunScheduled)
+				storeUpdate(scheduled[id], gaia.RunScheduled)
 				continue
 			}
 		}
@@ -327,7 +327,7 @@ func (s *Scheduler) schedule() {
 			// Reset the docker status manipulation
 			scheduled[id].Docker = true
 
-			storeUpdate(gaia.RunScheduled)
+			storeUpdate(scheduled[id], gaia.RunScheduled)
 			continue
 		}
 
@@ -335,7 +335,7 @@ func (s *Scheduler) schedule() {
 		s.scheduledRuns <- *scheduled[id]
 
 		// Run is now scheduled
-		storeUpdate(gaia.RunScheduled)
+		storeUpdate(scheduled[id], gaia.RunScheduled)
 	}
 }
 

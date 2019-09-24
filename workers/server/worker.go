@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/helper/stringhelper"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
@@ -298,9 +300,13 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 		}
 		oldPipelineRun, err := store.PipelineGetRunByID(run.UniqueID)
 		if err != nil {
-			gaia.Cfg.Logger.Error("failed to get old pipeline run from storage vbia updatework", "error", err.Error())
+			gaia.Cfg.Logger.Error("failed to get old pipeline run from storage via updatework", "error", err.Error())
 			return e, err
 		}
+
+		// The old status is always correct since the status from the worker might be wrong
+		run.Docker = oldPipelineRun.Docker
+		run.DockerWorkerID = oldPipelineRun.DockerWorkerID
 
 		// Store pipeline run
 		if err = store.PipelinePutRun(run); err != nil {
@@ -312,12 +318,31 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 		switch run.Status {
 		case gaia.RunSuccess, gaia.RunFailed, gaia.RunCancelled:
 			// Check if this was a docker worker run
-			if oldPipelineRun.Docker {
+			if run.Docker {
+				gaia.Cfg.Logger.Info("Cleaning up docker resources from docker pipeline run...")
 				go func() {
 					// Get docker worker object
 					dockerWorker, err := db.GetDockerWorker(run.DockerWorkerID)
 					if err != nil {
 						return
+					}
+
+					// Check if we found the right docker worker
+					if dockerWorker == nil {
+						gaia.Cfg.Logger.Error("failed to find pipeline run docker worker in memdb via updatework", "pipeline", run)
+					}
+
+					// Find the worker which is our docker worker
+					workers := db.GetAllWorker()
+					for _, worker := range workers {
+						if stringhelper.IsContainedInSlice(worker.Tags, dockerWorker.WorkerID, false) {
+							// Deregister docker worker from this instance
+							if err := db.DeleteWorker(worker.UniqueID, true); err != nil {
+								// Log the error but still continue
+								gaia.Cfg.Logger.Error("failed to remove worker via updatework", "error", err)
+							}
+							break
+						}
 					}
 
 					// Kill and remove docker worker
