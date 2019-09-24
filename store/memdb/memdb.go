@@ -2,7 +2,6 @@ package memdb
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
@@ -298,7 +297,6 @@ RunLoop:
 
 		// Filter by pipeline type
 		if !stringhelper.IsContainedInSlice(tags, pipelineRun.PipelineType.String(), true) {
-			fmt.Printf("Filtered by pipeline type (tags: %#v): %#v\n", tags, pipelineRun)
 			continue
 		}
 
@@ -306,7 +304,6 @@ RunLoop:
 		for _, pipelineTag := range pipelineRun.PipelineTags {
 			// Find a match
 			if !stringhelper.IsContainedInSlice(tags, pipelineTag, true) {
-				fmt.Printf("Filtered by tags (%#v): %s\n", tags, pipelineTag)
 				continue RunLoop
 			}
 		}

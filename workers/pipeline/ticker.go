@@ -86,7 +86,6 @@ func InitTicker() {
 			case <-ticker.C:
 				checkActivePipelines()
 				updateWorker()
-				updateDockerWorker()
 			}
 		}
 	}()
@@ -288,81 +287,6 @@ func updateWorker() {
 
 			if err := db.UpsertWorker(worker, true); err != nil {
 				gaia.Cfg.Logger.Error("failed to store update to worker via updateWorker", "error", err)
-			}
-		}
-	}
-}
-
-// updateDockerWorker checks occasionally the status of all running docker workers.
-func updateDockerWorker() {
-	// Get memdb service
-	db, err := services.MemDBService(nil)
-	if err != nil {
-		gaia.Cfg.Logger.Error("failed to get memdb service via updateDockerWorker", "error", err)
-		return
-	}
-
-	// Get store service
-	store, err := services.StorageService()
-	if err != nil {
-		gaia.Cfg.Logger.Error("failed to get storage service via updateDockerWorker", "error", err)
-		return
-	}
-
-	// Get current active docker worker
-	dockerWorker, err := db.GetAllDockerWorker()
-	if err != nil {
-		gaia.Cfg.Logger.Error("failed to get all docker worker during updateDockerWorker", "error", err)
-		return
-	}
-
-	// Iterate all docker worker
-	for _, worker := range dockerWorker {
-		// Check if docker worker is still running
-		if !worker.IsDockerWorkerRunning() {
-			// Check the elapsed time of the belonging pipeline run
-			// to decide if this docker worker has been timed out.
-			run, err := store.PipelineGetRunByID(worker.PipelineRunID)
-			if err != nil {
-				gaia.Cfg.Logger.Error("failed to access pipeline run via updateDockerWorker", "error", err)
-				continue
-			}
-
-			// If docker container is not running and pipeline is still not finished, kill container.
-			if run.FinishDate.IsZero() && run.Status == gaia.RunScheduled {
-				// Print debug information
-				gaia.Cfg.Logger.Warn("found irresponsible docker worker. Killing docker container and rescheduling run now",
-					"pipelineid", run.PipelineID, "runid", run.ID)
-
-				// Kill docker container
-				if err := worker.KillDockerWorker(); err != nil {
-					gaia.Cfg.Logger.Error("failed to kill irresponsible docker container", "error", err, "containerid", worker.ContainerID)
-					continue
-				}
-
-				// Remove scheduled pipeline run from memdb service
-				if err := db.DeletePipelineRun(worker.PipelineRunID); err != nil {
-					gaia.Cfg.Logger.Error("failed to access pipeline run via updateDockerWorker", "error", err)
-					continue
-				}
-
-				switch gaia.Cfg.Mode {
-				case gaia.ModeWorker:
-					// Reschedule pipeline run which might fix the issue.
-					run.Status = gaia.RunReschedule
-					if err := store.PipelinePutRun(run); err != nil {
-						gaia.Cfg.Logger.Error("failed to put pipeline run into store via updateDockerWorker", "error", err)
-						continue
-					}
-				case gaia.ModeServer:
-					// Set status to not scheduled, this will allow the scheduler to pick up this run again.
-					run.Status = gaia.RunNotScheduled
-					if err := store.PipelinePutRun(run); err != nil {
-						gaia.Cfg.Logger.Error("failed to put pipeline run into store via updateDockerWorker", "error", err)
-						continue
-					}
-				}
-
 			}
 		}
 	}

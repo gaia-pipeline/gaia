@@ -104,7 +104,7 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 				return err
 			}
 			if p == nil {
-				gaia.Cfg.Logger.Error("failed to find related pipeline via GetWork", "error", err.Error(), "pipeline", scheduled)
+				gaia.Cfg.Logger.Error("failed to find related pipeline via GetWork", "pipeline", scheduled)
 				return errors.New("failed to find related pipeline in storage")
 			}
 			shaSum := p.SHA256Sum
