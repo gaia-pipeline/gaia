@@ -11,10 +11,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+	hclog "github.com/hashicorp/go-hclog"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/store"
-	"github.com/hashicorp/go-hclog"
 )
 
 func TestPrepareEnvironmentCpp(t *testing.T) {
@@ -135,7 +137,7 @@ func TestCopyBinaryCpp(t *testing.T) {
 	p.Pipeline.Type = gaia.PTypeCpp
 	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: tmp}
 	src := filepath.Join(tmp, cppFinalBinaryName)
-	dst := appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
+	dst := pipelinehelper.AppendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
 	f, _ := os.Create(src)
 	defer f.Close()
 	defer os.Remove(dst)

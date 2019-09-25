@@ -273,7 +273,7 @@ func (a *Agent) scheduleWork() {
 	gaia.Cfg.Logger.Trace("try to pull work from Gaia primary instance...")
 
 	// Set available worker slots. Primary instance decides if worker needs work.
-	a.self.WorkerSlots = int32(a.scheduler.GetFreeWorkers())
+	a.self.WorkerSlots = a.scheduler.GetFreeWorkers()
 
 	// Setup context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), (12*schedulerTickerSeconds)*time.Second)

@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/workers/docker"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/security"
@@ -62,11 +64,20 @@ func (m *MemDBFake) InsertPipelineRun(p *gaia.PipelineRun) error     { return ni
 func (m *MemDBFake) PopPipelineRun(tags []string) (*gaia.PipelineRun, error) {
 	return &gaia.PipelineRun{}, nil
 }
+func (m *MemDBFake) DeletePipelineRun(runID string) error { return nil }
 func (m *MemDBFake) UpsertSHAPair(pair gaia.SHAPair) error {
 	return nil
 }
 func (m *MemDBFake) GetSHAPair(pipelineID string) (ok bool, pair gaia.SHAPair, err error) {
 	return
+}
+func (m *MemDBFake) InsertDockerWorker(w *docker.DockerWorker) error { return nil }
+func (m *MemDBFake) GetDockerWorker(workerID string) (*docker.DockerWorker, error) {
+	return &docker.DockerWorker{}, nil
+}
+func (m *MemDBFake) DeleteDockerWorker(workerID string) error { return nil }
+func (m *MemDBFake) GetAllDockerWorker() ([]*docker.DockerWorker, error) {
+	return []*docker.DockerWorker{}, nil
 }
 
 func TestInit(t *testing.T) {

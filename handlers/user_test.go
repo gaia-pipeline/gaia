@@ -14,9 +14,9 @@ import (
 	gStore "github.com/gaia-pipeline/gaia/store"
 	"github.com/pkg/errors"
 
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
-	"github.com/hashicorp/go-hclog"
+	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
 
@@ -36,6 +36,7 @@ func TestUserLoginHMACKey(t *testing.T) {
 			Name:   "Gaia",
 		}),
 		DataPath: dataDir,
+		Mode:     gaia.ModeServer,
 	}
 
 	e := echo.New()
@@ -200,6 +201,7 @@ func TestUserLoginRSAKey(t *testing.T) {
 			Name:   "Gaia",
 		}),
 		DataPath: dataDir,
+		Mode:     gaia.ModeServer,
 	}
 
 	e := echo.New()

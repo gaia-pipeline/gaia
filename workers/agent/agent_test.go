@@ -30,7 +30,7 @@ import (
 	pb "github.com/gaia-pipeline/gaia/workers/proto"
 	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/hashicorp/go-hclog"
+	hclog "github.com/hashicorp/go-hclog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 )
@@ -177,7 +177,7 @@ func (mw *mockWorkerInterface) GetWork(workInst *pb.WorkerInstance, serv pb.Work
 			Status:       string(gaia.RunScheduled),
 			ScheduleDate: time.Now().Unix(),
 			Id:           1,
-			PipelineName: "my-pipeline_golang",
+			PipelineName: "my-pipeline",
 			ShaSum:       sha,
 			Jobs: []*pb.Job{
 				{
@@ -201,7 +201,7 @@ func (mw *mockWorkerInterface) GetWork(workInst *pb.WorkerInstance, serv pb.Work
 			Status:       string(gaia.RunScheduled),
 			ScheduleDate: time.Now().Unix(),
 			Id:           2,
-			PipelineName: "my-cpp-pipeline-broken_cpp",
+			PipelineName: "my-cpp-pipeline-broken",
 			ShaSum:       shaCpp,
 		},
 	}

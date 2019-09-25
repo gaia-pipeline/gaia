@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+
 	"github.com/gaia-pipeline/gaia"
 )
 
@@ -326,8 +328,8 @@ func TestRenameBinary(t *testing.T) {
 
 	newName := "PipelineB"
 
-	src := filepath.Join(tmp, appendTypeToName(p.Name, p.Type))
-	dst := filepath.Join(tmp, appendTypeToName(newName, p.Type))
+	src := filepath.Join(tmp, pipelinehelper.AppendTypeToName(p.Name, p.Type))
+	dst := filepath.Join(tmp, pipelinehelper.AppendTypeToName(newName, p.Type))
 	f, _ := os.Create(src)
 	defer f.Close()
 	defer os.Remove(src)
@@ -363,7 +365,7 @@ func TestDeleteBinary(t *testing.T) {
 		Created: time.Now(),
 	}
 
-	src := filepath.Join(tmp, appendTypeToName(p.Name, p.Type))
+	src := filepath.Join(tmp, pipelinehelper.AppendTypeToName(p.Name, p.Type))
 	f, _ := os.Create(src)
 	defer f.Close()
 	defer os.Remove(src)
@@ -394,7 +396,7 @@ func TestGetExecPath(t *testing.T) {
 		Created: time.Now(),
 	}
 
-	expectedPath := filepath.Join(tmp, appendTypeToName(p.Name, p.Type))
+	expectedPath := filepath.Join(tmp, pipelinehelper.AppendTypeToName(p.Name, p.Type))
 	execPath := GetExecPath(p)
 
 	if execPath != expectedPath {

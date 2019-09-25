@@ -17,7 +17,7 @@ import (
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	pb "github.com/gaia-pipeline/gaia/workers/proto"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/hashicorp/go-hclog"
+	hclog "github.com/hashicorp/go-hclog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -52,6 +52,9 @@ func (s *mockStorageService) PipelineGetRunByPipelineIDAndID(pipelineid int, run
 func (s *mockStorageService) PipelinePutRun(r *gaia.PipelineRun) error { return nil }
 func (s *mockStorageService) PipelineGet(id int) (pipeline *gaia.Pipeline, err error) {
 	return s.mockPipeline, nil
+}
+func (s *mockStorageService) PipelineGetRunByID(runID string) (*gaia.PipelineRun, error) {
+	return &gaia.PipelineRun{}, nil
 }
 
 type mockGetWorkServ struct {
@@ -134,7 +137,9 @@ func generateTestData() *gaia.PipelineRun {
 }
 
 func TestGetWork(t *testing.T) {
-	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg = &gaia.Config{
+		Mode: gaia.ModeServer,
+	}
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level: hclog.Trace,
 		Name:  "Gaia",
@@ -242,7 +247,9 @@ func TestStreamBinary(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tmp)
-	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg = &gaia.Config{
+		Mode: gaia.ModeServer,
+	}
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level: hclog.Trace,
 		Name:  "Gaia",
