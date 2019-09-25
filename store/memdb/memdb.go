@@ -60,16 +60,16 @@ type GaiaMemDB interface {
 	DeletePipelineRun(runID string) error
 
 	// InsertDockerWorker inserts a docker worker into the memdb.
-	InsertDockerWorker(w *docker.DockerWorker) error
+	InsertDockerWorker(w *docker.Worker) error
 
 	// GetDockerWorker gets the docker worker by the given worker id.
-	GetDockerWorker(workerID string) (*docker.DockerWorker, error)
+	GetDockerWorker(workerID string) (*docker.Worker, error)
 
 	// DeleteDockerWorker deletes the docker worker by then given worker id.
 	DeleteDockerWorker(workerID string) error
 
 	// GetAllDockerWorker gets all docker worker.
-	GetAllDockerWorker() ([]*docker.DockerWorker, error)
+	GetAllDockerWorker() ([]*docker.Worker, error)
 }
 
 // InitMemDB initiates a new memdb db.
@@ -381,7 +381,7 @@ func (m *MemDB) DeletePipelineRun(runID string) error {
 }
 
 // InsertDockerWorker inserts a docker worker into the memdb.
-func (m *MemDB) InsertDockerWorker(w *docker.DockerWorker) error {
+func (m *MemDB) InsertDockerWorker(w *docker.Worker) error {
 	// Create a write transaction
 	txn := m.db.Txn(true)
 
@@ -398,7 +398,7 @@ func (m *MemDB) InsertDockerWorker(w *docker.DockerWorker) error {
 }
 
 // GetDockerWorker returns the docker worker by the given worker id.
-func (m *MemDB) GetDockerWorker(workerID string) (*docker.DockerWorker, error) {
+func (m *MemDB) GetDockerWorker(workerID string) (*docker.Worker, error) {
 	// Create read transaction
 	txn := m.db.Txn(false)
 	defer txn.Abort()
@@ -416,7 +416,7 @@ func (m *MemDB) GetDockerWorker(workerID string) (*docker.DockerWorker, error) {
 	}
 
 	// Convert into docker worker obj
-	w, ok := raw.(*docker.DockerWorker)
+	w, ok := raw.(*docker.Worker)
 	if !ok {
 		gaia.Cfg.Logger.Error("failed to convert docker worker into docker worker obj", "raw", raw)
 		return nil, errors.New("failed to convert docker worker into docker worker obj")
@@ -453,8 +453,8 @@ func (m *MemDB) DeleteDockerWorker(workerID string) error {
 }
 
 // GetAllDockerWorker gets all docker worker.
-func (m *MemDB) GetAllDockerWorker() ([]*docker.DockerWorker, error) {
-	var dockerWorkers []*docker.DockerWorker
+func (m *MemDB) GetAllDockerWorker() ([]*docker.Worker, error) {
+	var dockerWorkers []*docker.Worker
 
 	// Create a read-only transaction
 	txn := m.db.Txn(false)
@@ -476,7 +476,7 @@ func (m *MemDB) GetAllDockerWorker() ([]*docker.DockerWorker, error) {
 		}
 
 		// Convert into docker worker obj
-		w, ok := item.(*docker.DockerWorker)
+		w, ok := item.(*docker.Worker)
 		if !ok {
 			gaia.Cfg.Logger.Error("failed to convert docker worker into docker worker obj", "raw", item)
 			continue

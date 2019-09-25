@@ -71,13 +71,13 @@ func (m *MemDBFake) UpsertSHAPair(pair gaia.SHAPair) error {
 func (m *MemDBFake) GetSHAPair(pipelineID string) (ok bool, pair gaia.SHAPair, err error) {
 	return
 }
-func (m *MemDBFake) InsertDockerWorker(w *docker.DockerWorker) error { return nil }
-func (m *MemDBFake) GetDockerWorker(workerID string) (*docker.DockerWorker, error) {
-	return &docker.DockerWorker{}, nil
+func (m *MemDBFake) InsertDockerWorker(w *docker.Worker) error { return nil }
+func (m *MemDBFake) GetDockerWorker(workerID string) (*docker.Worker, error) {
+	return &docker.Worker{}, nil
 }
 func (m *MemDBFake) DeleteDockerWorker(workerID string) error { return nil }
-func (m *MemDBFake) GetAllDockerWorker() ([]*docker.DockerWorker, error) {
-	return []*docker.DockerWorker{}, nil
+func (m *MemDBFake) GetAllDockerWorker() ([]*docker.Worker, error) {
+	return []*docker.Worker{}, nil
 }
 
 func TestInit(t *testing.T) {

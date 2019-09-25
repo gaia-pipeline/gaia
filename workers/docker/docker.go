@@ -11,8 +11,8 @@ import (
 	"github.com/gaia-pipeline/gaia/security"
 )
 
-// DockerWorker represents the data structure of a docker worker.
-type DockerWorker struct {
+// Worker represents the data structure of a docker worker.
+type Worker struct {
 	Host          string `json:"host"`
 	WorkerID      string `json:"worker_id"`
 	ContainerID   string `json:"container_id"`
@@ -20,13 +20,13 @@ type DockerWorker struct {
 }
 
 // NewDockerWorker initiates a new worker instance.
-func NewDockerWorker(host string, pipelineRunID string) *DockerWorker {
-	return &DockerWorker{Host: host, PipelineRunID: pipelineRunID}
+func NewDockerWorker(host string, pipelineRunID string) *Worker {
+	return &Worker{Host: host, PipelineRunID: pipelineRunID}
 }
 
 // SetupDockerWorker starts a Gaia worker inside a docker container, automatically
 // connects it with this Gaia instance and sets a unique tag.
-func (w *DockerWorker) SetupDockerWorker(workerImage string, workerSecret string) error {
+func (w *Worker) SetupDockerWorker(workerImage string, workerSecret string) error {
 	// Generate a unique id for this worker
 	w.WorkerID = security.GenerateRandomUUIDV5()
 
@@ -86,7 +86,7 @@ func (w *DockerWorker) SetupDockerWorker(workerImage string, workerSecret string
 }
 
 // IsDockerWorkerRunning checks if the docker worker is running.
-func (w *DockerWorker) IsDockerWorkerRunning() bool {
+func (w *Worker) IsDockerWorkerRunning() bool {
 	// Setup docker client
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.WithHost(w.Host))
@@ -110,7 +110,7 @@ func (w *DockerWorker) IsDockerWorkerRunning() bool {
 
 // KillDockerWorker disconnects the existing docker worker and
 // kills the docker container.
-func (w *DockerWorker) KillDockerWorker() error {
+func (w *Worker) KillDockerWorker() error {
 	// Setup docker client
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.WithHost(w.Host))
