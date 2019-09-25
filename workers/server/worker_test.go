@@ -145,6 +145,7 @@ func TestGetWork(t *testing.T) {
 		Name:  "Gaia",
 	})
 	services.MockMemDBService(&mockMemDBService{})
+	services.MockStorageService(&mockStorageService{})
 
 	// Init global active pipelines slice
 	pipeline.GlobalActivePipelines = pipeline.NewActivePipelines()

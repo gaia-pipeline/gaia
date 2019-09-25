@@ -689,6 +689,9 @@ func TestUpdateWork(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Reset previous cached runs
+	mW.pbRuns = nil
+
 	// Run update work
 	ag.updateWork()
 
