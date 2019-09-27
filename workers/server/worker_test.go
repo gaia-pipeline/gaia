@@ -136,7 +136,7 @@ func generateTestData() *gaia.PipelineRun {
 	}
 }
 
-func TestGetWork(t *testing.T) {
+func TestGetWorkServer(t *testing.T) {
 	gaia.Cfg = &gaia.Config{
 		Mode: gaia.ModeServer,
 	}
@@ -158,6 +158,31 @@ func TestGetWork(t *testing.T) {
 	ws := WorkServer{}
 	if err := ws.GetWork(&pb.WorkerInstance{UniqueId: "test", WorkerSlots: 1}, mw); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestGetWorkWorker(t *testing.T) {
+	gaia.Cfg = &gaia.Config{
+		Mode: gaia.ModeWorker,
+	}
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level: hclog.Trace,
+		Name:  "Gaia",
+	})
+	services.MockMemDBService(&mockMemDBService{})
+	services.MockStorageService(&mockStorageService{})
+
+	// Init global active pipelines slice
+	pipeline.GlobalActivePipelines = pipeline.NewActivePipelines()
+	pipeline.GlobalActivePipelines.Append(gaia.Pipeline{ID: 1, SHA256Sum: []byte("testbytes"), Type: gaia.PTypeGolang, ExecPath: "execpath"})
+
+	// Mock gRPC server
+	mw := mockGetWorkServ{}
+
+	// Run GetWork
+	ws := WorkServer{}
+	if err := ws.GetWork(&pb.WorkerInstance{UniqueId: "test", WorkerSlots: 1}, mw); err == nil {
+		t.Fatal("expected error")
 	}
 }
 
