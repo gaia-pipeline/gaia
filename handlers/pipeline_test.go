@@ -476,7 +476,10 @@ func TestPipelineStart(t *testing.T) {
 	})
 
 	t.Run("fails when scheduler doesn't find the pipeline but does not return error", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", nil)
+		bodyBytes, _ := json.Marshal(map[string]interface{}{
+			"docker": false,
+		})
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
