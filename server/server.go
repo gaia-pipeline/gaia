@@ -67,12 +67,11 @@ func init() {
 	fs.StringVar(&gaia.Cfg.WorkerServerPort, "worker-server-port", "8989", "Listen port for Gaia primary worker gRPC communication. Only used in server mode")
 	fs.StringVar(&gaia.Cfg.WorkerTags, "worker-tags", "", "Comma separated list of custom tags for this worker. Only used in worker mode")
 	fs.BoolVar(&gaia.Cfg.PreventPrimaryWork, "prevent-primary-work", false, "If true, prevents the scheduler to schedule work on this Gaia primary instance. Only used in server mode")
-	fs.BoolVar(&gaia.Cfg.AutoDockerMode, "auto-docker-mode", true, "If true, by default runs all pipelines in a docker container")
+	fs.BoolVar(&gaia.Cfg.AutoDockerMode, "auto-docker-mode", false, "If true, by default runs all pipelines in a docker container")
 	fs.StringVar(&gaia.Cfg.DockerHostURL, "docker-host-url", "unix:///var/run/docker.sock", "Docker daemon host url which is used to build and run pipelines in a docker container")
-	//fs.StringVar(&gaia.Cfg.DockerRunImage, "docker-run-image", "gaiapipeline/gaia:latest", "Docker image repository name with tag which will be used for running pipelines in a docker container")
-	fs.StringVar(&gaia.Cfg.DockerRunImage, "docker-run-image", "gaia-go:latest", "Docker image repository name with tag which will be used for running pipelines in a docker container")
-	fs.StringVar(&gaia.Cfg.DockerWorkerHostURL, "docker-worker-host-url", "http://192.168.1.117:8080", "The host url of the primary/worker API endpoint used for docker worker communication")
-	fs.StringVar(&gaia.Cfg.DockerWorkerGRPCHostURL, "docker-worker-grpc-host-url", "192.168.1.117:8989", "The host url of the primary/worker gRPC endpoint used for docker worker communication")
+	fs.StringVar(&gaia.Cfg.DockerRunImage, "docker-run-image", "gaiapipeline/gaia:latest", "Docker image repository name with tag which will be used for running pipelines in a docker container")
+	fs.StringVar(&gaia.Cfg.DockerWorkerHostURL, "docker-worker-host-url", "http://127.0.0.1:8080", "The host url of the primary/worker API endpoint used for docker worker communication")
+	fs.StringVar(&gaia.Cfg.DockerWorkerGRPCHostURL, "docker-worker-grpc-host-url", "127.0.0.1:8989", "The host url of the primary/worker gRPC endpoint used for docker worker communication")
 
 	// Default values
 	gaia.Cfg.Bolt.Mode = 0600

@@ -195,7 +195,7 @@ type Pipeline struct {
 	PeriodicSchedules []string     `json:"periodicschedules,omitempty"`
 	TriggerToken      string       `json:"trigger_token,omitempty"`
 	Tags              []string     `json:"tags,omitempty"`
-	Docker            bool         `json:"docker,omitempty"`
+	Docker            bool         `json:"docker"`
 	CronInst          *cron.Cron   `json:"-"`
 }
 

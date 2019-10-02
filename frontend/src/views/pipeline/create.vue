@@ -53,11 +53,17 @@
                   </span>
                   <span>Add Pipeline Trigger</span>
                 </a>
-                <a class="button is-primary" v-on:click="showSetPipelineWorkerTags">
+                <a class="button is-primary" v-on:click="showSetPipelineWorkerTags" style="margin-right: 5px;">
                   <span class="icon">
                     <i class="fa fa-tags"></i>
                   </span>
                   <span>Set Pipeline Worker Tags</span>
+                </a>
+                <a class="button is-primary" v-on:click="showCustomOptionsModal">
+                  <span class="icon">
+                    <i class="fa fa-cogs"></i>
+                  </span>
+                  <span>Custom Options</span>
                 </a>
               </p>
               <span style="color: red" v-if="periodicSchedulesErr">Periodic schedules invalid: {{ periodicSchedulesErrMsg }}</span>
@@ -350,6 +356,42 @@
       </div>
     </modal>
 
+    <!-- pipeline custom options -->
+    <modal :visible="customOptionsModal" class="modal-z-index" @close="close">
+      <div class="box credentials-modal">
+        <div class="block credentials-modal-content">
+          <collapse accordion is-fullwidth>
+            <collapse-item title="Docker options:" selected>
+              <div class="credentials-modal-content">
+                <message :direction="'down'" style="padding-bottom: 10px;"
+                         message="
+                           If enabled, Gaia will automatically run this pipeline in a docker container
+                           by default."
+                         :duration="0">
+                </message>
+                <p class="control has-icons-left" style="padding-bottom: 5px;">
+                  <toggle-button
+                    v-model="createPipeline.pipeline.docker"
+                    id="pipelinedocker"
+                    :color="{checked: '#7DCE94', unchecked: '#82C7EB'}"
+                    :labels="{checked: 'On', unchecked: 'Off'}"
+                    :sync="true"/>
+                </p>
+              </div>
+            </collapse-item>
+          </collapse>
+          <div class="modal-footer">
+            <div style="float: left;">
+              <button class="button is-primary" v-on:click="customOptionsModalConfirm">Confirm</button>
+            </div>
+            <div style="float: right;">
+              <button class="button is-danger" v-on:click="cancel">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </modal>
+
     <!-- status output modal -->
     <modal :visible="statusOutputModal" class="modal-z-index" @close="closeStatusModal">
       <div class="box statusModal">
@@ -378,6 +420,7 @@ import moment from 'moment'
 import Notification from 'vue-bulma-notification-fixed'
 import Message from 'vue-bulma-message-html'
 import VueTagsInput from '@johmun/vue-tags-input'
+import { ToggleButton } from 'vue-js-toggle-button'
 
 const NotificationComponent = Vue.extend(Notification)
 const openNotification = (
@@ -466,7 +509,8 @@ export default {
       statusOutputMsg: '',
       setPipelineWorkerTagsModal: false,
       selectedPipelineWorkerTags: [],
-      currentTag: ''
+      currentTag: '',
+      customOptionsModal: false
     }
   },
 
@@ -477,7 +521,8 @@ export default {
     ProgressBar,
     Message,
     VueTagsInput,
-    VueGoodTable
+    VueGoodTable,
+    ToggleButton
   },
 
   mounted () {
@@ -649,6 +694,7 @@ export default {
       this.gitWebHookModal = false
       this.periodicalPipelineScheduleModal = false
       this.setPipelineWorkerTagsModal = false
+      this.customOptionsModal = false
       this.$emit('close')
     },
 
@@ -661,6 +707,7 @@ export default {
       this.createPipeline.pipeline.repo.privatekey.password = ''
       this.periodicSchedules = ''
       this.selectedPipelineWorkerTags = []
+      this.createPipeline.pipeline.docker = false
 
       this.close()
     },
@@ -671,6 +718,10 @@ export default {
 
     showGitHubWebHookModal () {
       this.gitWebHookModal = true
+    },
+
+    showCustomOptionsModal () {
+      this.customOptionsModal = true
     },
 
     showPeriodicalPipelineScheduleModal () {
@@ -723,6 +774,10 @@ export default {
         this.currentTag = ''
       }
 
+      this.close()
+    },
+
+    customOptionsModalConfirm () {
       this.close()
     },
 

@@ -27,6 +27,9 @@ var (
 	// errPipelineRename is thrown when a pipeline binary could not be renamed
 	errPipelineRename = errors.New("pipeline could not be renamed")
 
+	// errWrongDockerValue is thrown when docker has been specified for a pipeline run but the value is invalid
+	errWrongDockerValue = errors.New("invalid value for docker parameter")
+
 	// List of secret keys which cannot be modified via the normal Vault API.
 	ignoredVaultKeys []string
 )
