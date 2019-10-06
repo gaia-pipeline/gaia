@@ -3,10 +3,11 @@ package pipeline
 import (
 	"errors"
 	"fmt"
-	"github.com/gaia-pipeline/gaia/helper/filehelper"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/gaia-pipeline/gaia/helper/filehelper"
 
 	"github.com/gaia-pipeline/gaia"
 )
@@ -17,7 +18,7 @@ var (
 
 	// pythonPipInstallCmd is the command used to install the python distribution
 	// package.
-	pythonPipInstallCmd = ". bin/activate; python -m pip install %s.tar.gz"
+	pythonPipInstallCmd = ". bin/activate; python -m pip install '%s.tar.gz'"
 
 	// Ruby gem binary name.
 	rubyGemName = "gem"
