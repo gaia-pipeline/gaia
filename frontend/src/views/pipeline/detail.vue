@@ -12,10 +12,42 @@
           <span class="icon">
             <i class="fa fa-terminal"></i>
           </span>
-          <span>Show Logs</span>
+          <span>Show Logs (Run :{{runID}})</span>
         </a>
       </div>
+       <div class="tile is-parent" v-if="pipeline">
+        <article class="tile is-child notification content-article box">
+          <table class="pipeline-detail-table">
+            <tr><th>Name</th><td>{{pipeline.name}}</td></tr>
+            <tr><th>Repo</th><td>{{pipeline.repo.url}}</td></tr>
+            <tr><th>Branch</th><td>{{pipeline.repo.selectedbranch}}</td></tr>
+            <tr><th>Location</th><td>{{pipeline.execpath}}</td></tr>
+            <tr><th>Trigger Token</th><td>{{pipeline.trigger_token}}</td></tr>
 
+            <tr v-if="lastSuccessfulRun">
+              <th>Last Successful Run</th>
+              <td>
+                <router-link :to="{ path: '/pipeline/detail', query: { pipelineid: pipelineID, runid: lastSuccessfulRun.id }}"
+                             class="is-blue">
+                  {{ lastSuccessfulRun.id }}
+                </router-link></td>
+            </tr>
+            <tr v-if="lastRun">
+              <th>Last Run</th>
+              <td>
+                <router-link :to="{ path: '/pipeline/detail', query: { pipelineid: pipelineID, runid: lastRun.id }}"
+                             class="is-blue">
+                  {{ lastRun.id }}
+                </router-link>
+                [<span v-if="lastRun.status === 'success'" style="color: green;">{{ lastRun.status }}</span>
+                <span v-else-if="lastRun.status === 'failed'" style="color: red;">{{ lastRun.status }}</span>
+                <span v-else-if="lastRun.status === 'cancelled'" style="color: yellow;">{{ lastRun.status }}</span>
+                <span v-else>{{ lastRun.status }}</span> ]
+              </td>
+            </tr>
+          </table>
+        </article>
+       </div>
       <div class="tile">
         <div class="tile is-vertical is-parent is-12">
           <article class="tile is-child notification content-article">
@@ -231,6 +263,21 @@ export default {
               this.drawPipelineDetail(pipeline.data, pipelineRun.data)
             }
             this.runsRows = pipelineRuns.data
+            let tempLastSuccessfulRunId = -1;
+            let tempLastRunId = -1;
+            for (let runI = 0; runI < pipelineRuns.data.length; runI++) {
+              if (pipelineRuns.data[runI].status == 'success') {
+                if (pipelineRuns.data[runI].id > tempLastSuccessfulRunId) {
+                  this.lastSuccessfulRun = pipelineRuns.data[runI];
+                  tempLastSuccessfulRunId = pipelineRuns.data[runI].id;
+                }
+              }
+
+              if (pipelineRuns.data[runI].id > tempLastRunId) {
+                this.lastRun = pipelineRuns.data[runI];
+                tempLastRunId = pipelineRuns.data[runI].id;
+              }
+            }
             this.pipeline = pipeline.data
           })
           .catch((error) => {
@@ -251,6 +298,21 @@ export default {
             // Are runs available?
             if (pipelineRuns.data) {
               this.runsRows = pipelineRuns.data
+              let tempLastSuccessfulRunId = -1;
+              let tempLastRunId = -1;
+              for (let runI = 0; runI < pipelineRuns.data.length; runI++) {
+                if (pipelineRuns.data[runI].status == 'success') {
+                  if (pipelineRuns.data[runI].id > tempLastSuccessfulRunId) {
+                    this.lastSuccessfulRun = pipelineRuns.data[runI];
+                    tempLastSuccessfulRunId = pipelineRuns.data[runI].id;
+                  }
+                }
+
+                if (pipelineRuns.data[runI].id > tempLastRunId) {
+                  this.lastRun = pipelineRuns.data[runI];
+                  tempLastRunId = pipelineRuns.data[runI].id;
+                }
+              }
             }
             this.pipeline = pipeline.data
           })
@@ -467,4 +529,20 @@ export default {
     background-color: #2a2735;
   }
 
+  .pipeline-detail-table {
+    width: 100%;
+    table-layout: auto;
+    border: 1px solid #000000;
+    background-color: #19191B;
+    border-radius: 6px;
+    border-collapse: separate !important;
+    th {
+      color: #4da2fc;
+    }
+    td, th {
+      padding: 10px;
+      padding-left: 15px;
+      border-bottom: 1px solid #000000;
+    }
+  }
 </style>
