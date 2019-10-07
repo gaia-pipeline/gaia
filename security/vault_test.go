@@ -65,9 +65,8 @@ func TestAddAndGet(t *testing.T) {
 		Name:   "Gaia",
 	})
 	c, _ := InitCA()
-	v, err := NewVault(c, nil)
 	mvs := new(MockVaultStorer)
-	v.storer = mvs
+	v, err := NewVault(c, mvs)
 	if err != nil {
 		t.Fatal(err)
 	}
