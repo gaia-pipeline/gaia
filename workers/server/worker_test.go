@@ -203,6 +203,7 @@ func TestUpdateWork(t *testing.T) {
 			UniqueId: "first-pipeline-run",
 			Id:       1,
 			Status:   string(gaia.RunReschedule),
+			Docker:   true,
 		}
 
 		// Run UpdateWork
