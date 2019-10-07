@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
@@ -35,8 +36,9 @@ var (
 func updatePipeline(p *gaia.Pipeline) error {
 	switch p.Type {
 	case gaia.PTypePython:
+		pNameBase64Encoded := base64.StdEncoding.EncodeToString([]byte(p.Name))
 		// Remove virtual environment if exists
-		virtualEnvPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder, p.Name)
+		virtualEnvPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder, pNameBase64Encoded)
 		_ = os.RemoveAll(virtualEnvPath)
 
 		// Create virtual environment

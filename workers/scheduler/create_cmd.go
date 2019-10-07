@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"encoding/base64"
 	"os/exec"
 	"path/filepath"
 
@@ -40,7 +41,8 @@ func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
 			"-c",
 			". bin/activate; exec " + pythonExecName + " -c \"import pipeline; pipeline.main()\"",
 		}
-		c.Dir = filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder, p.Name)
+		pNameBase64Encoded := base64.StdEncoding.EncodeToString([]byte(p.Name))
+		c.Dir = filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder, pNameBase64Encoded)
 	case gaia.PTypeCpp:
 		c.Path = p.ExecPath
 	case gaia.PTypeRuby:
