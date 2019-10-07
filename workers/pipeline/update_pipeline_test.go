@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"bytes"
+	"encoding/base64"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -29,8 +30,9 @@ func TestUpdatePipelinePython(t *testing.T) {
 		Created: time.Now(),
 	}
 
+	pNameBase64Encoded := base64.StdEncoding.EncodeToString([]byte(p1.Name))
 	// Create fake virtualenv folder with temp file
-	virtualEnvPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder, p1.Name)
+	virtualEnvPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder, pNameBase64Encoded)
 	err := os.MkdirAll(virtualEnvPath, 0700)
 	if err != nil {
 		t.Fatal(err)
