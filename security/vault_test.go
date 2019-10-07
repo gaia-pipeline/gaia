@@ -46,9 +46,8 @@ func TestNewVault(t *testing.T) {
 		Name:   "Gaia",
 	})
 	c, _ := InitCA()
-	v, err := NewVault(c, nil)
 	mvs := new(MockVaultStorer)
-	v.storer = mvs
+	_, err := NewVault(c, mvs)
 	if err != nil {
 		t.Fatal(err)
 	}
