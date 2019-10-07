@@ -79,7 +79,7 @@ func TestVaultService(t *testing.T) {
 		t.Fatal("initial service should be nil. was: ", vaultService)
 	}
 	_, _ = CertificateService()
-	_, _ = VaultService(nil)
+	_, _ = DefaultVaultService()
 	defer func() {
 		certificateService = nil
 		vaultService = nil
@@ -158,7 +158,7 @@ type testMockCertificateService struct {
 }
 
 type testMockVaultService struct {
-	security.VaultAPI
+	security.GaiaVault
 }
 
 type testMockMemDBService struct {
@@ -227,12 +227,12 @@ func TestCanMockServiceToNil(t *testing.T) {
 	t.Run("can mock vault to nil", func(t *testing.T) {
 		mcp := new(testMockVaultService)
 		MockVaultService(mcp)
-		s1, _ := VaultService(nil)
+		s1, _ := DefaultVaultService()
 		if reflect.TypeOf(s1).String() != "*services.testMockVaultService" {
 			t.Fatalf("want type: '%s' got: '%s'", "testMockVaultService", reflect.TypeOf(s1).String())
 		}
 		MockVaultService(nil)
-		s2, _ := VaultService(nil)
+		s2, _ := DefaultVaultService()
 		if reflect.TypeOf(s2).String() == "*services.testMockVaultService" {
 			t.Fatalf("got: '%s'", reflect.TypeOf(s2).String())
 		}
@@ -241,7 +241,7 @@ func TestCanMockServiceToNil(t *testing.T) {
 	t.Run("can mock memdb to nil", func(t *testing.T) {
 		mcp := new(testMockMemDBService)
 		MockMemDBService(mcp)
-		s1, _ := MemDBService(nil)
+		s1, _ := DefaultMemDBService()
 		if reflect.TypeOf(s1).String() != "*services.testMockMemDBService" {
 			t.Fatalf("want type: '%s' got: '%s'", "testMockMemDBService", reflect.TypeOf(s1).String())
 		}

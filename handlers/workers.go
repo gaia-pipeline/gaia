@@ -109,7 +109,7 @@ func RegisterWorker(c echo.Context) error {
 	caCertB64 := base64.StdEncoding.EncodeToString([]byte(caCert))
 
 	// Register worker by adding it to the memdb and store
-	db, err := services.MemDBService(nil)
+	db, err := services.DefaultMemDBService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot get memdb service via register worker", "error", err.Error())
 		return c.String(http.StatusInternalServerError, "cannot get memdb service")
@@ -134,7 +134,7 @@ func DeregisterWorker(c echo.Context) error {
 	}
 
 	// Get memdb service
-	db, err := services.MemDBService(nil)
+	db, err := services.DefaultMemDBService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot get memdb service from store", "error", err.Error())
 		return c.String(http.StatusInternalServerError, "cannot get memdb service from service store")
@@ -166,7 +166,7 @@ func GetWorkerRegisterSecret(c echo.Context) error {
 
 // getWorkerSecret returns the global secret for registering new worker.
 func getWorkerSecret() (string, error) {
-	v, err := services.VaultService(nil)
+	v, err := services.DefaultVaultService()
 	if err != nil {
 		gaia.Cfg.Logger.Debug("cannot get vault instance", "error", err.Error())
 		return "", err
@@ -196,7 +196,7 @@ func GetWorkerStatusOverview(c echo.Context) error {
 	response := workerStatusOverviewRespoonse{}
 
 	// Get memdb service
-	db, err := services.MemDBService(nil)
+	db, err := services.DefaultMemDBService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot get memdb service from service store", "error", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
@@ -235,7 +235,7 @@ func GetWorkerStatusOverview(c echo.Context) error {
 // GetWorker returns all workers.
 func GetWorker(c echo.Context) error {
 	// Get memdb service
-	db, err := services.MemDBService(nil)
+	db, err := services.DefaultMemDBService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot get memdb service from service store", "error", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
@@ -247,7 +247,7 @@ func GetWorker(c echo.Context) error {
 // ResetWorkerRegisterSecret generates a new global worker registration secret
 func ResetWorkerRegisterSecret(c echo.Context) error {
 	// Get vault service
-	v, err := services.VaultService(nil)
+	v, err := services.DefaultVaultService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot get vault service from service store", "error", err)
 		return c.String(http.StatusInternalServerError, err.Error())

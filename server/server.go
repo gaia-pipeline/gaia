@@ -199,7 +199,7 @@ func Start() (err error) {
 			// Set default to data folder
 			gaia.Cfg.VaultPath = gaia.Cfg.DataPath
 		}
-		v, err := services.VaultService(nil)
+		v, err := services.DefaultVaultService()
 		if err != nil {
 			gaia.Cfg.Logger.Error("error initiating vault")
 			return err

@@ -45,7 +45,7 @@ func SetSecret(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "key is reserved and cannot be set/changed")
 	}
 
-	v, err := services.VaultService(nil)
+	v, err := services.DefaultVaultService()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -64,7 +64,7 @@ func SetSecret(c echo.Context) error {
 // ListSecrets retrieves all secrets from the vault.
 func ListSecrets(c echo.Context) error {
 	secrets := make([]addSecret, 0)
-	v, err := services.VaultService(nil)
+	v, err := services.DefaultVaultService()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -97,7 +97,7 @@ func RemoveSecret(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "key is reserved and cannot be deleted")
 	}
 
-	v, err := services.VaultService(nil)
+	v, err := services.DefaultVaultService()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}

@@ -39,7 +39,7 @@ func (w *WorkServer) GetWork(workInst *pb.WorkerInstance, serv pb.Worker_GetWork
 	}
 
 	// Get memdb instance
-	db, err := services.MemDBService(nil)
+	db, err := services.DefaultMemDBService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to get memdb service via GetWork", "error", err.Error())
 		return err
@@ -155,7 +155,7 @@ func (w *WorkServer) UpdateWork(ctx context.Context, pipelineRun *pb.PipelineRun
 	}
 
 	// Get memdb service
-	db, err := services.MemDBService(nil)
+	db, err := services.DefaultMemDBService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to get memdb service via updatework", "error", err.Error())
 		return e, err
@@ -432,7 +432,7 @@ func (w *WorkServer) Deregister(ctx context.Context, workInst *pb.WorkerInstance
 	}
 
 	// Get memdb service
-	db, err := services.MemDBService(nil)
+	db, err := services.DefaultMemDBService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to get memdb service via deregister", "error", err.Error())
 		return e, err
@@ -466,7 +466,7 @@ func workerRegistered(ctx context.Context) (bool, *gaia.Worker) {
 	}
 
 	// Get memdb service
-	db, err := services.MemDBService(nil)
+	db, err := services.DefaultMemDBService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to get memdb service via isWorkerRegistered", "error", err.Error())
 		return false, w

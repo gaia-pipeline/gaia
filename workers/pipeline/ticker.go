@@ -255,7 +255,7 @@ func checkActivePipelines() {
 // of the worker.
 func updateWorker() {
 	// Get memdb service
-	db, err := services.MemDBService(nil)
+	db, err := services.DefaultMemDBService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to get memdb service via updateWorker", "error", err)
 		return

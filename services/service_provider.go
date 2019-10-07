@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"reflect"
 
 	"github.com/gaia-pipeline/gaia"
@@ -22,7 +23,7 @@ var schedulerService scheduler.GaiaScheduler
 var certificateService security.CAAPI
 
 // vaultService is an instance of the internal Vault.
-var vaultService security.VaultAPI
+var vaultService security.GaiaVault
 
 // memDBService is an instance of the internal memdb.
 var memDBService memdb.GaiaMemDB
@@ -99,8 +100,17 @@ func MockCertificateService(service security.CAAPI) {
 	certificateService = service
 }
 
+// DefaultVaultService provides a vault with a FileStorer backend.
+func DefaultVaultService() (security.GaiaVault, error) {
+	return VaultService(&security.FileVaultStorer{})
+}
+
 // VaultService creates a vault manager service.
-func VaultService(vaultStore security.VaultStorer) (security.VaultAPI, error) {
+func VaultService(vaultStore security.VaultStorer) (security.GaiaVault, error) {
+	if vaultStore == nil {
+		return nil, errors.New("VaultService must be called with a valid VaultStore")
+	}
+
 	if vaultService != nil && !reflect.ValueOf(vaultService).IsNil() {
 		return vaultService, nil
 	}
@@ -116,12 +126,26 @@ func VaultService(vaultStore security.VaultStorer) (security.VaultAPI, error) {
 
 // MockVaultService provides a way to create and set a mock
 // for the internal vault service manager.
-func MockVaultService(service security.VaultAPI) {
+func MockVaultService(service security.GaiaVault) {
 	vaultService = service
+}
+
+// DefaultMemDBService provides a default memDBService with an underlying storere.
+func DefaultMemDBService() (memdb.GaiaMemDB, error) {
+	s, err := StorageService()
+	if err != nil {
+		return nil, err
+	}
+	return MemDBService(s)
 }
 
 // MemDBService creates a memdb service instance.
 func MemDBService(store store.GaiaStore) (memdb.GaiaMemDB, error) {
+	// Store must be existent
+	if store == nil {
+		return nil, errors.New("store is nil")
+	}
+
 	if memDBService != nil && !reflect.ValueOf(memDBService).IsNil() {
 		return memDBService, nil
 	}
