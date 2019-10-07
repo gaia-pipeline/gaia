@@ -71,6 +71,10 @@ type Vault struct {
 func NewVault(ca CAAPI, storer VaultStorer) (*Vault, error) {
 	v := new(Vault)
 
+	if storer == nil {
+		return nil, errors.New("vault must be created with a valid VaultStore")
+	}
+
 	err := storer.Init()
 	if err != nil {
 		return nil, err

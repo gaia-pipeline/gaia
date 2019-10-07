@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"reflect"
 
 	"github.com/gaia-pipeline/gaia"
@@ -107,10 +106,6 @@ func DefaultVaultService() (security.GaiaVault, error) {
 
 // VaultService creates a vault manager service.
 func VaultService(vaultStore security.VaultStorer) (security.GaiaVault, error) {
-	if vaultStore == nil {
-		return nil, errors.New("VaultService must be called with a valid VaultStore")
-	}
-
 	if vaultService != nil && !reflect.ValueOf(vaultService).IsNil() {
 		return vaultService, nil
 	}
@@ -141,11 +136,6 @@ func DefaultMemDBService() (memdb.GaiaMemDB, error) {
 
 // MemDBService creates a memdb service instance.
 func MemDBService(store store.GaiaStore) (memdb.GaiaMemDB, error) {
-	// Store must be existent
-	if store == nil {
-		return nil, errors.New("store is nil")
-	}
-
 	if memDBService != nil && !reflect.ValueOf(memDBService).IsNil() {
 		return memDBService, nil
 	}

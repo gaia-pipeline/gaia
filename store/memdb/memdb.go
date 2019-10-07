@@ -56,6 +56,11 @@ type GaiaMemDB interface {
 
 // InitMemDB initiates a new memdb db.
 func InitMemDB(s store.GaiaStore) (GaiaMemDB, error) {
+	// Store must be existent
+	if s == nil {
+		return nil, errors.New("store is nil")
+	}
+
 	// Create new database
 	db, err := memdb.NewMemDB(memDBSchema)
 	if err != nil {

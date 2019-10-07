@@ -21,7 +21,9 @@ type MockVaultStorer struct {
 var store []byte
 
 func (mvs *MockVaultStorer) Init() error {
-	store = make([]byte, 0)
+	if len(store) < 1 {
+		store = make([]byte, 0)
+	}
 	return mvs.Error
 }
 
@@ -89,12 +91,11 @@ func TestCloseLoadSecrets(t *testing.T) {
 		Name:   "Gaia",
 	})
 	c, _ := InitCA()
-	v, err := NewVault(c, nil)
+	mvs := new(MockVaultStorer)
+	v, err := NewVault(c, mvs)
 	if err != nil {
 		t.Fatal(err)
 	}
-	mvs := new(MockVaultStorer)
-	v.storer = mvs
 	v.Add("key1", []byte("value1"))
 	v.Add("key2", []byte("value2"))
 	err = v.SaveSecrets()
@@ -124,12 +125,11 @@ func TestCloseLoadSecretsWithInvalidPassword(t *testing.T) {
 		Name:   "Gaia",
 	})
 	c, _ := InitCA()
-	v, err := NewVault(c, nil)
+	mvs := new(MockVaultStorer)
+	v, err := NewVault(c, mvs)
 	if err != nil {
 		t.Fatal(err)
 	}
-	mvs := new(MockVaultStorer)
-	v.storer = mvs
 	v.key = []byte("change this password to a secret")
 	v.Add("key1", []byte("value1"))
 	v.Add("key2", []byte("value2"))
@@ -161,22 +161,29 @@ func TestAnExistingVaultFileIsNotOverwritten(t *testing.T) {
 		Name:   "Gaia",
 	})
 	c, _ := InitCA()
-	v, err := NewVault(c, nil)
+	mvs := new(MockVaultStorer)
+	v, err := NewVault(c, mvs)
 	if err != nil {
 		t.Fatal(err)
 	}
-	mvs := new(MockVaultStorer)
-	v.storer = mvs
 	defer os.Remove(vaultName)
 	defer os.Remove("ca.crt")
 	defer os.Remove("ca.key")
 	v.key = []byte("change this password to a secret")
 	v.Add("test", []byte("value"))
-	_ = v.SaveSecrets()
-	v2, _ := NewVault(c, nil)
-	v2.storer = mvs
+	err = v.SaveSecrets()
+	if err != nil {
+		t.Fatal(err)
+	}
+	v2, err := NewVault(c, mvs)
+	if err != nil {
+		t.Fatal(err)
+	}
 	v2.key = []byte("change this password to a secret")
-	_ = v2.LoadSecrets()
+	err = v2.LoadSecrets()
+	if err != nil {
+		t.Fatal(err)
+	}
 	value, err := v2.Get("test")
 	if err != nil {
 		t.Fatal("couldn't retrieve value: ", err)
@@ -198,12 +205,11 @@ func TestRemovingFromTheVault(t *testing.T) {
 	gaia.Cfg.VaultPath = tmp
 	gaia.Cfg.CAPath = tmp
 	c, _ := InitCA()
-	v, err := NewVault(c, nil)
+	mvs := new(MockVaultStorer)
+	v, err := NewVault(c, mvs)
 	if err != nil {
 		t.Fatal(err)
 	}
-	mvs := new(MockVaultStorer)
-	v.storer = mvs
 	v.Add("key1", []byte("value1"))
 	v.Add("key2", []byte("value2"))
 	err = v.SaveSecrets()
@@ -245,12 +251,11 @@ func TestGetAll(t *testing.T) {
 		Name:   "Gaia",
 	})
 	c, _ := InitCA()
-	v, err := NewVault(c, nil)
+	mvs := new(MockVaultStorer)
+	v, err := NewVault(c, mvs)
 	if err != nil {
 		t.Fatal(err)
 	}
-	mvs := new(MockVaultStorer)
-	v.storer = mvs
 	v.Add("key1", []byte("value1"))
 	err = v.SaveSecrets()
 	if err != nil {
@@ -279,9 +284,8 @@ func TestEditValueWithAddingItAgain(t *testing.T) {
 		Name:   "Gaia",
 	})
 	c, _ := InitCA()
-	v, _ := NewVault(c, nil)
 	mvs := new(MockVaultStorer)
-	v.storer = mvs
+	v, _ := NewVault(c, mvs)
 	v.Add("key1", []byte("value1"))
 	_ = v.SaveSecrets()
 	v.data = make(map[string][]byte)
@@ -308,59 +312,14 @@ func TestReadErrorForVault(t *testing.T) {
 		Name:   "Gaia",
 	})
 	c, _ := InitCA()
-	v, _ := NewVault(c, nil)
 	mvs := new(MockVaultStorer)
 	mvs.Error = errors.New("get vault data error")
-	v.storer = mvs
-	err := v.LoadSecrets()
+	_, err := NewVault(c, mvs)
 	if err == nil {
 		t.Fatal("error expected on LoadSecret but got none")
 	}
 	if err.Error() != "get vault data error" {
 		t.Fatal("got a different error than expected. was: ", err.Error())
-	}
-}
-
-func TestWriteErrorForVault(t *testing.T) {
-	tmp, _ := ioutil.TempDir("", "TestWriteErrorForVault")
-	gaia.Cfg = &gaia.Config{}
-	gaia.Cfg.VaultPath = tmp
-	gaia.Cfg.CAPath = tmp
-	buf := new(bytes.Buffer)
-	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
-		Level:  hclog.Trace,
-		Output: buf,
-		Name:   "Gaia",
-	})
-	c, _ := InitCA()
-	v, _ := NewVault(c, nil)
-	mvs := new(MockVaultStorer)
-	mvs.Error = errors.New("write vault data error")
-	v.storer = mvs
-	err := v.SaveSecrets()
-	if err == nil {
-		t.Fatal("error expected on LoadSecret but got none")
-	}
-	if err.Error() != "write vault data error" {
-		t.Fatal("got a different error than expected. was: ", err.Error())
-	}
-}
-
-func TestDefaultStorerIsAFileStorer(t *testing.T) {
-	tmp, _ := ioutil.TempDir("", "TestDefaultStorerIsAFileStorer")
-	gaia.Cfg = &gaia.Config{}
-	gaia.Cfg.VaultPath = tmp
-	gaia.Cfg.CAPath = tmp
-	buf := new(bytes.Buffer)
-	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
-		Level:  hclog.Trace,
-		Output: buf,
-		Name:   "Gaia",
-	})
-	c, _ := InitCA()
-	v, _ := NewVault(c, nil)
-	if _, ok := v.storer.(*FileVaultStorer); !ok {
-		t.Fatal("default filestorer not created when nil is passed in")
 	}
 }
 
@@ -376,12 +335,11 @@ func TestNonceCounter(t *testing.T) {
 		Name:   "Gaia",
 	})
 	c, _ := InitCA()
-	v, err := NewVault(c, nil)
+	mvs := new(MockVaultStorer)
+	v, err := NewVault(c, mvs)
 	if err != nil {
 		t.Fatal(err)
 	}
-	mvs := new(MockVaultStorer)
-	v.storer = mvs
 	v.Add("key1", []byte("value1"))
 	beginCounter := v.counter
 	for i := 0; i < 3; i++ {
