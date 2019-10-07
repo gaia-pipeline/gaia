@@ -37,8 +37,7 @@
               <td>
                 <router-link :to="{ path: '/pipeline/detail', query: { pipelineid: pipelineID, runid: lastRun.id }}"
                              class="is-blue">
-                  {{ lastRun.id }}
-                </router-link>
+                  {{ lastRun.id }}</router-link>
                 [<span v-if="lastRun.status === 'success'" style="color: green;">{{ lastRun.status }}</span>
                 <span v-else-if="lastRun.status === 'failed'" style="color: red;">{{ lastRun.status }}</span>
                 <span v-else-if="lastRun.status === 'cancelled'" style="color: yellow;">{{ lastRun.status }}</span>
