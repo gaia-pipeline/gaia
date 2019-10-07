@@ -64,7 +64,7 @@
               </span>
             </span>
             <span v-if="props.column.field === 'tags'">
-              <span>{{ $prettifyTags(props.row.tags.sort()) }}</span>
+              <span>{{ $prettifyTags(props.row.tags) }}</span>
             </span>
             <span v-if="props.column.field === 'action'">
               <a title="Deregister Worker" v-tippy="{ arrow : true,  animation : 'shift-away'}"
