@@ -57,6 +57,25 @@ func TestNewVault(t *testing.T) {
 	}
 }
 
+func TestNewVaultNilStorer(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestNewVaultNilStorer")
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.VaultPath = tmp
+	gaia.Cfg.CAPath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
+	c, _ := InitCA()
+	mvs := new(MockVaultStorer)
+	_, err := NewVault(c, mvs)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestAddAndGet(t *testing.T) {
 	tmp, _ := ioutil.TempDir("", "TestAddAndGet")
 	gaia.Cfg = &gaia.Config{}
@@ -430,6 +449,16 @@ func TestEmptyVault(t *testing.T) {
 			t.Fatalf("wanted log message '%s'. Got: %s", want, buf.String())
 		}
 	})
+}
+
+func TestDefaultMemDBService(t *testing.T) {
+	_, err := NewVault(nil, nil)
+	if err == nil {
+		t.Fatal("NewVault without a storer should have thrown an error. Got no error.")
+	}
+	if err.Error() != "vault must be created with a valid VaultStore" {
+		t.Fatal("error did not equal expected error. got: ", err.Error())
+	}
 }
 
 func TestAllTheHexDecrypts(t *testing.T) {
