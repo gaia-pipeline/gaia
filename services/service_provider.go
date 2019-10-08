@@ -125,7 +125,7 @@ func MockVaultService(service security.GaiaVault) {
 	vaultService = service
 }
 
-// DefaultMemDBService provides a default memDBService with an underlying storere.
+// DefaultMemDBService provides a default memDBService with an underlying storer.
 func DefaultMemDBService() (memdb.GaiaMemDB, error) {
 	s, err := StorageService()
 	if err != nil {
