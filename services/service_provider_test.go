@@ -186,7 +186,7 @@ func TestCanMockServiceToNil(t *testing.T) {
 		mcp := new(testMockStorageService)
 		MockStorageService(mcp)
 		s1, _ := StorageService()
-		if reflect.TypeOf(s1).String() != "*services.testMockStorageService" {
+		if _, ok := s1.(*testMockStorageService); !ok {
 			t.Fatalf("want type: '%s' got: '%s'", "testMockStorageService", reflect.TypeOf(s1).String())
 		}
 		MockStorageService(nil)
@@ -200,7 +200,7 @@ func TestCanMockServiceToNil(t *testing.T) {
 		mcp := new(testMockScheduleService)
 		MockSchedulerService(mcp)
 		s1, _ := SchedulerService()
-		if reflect.TypeOf(s1).String() != "*services.testMockScheduleService" {
+		if _, ok := s1.(*testMockScheduleService); !ok {
 			t.Fatalf("want type: '%s' got: '%s'", "testMockScheduleService", reflect.TypeOf(s1).String())
 		}
 		MockSchedulerService(nil)
@@ -214,7 +214,7 @@ func TestCanMockServiceToNil(t *testing.T) {
 		mcp := new(testMockCertificateService)
 		MockCertificateService(mcp)
 		s1, _ := CertificateService()
-		if reflect.TypeOf(s1).String() != "*services.testMockCertificateService" {
+		if _, ok := s1.(*testMockCertificateService); !ok {
 			t.Fatalf("want type: '%s' got: '%s'", "testMockCertificateService", reflect.TypeOf(s1).String())
 		}
 		MockCertificateService(nil)
@@ -228,7 +228,7 @@ func TestCanMockServiceToNil(t *testing.T) {
 		mcp := new(testMockVaultService)
 		MockVaultService(mcp)
 		s1, _ := DefaultVaultService()
-		if reflect.TypeOf(s1).String() != "*services.testMockVaultService" {
+		if _, ok := s1.(*testMockVaultService); !ok {
 			t.Fatalf("want type: '%s' got: '%s'", "testMockVaultService", reflect.TypeOf(s1).String())
 		}
 		MockVaultService(nil)
@@ -242,7 +242,7 @@ func TestCanMockServiceToNil(t *testing.T) {
 		mcp := new(testMockMemDBService)
 		MockMemDBService(mcp)
 		s1, _ := DefaultMemDBService()
-		if reflect.TypeOf(s1).String() != "*services.testMockMemDBService" {
+		if _, ok := s1.(*testMockMemDBService); !ok {
 			t.Fatalf("want type: '%s' got: '%s'", "testMockMemDBService", reflect.TypeOf(s1).String())
 		}
 		MockMemDBService(nil)
@@ -253,4 +253,50 @@ func TestCanMockServiceToNil(t *testing.T) {
 			t.Fatalf("got: '%s'", reflect.TypeOf(s2).String())
 		}
 	})
+}
+
+func TestDefaultVaultStorer(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestDefaultVaultStorer")
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.HomePath = tmp
+	gaia.Cfg.DataPath = tmp
+	gaia.Cfg.CAPath = tmp
+	gaia.Cfg.VaultPath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
+	_, _ = CertificateService()
+	v, err := DefaultVaultService()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if va, ok := v.(security.GaiaVault); !ok {
+		t.Fatal("DefaultVaultService should have given back a GaiaVault. was instead: ", va)
+	}
+}
+
+func TestDefaultMemDBService(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestDefaultMemDBService")
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.HomePath = tmp
+	gaia.Cfg.DataPath = tmp
+	gaia.Cfg.CAPath = tmp
+	gaia.Cfg.VaultPath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
+	_, _ = StorageService()
+	v, err := DefaultMemDBService()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if va, ok := v.(memdb.GaiaMemDB); !ok {
+		t.Fatal("DefaultVaultService should have given back a GaiaVault. was instead: ", va)
+	}
 }
