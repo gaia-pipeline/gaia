@@ -15,7 +15,9 @@ import (
 )
 
 type MockVaultStorer struct {
-	Error error
+	ReadError  error
+	InitError  error
+	WriteError error
 }
 
 var store []byte
@@ -24,16 +26,16 @@ func (mvs *MockVaultStorer) Init() error {
 	if len(store) < 1 {
 		store = make([]byte, 0)
 	}
-	return mvs.Error
+	return mvs.InitError
 }
 
 func (mvs *MockVaultStorer) Read() ([]byte, error) {
-	return store, mvs.Error
+	return store, mvs.ReadError
 }
 
 func (mvs *MockVaultStorer) Write(data []byte) error {
 	store = data
-	return mvs.Error
+	return mvs.WriteError
 }
 
 func TestNewVault(t *testing.T) {
@@ -300,6 +302,29 @@ func TestEditValueWithAddingItAgain(t *testing.T) {
 	}
 }
 
+func TestInitErrorForVault(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestReadErrorForVault")
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.VaultPath = tmp
+	gaia.Cfg.CAPath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
+	c, _ := InitCA()
+	mvs := new(MockVaultStorer)
+	mvs.InitError = errors.New("init error")
+	_, err := NewVault(c, mvs)
+	if err == nil {
+		t.Fatal("error expected on NewVault but got none")
+	}
+	if err.Error() != "init error" {
+		t.Fatal("got a different error than expected. was: ", err.Error())
+	}
+}
+
 func TestReadErrorForVault(t *testing.T) {
 	tmp, _ := ioutil.TempDir("", "TestReadErrorForVault")
 	gaia.Cfg = &gaia.Config{}
@@ -313,12 +338,37 @@ func TestReadErrorForVault(t *testing.T) {
 	})
 	c, _ := InitCA()
 	mvs := new(MockVaultStorer)
-	mvs.Error = errors.New("get vault data error")
-	_, err := NewVault(c, mvs)
+	mvs.ReadError = errors.New("get vault data error")
+	v, _ := NewVault(c, mvs)
+	err := v.LoadSecrets()
 	if err == nil {
 		t.Fatal("error expected on LoadSecret but got none")
 	}
 	if err.Error() != "get vault data error" {
+		t.Fatal("got a different error than expected. was: ", err.Error())
+	}
+}
+
+func TestWriteErrorForVault(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestWriteErrorForVault")
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.VaultPath = tmp
+	gaia.Cfg.CAPath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
+	c, _ := InitCA()
+	mvs := new(MockVaultStorer)
+	mvs.WriteError = errors.New("write vault data error")
+	v, _ := NewVault(c, mvs)
+	err := v.SaveSecrets()
+	if err == nil {
+		t.Fatal("error expected on LoadSecret but got none")
+	}
+	if err.Error() != "write vault data error" {
 		t.Fatal("got a different error than expected. was: ", err.Error())
 	}
 }
