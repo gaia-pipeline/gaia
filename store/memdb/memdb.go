@@ -60,6 +60,7 @@ func InitMemDB(s store.GaiaStore) (GaiaMemDB, error) {
 	if s == nil {
 		return nil, errors.New("store is nil")
 	}
+
 	// Create new database
 	db, err := memdb.NewMemDB(memDBSchema)
 	if err != nil {

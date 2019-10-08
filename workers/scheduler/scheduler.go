@@ -87,14 +87,14 @@ type Scheduler struct {
 	ca security.CAAPI
 
 	// vault is the instance of the vault.
-	vault security.VaultAPI
+	vault security.GaiaVault
 
 	// Atomic Counter that represents the current free workers
 	freeWorkers *int32
 }
 
 // NewScheduler creates a new instance of Scheduler.
-func NewScheduler(store store.GaiaStore, db memdb.GaiaMemDB, pS plugin.Plugin, ca security.CAAPI, vault security.VaultAPI) (*Scheduler, error) {
+func NewScheduler(store store.GaiaStore, db memdb.GaiaMemDB, pS plugin.Plugin, ca security.CAAPI, vault security.GaiaVault) (*Scheduler, error) {
 	// Create new scheduler
 	s := &Scheduler{
 		scheduledRuns: make(chan gaia.PipelineRun, schedulerBufferLimit),

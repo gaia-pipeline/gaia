@@ -23,8 +23,8 @@ const (
 	keySize   = 32
 )
 
-// VaultAPI defines a set of apis that a Vault must provide in order to be a Gaia Vault.
-type VaultAPI interface {
+// GaiaVault defines a set of apis that a Vault must provide in order to be a Gaia Vault.
+type GaiaVault interface {
 	LoadSecrets() error
 	GetAll() []string
 	SaveSecrets() error
@@ -72,8 +72,9 @@ func NewVault(ca CAAPI, storer VaultStorer) (*Vault, error) {
 	v := new(Vault)
 
 	if storer == nil {
-		storer = new(FileVaultStorer)
+		return nil, errors.New("vault must be created with a valid VaultStore")
 	}
+
 	err := storer.Init()
 	if err != nil {
 		return nil, err

@@ -237,7 +237,7 @@ func NewGithubClient(httpClient *gohttp.Client, repoMock GithubRepoService) Gith
 }
 
 func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoService) error {
-	vault, err := services.VaultService(nil)
+	vault, err := services.DefaultVaultService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("unable to initialize vault: ", "error", err.Error())
 		return err
