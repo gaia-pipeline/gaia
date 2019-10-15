@@ -110,7 +110,9 @@ func NewBoltStore() *BoltStore {
 func (s *BoltStore) Init(dataPath string) error {
 	// Open connection to bolt database
 	path := filepath.Join(dataPath, boltDBFileName)
-	db, err := bolt.Open(path, gaia.Cfg.Bolt.Mode, nil)
+	// Give boltdb 5 seconds to try and open up a db file.
+	// If another process is already holding that file, this will time-out.
+	db, err := bolt.Open(path, gaia.Cfg.Bolt.Mode, &bolt.Options{Timeout: 5 * time.Second})
 	if err != nil {
 		return err
 	}
