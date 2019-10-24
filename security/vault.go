@@ -192,10 +192,10 @@ func (fvs *FileVaultStorer) Write(data []byte) error {
 }
 
 // encrypt uses an aes cipher provided by the certificate file for encryption.
-// We don't store the password in the file. an error will be thrown in case the encryption
-// operation encounters a problem which will most likely be due to a mistyped password.
-// We will return this possibility but we won't know for sure if that's the cause.
-// The password is padded with 0x04 to Blocklenght. IV randomized to blocksize and length of the message.
+// We don't store the password anywhere. An error will be thrown in case the encryption
+// operation encounters a problem. Gaia uses AES GCM to encrypt the vault file. For Nonce it's
+// using a constantly increasing number which is stored with the file. GCM allows for better
+// password verification in which case we don't have to guess what was wrong any longer.
 // In the end we encrypt the whole thing to Base64 for ease of saving an handling.
 func (v *Vault) encrypt(data []byte) (string, error) {
 	if len(data) < 1 {
