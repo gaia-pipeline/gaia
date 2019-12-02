@@ -299,7 +299,7 @@ func (s *Scheduler) schedule() {
 
 			// Start docker worker for this pipeline run
 			worker := docker.NewDockerWorker(gaia.Cfg.DockerHostURL, scheduled[id].UniqueID)
-			if err := worker.SetupDockerWorker(gaia.Cfg.DockerRunImage, string(workerSecret[:])); err != nil {
+			if err := worker.SetupDockerWorker(gaia.Cfg.DockerRunImage, workerSecret); err != nil {
 				gaia.Cfg.Logger.Error("failed to setup docker worker for pipeline run", "error", err)
 				continue
 			}

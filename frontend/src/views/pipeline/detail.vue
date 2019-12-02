@@ -262,19 +262,19 @@ export default {
               this.drawPipelineDetail(pipeline.data, pipelineRun.data)
             }
             this.runsRows = pipelineRuns.data
-            let tempLastSuccessfulRunId = -1;
-            let tempLastRunId = -1;
+            let tempLastSuccessfulRunId = -1
+            let tempLastRunId = -1
             for (let runI = 0; runI < pipelineRuns.data.length; runI++) {
-              if (pipelineRuns.data[runI].status == 'success') {
+              if (pipelineRuns.data[runI].status === 'success') {
                 if (pipelineRuns.data[runI].id > tempLastSuccessfulRunId) {
-                  this.lastSuccessfulRun = pipelineRuns.data[runI];
-                  tempLastSuccessfulRunId = pipelineRuns.data[runI].id;
+                  this.lastSuccessfulRun = pipelineRuns.data[runI]
+                  tempLastSuccessfulRunId = pipelineRuns.data[runI].id
                 }
               }
 
               if (pipelineRuns.data[runI].id > tempLastRunId) {
-                this.lastRun = pipelineRuns.data[runI];
-                tempLastRunId = pipelineRuns.data[runI].id;
+                this.lastRun = pipelineRuns.data[runI]
+                tempLastRunId = pipelineRuns.data[runI].id
               }
             }
             this.pipeline = pipeline.data
@@ -297,19 +297,19 @@ export default {
             // Are runs available?
             if (pipelineRuns.data) {
               this.runsRows = pipelineRuns.data
-              let tempLastSuccessfulRunId = -1;
-              let tempLastRunId = -1;
+              let tempLastSuccessfulRunId = -1
+              let tempLastRunId = -1
               for (let runI = 0; runI < pipelineRuns.data.length; runI++) {
-                if (pipelineRuns.data[runI].status == 'success') {
+                if (pipelineRuns.data[runI].status === 'success') {
                   if (pipelineRuns.data[runI].id > tempLastSuccessfulRunId) {
-                    this.lastSuccessfulRun = pipelineRuns.data[runI];
-                    tempLastSuccessfulRunId = pipelineRuns.data[runI].id;
+                    this.lastSuccessfulRun = pipelineRuns.data[runI]
+                    tempLastSuccessfulRunId = pipelineRuns.data[runI].id
                   }
                 }
 
                 if (pipelineRuns.data[runI].id > tempLastRunId) {
-                  this.lastRun = pipelineRuns.data[runI];
-                  tempLastRunId = pipelineRuns.data[runI].id;
+                  this.lastRun = pipelineRuns.data[runI]
+                  tempLastRunId = pipelineRuns.data[runI].id
                 }
               }
             }

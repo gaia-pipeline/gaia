@@ -3,6 +3,8 @@ package docker
 import (
 	"context"
 	"fmt"
+	"io"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -31,7 +33,8 @@ func (w *Worker) SetupDockerWorker(workerImage string, workerSecret string) erro
 	w.WorkerID = security.GenerateRandomUUIDV5()
 
 	// Setup docker client
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
 	cli, err := client.NewClientWithOpts(client.WithHost(w.Host))
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to setup docker client", "error", err)
@@ -57,14 +60,32 @@ func (w *Worker) SetupDockerWorker(workerImage string, workerSecret string) erro
 	resp, err := createContainer()
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to create worker container", "error", err)
-		gaia.Cfg.Logger.Info("try to pull docker image and then try it again...")
+		gaia.Cfg.Logger.Info("try to pull docker image before trying it again...")
 
 		// Pull worker image
-		_, err = cli.ImagePull(ctx, workerImage, types.ImagePullOptions{})
+		out, err := cli.ImagePull(ctx, workerImage, types.ImagePullOptions{})
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to pull worker image", "error", err)
 			return err
 		}
+		defer out.Close()
+
+		// Image will be only pulled when we read the stream.
+		// We read it here even tho we are not interested into the output.
+		gaia.Cfg.Logger.Info("pulling docker image. This may take a while...")
+		buffer := make([]byte, 1024)
+		for {
+			_, err := out.Read(buffer)
+
+			if err != nil {
+				if err != io.EOF {
+					gaia.Cfg.Logger.Error("failed to pull worker image", "error", err)
+					return err
+				}
+				break
+			}
+		}
+		gaia.Cfg.Logger.Info("finished pulling docker image. Continue with pipeline run...")
 
 		// Try to create the container again
 		resp, err = createContainer()
