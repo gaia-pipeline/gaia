@@ -34,10 +34,16 @@ func TestStart(t *testing.T) {
 	server := InitWorkerServer()
 
 	// Start server
+	errChan := make(chan error)
 	go func() {
 		if err := server.Start(); err != nil {
-			t.Fatal(err)
+			errChan <- err
 		}
 	}()
 	time.Sleep(3 * time.Second)
+	select {
+	case err := <-errChan:
+		t.Fatal(err)
+	default:
+	}
 }
