@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 
 	"github.com/gaia-pipeline/gaia/workers/server"
 
@@ -242,32 +244,63 @@ func Start() (err error) {
 		return
 	}
 
+	// Allocate SIG channel
+	exitChan := make(chan os.Signal, 1)
+
+	// Register the signal channel
+	signal.Notify(exitChan, syscall.SIGINT, syscall.SIGTERM)
+
 	// Start worker gRPC server.
 	// We need this in both modes (server and worker) for docker worker to run.
 	workerServer := server.InitWorkerServer()
-	go workerServer.Start()
+	go func() {
+		if err := workerServer.Start(); err != nil {
+			gaia.Cfg.Logger.Error("failed to start gRPC worker server", "error", err)
+			exitChan <- syscall.SIGTERM
+		}
+	}()
 
+	cleanUpFunc := func() {}
 	switch gaia.Cfg.Mode {
 	case gaia.ModeServer:
 		// Start ticker. Periodic job to check for new plugins.
 		pipeline.InitTicker()
 
 		// Start API server
-		echoInstance.Logger.Fatal(echoInstance.Start(":" + gaia.Cfg.ListenPort))
+		go func() {
+			err := echoInstance.Start(":" + gaia.Cfg.ListenPort)
+			if err != nil {
+				gaia.Cfg.Logger.Error("failed to start echo listener", "error", err)
+				exitChan <- syscall.SIGTERM
+			}
+		}()
 	case gaia.ModeWorker:
 		// Start API server
 		go func() {
-			_ = echoInstance.Start(":" + gaia.Cfg.ListenPort)
+			err := echoInstance.Start(":" + gaia.Cfg.ListenPort)
+			if err != nil {
+				gaia.Cfg.Logger.Error("failed to start echo listener", "error", err)
+				exitChan <- syscall.SIGTERM
+			}
 		}()
 
-		// Start worker main loop and block until SIGINT or SIGTERM has been received
-		ag := agent.InitAgent(scheduler, store, gaia.Cfg.HomePath)
-		err := ag.StartAgent()
-		if err != nil {
-			gaia.Cfg.Logger.Error("failed to start agent", "error", err)
-			return err
-		}
+		// Start agent
+		ag := agent.InitAgent(exitChan, scheduler, store, gaia.Cfg.HomePath)
+		go func() {
+			cleanUpFunc, err = ag.StartAgent()
+			if err != nil {
+				gaia.Cfg.Logger.Error("failed to start agent", "error", err)
+				exitChan <- syscall.SIGTERM
+			}
+		}()
 	}
+
+	// Wait for exit signal
+	<-exitChan
+	gaia.Cfg.Logger.Info("exit signal received. Exiting...")
+
+	// Run clean up func
+	cleanUpFunc()
 	return
 }
 

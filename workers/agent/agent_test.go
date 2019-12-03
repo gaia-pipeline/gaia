@@ -586,7 +586,7 @@ func TestScheduleWork_RecvError(t *testing.T) {
 	mStore := &mockStore{}
 	mScheduler := &mockScheduler{}
 	ag := InitAgent(mScheduler, mStore, tmpFolder)
-	ag.sigs = make(chan os.Signal, 1)
+	ag.exitChan = make(chan os.Signal, 1)
 	ag.client = client
 	ag.self = &pb.WorkerInstance{UniqueId: "my-failed-worker"}
 	gaia.Cfg = &gaia.Config{
@@ -602,7 +602,7 @@ func TestScheduleWork_RecvError(t *testing.T) {
 
 	// Validate output from mScheduler
 	select {
-	case sig := <-ag.sigs:
+	case sig := <-ag.exitChan:
 		if sig != syscall.SIGTERM {
 			t.Fatalf("expected SIGTERM syscall but got %#v", sig)
 		}

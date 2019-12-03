@@ -11,7 +11,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -74,12 +73,13 @@ type Agent struct {
 	store store.GaiaStore
 
 	// Signal channel for this agent
-	sigs chan os.Signal
+	exitChan chan os.Signal
 }
 
 // InitAgent initiates the agent instance
-func InitAgent(scheduler scheduler.GaiaScheduler, store store.GaiaStore, certPath string) *Agent {
+func InitAgent(exitChan chan os.Signal, scheduler scheduler.GaiaScheduler, store store.GaiaStore, certPath string) *Agent {
 	ag := &Agent{
+		exitChan:  exitChan,
 		scheduler: scheduler,
 		store:     store,
 	}
@@ -93,28 +93,20 @@ func InitAgent(scheduler scheduler.GaiaScheduler, store store.GaiaStore, certPat
 	return ag
 }
 
-// StartAgent starts the agent main loop and waits until SIGINT or SIGTERM
-// signal has been received.
-func (a *Agent) StartAgent() error {
-	// Allocate SIG channel
-	a.sigs = make(chan os.Signal, 1)
-
-	// Register the signal channel
-	signal.Notify(a.sigs, syscall.SIGINT, syscall.SIGTERM)
-
+// StartAgent starts the agent and returns a clean up function.
+func (a *Agent) StartAgent() (func(), error) {
 	// Setup connection information
 	clientTLS, err := a.setupConnectionInfo()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Setup gRPC connection
 	dialOption := grpc.WithTransportCredentials(clientTLS)
 	conn, err := grpc.Dial(gaia.Cfg.WorkerGRPCHostURL, dialOption)
 	if err != nil {
-		return fmt.Errorf("failed to connect to remote host: %s", err.Error())
+		return nil, fmt.Errorf("failed to connect to remote host: %s", err.Error())
 	}
-	defer conn.Close()
 
 	// Get worker interface
 	a.client = pb.NewWorkerClient(conn)
@@ -151,15 +143,17 @@ func (a *Agent) StartAgent() error {
 		}
 	}()
 
-	// Block until signal received
-	<-a.sigs
-	gaia.Cfg.Logger.Info("exit signal received. Exiting...")
+	// Return clean up function
+	return func() {
+		// Close gRPC connection
+		if err := conn.Close(); err != nil {
+			gaia.Cfg.Logger.Error("failed to close gRPC connection", "error", err)
+		}
 
-	// Safely stop scheduler
-	close(quitScheduler)
-	close(quitUpdate)
-
-	return nil
+		// Safely stop scheduler
+		close(quitScheduler)
+		close(quitUpdate)
+	}, nil
 }
 
 // setupConnectionInfo setups the connection info object by parsing existing
@@ -315,7 +309,7 @@ func (a *Agent) scheduleWork() {
 				}
 
 				// Send quit signal
-				a.sigs <- syscall.SIGTERM
+				a.exitChan <- syscall.SIGTERM
 			}
 			return
 		}
