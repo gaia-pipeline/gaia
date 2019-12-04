@@ -37,16 +37,6 @@
               <span v-else>
                 unknown
               </span><br/>
-              <i class="fa fa-exchange"></i>
-              <span style="color: #b1adad;">
-                Trigger Token:
-              </span>
-              <span v-if="pipeline.p.trigger_token !== ''">
-                {{ pipeline.p.trigger_token }}
-              </span>
-              <span v-else>
-                unknown
-              </span><br/>
               <i class="fa fa-tags"></i>
               <span style="color: #b1adad;">
                 Tags:
@@ -311,11 +301,6 @@ export default {
   }
 
   .pipeline-hr {
-    background-image: linear-gradient(
-      to right,
-      black 33%,
-      rgba(255, 255, 255, 0) 0%
-    );
     background-position: bottom;
     background-size: 3px 1px;
     background-repeat: repeat-x;
