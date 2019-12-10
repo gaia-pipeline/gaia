@@ -104,6 +104,11 @@ func PipelineGetAll(c echo.Context) error {
 	// Get all active pipelines
 	pipelines := pipeline.GlobalActivePipelines.GetAll()
 
+	// Obscure non-necessary information
+	for id := range pipelines {
+		obscurePipelineData(&pipelines[id])
+	}
+
 	// Return as json
 	return c.JSON(http.StatusOK, pipelines)
 }
@@ -121,6 +126,7 @@ func PipelineGet(c echo.Context) error {
 	// Look up pipeline for the given id
 	for _, p := range pipeline.GlobalActivePipelines.GetAll() {
 		if p.ID == pipelineID {
+			obscurePipelineData(&p)
 			return c.JSON(http.StatusOK, p)
 		}
 	}
@@ -452,6 +458,7 @@ func PipelineGetAllWithLatestRun(c echo.Context) error {
 
 		// Append run if one exists
 		g := getAllWithLatestRun{}
+		obscurePipelineData(&p)
 		g.Pipeline = p
 		if run != nil {
 			g.PipelineRun = *run
@@ -483,4 +490,9 @@ func PipelineCheckPeriodicSchedules(c echo.Context) error {
 
 	// All entries are valid.
 	return c.JSON(http.StatusOK, nil)
+}
+
+// obscurePipelineData obscures pipeline data from the given pipeline object
+func obscurePipelineData(p *gaia.Pipeline) {
+	p.ExecPath = ""
 }

@@ -19,9 +19,11 @@
         <article class="tile is-child notification content-article box">
           <table class="pipeline-detail-table">
             <tr><th>Name</th><td>{{pipeline.name}}</td></tr>
+            <tr><th>Type</th><td>{{pipeline.type}}</td></tr>
             <tr><th>Repo</th><td>{{pipeline.repo.url}}</td></tr>
             <tr><th>Branch</th><td>{{pipeline.repo.selectedbranch}}</td></tr>
-            <tr><th>Location</th><td>{{pipeline.execpath}}</td></tr>
+            <tr><th>Created</th><td><span :title="pipeline.created" v-tippy="{ arrow : true,  animation : 'shift-away'}">{{
+              convertTime(pipeline.created) }}</span></td></tr>
             <tr><th>Trigger Token</th><td>{{pipeline.trigger_token}}</td></tr>
 
             <tr v-if="lastSuccessfulRun">
@@ -124,12 +126,16 @@
 </template>
 
 <script>
+import Vue from 'vue'
 import Vis from 'vis'
 import { Modal } from 'vue-bulma-modal'
 import { VueGoodTable } from 'vue-good-table'
 import 'vue-good-table/dist/vue-good-table.css'
 import moment from 'moment'
 import helper from '../../helper'
+import VueTippy from 'vue-tippy'
+
+Vue.use(VueTippy)
 
 export default {
   components: {
@@ -196,7 +202,9 @@ export default {
           arrows: { to: true }
         }
       },
-      pipeline: null
+      pipeline: null,
+      lastSuccessfulRun: null,
+      lastRun: null
     }
   },
 
@@ -511,6 +519,10 @@ export default {
 
     checkPipelineArgsAndStartPipeline () {
       helper.StartPipelineWithArgsCheck(this, this.pipeline)
+    },
+
+    convertTime (time) {
+      return moment(time).fromNow()
     }
   }
 }
