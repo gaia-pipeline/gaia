@@ -27,6 +27,9 @@ var (
 	// errPipelineRename is thrown when a pipeline binary could not be renamed
 	errPipelineRename = errors.New("pipeline could not be renamed")
 
+	// errWrongDockerValue is thrown when docker has been specified for a pipeline run but the value is invalid
+	errWrongDockerValue = errors.New("invalid value for docker parameter")
+
 	// List of secret keys which cannot be modified via the normal Vault API.
 	ignoredVaultKeys []string
 )
@@ -38,52 +41,55 @@ func InitHandlers(e *echo.Echo) error {
 
 	// --- Register handlers at echo instance ---
 
-	// Users
-	e.POST(p+"login", UserLogin)
-	e.GET(p+"users", UserGetAll)
-	e.POST(p+"user/password", UserChangePassword)
-	e.DELETE(p+"user/:username", UserDelete)
-	e.GET(p+"user/:username/permissions", UserGetPermissions)
-	e.PUT(p+"user/:username/permissions", UserPutPermissions)
-	e.POST(p+"user", UserAdd)
-	e.PUT(p+"user/:username/reset-trigger-token", UserResetTriggerToken)
+	// Endpoints for Gaia primary instance
+	if gaia.Cfg.Mode == gaia.ModeServer {
+		// Users
+		e.POST(p+"login", UserLogin)
+		e.GET(p+"users", UserGetAll)
+		e.POST(p+"user/password", UserChangePassword)
+		e.DELETE(p+"user/:username", UserDelete)
+		e.GET(p+"user/:username/permissions", UserGetPermissions)
+		e.PUT(p+"user/:username/permissions", UserPutPermissions)
+		e.POST(p+"user", UserAdd)
+		e.PUT(p+"user/:username/reset-trigger-token", UserResetTriggerToken)
 
-	perms := e.Group(p + "permission")
-	perms.GET("", PermissionGetAll)
+		perms := e.Group(p + "permission")
+		perms.GET("", PermissionGetAll)
 
-	// Pipelines
-	e.POST(p+"pipeline", CreatePipeline)
-	e.POST(p+"pipeline/gitlsremote", PipelineGitLSRemote)
-	e.GET(p+"pipeline/name", PipelineNameAvailable)
-	e.POST(p+"pipeline/githook", GitWebHook)
-	e.GET(p+"pipeline/created", CreatePipelineGetAll)
-	e.GET(p+"pipeline", PipelineGetAll)
-	e.GET(p+"pipeline/:pipelineid", PipelineGet)
-	e.PUT(p+"pipeline/:pipelineid", PipelineUpdate)
-	e.DELETE(p+"pipeline/:pipelineid", PipelineDelete)
-	e.POST(p+"pipeline/:pipelineid/start", PipelineStart)
-	e.POST(p+"pipeline/:pipelineid/:pipelinetoken/trigger", PipelineTrigger)
-	e.PUT(p+"pipeline/:pipelineid/reset-trigger-token", PipelineResetToken)
-	e.GET(p+"pipeline/latest", PipelineGetAllWithLatestRun)
-	e.POST(p+"pipeline/periodicschedules", PipelineCheckPeriodicSchedules)
+		// Pipelines
+		e.POST(p+"pipeline", CreatePipeline)
+		e.POST(p+"pipeline/gitlsremote", PipelineGitLSRemote)
+		e.GET(p+"pipeline/name", PipelineNameAvailable)
+		e.POST(p+"pipeline/githook", GitWebHook)
+		e.GET(p+"pipeline/created", CreatePipelineGetAll)
+		e.GET(p+"pipeline", PipelineGetAll)
+		e.GET(p+"pipeline/:pipelineid", PipelineGet)
+		e.PUT(p+"pipeline/:pipelineid", PipelineUpdate)
+		e.DELETE(p+"pipeline/:pipelineid", PipelineDelete)
+		e.POST(p+"pipeline/:pipelineid/start", PipelineStart)
+		e.POST(p+"pipeline/:pipelineid/:pipelinetoken/trigger", PipelineTrigger)
+		e.PUT(p+"pipeline/:pipelineid/reset-trigger-token", PipelineResetToken)
+		e.GET(p+"pipeline/latest", PipelineGetAllWithLatestRun)
+		e.POST(p+"pipeline/periodicschedules", PipelineCheckPeriodicSchedules)
 
-	// Settings
-	e.POST(p+"settings/poll/on", SettingsPollOn)
-	e.POST(p+"settings/poll/off", SettingsPollOff)
-	e.GET(p+"settings/poll", SettingsPollGet)
+		// Settings
+		e.POST(p+"settings/poll/on", SettingsPollOn)
+		e.POST(p+"settings/poll/off", SettingsPollOff)
+		e.GET(p+"settings/poll", SettingsPollGet)
 
-	// PipelineRun
-	e.POST(p+"pipelinerun/:pipelineid/:runid/stop", PipelineStop)
-	e.GET(p+"pipelinerun/:pipelineid/:runid", PipelineRunGet)
-	e.GET(p+"pipelinerun/:pipelineid", PipelineGetAllRuns)
-	e.GET(p+"pipelinerun/:pipelineid/latest", PipelineGetLatestRun)
-	e.GET(p+"pipelinerun/:pipelineid/:runid/log", GetJobLogs)
+		// PipelineRun
+		e.POST(p+"pipelinerun/:pipelineid/:runid/stop", PipelineStop)
+		e.GET(p+"pipelinerun/:pipelineid/:runid", PipelineRunGet)
+		e.GET(p+"pipelinerun/:pipelineid", PipelineGetAllRuns)
+		e.GET(p+"pipelinerun/:pipelineid/latest", PipelineGetLatestRun)
+		e.GET(p+"pipelinerun/:pipelineid/:runid/log", GetJobLogs)
 
-	// Secrets
-	e.GET(p+"secrets", ListSecrets)
-	e.DELETE(p+"secret/:key", RemoveSecret)
-	e.POST(p+"secret", SetSecret)
-	e.PUT(p+"secret/update", SetSecret)
+		// Secrets
+		e.GET(p+"secrets", ListSecrets)
+		e.DELETE(p+"secret/:key", RemoveSecret)
+		e.POST(p+"secret", SetSecret)
+		e.PUT(p+"secret/update", SetSecret)
+	}
 
 	// Worker
 	e.GET(p+"worker/secret", GetWorkerRegisterSecret)

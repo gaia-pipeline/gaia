@@ -25,6 +25,7 @@ message PipelineRun {
     string   pipeline_type = 9;
     bytes    sha_sum       = 10;
     repeated Job jobs      = 11;
+    bool     docker        = 12;
 }
 
 // PrivateKey represents a key.

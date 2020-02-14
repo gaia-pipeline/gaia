@@ -11,12 +11,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+	hclog "github.com/hashicorp/go-hclog"
+
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/store"
-	"github.com/hashicorp/go-hclog"
 )
 
 func TestPrepareEnvironmentNodeJS(t *testing.T) {
@@ -169,8 +171,8 @@ func TestCopyBinaryNodeJS(t *testing.T) {
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = gaia.PTypeNodeJS
 	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: tmp}
-	src := filepath.Join(tmp, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
-	dst := filepath.Join(dest, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
+	src := filepath.Join(tmp, pipelinehelper.AppendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
+	dst := filepath.Join(dest, pipelinehelper.AppendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
 	if err := ioutil.WriteFile(src, []byte("testcontent"), 0666); err != nil {
 		t.Fatal(err)
 	}
@@ -211,7 +213,7 @@ func TestCopyBinarySrcDoesNotExistNodeJS(t *testing.T) {
 	if err == nil {
 		t.Fatal("error was expected when copying binary but none occurred ")
 	}
-	if err.Error() != "open /noneexistent/"+appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)+": no such file or directory" {
+	if err.Error() != "open /noneexistent/"+pipelinehelper.AppendTypeToName(p.Pipeline.Name, p.Pipeline.Type)+": no such file or directory" {
 		t.Fatal("a different error occurred then expected: ", err)
 	}
 }

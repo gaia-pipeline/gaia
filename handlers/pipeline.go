@@ -221,6 +221,20 @@ func PipelineUpdate(c echo.Context) error {
 		pipeline.GlobalActivePipelines.Replace(foundPipeline)
 	}
 
+	// Check if docker option has been updated
+	if p.Docker != foundPipeline.Docker {
+		foundPipeline.Docker = p.Docker
+
+		// Update pipeline in store
+		err := storeService.PipelinePut(&foundPipeline)
+		if err != nil {
+			return c.String(http.StatusInternalServerError, err.Error())
+		}
+
+		// Update active pipelines
+		pipeline.GlobalActivePipelines.Replace(foundPipeline)
+	}
+
 	return c.String(http.StatusOK, "Pipeline has been updated")
 }
 
@@ -402,6 +416,12 @@ func PipelineStart(c echo.Context) error {
 	schedulerService, _ := services.SchedulerService()
 	pipelineIDStr := c.Param("pipelineid")
 
+	// Decode content
+	content := echo.Map{}
+	if err := c.Bind(&content); err != nil {
+		return c.String(http.StatusBadRequest, "invalid content provided in request")
+	}
+
 	// Look for arguments.
 	// We do not check for errors here cause arguments are optional.
 	var args []*gaia.Argument
@@ -412,6 +432,13 @@ func PipelineStart(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
 	}
+	var docker bool
+	if _, ok := content["docker"]; ok {
+		docker, ok = content["docker"].(bool)
+		if !ok {
+			return c.String(http.StatusBadRequest, errWrongDockerValue.Error())
+		}
+	}
 
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
@@ -421,6 +448,9 @@ func PipelineStart(c echo.Context) error {
 			break
 		}
 	}
+
+	// Overwrite docker setting
+	foundPipeline.Docker = docker
 
 	if foundPipeline.Name != "" {
 		pipelineRun, err := schedulerService.SchedulePipeline(&foundPipeline, args)

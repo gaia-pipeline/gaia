@@ -251,6 +251,33 @@ func (s *BoltStore) PipelineGetRunByPipelineIDAndID(pipelineid int, runid int) (
 	})
 }
 
+// PipelineGetRunByID returns the pipeline run by internal unique id.
+func (s *BoltStore) PipelineGetRunByID(runID string) (*gaia.PipelineRun, error) {
+	var pipelineRun *gaia.PipelineRun
+
+	return pipelineRun, s.db.View(func(tx *bolt.Tx) error {
+		// Get bucket
+		b := tx.Bucket(pipelineRunBucket)
+
+		// Get pipeline run
+		v := b.Get([]byte(runID))
+
+		// Check if we found the pipeline
+		if v == nil {
+			return nil
+		}
+
+		// Unmarshal pipeline object
+		pipelineRun = &gaia.PipelineRun{}
+		err := json.Unmarshal(v, pipelineRun)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
 // PipelineGetAllRunsByPipelineID looks for all pipeline runs by the given pipeline id.
 func (s *BoltStore) PipelineGetAllRunsByPipelineID(pipelineID int) ([]gaia.PipelineRun, error) {
 	var runs []gaia.PipelineRun

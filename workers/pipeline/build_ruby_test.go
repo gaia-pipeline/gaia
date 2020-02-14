@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/store"
@@ -148,7 +150,7 @@ func TestCopyBinaryRuby(t *testing.T) {
 	p.Pipeline.Type = gaia.PTypeRuby
 	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: tmp}
 	src := filepath.Join(tmp, "test.gem")
-	dst := appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
+	dst := pipelinehelper.AppendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
 	f, _ := os.Create(src)
 	defer f.Close()
 	defer os.Remove(dst)

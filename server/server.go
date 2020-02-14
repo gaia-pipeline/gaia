@@ -6,19 +6,22 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
+
+	"github.com/gaia-pipeline/gaia/workers/server"
 
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/flag"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/agent"
-	"github.com/gaia-pipeline/gaia/workers/server"
-	"github.com/hashicorp/go-hclog"
+	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
 
@@ -59,13 +62,18 @@ func init() {
 	fs.BoolVar(&gaia.Cfg.Poll, "pipeline-poll", false, "If true, Gaia will periodically poll pipeline repositories, watch for changes and rebuild them accordingly")
 	fs.IntVar(&gaia.Cfg.PVal, "pipeline-poll-interval", 1, "The interval in minutes in which to poll source repositories for changes")
 	fs.StringVar(&gaia.Cfg.ModeRaw, "mode", "server", "The mode which Gaia should be started in. Possible options are server and worker")
-	fs.StringVar(&gaia.Cfg.WorkerName, "worker-name", "", "The name of the worker which will be displayed at the primary instance. Only used in worker mode")
-	fs.StringVar(&gaia.Cfg.WorkerHostURL, "worker-host-url", "http://localhost:8080", "The host url of an Gaia primary instance to connect to. Only used in worker mode")
-	fs.StringVar(&gaia.Cfg.WorkerGRPCHostURL, "worker-grpc-host-url", "localhost:8989", "The host url of an Gaia primary instance gRPC interface used for worker connection. Only used in worker mode")
+	fs.StringVar(&gaia.Cfg.WorkerName, "worker-name", "", "The name of the worker which will be displayed at the primary instance. Only used in worker mode or for docker runs")
+	fs.StringVar(&gaia.Cfg.WorkerHostURL, "worker-host-url", "http://127.0.0.1:8080", "The host url of an Gaia primary instance to connect to. Only used in worker mode or for docker runs")
+	fs.StringVar(&gaia.Cfg.WorkerGRPCHostURL, "worker-grpc-host-url", "127.0.0.1:8989", "The host url of an Gaia primary instance gRPC interface used for worker connection. Only used in worker mode or for docker runs")
 	fs.StringVar(&gaia.Cfg.WorkerSecret, "worker-secret", "", "The secret which is used to register a worker at an Gaia primary instance. Only used in worker mode")
 	fs.StringVar(&gaia.Cfg.WorkerServerPort, "worker-server-port", "8989", "Listen port for Gaia primary worker gRPC communication. Only used in server mode")
 	fs.StringVar(&gaia.Cfg.WorkerTags, "worker-tags", "", "Comma separated list of custom tags for this worker. Only used in worker mode")
 	fs.BoolVar(&gaia.Cfg.PreventPrimaryWork, "prevent-primary-work", false, "If true, prevents the scheduler to schedule work on this Gaia primary instance. Only used in server mode")
+	fs.BoolVar(&gaia.Cfg.AutoDockerMode, "auto-docker-mode", false, "If true, by default runs all pipelines in a docker container")
+	fs.StringVar(&gaia.Cfg.DockerHostURL, "docker-host-url", "unix:///var/run/docker.sock", "Docker daemon host url which is used to build and run pipelines in a docker container")
+	fs.StringVar(&gaia.Cfg.DockerRunImage, "docker-run-image", "gaiapipeline/gaia:latest", "Docker image repository name with tag which will be used for running pipelines in a docker container")
+	fs.StringVar(&gaia.Cfg.DockerWorkerHostURL, "docker-worker-host-url", "http://127.0.0.1:8080", "The host url of the primary/worker API endpoint used for docker worker communication")
+	fs.StringVar(&gaia.Cfg.DockerWorkerGRPCHostURL, "docker-worker-grpc-host-url", "127.0.0.1:8989", "The host url of the primary/worker gRPC endpoint used for docker worker communication")
 
 	// Default values
 	gaia.Cfg.Bolt.Mode = 0600
@@ -166,70 +174,68 @@ func Start() (err error) {
 		return err
 	}
 
-	if gaia.Cfg.Mode == gaia.ModeServer {
-		var jwtKey interface{}
-		// Check JWT key is set
-		if gaia.Cfg.JwtPrivateKeyPath == "" {
-			gaia.Cfg.Logger.Warn("using auto-generated key to sign jwt tokens, do not use in production")
-			jwtKey = make([]byte, 64)
-			_, err = rand.Read(jwtKey.([]byte))
-			if err != nil {
-				gaia.Cfg.Logger.Error("error auto-generating jwt key", "error", err.Error())
-				return
-			}
-		} else {
-			keyData, err := ioutil.ReadFile(gaia.Cfg.JwtPrivateKeyPath)
-			if err != nil {
-				gaia.Cfg.Logger.Error("could not read jwt key file", "error", err.Error())
-				return err
-			}
-			jwtKey, err = jwt.ParseRSAPrivateKeyFromPEM(keyData)
-			if err != nil {
-				gaia.Cfg.Logger.Error("could not parse jwt key file", "error", err.Error())
-				return err
-			}
-		}
-		gaia.Cfg.JWTKey = jwtKey
-
-		// Initialize echo instance
-		echoInstance = echo.New()
-
-		// Initiating Vault
-		if gaia.Cfg.VaultPath == "" {
-			// Set default to data folder
-			gaia.Cfg.VaultPath = gaia.Cfg.DataPath
-		}
-		v, err := services.DefaultVaultService()
+	var jwtKey interface{}
+	// Check JWT key is set
+	if gaia.Cfg.JwtPrivateKeyPath == "" {
+		gaia.Cfg.Logger.Warn("using auto-generated key to sign jwt tokens, do not use in production")
+		jwtKey = make([]byte, 64)
+		_, err = rand.Read(jwtKey.([]byte))
 		if err != nil {
-			gaia.Cfg.Logger.Error("error initiating vault")
+			gaia.Cfg.Logger.Error("error auto-generating jwt key", "error", err.Error())
+			return
+		}
+	} else {
+		keyData, err := ioutil.ReadFile(gaia.Cfg.JwtPrivateKeyPath)
+		if err != nil {
+			gaia.Cfg.Logger.Error("could not read jwt key file", "error", err.Error())
 			return err
 		}
-		if err = v.LoadSecrets(); err != nil {
-			gaia.Cfg.Logger.Error("error loading secrets from vault")
+		jwtKey, err = jwt.ParseRSAPrivateKeyFromPEM(keyData)
+		if err != nil {
+			gaia.Cfg.Logger.Error("could not parse jwt key file", "error", err.Error())
 			return err
 		}
+	}
+	gaia.Cfg.JWTKey = jwtKey
 
-		// Generate global worker secret if it does not exist
-		_, err = v.Get(gaia.WorkerRegisterKey)
-		if err != nil {
-			// Secret hasn't been generated yet
-			gaia.Cfg.Logger.Info("global worker registration secret has not been generated yet. Will generate it now...")
-			secret := []byte(security.GenerateRandomUUIDV5())
+	// Initialize echo instance
+	echoInstance = echo.New()
 
-			// Store secret in vault
-			v.Add(gaia.WorkerRegisterKey, secret)
-			if err := v.SaveSecrets(); err != nil {
-				gaia.Cfg.Logger.Error("failed to store secret into vault", "error", err.Error())
-				return err
-			}
-		}
+	// Initiating Vault
+	if gaia.Cfg.VaultPath == "" {
+		// Set default to data folder
+		gaia.Cfg.VaultPath = gaia.Cfg.DataPath
+	}
+	v, err := services.DefaultVaultService()
+	if err != nil {
+		gaia.Cfg.Logger.Error("error initiating vault")
+		return err
+	}
+	if err = v.LoadSecrets(); err != nil {
+		gaia.Cfg.Logger.Error("error loading secrets from vault")
+		return err
+	}
 
-		// Initialize handlers
-		err = handlers.InitHandlers(echoInstance)
-		if err != nil {
-			gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
+	// Generate global worker secret if it does not exist
+	_, err = v.Get(gaia.WorkerRegisterKey)
+	if err != nil {
+		// Secret hasn't been generated yet
+		gaia.Cfg.Logger.Info("global worker registration secret has not been generated yet. Will generate it now...")
+		secret := []byte(security.GenerateRandomUUIDV5())
+
+		// Store secret in vault
+		v.Add(gaia.WorkerRegisterKey, secret)
+		if err := v.SaveSecrets(); err != nil {
+			gaia.Cfg.Logger.Error("failed to store secret into vault", "error", err.Error())
 			return err
 		}
+	}
+
+	// Initialize handlers
+	err = handlers.InitHandlers(echoInstance)
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
+		return err
 	}
 
 	// Initialize scheduler
@@ -238,26 +244,63 @@ func Start() (err error) {
 		return
 	}
 
+	// Allocate SIG channel
+	exitChan := make(chan os.Signal, 1)
+
+	// Register the signal channel
+	signal.Notify(exitChan, syscall.SIGINT, syscall.SIGTERM)
+
+	// Start worker gRPC server.
+	// We need this in both modes (server and worker) for docker worker to run.
+	workerServer := server.InitWorkerServer()
+	go func() {
+		if err := workerServer.Start(); err != nil {
+			gaia.Cfg.Logger.Error("failed to start gRPC worker server", "error", err)
+			exitChan <- syscall.SIGTERM
+		}
+	}()
+
+	cleanUpFunc := func() {}
 	switch gaia.Cfg.Mode {
 	case gaia.ModeServer:
 		// Start ticker. Periodic job to check for new plugins.
 		pipeline.InitTicker()
 
-		// Start worker gRPC server
-		workerServer := server.InitWorkerServer()
-		go workerServer.Start()
-
-		// Start listen
-		echoInstance.Logger.Fatal(echoInstance.Start(":" + gaia.Cfg.ListenPort))
+		// Start API server
+		go func() {
+			err := echoInstance.Start(":" + gaia.Cfg.ListenPort)
+			if err != nil {
+				gaia.Cfg.Logger.Error("failed to start echo listener", "error", err)
+				exitChan <- syscall.SIGTERM
+			}
+		}()
 	case gaia.ModeWorker:
-		// Start worker main loop and block until SIGINT or SIGTERM has been received
-		ag := agent.InitAgent(scheduler, store, gaia.Cfg.HomePath)
-		err := ag.StartAgent()
-		if err != nil {
-			gaia.Cfg.Logger.Error("failed to start agent", "error", err)
-			return err
-		}
+		// Start API server
+		go func() {
+			err := echoInstance.Start(":" + gaia.Cfg.ListenPort)
+			if err != nil {
+				gaia.Cfg.Logger.Error("failed to start echo listener", "error", err)
+				exitChan <- syscall.SIGTERM
+			}
+		}()
+
+		// Start agent
+		ag := agent.InitAgent(exitChan, scheduler, store, gaia.Cfg.HomePath)
+		go func() {
+			cleanUpFunc, err = ag.StartAgent()
+			if err != nil {
+				gaia.Cfg.Logger.Error("failed to start agent", "error", err)
+				exitChan <- syscall.SIGTERM
+			}
+		}()
 	}
+
+	// Wait for exit signal
+	<-exitChan
+	gaia.Cfg.Logger.Info("exit signal received. Exiting...")
+
+	// Run clean up func
+	cleanUpFunc()
 	return
 }
 

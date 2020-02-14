@@ -1,4 +1,4 @@
-FROM golang:1.12.7-alpine3.8
+FROM golang:1.12.7-alpine
 
 # Version and other variables which can be changed.
 ENV GAIA_PORT=8080 \
@@ -13,7 +13,7 @@ COPY gaia-linux-amd64 /app
 # Fix permissions & setup known hosts file for ssh agent.
 # Install git.
 RUN chmod +x ./gaia-linux-amd64 \
-    && apk add --no-cache --virtual git \
+    && apk add --no-cache git \
     && mkdir -p /root/.ssh \
     && touch /root/.ssh/known_hosts \
     && chmod 600 /root/.ssh

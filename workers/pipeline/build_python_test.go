@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/store"
@@ -123,7 +125,7 @@ func TestCopyBinaryPython(t *testing.T) {
 	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: tmp}
 	_ = os.Mkdir(filepath.Join(tmp, "dist"), 0744)
 	src := filepath.Join(tmp, "dist", p.Pipeline.Name+".tar.gz")
-	dst := appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
+	dst := pipelinehelper.AppendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
 	f, _ := os.Create(src)
 	defer os.RemoveAll(tmp)
 	defer f.Close()

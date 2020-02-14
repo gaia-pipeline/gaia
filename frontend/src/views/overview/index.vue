@@ -49,12 +49,22 @@
               </span><br/>
               <div class="pipelinegrid-footer">
                 <a class="button is-primary" @click="checkPipelineArgsAndStartPipeline(pipeline.p)"
-                   style="width: 100%;">
+                   style="width: 49%; margin-right: 10px;">
                   <span class="icon">
                     <i class="fa fa-play-circle"></i>
                   </span>
                   <span>Start Pipeline</span>
                 </a>
+                <toggle-button
+                  id="pipelinedocker"
+                  v-model="pipeline.p.docker"
+                  :color="{checked: '#7DCE94', unchecked: '#82C7EB'}"
+                  :labels="{checked: 'Docker enabled', unchecked: 'Docker disabled'}"
+                  v-on:change="onDockerRunChange(pipeline.p)"
+                  :width=140
+                  :height=35
+                  :font-size=12
+                  :sync="true"/>
               </div>
             </div>
           </div>
@@ -70,6 +80,7 @@
 <script>
 import moment from 'moment'
 import helper from '../../helper'
+import { ToggleButton } from 'vue-js-toggle-button'
 
 export default {
   data () {
@@ -90,6 +101,10 @@ export default {
 
     // Append interval id to store
     this.$store.commit('appendInterval', intervalID)
+  },
+
+  components: {
+    ToggleButton
   },
 
   destroyed () {
@@ -136,6 +151,14 @@ export default {
 
     checkPipelineArgsAndStartPipeline (pipeline) {
       helper.StartPipelineWithArgsCheck(this, pipeline)
+    },
+
+    onDockerRunChange (pipeline) {
+      this.$http
+        .put('/api/v1/pipeline/' + pipeline.id, pipeline)
+        .catch((error) => {
+          this.$onError(error)
+        })
     },
 
     getImagePath (type) {

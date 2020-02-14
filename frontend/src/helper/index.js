@@ -8,7 +8,7 @@ export default {
           for (let argsCurr = 0; argsCurr < pipeline.jobs[pipelineCurr].args.length; argsCurr++) {
             if (pipeline.jobs[pipelineCurr].args[argsCurr].type !== 'vault') {
               // we found args. Redirect user to params view.
-              context.$router.push({ path: '/pipeline/params', query: { pipelineid: pipeline.id } })
+              context.$router.push({ path: '/pipeline/params', query: { pipelineid: pipeline.id, docker: pipeline.docker } })
               return
             }
           }
@@ -23,7 +23,7 @@ export default {
   StartPipeline (context, pipeline) {
     // Send start request
     context.$http
-      .post('/api/v1/pipeline/' + pipeline.id + '/start')
+      .post('/api/v1/pipeline/' + pipeline.id + '/start', { docker: pipeline.docker })
       .then(response => {
         if (response.data) {
           context.$router.push({ path: '/pipeline/detail', query: { pipelineid: pipeline.id, runid: response.data.id } })

@@ -11,10 +11,12 @@ import (
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/helper/stringhelper"
 	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/store/memdb"
+	"github.com/gaia-pipeline/gaia/workers/docker"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -239,33 +241,39 @@ func (s *Scheduler) schedule() {
 
 	// Iterate scheduled runs
 	for id := range scheduled {
+		// Small helper function to update the pipeline run status in the store
+		storeUpdate := func(run *gaia.PipelineRun, status gaia.PipelineRunStatus) {
+			// Update entry in store
+			run.Status = status
+			if err := s.storeService.PipelinePutRun(run); err != nil {
+				gaia.Cfg.Logger.Debug("could not put pipeline run into store via schedule", "error", err.Error(), "run", run)
+			}
+		}
+
 		// If we are a server instance, we will by default give the worker the advantage.
 		// Only in case all workers are busy we will schedule work on the server.
 		workers := s.memDBService.GetAllWorker()
 		if gaia.Cfg.Mode == gaia.ModeServer && len(workers) > 0 {
-			// Check if all workers are busy / inactive
+			// Check if we have a suitable worker at all
 			invalidWorkers := 0
 			for _, w := range workers {
-				if w.Slots == 0 || w.Status != gaia.WorkerActive {
+				switch {
+				case w.Slots == 0:
+					invalidWorkers++
+				case w.Status != gaia.WorkerActive:
+					invalidWorkers++
+				case stringhelper.IsContainedInSlice(w.Tags, "dockerworker", true):
 					invalidWorkers++
 				}
 			}
 
 			// Insert pipeline run into memdb where all workers get their work from
 			if len(workers) > invalidWorkers {
-				// Mark them as scheduled
-				scheduled[id].Status = gaia.RunScheduled
-
-				// Update entry in store
-				err = s.storeService.PipelinePutRun(scheduled[id])
-				if err != nil {
-					gaia.Cfg.Logger.Debug("could not put pipeline run into store", "error", err.Error())
-					continue
-				}
-
 				if err := s.memDBService.InsertPipelineRun(scheduled[id]); err != nil {
 					gaia.Cfg.Logger.Error("failed to insert pipeline run into memdb via schedule", "error", err.Error())
+					continue
 				}
+				storeUpdate(scheduled[id], gaia.RunScheduled)
 				continue
 			}
 		}
@@ -275,18 +283,59 @@ func (s *Scheduler) schedule() {
 			continue
 		}
 
-		// Mark them as scheduled
-		scheduled[id].Status = gaia.RunScheduled
+		// Check if this pipeline run is a docker run
+		if scheduled[id].Docker || gaia.Cfg.AutoDockerMode {
+			// Retrieve the global worker registration secret
+			if err = s.vault.LoadSecrets(); err != nil {
+				gaia.Cfg.Logger.Error("failed to load secrets from vault", "error", err)
+				continue
+			}
+			workerSecretBytes, err := s.vault.Get(gaia.WorkerRegisterKey)
+			if err != nil {
+				gaia.Cfg.Logger.Error("failed to get global worker registration secret from vault", "error", err)
+				continue
+			}
+			workerSecret := string(workerSecretBytes[:])
 
-		// Update entry in store
-		err = s.storeService.PipelinePutRun(scheduled[id])
-		if err != nil {
-			gaia.Cfg.Logger.Debug("could not put pipeline run into store", "error", err.Error())
+			// Start docker worker for this pipeline run
+			worker := docker.NewDockerWorker(gaia.Cfg.DockerHostURL, scheduled[id].UniqueID)
+			if err := worker.SetupDockerWorker(gaia.Cfg.DockerRunImage, workerSecret); err != nil {
+				gaia.Cfg.Logger.Error("failed to setup docker worker for pipeline run", "error", err)
+				continue
+			}
+
+			// Cache docker worker
+			if err := s.memDBService.InsertDockerWorker(worker); err != nil {
+				gaia.Cfg.Logger.Error("failed to cache docker worker in memdb", "error", err)
+				if err := worker.KillDockerWorker(); err != nil {
+					gaia.Cfg.Logger.Error("failed to kill docker worker", "error", err)
+				}
+				continue
+			}
+
+			// Prevent the docker worker to start another docker worker container
+			scheduled[id].Docker = false
+
+			// If it is a docker run, pipeline will be executed by a worker inside a container
+			scheduled[id].DockerWorkerID = worker.WorkerID
+			scheduled[id].PipelineTags = append(scheduled[id].PipelineTags, []string{worker.WorkerID, "dockerworker"}...)
+			if err := s.memDBService.InsertPipelineRun(scheduled[id]); err != nil {
+				gaia.Cfg.Logger.Error("failed to insert pipeline run into memdb via schedule", "error", err.Error())
+				continue
+			}
+
+			// Reset the docker status manipulation
+			scheduled[id].Docker = true
+
+			storeUpdate(scheduled[id], gaia.RunScheduled)
 			continue
 		}
 
 		// push scheduled run into our channel
 		s.scheduledRuns <- *scheduled[id]
+
+		// Run is now scheduled
+		storeUpdate(scheduled[id], gaia.RunScheduled)
 	}
 }
 
@@ -389,6 +438,7 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*
 		Status:       gaia.RunNotScheduled,
 		PipelineType: p.Type,
 		PipelineTags: p.Tags,
+		Docker:       p.Docker,
 	}
 
 	// Put run into store
@@ -754,7 +804,7 @@ func (s *Scheduler) CountScheduledRuns() int {
 
 // finishPipelineRun finishes the pipeline run and stores the results.
 func (s *Scheduler) finishPipelineRun(r *gaia.PipelineRun, status gaia.PipelineRunStatus) {
-	// Mark pipeline run as success
+	// Set pipeline run status
 	r.Status = status
 
 	// Finish date

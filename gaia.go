@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/hashicorp/go-hclog"
+	hclog "github.com/hashicorp/go-hclog"
 	"github.com/robfig/cron"
 )
 
@@ -195,6 +195,7 @@ type Pipeline struct {
 	PeriodicSchedules []string     `json:"periodicschedules,omitempty"`
 	TriggerToken      string       `json:"trigger_token,omitempty"`
 	Tags              []string     `json:"tags,omitempty"`
+	Docker            bool         `json:"docker"`
 	CronInst          *cron.Cron   `json:"-"`
 }
 
@@ -249,16 +250,18 @@ type PrivateKey struct {
 
 // PipelineRun represents a single run of a pipeline.
 type PipelineRun struct {
-	UniqueID     string            `json:"uniqueid"`
-	ID           int               `json:"id"`
-	PipelineID   int               `json:"pipelineid"`
-	StartDate    time.Time         `json:"startdate,omitempty"`
-	FinishDate   time.Time         `json:"finishdate,omitempty"`
-	ScheduleDate time.Time         `json:"scheduledate,omitempty"`
-	Status       PipelineRunStatus `json:"status,omitempty"`
-	Jobs         []*Job            `json:"jobs,omitempty"`
-	PipelineType PipelineType      `json:"pipelinetype,omitempty"`
-	PipelineTags []string          `json:"pipelinetags,omitempty"`
+	UniqueID       string            `json:"uniqueid"`
+	ID             int               `json:"id"`
+	PipelineID     int               `json:"pipelineid"`
+	StartDate      time.Time         `json:"startdate,omitempty"`
+	FinishDate     time.Time         `json:"finishdate,omitempty"`
+	ScheduleDate   time.Time         `json:"scheduledate,omitempty"`
+	Status         PipelineRunStatus `json:"status,omitempty"`
+	Jobs           []*Job            `json:"jobs,omitempty"`
+	PipelineType   PipelineType      `json:"pipelinetype,omitempty"`
+	PipelineTags   []string          `json:"pipelinetags,omitempty"`
+	Docker         bool              `json:"docker,omitempty"`
+	DockerWorkerID string            `json:"dockerworkerid,omitempty"`
 }
 
 // Worker represents a single registered worker.
@@ -286,26 +289,31 @@ var Cfg = &Config{}
 
 // Config holds all config options
 type Config struct {
-	DevMode            bool
-	ModeRaw            string
-	Mode               Mode
-	VersionSwitch      bool
-	Poll               bool
-	PVal               int
-	ListenPort         string
-	HomePath           string
-	Hostname           string
-	VaultPath          string
-	DataPath           string
-	PipelinePath       string
-	WorkspacePath      string
-	Worker             int
-	JwtPrivateKeyPath  string
-	JWTKey             interface{}
-	Logger             hclog.Logger
-	CAPath             string
-	WorkerServerPort   string
-	PreventPrimaryWork bool
+	DevMode                 bool
+	ModeRaw                 string
+	Mode                    Mode
+	VersionSwitch           bool
+	Poll                    bool
+	PVal                    int
+	ListenPort              string
+	HomePath                string
+	Hostname                string
+	VaultPath               string
+	DataPath                string
+	PipelinePath            string
+	WorkspacePath           string
+	Worker                  int
+	JwtPrivateKeyPath       string
+	JWTKey                  interface{}
+	Logger                  hclog.Logger
+	CAPath                  string
+	WorkerServerPort        string
+	PreventPrimaryWork      bool
+	AutoDockerMode          bool
+	DockerHostURL           string
+	DockerRunImage          string
+	DockerWorkerHostURL     string
+	DockerWorkerGRPCHostURL string
 
 	// Worker
 	WorkerName        string

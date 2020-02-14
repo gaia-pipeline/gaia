@@ -11,7 +11,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -74,12 +73,13 @@ type Agent struct {
 	store store.GaiaStore
 
 	// Signal channel for this agent
-	sigs chan os.Signal
+	exitChan chan os.Signal
 }
 
 // InitAgent initiates the agent instance
-func InitAgent(scheduler scheduler.GaiaScheduler, store store.GaiaStore, certPath string) *Agent {
+func InitAgent(exitChan chan os.Signal, scheduler scheduler.GaiaScheduler, store store.GaiaStore, certPath string) *Agent {
 	ag := &Agent{
+		exitChan:  exitChan,
 		scheduler: scheduler,
 		store:     store,
 	}
@@ -93,28 +93,20 @@ func InitAgent(scheduler scheduler.GaiaScheduler, store store.GaiaStore, certPat
 	return ag
 }
 
-// StartAgent starts the agent main loop and waits until SIGINT or SIGTERM
-// signal has been received.
-func (a *Agent) StartAgent() error {
-	// Allocate SIG channel
-	a.sigs = make(chan os.Signal, 1)
-
-	// Register the signal channel
-	signal.Notify(a.sigs, syscall.SIGINT, syscall.SIGTERM)
-
+// StartAgent starts the agent and returns a clean up function.
+func (a *Agent) StartAgent() (func(), error) {
 	// Setup connection information
 	clientTLS, err := a.setupConnectionInfo()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Setup gRPC connection
 	dialOption := grpc.WithTransportCredentials(clientTLS)
 	conn, err := grpc.Dial(gaia.Cfg.WorkerGRPCHostURL, dialOption)
 	if err != nil {
-		return fmt.Errorf("failed to connect to remote host: %s", err.Error())
+		return nil, fmt.Errorf("failed to connect to remote host: %s", err.Error())
 	}
-	defer conn.Close()
 
 	// Get worker interface
 	a.client = pb.NewWorkerClient(conn)
@@ -151,15 +143,17 @@ func (a *Agent) StartAgent() error {
 		}
 	}()
 
-	// Block until signal received
-	<-a.sigs
-	gaia.Cfg.Logger.Info("exit signal received. Exiting...")
+	// Return clean up function
+	return func() {
+		// Close gRPC connection
+		if err := conn.Close(); err != nil {
+			gaia.Cfg.Logger.Error("failed to close gRPC connection", "error", err)
+		}
 
-	// Safely stop scheduler
-	close(quitScheduler)
-	close(quitUpdate)
-
-	return nil
+		// Safely stop scheduler
+		close(quitScheduler)
+		close(quitUpdate)
+	}, nil
 }
 
 // setupConnectionInfo setups the connection info object by parsing existing
@@ -273,7 +267,7 @@ func (a *Agent) scheduleWork() {
 	gaia.Cfg.Logger.Trace("try to pull work from Gaia primary instance...")
 
 	// Set available worker slots. Primary instance decides if worker needs work.
-	a.self.WorkerSlots = int32(a.scheduler.GetFreeWorkers())
+	a.self.WorkerSlots = a.scheduler.GetFreeWorkers()
 
 	// Setup context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), (12*schedulerTickerSeconds)*time.Second)
@@ -315,7 +309,7 @@ func (a *Agent) scheduleWork() {
 				}
 
 				// Send quit signal
-				a.sigs <- syscall.SIGTERM
+				a.exitChan <- syscall.SIGTERM
 			}
 			return
 		}
@@ -330,6 +324,8 @@ func (a *Agent) scheduleWork() {
 			Status:       gaia.PipelineRunStatus(pipelineRunPB.Status),
 			PipelineID:   int(pipelineRunPB.PipelineId),
 			ScheduleDate: time.Unix(pipelineRunPB.ScheduleDate, 0),
+			PipelineType: gaia.PipelineType(pipelineRunPB.PipelineType),
+			Docker:       pipelineRunPB.Docker,
 		}
 
 		// Convert jobs
@@ -374,7 +370,7 @@ func (a *Agent) scheduleWork() {
 		}
 
 		// Get pipeline binary name and SHA256SUM
-		pipelineName := pipelineRunPB.PipelineName
+		pipelineName := pipelinehelper.AppendTypeToName(pipelineRunPB.PipelineName, gaia.PipelineType(pipelineRunPB.PipelineType))
 		pipelineSHA256SUM := pipelineRunPB.ShaSum
 
 		// Setup reschedule of pipeline in case something goes wrong
@@ -448,7 +444,7 @@ func (a *Agent) scheduleWork() {
 			pipelineType := gaia.PipelineType(pipelineRunPB.PipelineType)
 			pipeline = &gaia.Pipeline{
 				ID:       pipelineRun.PipelineID,
-				Name:     pipelinehelper.GetRealPipelineName(pipelineRunPB.PipelineName, pipelineType),
+				Name:     pipelineRunPB.PipelineName,
 				Type:     pipelineType,
 				ExecPath: pipelineFullPath,
 				Jobs:     pipelineRun.Jobs,
@@ -640,7 +636,7 @@ func (a *Agent) streamBinary(pipelineRunPB *pb.PipelineRun, pipelinePath string)
 	return os.Chmod(pipelinePath, gaia.ExecutablePermission)
 }
 
-// updateWork is function that is periodically called and it is used to
+// updateWork is periodically called and it is used to
 // send new information about a pipeline run to the Gaia primary instance.
 func (a *Agent) updateWork() {
 	// Read all pipeline runs from the store. The number of pipeline runs
@@ -651,6 +647,11 @@ func (a *Agent) updateWork() {
 		gaia.Cfg.Logger.Error("failed to load pipeline runs from store", "error", err.Error())
 		return
 	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), (updateTickerSeconds*3)*time.Second)
+	ctx = metadata.AppendToOutgoingContext(ctx, idMDKey, a.self.UniqueId)
+	defer cancel()
 
 	// Send all pipeline runs to the remote primary instance
 	for _, run := range runs {
@@ -663,6 +664,7 @@ func (a *Agent) updateWork() {
 			ScheduleDate: run.ScheduleDate.Unix(),
 			StartDate:    run.StartDate.Unix(),
 			FinishDate:   run.FinishDate.Unix(),
+			Docker:       run.Docker,
 		}
 
 		// Transform pipeline run jobs
@@ -708,10 +710,10 @@ func (a *Agent) updateWork() {
 			}
 		}
 
-		// Create context with timeout
-		ctx, cancel := context.WithTimeout(context.Background(), (updateTickerSeconds*3)*time.Second)
-		ctx = metadata.AppendToOutgoingContext(ctx, idMDKey, a.self.UniqueId)
-		defer cancel()
+		// Ship pipeline logs if exists
+		if err := a.shipPipelineLogs(ctx, &run); err != nil {
+			return
+		}
 
 		// Send to remote instance
 		if _, err := a.client.UpdateWork(ctx, runPB); err != nil {
@@ -720,65 +722,71 @@ func (a *Agent) updateWork() {
 		}
 
 		// Remove pipeline run from store when the state is finalized
-		if run.Status == gaia.RunFailed || run.Status == gaia.RunSuccess || run.Status == gaia.RunCancelled {
+		if run.Status == gaia.RunFailed || run.Status == gaia.RunSuccess || run.Status == gaia.RunCancelled || run.Status == gaia.RunReschedule {
 			if err = a.store.PipelineRunDelete(run.UniqueID); err != nil {
 				gaia.Cfg.Logger.Error("failed to remove pipeline run from store", "error", err.Error(), "pipelinerun", run)
 			}
 		}
+	}
+}
 
-		// Check if log file exists for pipeline run
-		logFilePath := filepath.Join(gaia.Cfg.WorkspacePath, strconv.Itoa(run.PipelineID), strconv.Itoa(run.ID), gaia.LogsFolderName, gaia.LogsFileName)
-		if _, err := os.Stat(logFilePath); err != nil {
-			continue
-		}
+// shipPipelineLogs ships pipeline from the given pipeline run to the primary instance.
+// It will only return an error when an error occurred during transmission, not when
+// no logs for a pipeline are not existent.
+func (a *Agent) shipPipelineLogs(ctx context.Context, run *gaia.PipelineRun) error {
+	// Check if log file exists for pipeline run.
+	// If the file does not exist, we simply skip the shipping.
+	logFilePath := filepath.Join(gaia.Cfg.WorkspacePath, strconv.Itoa(run.PipelineID), strconv.Itoa(run.ID), gaia.LogsFolderName, gaia.LogsFileName)
+	if _, err := os.Stat(logFilePath); err != nil {
+		return nil
+	}
 
-		// Open file handle
-		file, err := os.Open(logFilePath)
+	// Open file handle
+	file, err := os.Open(logFilePath)
+	if err != nil {
+		gaia.Cfg.Logger.Warn("failed to open pipeline run log file via shipPipelineLogs", "error", err.Error(), "pipelinerun", run)
+		return err
+	}
+	defer file.Close()
+
+	// Open streaming session to primary instance
+	stream, err := a.client.StreamLogs(ctx)
+	if err != nil {
+		gaia.Cfg.Logger.Warn("failed to open stream session to primary instance to ship logs via shipPipelineLogs", "error", err.Error(), "pipelinerun", run)
+		return err
+	}
+
+	chunk := &pb.LogChunk{
+		PipelineId: int64(run.PipelineID),
+		RunId:      int64(run.ID),
+	}
+	buffer := make([]byte, chunkSize)
+	for {
+		bytesread, err := file.Read(buffer)
+
+		// Check for errors
 		if err != nil {
-			gaia.Cfg.Logger.Warn("failed to open pipeline run log file via updatework", "error", err.Error(), "pipelinerun", run)
-			continue
-		}
-		defer file.Close()
-
-		// Open streaming session to primary instance
-		streamCtx := context.Background()
-		streamCtx = metadata.AppendToOutgoingContext(streamCtx, idMDKey, a.self.UniqueId)
-		stream, err := a.client.StreamLogs(streamCtx)
-		if err != nil {
-			gaia.Cfg.Logger.Warn("failed to open stream session to primary instance to ship logs via updatework", "error", err.Error(), "pipelinerun", run)
-			continue
-		}
-
-		chunk := &pb.LogChunk{
-			PipelineId: int64(run.PipelineID),
-			RunId:      int64(run.ID),
-		}
-		buffer := make([]byte, chunkSize)
-		for {
-			bytesread, err := file.Read(buffer)
-
-			// Check for errors
-			if err != nil {
-				if err != io.EOF {
-					gaia.Cfg.Logger.Warn("error occurred during pipeline run log disk read", "error", err.Error(), "pipelinerun", run)
-					continue
-				}
-				break
+			if err != io.EOF {
+				gaia.Cfg.Logger.Warn("error occurred during pipeline run log disk read", "error", err.Error(), "pipelinerun", run)
+				return err
 			}
-
-			// Set bytes
-			chunk.Chunk = buffer[:bytesread]
-
-			// Stream it to primary instance
-			if err = stream.Send(chunk); err != nil {
-				gaia.Cfg.Logger.Error("failed to stream log chunk to primary instance", "error", err.Error(), "pipelinerun", run)
-				continue
-			}
+			break
 		}
-		if err = stream.CloseSend(); err != nil {
-			gaia.Cfg.Logger.Warn("failed to safely close gRPC connection via updatework", "error", err.Error())
+
+		// Set bytes
+		chunk.Chunk = buffer[:bytesread]
+
+		// Stream it to primary instance
+		if err = stream.Send(chunk); err != nil {
+			gaia.Cfg.Logger.Error("failed to stream log chunk to primary instance", "error", err.Error(), "pipelinerun", run)
+			return err
 		}
 	}
+	if err = stream.CloseSend(); err != nil {
+		gaia.Cfg.Logger.Warn("failed to safely close gRPC connection via updatework", "error", err.Error())
+		return err
+	}
+	return nil
 }
 
 // generateClientTLSCreds checks if certificates exist in the home directory.

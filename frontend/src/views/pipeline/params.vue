@@ -13,7 +13,7 @@
             </p>
             <p class="control" v-else-if="arg.type === 'boolean'">
               <label class="checkbox">
-                <input type="checkbox">
+                <input type="checkbox" v-model="arg.value">
                 {{ arg.desc }}
               </label>
             </p>
@@ -35,7 +35,8 @@ export default {
   data () {
     return {
       args: [],
-      pipelineID: null
+      pipelineID: null,
+      docker: false
     }
   },
 
@@ -56,12 +57,17 @@ export default {
         return
       }
       this.pipelineID = pipelineID
+      this.docker = this.$route.query.docker
 
       // reset args
       this.args = []
 
       this.$http
-        .get('/api/v1/pipeline/' + pipelineID, { showProgressBar: false })
+        .get('/api/v1/pipeline/' + pipelineID, {
+          params: {
+            hideProgressBar: true
+          }
+        })
         .then(response => {
           if (response.data) {
             let pipeline = response.data
@@ -88,6 +94,9 @@ export default {
     },
 
     startPipeline () {
+      // Add docker option
+      this.args.push({ docker: this.docker })
+
       // Send start request
       this.$http
         .post('/api/v1/pipeline/' + this.pipelineID + '/start', this.args)

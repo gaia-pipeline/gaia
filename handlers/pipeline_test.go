@@ -18,7 +18,7 @@ import (
 	gStore "github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"github.com/gaia-pipeline/gaia/workers/scheduler"
-	"github.com/hashicorp/go-hclog"
+	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
 
@@ -420,7 +420,10 @@ func TestPipelineStart(t *testing.T) {
 	ap.Append(p)
 
 	t.Run("can start a pipeline", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", nil)
+		bodyBytes, _ := json.Marshal(map[string]interface{}{
+			"docker": false,
+		})
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -448,7 +451,10 @@ func TestPipelineStart(t *testing.T) {
 	})
 
 	t.Run("fails when scheduler throws error", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", nil)
+		bodyBytes, _ := json.Marshal(map[string]interface{}{
+			"docker": false,
+		})
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -470,7 +476,10 @@ func TestPipelineStart(t *testing.T) {
 	})
 
 	t.Run("fails when scheduler doesn't find the pipeline but does not return error", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", nil)
+		bodyBytes, _ := json.Marshal(map[string]interface{}{
+			"docker": false,
+		})
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
