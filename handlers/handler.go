@@ -95,7 +95,7 @@ func InitHandlers(e *echo.Echo) error {
 	// Swagger UI
 	e.GET(p+"swagger/*", echoSwagger.WrapHandler)
 
-  // Worker
+	// Worker
 	e.GET(p+"worker/secret", GetWorkerRegisterSecret)
 	e.POST(p+"worker/register", RegisterWorker)
 	e.GET(p+"worker/status", GetWorkerStatusOverview)

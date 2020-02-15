@@ -18,7 +18,7 @@ var (
 	errNotAuthorized = errors.New("no or invalid jwt token provided. You are not authorized")
 
 	// Non-protected URL paths which are prefix checked
-	nonProtectedPathsPrefix = []string {
+	nonProtectedPathsPrefix = []string{
 		"/login",
 		"/pipeline/githook",
 		"/trigger",
@@ -30,7 +30,7 @@ var (
 	}
 
 	// Non-protected URL paths which are explicitly checked
-	nonProtectedPaths = []string {
+	nonProtectedPaths = []string{
 		"/",
 		"/favicon.ico",
 	}
