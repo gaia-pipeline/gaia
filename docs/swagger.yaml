@@ -42,7 +42,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/gaia.User'
-          type: object
       produces:
       - application/json
       responses:
@@ -50,7 +49,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/gaia.User'
-            type: object
         "400":
           description: Bad Request
           schema:

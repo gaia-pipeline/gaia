@@ -33,6 +33,7 @@ var (
 	nonProtectedPaths = []string{
 		"/",
 		"/favicon.ico",
+		"/swagger",
 	}
 )
 

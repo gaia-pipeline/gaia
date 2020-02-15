@@ -115,11 +115,11 @@ func Start() (err error) {
 		// Find executable path
 		execPath, err := findExecutablePath()
 		if err != nil {
-			gaia.Cfg.Logger.Error("cannot find executeable path", "error", err.Error())
+			gaia.Cfg.Logger.Error("cannot find executable path", "error", err.Error())
 			return err
 		}
 		gaia.Cfg.HomePath = execPath
-		gaia.Cfg.Logger.Debug("executeable path found", "path", execPath)
+		gaia.Cfg.Logger.Debug("executable path found", "path", execPath)
 	}
 
 	// Set data path, workspace path and pipeline path relative to home folder and create it

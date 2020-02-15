@@ -34,7 +34,6 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/gaia.User"
                         }
                     }
@@ -43,7 +42,6 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
                             "$ref": "#/definitions/gaia.User"
                         }
                     },
