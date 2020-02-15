@@ -33,6 +33,9 @@ var (
 
 	// Name of the bucket where we store all worker.
 	workerBucket = []byte("Worker")
+
+	// SHA pair bucket.
+	shaPairBucket = []byte("SHAPair")
 )
 
 const (
@@ -68,6 +71,7 @@ type GaiaStore interface {
 	PipelineGetAllRuns() ([]gaia.PipelineRun, error)
 	PipelineGetAllRunsByPipelineID(pipelineID int) ([]gaia.PipelineRun, error)
 	PipelineGetLatestRun(pipelineID int) (*gaia.PipelineRun, error)
+	PipelineGetRunByID(runID string) (*gaia.PipelineRun, error)
 	PipelineDelete(id int) error
 	PipelineRunDelete(uniqueID string) error
 	UserPut(u *gaia.User, encryptPassword bool) error
@@ -85,6 +89,8 @@ type GaiaStore interface {
 	WorkerDelete(id string) error
 	WorkerDeleteAll() error
 	WorkerGet(id string) (*gaia.Worker, error)
+	UpsertSHAPair(pair gaia.SHAPair) error
+	GetSHAPair(pipelineID int) (bool, gaia.SHAPair, error)
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore
@@ -105,7 +111,9 @@ func NewBoltStore() *BoltStore {
 func (s *BoltStore) Init(dataPath string) error {
 	// Open connection to bolt database
 	path := filepath.Join(dataPath, boltDBFileName)
-	db, err := bolt.Open(path, gaia.Cfg.Bolt.Mode, nil)
+	// Give boltdb 5 seconds to try and open up a db file.
+	// If another process is already holding that file, this will time-out.
+	db, err := bolt.Open(path, gaia.Cfg.Bolt.Mode, &bolt.Options{Timeout: 5 * time.Second})
 	if err != nil {
 		return err
 	}
@@ -120,11 +128,17 @@ func (s *BoltStore) Close() error {
 	return s.db.Close()
 }
 
-// setupDatabase create all buckets in the db.
-// Additionally, it makes sure that the admin user exists.
-func (s *BoltStore) setupDatabase() error {
-	// Create bucket if not exists function
-	var bucketName []byte
+type setup struct {
+	bs  *BoltStore
+	err error
+}
+
+// Create bucket if not exists function
+func (s *setup) update(bucketName []byte) {
+	// update is a no-op in case there was already an error
+	if s.err != nil {
+		return
+	}
 	c := func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists(bucketName)
 		if err != nil {
@@ -132,42 +146,30 @@ func (s *BoltStore) setupDatabase() error {
 		}
 		return nil
 	}
+	s.err = s.bs.db.Update(c)
+}
+
+// setupDatabase create all buckets in the db.
+// Additionally, it makes sure that the admin user exists.
+func (s *BoltStore) setupDatabase() error {
+	// Create bucket if not exists function
+	setP := &setup{
+		bs:  s,
+		err: nil,
+	}
 
 	// Make sure buckets exist
-	bucketName = userBucket
-	err := s.db.Update(c)
-	if err != nil {
-		return err
-	}
-	bucketName = userPermsBucket
-	err = s.db.Update(c)
-	if err != nil {
-		return err
-	}
-	bucketName = pipelineBucket
-	err = s.db.Update(c)
-	if err != nil {
-		return err
-	}
-	bucketName = createPipelineBucket
-	err = s.db.Update(c)
-	if err != nil {
-		return err
-	}
-	bucketName = pipelineRunBucket
-	err = s.db.Update(c)
-	if err != nil {
-		return err
-	}
-	bucketName = settingsBucket
-	err = s.db.Update(c)
-	if err != nil {
-		return err
-	}
-	bucketName = workerBucket
-	err = s.db.Update(c)
-	if err != nil {
-		return err
+	setP.update(userBucket)
+	setP.update(userPermsBucket)
+	setP.update(pipelineBucket)
+	setP.update(createPipelineBucket)
+	setP.update(pipelineRunBucket)
+	setP.update(settingsBucket)
+	setP.update(workerBucket)
+	setP.update(shaPairBucket)
+
+	if setP.err != nil {
+		return setP.err
 	}
 
 	// Make sure that the user "admin" does exist
@@ -195,6 +197,9 @@ func (s *BoltStore) setupDatabase() error {
 	}
 
 	u, err := s.UserGet(autoUsername)
+	if err != nil {
+		return err
+	}
 
 	if u == nil {
 		triggerToken := security.GenerateRandomUUIDV5()

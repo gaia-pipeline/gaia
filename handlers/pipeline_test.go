@@ -45,7 +45,7 @@ func TestPipelineGitLSRemote(t *testing.T) {
 	}
 
 	e := echo.New()
-	InitHandlers(e)
+	_ = InitHandlers(e)
 
 	t.Run("fails with invalid data", func(t *testing.T) {
 		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/gitlsremote", nil)
@@ -53,7 +53,7 @@ func TestPipelineGitLSRemote(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		PipelineGitLSRemote(c)
+		_ = PipelineGitLSRemote(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -73,7 +73,7 @@ func TestPipelineGitLSRemote(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		PipelineGitLSRemote(c)
+		_ = PipelineGitLSRemote(c)
 
 		if rec.Code != http.StatusForbidden {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -91,7 +91,7 @@ func TestPipelineGitLSRemote(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		PipelineGitLSRemote(c)
+		_ = PipelineGitLSRemote(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -118,7 +118,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 	}
 
 	e := echo.New()
-	InitHandlers(e)
+	_ = InitHandlers(e)
 
 	t.Run("invalid hostconfig for github in known_hosts file", func(t *testing.T) {
 		buf := new(bytes.Buffer)
@@ -129,8 +129,11 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 		})
 		hostConfig := "github.comom,1.2.3.4 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
 		knownHostsLocation := filepath.Join(dataDir, ".known_hosts")
-		ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), 0766)
-		os.Setenv("SSH_KNOWN_HOSTS", knownHostsLocation)
+		err := ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), gaia.ExecutablePermission)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = os.Setenv("SSH_KNOWN_HOSTS", knownHostsLocation)
 		repoURL := "github.com:gaia-pipeline/pipeline-test"
 		gr := gaia.GitRepo{
 			URL: repoURL,
@@ -146,7 +149,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		PipelineGitLSRemote(c)
+		_ = PipelineGitLSRemote(c)
 
 		// This will fail because the above SSH key is invalid. But that is fine,
 		// because the initial host file will fail earlier than that.
@@ -186,7 +189,7 @@ func TestPipelineUpdate(t *testing.T) {
 
 	// Initialize echo
 	e := echo.New()
-	InitHandlers(e)
+	_ = InitHandlers(e)
 
 	pipeline1 := gaia.Pipeline{
 		ID:                1,
@@ -226,7 +229,7 @@ func TestPipelineUpdate(t *testing.T) {
 		c.SetParamNames("pipelineid")
 		c.SetParamValues("2")
 
-		PipelineUpdate(c)
+		_ = PipelineUpdate(c)
 
 		if rec.Code != http.StatusNotFound {
 			t.Fatalf("expected response code %v got %v", http.StatusNotFound, rec.Code)
@@ -243,7 +246,7 @@ func TestPipelineUpdate(t *testing.T) {
 		c.SetParamNames("pipelineid")
 		c.SetParamValues("1")
 
-		PipelineUpdate(c)
+		_ = PipelineUpdate(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -271,7 +274,7 @@ func TestPipelineUpdate(t *testing.T) {
 		ms.pipelineRun = pRun
 		services.MockSchedulerService(ms)
 
-		PipelineUpdate(c)
+		_ = PipelineUpdate(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -299,7 +302,7 @@ func TestPipelineUpdate(t *testing.T) {
 		ms.pipelineRun = pRun
 		services.MockSchedulerService(ms)
 
-		PipelineUpdate(c)
+		_ = PipelineUpdate(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
@@ -331,7 +334,7 @@ func TestPipelineDelete(t *testing.T) {
 
 	// Initialize echo
 	e := echo.New()
-	InitHandlers(e)
+	_ = InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:      1,
@@ -353,7 +356,7 @@ func TestPipelineDelete(t *testing.T) {
 	defer f.Close()
 	defer os.Remove(src)
 
-	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	_ = ioutil.WriteFile(src, []byte("testcontent"), 0666)
 
 	t.Run("fails for non-existent pipeline", func(t *testing.T) {
 		req := httptest.NewRequest(echo.DELETE, "/", nil)
@@ -364,7 +367,7 @@ func TestPipelineDelete(t *testing.T) {
 		c.SetParamNames("pipelineid")
 		c.SetParamValues("2")
 
-		PipelineDelete(c)
+		_ = PipelineDelete(c)
 
 		if rec.Code != http.StatusNotFound {
 			t.Fatalf("expected response code %v got %v", http.StatusNotFound, rec.Code)
@@ -380,7 +383,7 @@ func TestPipelineDelete(t *testing.T) {
 		c.SetParamNames("pipelineid")
 		c.SetParamValues("1")
 
-		PipelineDelete(c)
+		_ = PipelineDelete(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusNotFound, rec.Code)
@@ -404,7 +407,7 @@ func TestPipelineStart(t *testing.T) {
 
 	// Initialize echo
 	e := echo.New()
-	InitHandlers(e)
+	_ = InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:      1,
@@ -417,7 +420,10 @@ func TestPipelineStart(t *testing.T) {
 	ap.Append(p)
 
 	t.Run("can start a pipeline", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", nil)
+		bodyBytes, _ := json.Marshal(map[string]interface{}{
+			"docker": false,
+		})
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -430,7 +436,7 @@ func TestPipelineStart(t *testing.T) {
 		ms.pipelineRun = pRun
 		services.MockSchedulerService(ms)
 
-		PipelineStart(c)
+		_ = PipelineStart(c)
 
 		if rec.Code != http.StatusCreated {
 			t.Fatalf("expected response code %v got %v", http.StatusCreated, rec.Code)
@@ -445,7 +451,10 @@ func TestPipelineStart(t *testing.T) {
 	})
 
 	t.Run("fails when scheduler throws error", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", nil)
+		bodyBytes, _ := json.Marshal(map[string]interface{}{
+			"docker": false,
+		})
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -459,7 +468,7 @@ func TestPipelineStart(t *testing.T) {
 		ms.err = errors.New("failed to run pipeline")
 		services.MockSchedulerService(ms)
 
-		PipelineStart(c)
+		_ = PipelineStart(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
@@ -467,7 +476,10 @@ func TestPipelineStart(t *testing.T) {
 	})
 
 	t.Run("fails when scheduler doesn't find the pipeline but does not return error", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", nil)
+		bodyBytes, _ := json.Marshal(map[string]interface{}{
+			"docker": false,
+		})
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -477,7 +489,7 @@ func TestPipelineStart(t *testing.T) {
 		ms := new(mockScheduleService)
 		services.MockSchedulerService(ms)
 
-		PipelineStart(c)
+		_ = PipelineStart(c)
 
 		if rec.Code != http.StatusNotFound {
 			t.Fatalf("expected response code %v got %v", http.StatusNotFound, rec.Code)
@@ -510,7 +522,7 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 
 	// Initialize echo
 	e := echo.New()
-	InitHandlers(e)
+	_ = InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:           1,
@@ -547,7 +559,7 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		ms.pipelineRun = pRun
 		services.MockSchedulerService(ms)
 
-		PipelineTrigger(c)
+		_ = PipelineTrigger(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -577,7 +589,7 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		ms.pipelineRun = pRun
 		services.MockSchedulerService(ms)
 
-		PipelineTrigger(c)
+		_ = PipelineTrigger(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
@@ -607,7 +619,7 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		ms.pipelineRun = pRun
 		services.MockSchedulerService(ms)
 
-		PipelineTrigger(c)
+		_ = PipelineTrigger(c)
 
 		if rec.Code != http.StatusForbidden {
 			t.Fatalf("expected response code %v got %v", http.StatusForbidden, rec.Code)
@@ -636,7 +648,7 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		ms.pipelineRun = pRun
 		services.MockSchedulerService(ms)
 
-		PipelineTrigger(c)
+		_ = PipelineTrigger(c)
 
 		if rec.Code != http.StatusForbidden {
 			t.Fatalf("expected response code %v got %v", http.StatusForbidden, rec.Code)
@@ -670,7 +682,7 @@ func TestPipelineResetToken(t *testing.T) {
 
 	// Initialize echo
 	e := echo.New()
-	InitHandlers(e)
+	_ = InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:           1,
@@ -702,7 +714,7 @@ func TestPipelineResetToken(t *testing.T) {
 		services.MockSchedulerService(nil)
 	}()
 
-	PipelineResetToken(c)
+	_ = PipelineResetToken(c)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -728,7 +740,7 @@ func TestPipelineCheckPeriodicSchedules(t *testing.T) {
 
 	// Initialize echo
 	e := echo.New()
-	InitHandlers(e)
+	_ = InitHandlers(e)
 
 	t.Run("invalid cron added", func(t *testing.T) {
 		body := []string{
@@ -741,7 +753,7 @@ func TestPipelineCheckPeriodicSchedules(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		PipelineCheckPeriodicSchedules(c)
+		_ = PipelineCheckPeriodicSchedules(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
@@ -759,7 +771,7 @@ func TestPipelineCheckPeriodicSchedules(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		PipelineCheckPeriodicSchedules(c)
+		_ = PipelineCheckPeriodicSchedules(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -791,7 +803,7 @@ func TestPipelineNameAvailable(t *testing.T) {
 
 	// Initialize echo
 	e := echo.New()
-	InitHandlers(e)
+	_ = InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:      1,
@@ -818,7 +830,7 @@ func TestPipelineNameAvailable(t *testing.T) {
 		q.Add("name", "pipeline a")
 		req.URL.RawQuery = q.Encode()
 
-		PipelineNameAvailable(c)
+		_ = PipelineNameAvailable(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
@@ -843,7 +855,7 @@ func TestPipelineNameAvailable(t *testing.T) {
 		q.Add("name", "pipeline a pipeline a pipeline a pipeline a pipeline a pipeline a pipeline a pipeline a pipeline a pipeline a")
 		req.URL.RawQuery = q.Encode()
 
-		PipelineNameAvailable(c)
+		_ = PipelineNameAvailable(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
@@ -868,7 +880,7 @@ func TestPipelineNameAvailable(t *testing.T) {
 		q.Add("name", "pipeline b")
 		req.URL.RawQuery = q.Encode()
 
-		PipelineNameAvailable(c)
+		_ = PipelineNameAvailable(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)

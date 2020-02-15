@@ -11,7 +11,7 @@ import (
 func GenerateRandomUUIDV5() string {
 	nsUUID := uuid.NewV4()
 	token := make([]byte, 32)
-	rand.Read(token)
+	_, _ = rand.Read(token)
 	namespace := string(token)
 	t := uuid.NewV5(nsUUID, namespace)
 	return t.String()

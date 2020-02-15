@@ -8,23 +8,21 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/google/go-github/github"
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-hclog"
 )
 
 func TestGitCloneRepo(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestGitCloneRepo")
 	repo := &gaia.GitRepo{
 		URL:       "https://github.com/gaia-pipeline/pipeline-test",
-		LocalDest: "tmp",
+		LocalDest: tmp,
 	}
-	// always ensure that tmp folder is cleaned up
-	defer os.RemoveAll("tmp")
 	err := gitCloneRepo(repo)
 	if err != nil {
 		t.Fatal(err)
@@ -118,12 +116,16 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 	}
 	hostConfig := "notgithub.comom,192.30.252.130 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
 	knownHostsLocation := filepath.Join(tmp, ".known_hosts")
-	ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), 0766)
-	os.Setenv("SSH_KNOWN_HOSTS", knownHostsLocation)
+	err := ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), gaia.ExecutablePermission)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_ = os.Setenv("SSH_KNOWN_HOSTS", knownHostsLocation)
 
 	// always ensure that tmp folder is cleaned up
 	defer os.RemoveAll("tmp")
-	gitCloneRepo(repo)
+	_ = gitCloneRepo(repo)
 	want := "knownhosts: key is unknown"
 	if !strings.Contains(b.String(), want) {
 		t.Fatalf("wanted buf to contain: '%s', got: '%s'", want, b.String())
@@ -159,12 +161,16 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 	}
 	hostConfig := "github.com,192.30.252.130 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
 	knownHostsLocation := filepath.Join(tmp, ".known_hosts")
-	ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), 0766)
-	os.Setenv("SSH_KNOWN_HOSTS", knownHostsLocation)
+	err := ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), gaia.ExecutablePermission)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_ = os.Setenv("SSH_KNOWN_HOSTS", knownHostsLocation)
 
 	// always ensure that tmp folder is cleaned up
 	defer os.RemoveAll("tmp")
-	gitCloneRepo(repo)
+	_ = gitCloneRepo(repo)
 
 	p := new(gaia.Pipeline)
 	p.Name = "main"
@@ -174,7 +180,10 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 	GlobalActivePipelines = NewActivePipelines()
 	GlobalActivePipelines.Append(*p)
 	hostConfig = "invalid.com,192.30.252.130 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
-	ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), 0766)
+	err = ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), gaia.ExecutablePermission)
+	if err != nil {
+		t.Fatal(err)
+	}
 	updateAllCurrentPipelines()
 	want := "knownhosts: key is unknown"
 	if !strings.Contains(b.String(), want) {
@@ -219,47 +228,6 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 	defer func() { GlobalActivePipelines = nil }()
 	GlobalActivePipelines.Append(*p1)
 	GlobalActivePipelines.Append(*p2)
-	updateAllCurrentPipelines()
-	if !strings.Contains(b.String(), "already up-to-date") {
-		t.Fatal("log output did not contain error message that the repo is up-to-date.: ", b.String())
-	}
-}
-
-func UpdateAllPipelinesFiftyPipelines(t *testing.T) {
-	if _, ok := os.LookupEnv("GAIA_RUN_FIFTY_PIPELINE_TEST"); !ok {
-		t.Skip()
-	}
-	tmp, _ := ioutil.TempDir("", "TestUpdateAllPipelinesFiftyPipelines")
-	gaia.Cfg = new(gaia.Config)
-	gaia.Cfg.HomePath = tmp
-	// Initialize shared logger
-	b := new(bytes.Buffer)
-	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
-		Level:  hclog.Trace,
-		Output: b,
-		Name:   "Gaia",
-	})
-	repo := &gaia.GitRepo{
-		URL:            "https://github.com/gaia-pipeline/pipeline-test",
-		LocalDest:      "tmp",
-		SelectedBranch: "refs/heads/master",
-	}
-	// always ensure that tmp folder is cleaned up
-	defer os.RemoveAll("tmp")
-	err := gitCloneRepo(repo)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	GlobalActivePipelines = NewActivePipelines()
-	for i := 1; i < 50; i++ {
-		p := new(gaia.Pipeline)
-		name := strconv.Itoa(i)
-		p.Name = "main" + name
-		p.Repo.SelectedBranch = "refs/heads/master"
-		p.Repo.LocalDest = "tmp"
-		GlobalActivePipelines.Append(*p)
-	}
 	updateAllCurrentPipelines()
 	if !strings.Contains(b.String(), "already up-to-date") {
 		t.Fatal("log output did not contain error message that the repo is up-to-date.: ", b.String())
@@ -453,7 +421,7 @@ func TestCreateGithubWebhook(t *testing.T) {
 
 	t.Run("successfully create webhook when password is not defined in advance", func(t *testing.T) {
 		v.Remove("GITHUB_WEBHOOK_SECRET")
-		v.SaveSecrets()
+		_ = v.SaveSecrets()
 		repo := gaia.GitRepo{
 			URL:            "https://github.com/gaia-pipeline/gaia",
 			SelectedBranch: "refs/heads/master",
@@ -489,7 +457,7 @@ func TestCreateGithubWebhook(t *testing.T) {
 
 	t.Run("if a secret is already defined it will not be overwritten", func(t *testing.T) {
 		v.Add("GITHUB_WEBHOOK_SECRET", []byte("superawesomesecretgithubpassword"))
-		v.SaveSecrets()
+		_ = v.SaveSecrets()
 		repo := gaia.GitRepo{
 			URL:            "https://github.com/gaia-pipeline/gaia",
 			SelectedBranch: "refs/heads/master",
@@ -522,7 +490,7 @@ func TestCreateGithubWebhook(t *testing.T) {
 			t.Fatalf("expected hook url not found in logs. want:'%s', got: '%s'", expectedHookURL, body)
 		}
 		secret, _ := v.Get("GITHUB_WEBHOOK_SECRET")
-		if bytes.Compare(secret, []byte("superawesomesecretgithubpassword")) != 0 {
+		if !bytes.Equal(secret, []byte("superawesomesecretgithubpassword")) {
 			t.Fatalf("secret did not match. want: '%s' got: '%s'", "superawesomesecretgithubpassword", string(secret))
 		}
 	})

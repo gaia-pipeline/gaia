@@ -42,9 +42,12 @@ func TestNewWorkload(t *testing.T) {
 			defer wg.Done()
 			wl := mw.GetByID(uint32(j))
 			if wl == nil {
-				t.Fatal("failed to find a job that was created previously. failed id: ", j)
+				t.Error("failed to find a job that was created previously. failed id: ", j)
 			}
 		}(i)
+	}
+	if t.Failed() {
+		t.Fatal("there were errors in the above function. ")
 	}
 	wg.Wait()
 }

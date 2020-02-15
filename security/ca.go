@@ -133,8 +133,14 @@ func (c *CA) generateCA() error {
 	if err != nil {
 		return err
 	}
-	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-	certOut.Close()
+	err = pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	if err != nil {
+		return err
+	}
+	err = certOut.Close()
+	if err != nil {
+		return err
+	}
 
 	// Write out the ca.key file
 	keyOut, err := os.OpenFile(c.caKeyPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
@@ -147,8 +153,14 @@ func (c *CA) generateCA() error {
 	if err != nil {
 		return err
 	}
-	pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privateKey})
-	keyOut.Close()
+	err = pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privateKey})
+	if err != nil {
+		return err
+	}
+	err = keyOut.Close()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -213,8 +225,14 @@ func (c *CA) CreateSignedCertWithValidOpts(hostname string, hoursBeforeValid, ho
 		return "", "", err
 	}
 
-	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certSigned})
-	certOut.Close()
+	err = pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certSigned})
+	if err != nil {
+		return "", "", err
+	}
+	err = certOut.Close()
+	if err != nil {
+		return "", "", err
+	}
 
 	// Private key
 	keyOut, err := ioutil.TempFile("", "key")
@@ -228,15 +246,21 @@ func (c *CA) CreateSignedCertWithValidOpts(hostname string, hoursBeforeValid, ho
 		return "", "", err
 	}
 
-	pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privateKey})
-	keyOut.Close()
+	err = pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privateKey})
+	if err != nil {
+		return "", "", err
+	}
+	err = keyOut.Close()
+	if err != nil {
+		return "", "", err
+	}
 
 	return certOut.Name(), keyOut.Name(), nil
 }
 
 // CreateSignedCert creates a new key pair which is signed by the CA.
 func (c *CA) CreateSignedCert() (string, string, error) {
-	return c.CreateSignedCertWithValidOpts("",1, maxValidCERT)
+	return c.CreateSignedCertWithValidOpts("", 1, maxValidCERT)
 }
 
 // GenerateTLSConfig generates a new TLS config based on given

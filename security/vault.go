@@ -23,8 +23,8 @@ const (
 	keySize   = 32
 )
 
-// VaultAPI defines a set of apis that a Vault must provide in order to be a Gaia Vault.
-type VaultAPI interface {
+// GaiaVault defines a set of apis that a Vault must provide in order to be a Gaia Vault.
+type GaiaVault interface {
 	LoadSecrets() error
 	GetAll() []string
 	SaveSecrets() error
@@ -72,8 +72,9 @@ func NewVault(ca CAAPI, storer VaultStorer) (*Vault, error) {
 	v := new(Vault)
 
 	if storer == nil {
-		storer = new(FileVaultStorer)
+		return nil, errors.New("vault must be created with a valid VaultStore")
 	}
+
 	err := storer.Init()
 	if err != nil {
 		return nil, err
@@ -88,12 +89,12 @@ func NewVault(ca CAAPI, storer VaultStorer) (*Vault, error) {
 		return nil, errors.New("key lenght should be longer than 32")
 	}
 	h := sha256.New()
-	h.Write(data)
+	_, _ = h.Write(data)
 	sum := h.Sum(nil)
 	v.storer = storer
 	v.cert = data
 	v.key = sum[:keySize]
-	v.data = make(map[string][]byte, 0)
+	v.data = make(map[string][]byte)
 	return v, nil
 }
 
@@ -119,7 +120,7 @@ func (v *Vault) SaveSecrets() error {
 		return err
 	}
 	// clear the hash after saving so the system always has a fresh view of the vault.
-	v.data = make(map[string][]byte, 0)
+	v.data = make(map[string][]byte)
 	return v.storer.Write([]byte(encryptedData))
 }
 
@@ -191,10 +192,10 @@ func (fvs *FileVaultStorer) Write(data []byte) error {
 }
 
 // encrypt uses an aes cipher provided by the certificate file for encryption.
-// We don't store the password in the file. an error will be thrown in case the encryption
-// operation encounters a problem which will most likely be due to a mistyped password.
-// We will return this possibility but we won't know for sure if that's the cause.
-// The password is padded with 0x04 to Blocklenght. IV randomized to blocksize and length of the message.
+// We don't store the password anywhere. An error will be thrown in case the encryption
+// operation encounters a problem. Gaia uses AES GCM to encrypt the vault file. For Nonce it's
+// using a constantly increasing number which is stored with the file. GCM allows for better
+// password verification in which case we don't have to guess what was wrong any longer.
 // In the end we encrypt the whole thing to Base64 for ease of saving an handling.
 func (v *Vault) encrypt(data []byte) (string, error) {
 	if len(data) < 1 {

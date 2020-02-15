@@ -1,10 +1,11 @@
 package handlers
 
 import (
-	"github.com/gaia-pipeline/gaia/helper/stringhelper"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/gaia-pipeline/gaia/helper/stringhelper"
 
 	"github.com/gaia-pipeline/gaia/security"
 
@@ -68,7 +69,7 @@ func CreatePipeline(c echo.Context) error {
 	// Cloning the repo and compiling the pipeline will be done async
 	go pipeline.CreatePipeline(p)
 
-	return nil
+	return c.JSON(http.StatusOK, nil)
 }
 
 // CreatePipelineGetAll returns a json array of
@@ -95,13 +96,18 @@ func PipelineNameAvailable(c echo.Context) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	return nil
+	return c.JSON(http.StatusOK, nil)
 }
 
 // PipelineGetAll returns all registered pipelines.
 func PipelineGetAll(c echo.Context) error {
 	// Get all active pipelines
 	pipelines := pipeline.GlobalActivePipelines.GetAll()
+
+	// Obscure non-necessary information
+	for id := range pipelines {
+		obscurePipelineData(&pipelines[id])
+	}
 
 	// Return as json
 	return c.JSON(http.StatusOK, pipelines)
@@ -118,9 +124,10 @@ func PipelineGet(c echo.Context) error {
 	}
 
 	// Look up pipeline for the given id
-	for _, pipeline := range pipeline.GlobalActivePipelines.GetAll() {
-		if pipeline.ID == pipelineID {
-			return c.JSON(http.StatusOK, pipeline)
+	for _, p := range pipeline.GlobalActivePipelines.GetAll() {
+		if p.ID == pipelineID {
+			obscurePipelineData(&p)
+			return c.JSON(http.StatusOK, p)
 		}
 	}
 
@@ -138,9 +145,9 @@ func PipelineUpdate(c echo.Context) error {
 
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
-	for _, pipeline := range pipeline.GlobalActivePipelines.GetAll() {
-		if pipeline.ID == p.ID {
-			foundPipeline = pipeline
+	for _, pipe := range pipeline.GlobalActivePipelines.GetAll() {
+		if pipe.ID == p.ID {
+			foundPipeline = pipe
 			break
 		}
 	}
@@ -184,8 +191,8 @@ func PipelineUpdate(c echo.Context) error {
 		foundPipeline.CronInst = cron.New()
 
 		// Iterate over all cron schedules.
-		for _, cron := range p.PeriodicSchedules {
-			err := foundPipeline.CronInst.AddFunc(cron, func() {
+		for _, schedule := range p.PeriodicSchedules {
+			err := foundPipeline.CronInst.AddFunc(schedule, func() {
 				_, err := schedulerService.SchedulePipeline(&foundPipeline, []*gaia.Argument{})
 				if err != nil {
 					gaia.Cfg.Logger.Error("cannot schedule pipeline from periodic schedule", "error", err, "pipeline", foundPipeline)
@@ -209,6 +216,20 @@ func PipelineUpdate(c echo.Context) error {
 
 		// Start schedule process.
 		foundPipeline.CronInst.Start()
+
+		// Update active pipelines
+		pipeline.GlobalActivePipelines.Replace(foundPipeline)
+	}
+
+	// Check if docker option has been updated
+	if p.Docker != foundPipeline.Docker {
+		foundPipeline.Docker = p.Docker
+
+		// Update pipeline in store
+		err := storeService.PipelinePut(&foundPipeline)
+		if err != nil {
+			return c.String(http.StatusInternalServerError, err.Error())
+		}
 
 		// Update active pipelines
 		pipeline.GlobalActivePipelines.Replace(foundPipeline)
@@ -246,9 +267,9 @@ func PipelineDelete(c echo.Context) error {
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
 	var deletedPipelineIndex int
-	for index, pipeline := range pipeline.GlobalActivePipelines.GetAll() {
-		if pipeline.ID == pipelineID {
-			foundPipeline = pipeline
+	for index, p := range pipeline.GlobalActivePipelines.GetAll() {
+		if p.ID == pipelineID {
+			foundPipeline = p
 			deletedPipelineIndex = index
 			break
 		}
@@ -271,7 +292,9 @@ func PipelineDelete(c echo.Context) error {
 	}
 
 	// Remove from active pipelines
-	pipeline.GlobalActivePipelines.Remove(deletedPipelineIndex)
+	if err := pipeline.GlobalActivePipelines.Remove(deletedPipelineIndex); err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
 
 	return c.String(http.StatusOK, "Pipeline has been deleted")
 }
@@ -298,9 +321,9 @@ func PipelineTrigger(c echo.Context) error {
 
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
-	for _, pipeline := range pipeline.GlobalActivePipelines.GetAll() {
-		if pipeline.ID == pipelineID {
-			foundPipeline = pipeline
+	for _, p := range pipeline.GlobalActivePipelines.GetAll() {
+		if p.ID == pipelineID {
+			foundPipeline = p
 			break
 		}
 	}
@@ -314,8 +337,8 @@ func PipelineTrigger(c echo.Context) error {
 	}
 
 	schedulerService, _ := services.SchedulerService()
-	args := []*gaia.Argument{}
-	c.Bind(&args)
+	var args []*gaia.Argument
+	_ = c.Bind(&args)
 	pipelineRun, err := schedulerService.SchedulePipeline(&foundPipeline, args)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
@@ -340,9 +363,9 @@ func PipelineResetToken(c echo.Context) error {
 
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
-	for _, pipeline := range pipeline.GlobalActivePipelines.GetAll() {
-		if pipeline.ID == pipelineID {
-			foundPipeline = pipeline
+	for _, p := range pipeline.GlobalActivePipelines.GetAll() {
+		if p.ID == pipelineID {
+			foundPipeline = p
 			break
 		}
 	}
@@ -393,25 +416,41 @@ func PipelineStart(c echo.Context) error {
 	schedulerService, _ := services.SchedulerService()
 	pipelineIDStr := c.Param("pipelineid")
 
+	// Decode content
+	content := echo.Map{}
+	if err := c.Bind(&content); err != nil {
+		return c.String(http.StatusBadRequest, "invalid content provided in request")
+	}
+
 	// Look for arguments.
 	// We do not check for errors here cause arguments are optional.
-	args := []*gaia.Argument{}
-	c.Bind(&args)
+	var args []*gaia.Argument
+	_ = c.Bind(&args)
 
 	// Convert string to int because id is int
 	pipelineID, err := strconv.Atoi(pipelineIDStr)
 	if err != nil {
 		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
 	}
+	var docker bool
+	if _, ok := content["docker"]; ok {
+		docker, ok = content["docker"].(bool)
+		if !ok {
+			return c.String(http.StatusBadRequest, errWrongDockerValue.Error())
+		}
+	}
 
 	// Look up pipeline for the given id
 	var foundPipeline gaia.Pipeline
-	for _, pipeline := range pipeline.GlobalActivePipelines.GetAll() {
-		if pipeline.ID == pipelineID {
-			foundPipeline = pipeline
+	for _, p := range pipeline.GlobalActivePipelines.GetAll() {
+		if p.ID == pipelineID {
+			foundPipeline = p
 			break
 		}
 	}
+
+	// Overwrite docker setting
+	foundPipeline.Docker = docker
 
 	if foundPipeline.Name != "" {
 		pipelineRun, err := schedulerService.SchedulePipeline(&foundPipeline, args)
@@ -440,16 +479,17 @@ func PipelineGetAllWithLatestRun(c echo.Context) error {
 
 	// Iterate all pipelines
 	var pipelinesWithLatestRun []getAllWithLatestRun
-	for _, pipeline := range pipelines {
+	for _, p := range pipelines {
 		// Get the latest run by the given pipeline id
-		run, err := storeService.PipelineGetLatestRun(pipeline.ID)
+		run, err := storeService.PipelineGetLatestRun(p.ID)
 		if err != nil {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
 
 		// Append run if one exists
 		g := getAllWithLatestRun{}
-		g.Pipeline = pipeline
+		obscurePipelineData(&p)
+		g.Pipeline = p
 		if run != nil {
 			g.PipelineRun = *run
 		}
@@ -463,7 +503,7 @@ func PipelineGetAllWithLatestRun(c echo.Context) error {
 
 // PipelineCheckPeriodicSchedules validates the added periodic schedules.
 func PipelineCheckPeriodicSchedules(c echo.Context) error {
-	pSchedules := []string{}
+	var pSchedules []string
 	if err := c.Bind(&pSchedules); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
@@ -479,5 +519,10 @@ func PipelineCheckPeriodicSchedules(c echo.Context) error {
 	}
 
 	// All entries are valid.
-	return nil
+	return c.JSON(http.StatusOK, nil)
+}
+
+// obscurePipelineData obscures pipeline data from the given pipeline object
+func obscurePipelineData(p *gaia.Pipeline) {
+	p.ExecPath = ""
 }

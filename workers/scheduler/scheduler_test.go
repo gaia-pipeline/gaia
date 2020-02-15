@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/workers/docker"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/security"
@@ -61,6 +63,21 @@ func (m *MemDBFake) DeleteWorker(id string, persist bool) error      { return ni
 func (m *MemDBFake) InsertPipelineRun(p *gaia.PipelineRun) error     { return nil }
 func (m *MemDBFake) PopPipelineRun(tags []string) (*gaia.PipelineRun, error) {
 	return &gaia.PipelineRun{}, nil
+}
+func (m *MemDBFake) DeletePipelineRun(runID string) error { return nil }
+func (m *MemDBFake) UpsertSHAPair(pair gaia.SHAPair) error {
+	return nil
+}
+func (m *MemDBFake) GetSHAPair(pipelineID string) (ok bool, pair gaia.SHAPair, err error) {
+	return
+}
+func (m *MemDBFake) InsertDockerWorker(w *docker.Worker) error { return nil }
+func (m *MemDBFake) GetDockerWorker(workerID string) (*docker.Worker, error) {
+	return &docker.Worker{}, nil
+}
+func (m *MemDBFake) DeleteDockerWorker(workerID string) error { return nil }
+func (m *MemDBFake) GetAllDockerWorker() ([]*docker.Worker, error) {
+	return []*docker.Worker{}, nil
 }
 
 func TestInit(t *testing.T) {
@@ -117,7 +134,7 @@ func TestPrepareAndExecFail(t *testing.T) {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
-	storeInstance.PipelinePut(&p)
+	_ = storeInstance.PipelinePut(&p)
 	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
 	if err != nil {
 		t.Fatal(err)
@@ -159,7 +176,7 @@ func TestPrepareAndExecInvalidType(t *testing.T) {
 	}
 	p, r := prepareTestData()
 	p.Type = gaia.PTypeUnknown
-	storeInstance.PipelinePut(&p)
+	_ = storeInstance.PipelinePut(&p)
 	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
 	if err != nil {
 		t.Fatal(err)
@@ -197,7 +214,7 @@ func TestPrepareAndExecJavaType(t *testing.T) {
 	p, r := prepareTestData()
 	javaExecName = "go"
 	p.Type = gaia.PTypeJava
-	storeInstance.PipelinePut(&p)
+	_ = storeInstance.PipelinePut(&p)
 	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
 	if err != nil {
 		t.Fatal(err)
@@ -244,7 +261,7 @@ func TestPrepareAndExecPythonType(t *testing.T) {
 	p, r := prepareTestData()
 	pythonExecName = "go"
 	p.Type = gaia.PTypePython
-	storeInstance.PipelinePut(&p)
+	_ = storeInstance.PipelinePut(&p)
 	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
 	if err != nil {
 		t.Fatal(err)
@@ -290,7 +307,7 @@ func TestPrepareAndExecCppType(t *testing.T) {
 	}
 	p, r := prepareTestData()
 	p.Type = gaia.PTypeCpp
-	storeInstance.PipelinePut(&p)
+	_ = storeInstance.PipelinePut(&p)
 	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
 	if err != nil {
 		t.Fatal(err)
@@ -339,7 +356,7 @@ func TestPrepareAndExecRubyType(t *testing.T) {
 	rubyExecName = "go"
 	rubyGemName = "echo"
 	findRubyGemCommands = []string{"name: rubytest"}
-	storeInstance.PipelinePut(&p)
+	_ = storeInstance.PipelinePut(&p)
 	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
 	if err != nil {
 		t.Fatal(err)
@@ -384,7 +401,7 @@ func TestSchedulePipeline(t *testing.T) {
 		t.Fatal(err)
 	}
 	p, _ := prepareTestData()
-	storeInstance.PipelinePut(&p)
+	_ = storeInstance.PipelinePut(&p)
 	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
 	if err != nil {
 		t.Fatal(err)
@@ -424,8 +441,8 @@ func TestSchedulePipelineParallel(t *testing.T) {
 		Type: gaia.PTypeGolang,
 		Jobs: prepareJobs(),
 	}
-	storeInstance.PipelinePut(&p1)
-	storeInstance.PipelinePut(&p2)
+	_ = storeInstance.PipelinePut(&p1)
+	_ = storeInstance.PipelinePut(&p2)
 	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
 	if err != nil {
 		t.Fatal(err)
@@ -466,7 +483,7 @@ func TestSchedule(t *testing.T) {
 		t.Fatal(err)
 	}
 	p, _ := prepareTestData()
-	storeInstance.PipelinePut(&p)
+	_ = storeInstance.PipelinePut(&p)
 	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
 	if err != nil {
 		t.Fatal(err)
@@ -532,7 +549,7 @@ func TestStopPipelineRunFailIfPipelineNotInRunningState(t *testing.T) {
 		t.Fatal(err)
 	}
 	p, _ := prepareTestData()
-	storeInstance.PipelinePut(&p)
+	_ = storeInstance.PipelinePut(&p)
 	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
 	if err != nil {
 		t.Fatal(err)
@@ -575,14 +592,14 @@ func TestStopPipelineRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	p, r := prepareTestData()
-	storeInstance.PipelinePut(&p)
+	_ = storeInstance.PipelinePut(&p)
 	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	r.Status = gaia.RunRunning
-	storeInstance.PipelinePutRun(&r)
+	_ = storeInstance.PipelinePutRun(&r)
 
 	run, _ := storeInstance.PipelineGetRunByPipelineIDAndID(p.ID, r.ID)
 	err = s.StopPipelineRun(&p, run.ID)
@@ -669,6 +686,6 @@ func prepareTestData() (pipeline gaia.Pipeline, pipelineRun gaia.PipelineRun) {
 // hash hashes the given string.
 func hash(s string) uint32 {
 	h := fnv.New32a()
-	h.Write([]byte(s))
+	_, _ = h.Write([]byte(s))
 	return h.Sum32()
 }

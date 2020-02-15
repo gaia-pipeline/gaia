@@ -11,10 +11,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+	hclog "github.com/hashicorp/go-hclog"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/store"
-	hclog "github.com/hashicorp/go-hclog"
 )
 
 func TestPrepareEnvironmentCpp(t *testing.T) {
@@ -105,8 +107,8 @@ func TestExecuteBuildBinaryNotFoundErrorCpp(t *testing.T) {
 		Name:   "Gaia",
 	})
 	currentPath := os.Getenv("PATH")
-	defer func() { os.Setenv("PATH", currentPath) }()
-	os.Setenv("PATH", "")
+	defer func() { _ = os.Setenv("PATH", currentPath) }()
+	_ = os.Setenv("PATH", "")
 	b := new(BuildPipelineCpp)
 	p := new(gaia.CreatePipeline)
 	err := b.ExecuteBuild(p)
@@ -135,11 +137,11 @@ func TestCopyBinaryCpp(t *testing.T) {
 	p.Pipeline.Type = gaia.PTypeCpp
 	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: tmp}
 	src := filepath.Join(tmp, cppFinalBinaryName)
-	dst := appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
+	dst := pipelinehelper.AppendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
 	f, _ := os.Create(src)
 	defer f.Close()
 	defer os.Remove(dst)
-	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	_ = ioutil.WriteFile(src, []byte("testcontent"), 0666)
 	err := b.CopyBinary(p)
 	if err != nil {
 		t.Fatal("error was not expected when copying binary: ", err)

@@ -30,3 +30,29 @@ func TestGetSHA256Sum(t *testing.T) {
 		t.Fatal("bytes are not identical")
 	}
 }
+
+func TestCopyFileContents(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestCopyFileContents")
+	sumText := []byte("hello world\n")
+	filePath := filepath.Join(tmp, "test.file")
+	err := ioutil.WriteFile(filePath, sumText, 0777)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmp)
+	calcSha, err := GetSHA256Sum(filePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	output := filepath.Join(tmp, "copy.file")
+	if err := CopyFileContents(filePath, output); err != nil {
+		t.Fatal(err)
+	}
+	copySha, err := GetSHA256Sum(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(copySha, calcSha) {
+		t.Fatal("bytes are not identical")
+	}
+}

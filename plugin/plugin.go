@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"sync"
 	"time"
 
 	"github.com/gaia-pipeline/gaia"
@@ -39,6 +40,34 @@ var pluginMap = map[string]plugin.Plugin{
 // timeFormat is the logging time format.
 const timeFormat = "2006/01/02 15:04:05"
 
+// GaiaLogWriter represents a concurrent safe log writer which can be shared with go-plugin.
+type GaiaLogWriter struct {
+	mu     sync.RWMutex
+	buffer *bytes.Buffer
+	writer *bufio.Writer
+}
+
+// Write locks and writes to the underlying writer.
+func (g *GaiaLogWriter) Write(p []byte) (n int, err error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.writer.Write(p)
+}
+
+// Flush locks and flushes the underlying writer.
+func (g *GaiaLogWriter) Flush() error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.writer.Flush()
+}
+
+// WriteString locks and passes on the string to write to the underlying writer.
+func (g *GaiaLogWriter) WriteString(s string) (int, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.writer.WriteString(s)
+}
+
 // GoPlugin represents a single plugin instance which uses gRPC
 // to connect to exactly one plugin.
 type GoPlugin struct {
@@ -55,8 +84,7 @@ type GoPlugin struct {
 	logFile *os.File
 
 	// Writer used to write logs from execution to file or buffer
-	writer *bufio.Writer
-	buffer *bytes.Buffer
+	logger GaiaLogWriter
 
 	// CA instance used to handle certificates
 	ca security.CAAPI
@@ -108,6 +136,9 @@ func (p *GoPlugin) NewPlugin(ca security.CAAPI) Plugin {
 // It's up to the caller to call plugin.Close to shutdown the plugin
 // and close the gRPC connection.
 func (p *GoPlugin) Init(command *exec.Cmd, logPath *string) error {
+	// Initialise the logger
+	p.logger = GaiaLogWriter{}
+
 	// Create log file and open it.
 	// We will close this file in the close method.
 	if logPath != nil {
@@ -122,11 +153,11 @@ func (p *GoPlugin) Init(command *exec.Cmd, logPath *string) error {
 		}
 
 		// Create new writer
-		p.writer = bufio.NewWriter(p.logFile)
+		p.logger.writer = bufio.NewWriter(p.logFile)
 	} else {
 		// If no path is provided, write output to buffer
-		p.buffer = new(bytes.Buffer)
-		p.writer = bufio.NewWriter(p.buffer)
+		p.logger.buffer = new(bytes.Buffer)
+		p.logger.writer = bufio.NewWriter(p.logger.buffer)
 	}
 
 	// Create and sign a new pair of certificates for the server
@@ -161,15 +192,15 @@ func (p *GoPlugin) Init(command *exec.Cmd, logPath *string) error {
 		Plugins:          pluginMap,
 		Cmd:              command,
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
-		Stderr:           p.writer,
+		Stderr:           &p.logger,
 		TLSConfig:        tlsConfig,
 	})
 
 	// Connect via gRPC
 	p.clientProtocol, err = p.client.Client()
 	if err != nil {
-		p.writer.Flush()
-		return fmt.Errorf("%s\n\n--- output ---\n%s", err.Error(), p.buffer.String())
+		_ = p.logger.Flush()
+		return fmt.Errorf("%s\n\n--- output ---\n%s", err.Error(), p.logger.buffer.String())
 	}
 
 	return nil
@@ -196,7 +227,7 @@ func (p *GoPlugin) Validate() error {
 // for the given plugin.
 func (p *GoPlugin) Execute(j *gaia.Job) error {
 	// Transform arguments
-	args := []*proto.Argument{}
+	var args []*proto.Argument
 	for _, arg := range j.Args {
 		a := &proto.Argument{
 			Key:   arg.Key,
@@ -227,7 +258,7 @@ func (p *GoPlugin) Execute(j *gaia.Job) error {
 
 		// Generate error message and attach it to logs.
 		timeString := time.Now().Format(timeFormat)
-		p.writer.WriteString(fmt.Sprintf("%s Job '%s' threw an error: %s\n", timeString, j.Title, resultObj.Message))
+		_, _ = p.logger.WriteString(fmt.Sprintf("%s Job '%s' threw an error: %s\n", timeString, j.Title, resultObj.Message))
 	} else if err != nil {
 		// An error occurred during the send or somewhere else.
 		// The job itself usually does not return an error here.
@@ -236,7 +267,7 @@ func (p *GoPlugin) Execute(j *gaia.Job) error {
 
 		// Generate error message and attach it to logs.
 		timeString := time.Now().Format(timeFormat)
-		p.writer.WriteString(fmt.Sprintf("%s Job '%s' threw an error: %s\n", timeString, j.Title, err.Error()))
+		_, _ = p.logger.WriteString(fmt.Sprintf("%s Job '%s' threw an error: %s\n", timeString, j.Title, err.Error()))
 	} else {
 		j.Status = gaia.JobSuccess
 	}
@@ -319,7 +350,7 @@ func (p *GoPlugin) GetJobs() ([]*gaia.Job, error) {
 
 // FlushLogs flushes the logs.
 func (p *GoPlugin) FlushLogs() error {
-	return p.writer.Flush()
+	return p.logger.Flush()
 }
 
 // Close shutdown the plugin and kills the gRPC connection.
@@ -332,13 +363,13 @@ func (p *GoPlugin) Close() {
 		p.client.Kill()
 
 		// Flush the writer
-		p.writer.Flush()
+		_ = p.logger.Flush()
 
 		// Close log file
-		p.logFile.Close()
+		_ = p.logFile.Close()
 
 		// Cleanup certificates
-		p.ca.CleanupCerts(p.certPath, p.keyPath)
-		p.ca.CleanupCerts(p.serverCertPath, p.serverKeyPath)
+		_ = p.ca.CleanupCerts(p.certPath, p.keyPath)
+		_ = p.ca.CleanupCerts(p.serverCertPath, p.serverKeyPath)
 	}()
 }

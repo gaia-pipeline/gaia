@@ -12,8 +12,8 @@ import (
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/services"
 	gStore "github.com/gaia-pipeline/gaia/store"
-	hclog "github.com/hashicorp/go-hclog"
-	"github.com/labstack/echo/v4"
+	"github.com/hashicorp/go-hclog"
+	"github.com/labstack/echo"
 )
 
 type mockStorageService struct {
@@ -59,7 +59,7 @@ func TestRegisterWorker(t *testing.T) {
 	}
 
 	// Initialize vault
-	v, err := services.VaultService(nil)
+	v, err := services.DefaultVaultService()
 	if err != nil {
 		t.Fatalf("cannot initialize vault service: %v", err)
 	}
@@ -199,7 +199,7 @@ func TestDeregisterWorker(t *testing.T) {
 	}
 
 	// Initialize vault
-	v, err := services.VaultService(nil)
+	v, err := services.DefaultVaultService()
 	if err != nil {
 		t.Fatalf("cannot initialize vault service: %v", err)
 	}
@@ -322,7 +322,7 @@ func TestGetWorkerRegisterSecret(t *testing.T) {
 	}
 
 	// Initialize vault
-	v, err := services.VaultService(nil)
+	v, err := services.DefaultVaultService()
 	if err != nil {
 		t.Fatalf("cannot initialize vault service: %v", err)
 	}
@@ -391,7 +391,7 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 	}
 
 	// Initialize vault
-	v, err := services.VaultService(nil)
+	v, err := services.DefaultVaultService()
 	if err != nil {
 		t.Fatalf("cannot initialize vault service: %v", err)
 	}
@@ -543,7 +543,7 @@ func TestGetWorker(t *testing.T) {
 	}
 
 	// Initialize vault
-	v, err := services.VaultService(nil)
+	v, err := services.DefaultVaultService()
 	if err != nil {
 		t.Fatalf("cannot initialize vault service: %v", err)
 	}
@@ -643,7 +643,7 @@ func TestResetWorkerRegisterSecret(t *testing.T) {
 	}
 
 	// Initialize vault
-	v, err := services.VaultService(nil)
+	v, err := services.DefaultVaultService()
 	if err != nil {
 		t.Fatalf("cannot initialize vault service: %v", err)
 	}

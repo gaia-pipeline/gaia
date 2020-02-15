@@ -1,15 +1,19 @@
 package server
 
 import (
+	"fmt"
+	"net"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/gaia-pipeline/gaia/helper/filehelper"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	pb "github.com/gaia-pipeline/gaia/workers/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"net"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 const (
@@ -27,11 +31,11 @@ func InitWorkerServer() *WorkerServer {
 
 // Start starts the gRPC worker server.
 // It returns an error when something badly happens.
-func (w *WorkerServer) Start() {
+func (w *WorkerServer) Start() error {
 	lis, err := net.Listen("tcp", ":"+gaia.Cfg.WorkerServerPort)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot start worker gRPC server", "error", err)
-		return
+		return err
 	}
 
 	// Print info message
@@ -41,7 +45,7 @@ func (w *WorkerServer) Start() {
 	certService, err := services.CertificateService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to initiate certificate service", "error", err.Error())
-		return
+		return err
 	}
 
 	// Check if certificates exist for the gRPC server
@@ -54,24 +58,32 @@ func (w *WorkerServer) Start() {
 		s := strings.Split(gaia.Cfg.WorkerGRPCHostURL, ":")
 		if len(s) != 2 {
 			gaia.Cfg.Logger.Error("failed to parse configured gRPC worker host url", "url", gaia.Cfg.WorkerGRPCHostURL)
-			return
+			return fmt.Errorf("failed to parse configured gRPC worker host url: %s", gaia.Cfg.WorkerGRPCHostURL)
 		}
 
 		// Generate certs
 		certTmpPath, keyTmpPath, err := certService.CreateSignedCertWithValidOpts(s[0], hoursBeforeValid, hoursAfterValid)
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to generate cert pair for gRPC server", "error", err.Error())
-			return
+			return err
 		}
 
 		// Move certs to correct place
-		if err = os.Rename(certTmpPath, certPath); err != nil {
-			gaia.Cfg.Logger.Error("failed to move gRPC server cert to data folder", "error", err.Error())
-			return
+		if err = filehelper.CopyFileContents(certTmpPath, certPath); err != nil {
+			gaia.Cfg.Logger.Error("failed to copy gRPC server cert to data folder", "error", err.Error())
+			return err
 		}
-		if err = os.Rename(keyTmpPath, keyPath); err != nil {
-			gaia.Cfg.Logger.Error("failed to move gRPC server key to data folder", "error", err.Error())
-			return
+		if err = filehelper.CopyFileContents(keyTmpPath, keyPath); err != nil {
+			gaia.Cfg.Logger.Error("failed to copy gRPC server key to data folder", "error", err.Error())
+			return err
+		}
+		if err = os.Remove(certTmpPath); err != nil {
+			gaia.Cfg.Logger.Error("failed to remove temporary server cert file", "error", err)
+			return err
+		}
+		if err = os.Remove(keyTmpPath); err != nil {
+			gaia.Cfg.Logger.Error("failed to remove temporary key cert file", "error", err)
+			return err
 		}
 	}
 
@@ -79,13 +91,14 @@ func (w *WorkerServer) Start() {
 	tlsConfig, err := certService.GenerateTLSConfig(certPath, keyPath)
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to generate tls config for gRPC server", "error", err.Error())
-		return
+		return err
 	}
 
 	s := grpc.NewServer(grpc.Creds(credentials.NewTLS(tlsConfig)))
 	pb.RegisterWorkerServer(s, &WorkServer{})
 	if err := s.Serve(lis); err != nil {
 		gaia.Cfg.Logger.Error("cannot start worker gRPC server", "error", err)
-		return
+		return err
 	}
+	return nil
 }

@@ -9,6 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/helper/filehelper"
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	uuid "github.com/satori/go.uuid"
@@ -25,12 +28,12 @@ type BuildPipelinePython struct {
 
 // PrepareEnvironment prepares the environment before we start the build process.
 func (b *BuildPipelinePython) PrepareEnvironment(p *gaia.CreatePipeline) error {
-	// create uuid for destination folder
-	uuid := uuid.Must(uuid.NewV4(), nil)
+	// create uniqueName for destination folder
+	uniqueName := uuid.Must(uuid.NewV4(), nil)
 
 	// Create local temp folder for clone
 	rootPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder)
-	cloneFolder := filepath.Join(rootPath, srcFolder, uuid.String())
+	cloneFolder := filepath.Join(rootPath, srcFolder, uniqueName.String())
 	err := os.MkdirAll(cloneFolder, 0700)
 	if err != nil {
 		return err
@@ -41,7 +44,7 @@ func (b *BuildPipelinePython) PrepareEnvironment(p *gaia.CreatePipeline) error {
 		p.Pipeline.Repo = &gaia.GitRepo{}
 	}
 	p.Pipeline.Repo.LocalDest = cloneFolder
-	p.Pipeline.UUID = uuid.String()
+	p.Pipeline.UUID = uniqueName.String()
 	return nil
 }
 
@@ -123,20 +126,20 @@ func (b *BuildPipelinePython) CopyBinary(p *gaia.CreatePipeline) error {
 	if err != nil {
 		return err
 	}
-	dest := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
+	dest := filepath.Join(gaia.Cfg.PipelinePath, pipelinehelper.AppendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
 
 	// Copy binary
-	if err := copyFileContents(src, dest); err != nil {
+	if err := filehelper.CopyFileContents(src, dest); err != nil {
 		return err
 	}
 
 	// Set +x (execution right) for pipeline
-	return os.Chmod(dest, 0766)
+	return os.Chmod(dest, gaia.ExecutablePermission)
 }
 
 // SavePipeline saves the current pipeline configuration.
 func (b *BuildPipelinePython) SavePipeline(p *gaia.Pipeline) error {
-	dest := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
+	dest := filepath.Join(gaia.Cfg.PipelinePath, pipelinehelper.AppendTypeToName(p.Name, p.Type))
 	p.ExecPath = dest
 	p.Type = gaia.PTypePython
 	p.Name = strings.TrimSuffix(filepath.Base(dest), typeDelimiter+gaia.PTypePython.String())

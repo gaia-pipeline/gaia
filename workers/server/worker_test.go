@@ -4,6 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"testing"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/store"
@@ -11,14 +17,9 @@ import (
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	pb "github.com/gaia-pipeline/gaia/workers/proto"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/hashicorp/go-hclog"
+	hclog "github.com/hashicorp/go-hclog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"testing"
 )
 
 type mockMemDBService struct {
@@ -42,12 +43,19 @@ func (mm *mockMemDBService) DeleteWorker(id string, persist bool) error {
 
 type mockStorageService struct {
 	store.GaiaStore
+	mockPipeline *gaia.Pipeline
 }
 
 func (s *mockStorageService) PipelineGetRunByPipelineIDAndID(pipelineid int, runid int) (*gaia.PipelineRun, error) {
 	return generateTestData(), nil
 }
 func (s *mockStorageService) PipelinePutRun(r *gaia.PipelineRun) error { return nil }
+func (s *mockStorageService) PipelineGet(id int) (pipeline *gaia.Pipeline, err error) {
+	return s.mockPipeline, nil
+}
+func (s *mockStorageService) PipelineGetRunByID(runID string) (*gaia.PipelineRun, error) {
+	return &gaia.PipelineRun{}, nil
+}
 
 type mockGetWorkServ struct {
 	grpc.ServerStream
@@ -128,13 +136,16 @@ func generateTestData() *gaia.PipelineRun {
 	}
 }
 
-func TestGetWork(t *testing.T) {
-	gaia.Cfg = &gaia.Config{}
+func TestGetWorkServer(t *testing.T) {
+	gaia.Cfg = &gaia.Config{
+		Mode: gaia.ModeServer,
+	}
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level: hclog.Trace,
 		Name:  "Gaia",
 	})
 	services.MockMemDBService(&mockMemDBService{})
+	services.MockStorageService(&mockStorageService{})
 
 	// Init global active pipelines slice
 	pipeline.GlobalActivePipelines = pipeline.NewActivePipelines()
@@ -147,6 +158,31 @@ func TestGetWork(t *testing.T) {
 	ws := WorkServer{}
 	if err := ws.GetWork(&pb.WorkerInstance{UniqueId: "test", WorkerSlots: 1}, mw); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestGetWorkWorker(t *testing.T) {
+	gaia.Cfg = &gaia.Config{
+		Mode: gaia.ModeWorker,
+	}
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level: hclog.Trace,
+		Name:  "Gaia",
+	})
+	services.MockMemDBService(&mockMemDBService{})
+	services.MockStorageService(&mockStorageService{})
+
+	// Init global active pipelines slice
+	pipeline.GlobalActivePipelines = pipeline.NewActivePipelines()
+	pipeline.GlobalActivePipelines.Append(gaia.Pipeline{ID: 1, SHA256Sum: []byte("testbytes"), Type: gaia.PTypeGolang, ExecPath: "execpath"})
+
+	// Mock gRPC server
+	mw := mockGetWorkServ{}
+
+	// Run GetWork
+	ws := WorkServer{}
+	if err := ws.GetWork(&pb.WorkerInstance{UniqueId: "test", WorkerSlots: 1}, mw); err == nil {
+		t.Fatal("expected error")
 	}
 }
 
@@ -167,6 +203,7 @@ func TestUpdateWork(t *testing.T) {
 			UniqueId: "first-pipeline-run",
 			Id:       1,
 			Status:   string(gaia.RunReschedule),
+			Docker:   true,
 		}
 
 		// Run UpdateWork
@@ -237,7 +274,9 @@ func TestStreamBinary(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tmp)
-	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg = &gaia.Config{
+		Mode: gaia.ModeServer,
+	}
 	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
 		Level: hclog.Trace,
 		Name:  "Gaia",
@@ -315,5 +354,61 @@ func TestDeregister(t *testing.T) {
 	ws := WorkServer{}
 	if _, err := ws.Deregister(mw.Context(), &pb.WorkerInstance{UniqueId: "my-worker"}); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestGetGitRepository(t *testing.T) {
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level: hclog.Trace,
+		Name:  "Gaia",
+	})
+	ms := mockStorageService{mockPipeline: &gaia.Pipeline{
+		ID:   1,
+		Name: "testPipeline",
+		Repo: &gaia.GitRepo{
+			URL: "https://github.com/gaia-pipeline/go-example",
+		},
+	}}
+	services.MockMemDBService(&mockMemDBService{})
+	services.MockStorageService(&ms)
+
+	// Mock gRPC server
+	mw := mockGetWorkServ{}
+
+	// Run deregister
+	ws := WorkServer{}
+	repo, err := ws.GetGitRepo(mw.Context(), &pb.PipelineID{Id: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectedRepoURL := "https://github.com/gaia-pipeline/go-example"
+	if repo.Url != expectedRepoURL {
+		t.Fatalf("expected git repo url: %s, got: %s\n", expectedRepoURL, repo.Url)
+	}
+}
+
+func TestGetGitRepositoryRepoNotFound(t *testing.T) {
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level: hclog.Trace,
+		Name:  "Gaia",
+	})
+	services.MockMemDBService(&mockMemDBService{})
+	services.MockStorageService(&mockStorageService{})
+
+	// Mock gRPC server
+	mw := mockGetWorkServ{}
+
+	// Run deregister
+	ws := WorkServer{}
+	_, err := ws.GetGitRepo(mw.Context(), &pb.PipelineID{Id: 9999})
+	if err == nil {
+		t.Fatal("should have gotten an error because pipeline doesn't exist")
+	}
+
+	expectedError := fmt.Sprintf("pipeline for id %d not found", 9999)
+	if err.Error() != expectedError {
+		t.Fatalf("expected error message: %s, got: %s", expectedError, err.Error())
 	}
 }

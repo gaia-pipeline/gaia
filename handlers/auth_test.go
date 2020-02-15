@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/labstack/echo/v4"
 	"github.com/gaia-pipeline/gaia/helper/rolehelper"

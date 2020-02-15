@@ -41,6 +41,7 @@ func TestBuildPipelineAcceptanceTestTearUp(t *testing.T) {
 	t.Run("BuildPythonPluginTest", buildPythonPluginTest)
 	t.Run("BuildCppPluginTest", buildCppPluginTest)
 	t.Run("BuildRubyPluginTest", buildRubyPluginTest)
+	t.Run("BuildNodeJSPluginTest", buildNodeJSPluginTest)
 }
 
 func buildGoPluginTest(t *testing.T) {
@@ -58,7 +59,7 @@ func buildGoPluginTest(t *testing.T) {
 	pipeline.CreatePipeline(testPipeline)
 
 	// Check if everything went smoothly.
-	if testPipeline.StatusType == gaia.CreatePipelineFailed {
+	if testPipeline.StatusType != gaia.CreatePipelineSuccess {
 		t.Errorf("create go pipeline failed: %s", testPipeline.Output)
 	}
 }
@@ -78,7 +79,7 @@ func buildJavaPluginTest(t *testing.T) {
 	pipeline.CreatePipeline(testPipeline)
 
 	// Check if everything went smoothly.
-	if testPipeline.StatusType == gaia.CreatePipelineFailed {
+	if testPipeline.StatusType != gaia.CreatePipelineSuccess {
 		t.Errorf("create java pipeline failed: %s", testPipeline.Output)
 	}
 }
@@ -98,7 +99,7 @@ func buildPythonPluginTest(t *testing.T) {
 	pipeline.CreatePipeline(testPipeline)
 
 	// Check if everything went smoothly.
-	if testPipeline.StatusType == gaia.CreatePipelineFailed {
+	if testPipeline.StatusType != gaia.CreatePipelineSuccess {
 		t.Errorf("create python pipeline failed: %s", testPipeline.Output)
 	}
 }
@@ -118,7 +119,7 @@ func buildCppPluginTest(t *testing.T) {
 	pipeline.CreatePipeline(testPipeline)
 
 	// Check if everything went smoothly.
-	if testPipeline.StatusType == gaia.CreatePipelineFailed {
+	if testPipeline.StatusType != gaia.CreatePipelineSuccess {
 		t.Errorf("create cpp pipeline failed: %s", testPipeline.Output)
 	}
 }
@@ -138,7 +139,27 @@ func buildRubyPluginTest(t *testing.T) {
 	pipeline.CreatePipeline(testPipeline)
 
 	// Check if everything went smoothly.
-	if testPipeline.StatusType == gaia.CreatePipelineFailed {
+	if testPipeline.StatusType != gaia.CreatePipelineSuccess {
 		t.Errorf("create ruby pipeline failed: %s", testPipeline.Output)
+	}
+}
+
+func buildNodeJSPluginTest(t *testing.T) {
+	// Create test pipeline.
+	testPipeline := &gaia.CreatePipeline{
+		ID: uuid.Must(uuid.NewV4(), nil).String(),
+		Pipeline: gaia.Pipeline{
+			Name: "NodeJSTestPipeline",
+			Type: gaia.PTypeNodeJS,
+			Repo: &gaia.GitRepo{URL: "https://github.com/gaia-pipeline/nodejs-example"},
+		},
+	}
+
+	// Build pipeline.
+	pipeline.CreatePipeline(testPipeline)
+
+	// Check if everything went smoothly.
+	if testPipeline.StatusType != gaia.CreatePipelineSuccess {
+		t.Errorf("create nodejs pipeline failed: %s", testPipeline.Output)
 	}
 }

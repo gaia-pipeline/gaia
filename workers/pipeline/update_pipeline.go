@@ -3,10 +3,11 @@ package pipeline
 import (
 	"errors"
 	"fmt"
-	"github.com/gaia-pipeline/gaia/helper/filehelper"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/gaia-pipeline/gaia/helper/filehelper"
 
 	"github.com/gaia-pipeline/gaia"
 )
@@ -17,10 +18,16 @@ var (
 
 	// pythonPipInstallCmd is the command used to install the python distribution
 	// package.
-	pythonPipInstallCmd = ". bin/activate; python -m pip install %s.tar.gz"
+	pythonPipInstallCmd = ". bin/activate; python -m pip install '%s.tar.gz'"
 
 	// Ruby gem binary name.
 	rubyGemName = "gem"
+
+	// Tar binary name.
+	tarName = "tar"
+
+	// NPM binary name.
+	npmName = "npm"
 )
 
 // updatePipeline executes update steps dependent on the pipeline type.
@@ -30,7 +37,7 @@ func updatePipeline(p *gaia.Pipeline) error {
 	case gaia.PTypePython:
 		// Remove virtual environment if exists
 		virtualEnvPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder, p.Name)
-		os.RemoveAll(virtualEnvPath)
+		_ = os.RemoveAll(virtualEnvPath)
 
 		// Create virtual environment
 		path, err := exec.LookPath(virtualEnvName)
@@ -44,7 +51,7 @@ func updatePipeline(p *gaia.Pipeline) error {
 
 		// copy distribution file to environment and remove pipeline type at the end.
 		// we have to do this otherwise pip will fail.
-		err = copyFileContents(p.ExecPath, filepath.Join(virtualEnvPath, p.Name+".tar.gz"))
+		err = filehelper.CopyFileContents(p.ExecPath, filepath.Join(virtualEnvPath, p.Name+".tar.gz"))
 		if err != nil {
 			return err
 		}
@@ -52,8 +59,8 @@ func updatePipeline(p *gaia.Pipeline) error {
 		// install plugin in this environment
 		cmd = exec.Command("/bin/sh", "-c", fmt.Sprintf(pythonPipInstallCmd, filepath.Join(virtualEnvPath, p.Name)))
 		cmd.Dir = virtualEnvPath
-		if err := cmd.Run(); err != nil {
-			return err
+		if out, err := cmd.CombinedOutput(); err != nil {
+			return fmt.Errorf("cannot install python plugin: %s", string(out[:]))
 		}
 	case gaia.PTypeRuby:
 		// Find gem binary in path variable.
@@ -70,7 +77,7 @@ func updatePipeline(p *gaia.Pipeline) error {
 			return err
 		}
 		pipelineCopyPath := filepath.Join(tmpFolder, filepath.Base(p.ExecPath)+".gem")
-		err = copyFileContents(p.ExecPath, pipelineCopyPath)
+		err = filehelper.CopyFileContents(p.ExecPath, pipelineCopyPath)
 		if err != nil {
 			return err
 		}
@@ -79,8 +86,44 @@ func updatePipeline(p *gaia.Pipeline) error {
 		// Install gem forcefully.
 		cmd := exec.Command(path, "install", "-f", pipelineCopyPath)
 		if out, err := cmd.CombinedOutput(); err != nil {
-			gaia.Cfg.Logger.Error("error", string(out[:]))
+			return fmt.Errorf("cannot install ruby gem: %s", string(out[:]))
+		}
+	case gaia.PTypeNodeJS:
+		// Find tar binary in path
+		path, err := exec.LookPath(tarName)
+		if err != nil {
 			return err
+		}
+
+		// Delete old folders if exist
+		tmpFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpNodeJSFolder, p.Name)
+		_ = os.RemoveAll(tmpFolder)
+
+		// Recreate the temp folder
+		if err := os.MkdirAll(tmpFolder, 0700); err != nil {
+			return err
+		}
+
+		// Unpack it
+		cmd := exec.Command(path, "-xzvf", p.ExecPath, "-C", tmpFolder)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			return fmt.Errorf("cannot unpack nodejs archive: %s", string(out[:]))
+		}
+
+		// Find npm binary in path
+		path, err = exec.LookPath(npmName)
+		if err != nil {
+			return err
+		}
+
+		// Install dependencies
+		cmd = &exec.Cmd{
+			Path: path,
+			Dir:  tmpFolder,
+			Args: []string{path, "install"},
+		}
+		if out, err := cmd.CombinedOutput(); err != nil {
+			return fmt.Errorf("cannot install dependencies: %s", string(out[:]))
 		}
 	}
 

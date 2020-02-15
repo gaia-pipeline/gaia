@@ -45,7 +45,7 @@ func TestHookReceive(t *testing.T) {
 
 	defer func() {
 		gaia.Cfg = nil
-		os.RemoveAll(dataDir)
+		_ = os.RemoveAll(dataDir)
 	}()
 	gaia.Cfg = &gaia.Config{
 		Logger:    hclog.NewNullLogger(),
@@ -84,7 +84,7 @@ func TestHookReceive(t *testing.T) {
 
 	ap.Append(p)
 
-	InitHandlers(e)
+	_ = InitHandlers(e)
 
 	t.Run("successfully extracting path information from payload", func(t *testing.T) {
 		payload, _ := ioutil.ReadFile(filepath.Join("fixtures", "hook_basic_push_payload.json"))
@@ -98,7 +98,7 @@ func TestHookReceive(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		GitWebHook(c)
+		_ = GitWebHook(c)
 
 		// Expected failure because repository does not exist
 		if rec.Code != http.StatusInternalServerError {
@@ -125,7 +125,7 @@ func TestHookReceive(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		GitWebHook(c)
+		_ = GitWebHook(c)
 
 		// Expected failure because repository does not exist
 		if rec.Code != http.StatusBadRequest {

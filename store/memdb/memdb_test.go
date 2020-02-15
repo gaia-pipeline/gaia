@@ -3,6 +3,8 @@ package memdb
 import (
 	"testing"
 
+	"github.com/gaia-pipeline/gaia/workers/docker"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/store"
 )
@@ -90,6 +92,9 @@ func TestUpsertWorker(t *testing.T) {
 	}
 
 	if err := db.UpsertWorker(&gaia.Worker{UniqueID: "other-worker"}, false); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertWorker(&gaia.Worker{UniqueID: "another-other-worker"}, true); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.UpsertWorker(&gaia.Worker{UniqueID: "another-other-worker"}, true); err != nil {
@@ -238,5 +243,68 @@ func TestPopPipelineRun(t *testing.T) {
 	}
 	if pRun != nil {
 		t.Fatalf("run should be nil but is %#v", pRun)
+	}
+}
+
+func TestDeletePipelineRun(t *testing.T) {
+	mockStore := mockStore{}
+	db, err := InitMemDB(mockStore)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := db.SyncStore(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := db.InsertPipelineRun(&gaia.PipelineRun{UniqueID: "pipelinerun"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := db.DeletePipelineRun("pipelinerun"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDockerWorker(t *testing.T) {
+	mockStore := mockStore{}
+	db, err := InitMemDB(mockStore)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := db.SyncStore(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := db.InsertDockerWorker(&docker.Worker{WorkerID: "testworker"}); err != nil {
+		t.Fatal(err)
+	}
+
+	w, err := db.GetDockerWorker("testworker")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w == nil {
+		t.Fatal("expected non-nil response")
+	}
+	workers, err := db.GetAllDockerWorker()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(workers) != 1 {
+		t.Fatalf("expected 1 but got '%d': %#v", len(workers), workers)
+	}
+
+	// Delete docker worker
+	if err := db.DeleteDockerWorker("testworker"); err != nil {
+		t.Fatal(err)
+	}
+	workers, err = db.GetAllDockerWorker()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(workers) != 0 {
+		t.Fatalf("expected zero workers returned but got '%d': %#v", len(workers), workers)
 	}
 }

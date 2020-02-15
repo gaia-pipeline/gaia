@@ -38,7 +38,7 @@ func TestUpdatePipelinePython(t *testing.T) {
 	src := filepath.Join(tmp, "PipelineA_python")
 	p1.ExecPath = src
 	defer os.RemoveAll(tmp)
-	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	_ = ioutil.WriteFile(src, []byte("testcontent"), 0666)
 
 	// fake execution commands
 	virtualEnvName = "mkdir"
@@ -77,13 +77,52 @@ func TestUpdatePipelineRuby(t *testing.T) {
 	src := filepath.Join(tmp, "PipelineA_ruby")
 	p1.ExecPath = src
 	defer os.RemoveAll(tmp)
-	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	_ = ioutil.WriteFile(src, []byte("testcontent"), 0666)
 
 	// fake execution commands
 	rubyGemName = "echo"
 
 	// run
 	err := updatePipeline(&p1)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestUpdatePipelineNodeJS(t *testing.T) {
+	tmp, err := ioutil.TempDir("", "TestUpdatePipelineNodeJS")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmp)
+	gaia.Cfg = new(gaia.Config)
+	gaia.Cfg.HomePath = tmp
+	buf := new(bytes.Buffer)
+	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Trace,
+		Output: buf,
+		Name:   "Gaia",
+	})
+
+	p1 := gaia.Pipeline{
+		Name:    "PipelinA",
+		Type:    gaia.PTypeNodeJS,
+		Created: time.Now(),
+	}
+
+	// Create fake test nodejs archive file.
+	src := filepath.Join(tmp, "PipelineA_nodejs")
+	p1.ExecPath = src
+	if err := ioutil.WriteFile(src, []byte("testcontent"), 0666); err != nil {
+		t.Fatal(err)
+	}
+
+	// fake execution commands
+	tarName = "echo"
+	npmName = "echo"
+
+	// run
+	err = updatePipeline(&p1)
 	if err != nil {
 		t.Fatal(err)
 	}
