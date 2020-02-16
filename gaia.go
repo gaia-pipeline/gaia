@@ -140,13 +140,13 @@ const (
 	// ExecutablePermission is the permission used for gaia created executables.
 	ExecutablePermission = 0700
 
-	// Start reason label for pipelines which were triggered through a remote token.
+	// StartReasonRemote label for pipelines which were triggered through a remote token.
 	StartReasonRemote = "remote"
 
-	// Start reason label for pipelines which were triggered through the admin site.
+	// StartReasonManual label for pipelines which were triggered through the admin site.
 	StartReasonManual = "manual"
 
-	// Start reason label for pipelines which were triggered automated process, i.e. cron job / schedule.
+	// StartReasonScheduled label for pipelines which were triggered automated process, i.e. cron job / schedule.
 	StartReasonScheduled = "scheduled"
 )
 
