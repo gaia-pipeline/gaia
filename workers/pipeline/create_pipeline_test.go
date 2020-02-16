@@ -32,7 +32,7 @@ type mockScheduler struct {
 }
 
 func (ms *mockScheduler) Init() {}
-func (ms *mockScheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error) {
+func (ms *mockScheduler) SchedulePipeline(p *gaia.Pipeline, startedBy string, args []*gaia.Argument) (*gaia.PipelineRun, error) {
 	return nil, nil
 }
 func (ms *mockScheduler) SetPipelineJobs(p *gaia.Pipeline) error            { return ms.Error }

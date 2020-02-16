@@ -86,6 +86,7 @@
                 <span v-else>{{ props.row.status }}</span>
               </span>
               <span v-if="props.column.field === 'duration'">{{ calculateDuration(props.row.startdate, props.row.finishdate) }}</span>
+              <span v-if="props.column.field === 'reason'">{{ props.row.started_reason }}</span>
               <span v-if="props.column.field === 'action'">
                 <a v-on:click="stopPipelineModal(pipelineID, props.row.id)"><i class="fa fa-ban"
                                                                                style="color: whitesmoke;"></i></a>
@@ -164,6 +165,10 @@ export default {
         {
           label: 'Duration',
           field: 'duration'
+        },
+        {
+          label: 'Reason',
+          field: 'reason'
         },
         {
           label: 'Action',

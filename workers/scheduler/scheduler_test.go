@@ -407,7 +407,7 @@ func TestSchedulePipeline(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.Init()
-	_, err = s.SchedulePipeline(&p, prepareArgs())
+	_, err = s.SchedulePipeline(&p, gaia.StartReasonManual, prepareArgs())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -453,11 +453,11 @@ func TestSchedulePipelineParallel(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {
-		run1, _ = s.SchedulePipeline(&p1, prepareArgs())
+		run1, _ = s.SchedulePipeline(&p1, gaia.StartReasonManual, prepareArgs())
 		wg.Done()
 	}()
 	go func() {
-		run2, _ = s.SchedulePipeline(&p2, prepareArgs())
+		run2, _ = s.SchedulePipeline(&p2, gaia.StartReasonManual, prepareArgs())
 		wg.Done()
 	}()
 	wg.Wait()
@@ -488,7 +488,7 @@ func TestSchedule(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.SchedulePipeline(&p, prepareArgs())
+	_, err = s.SchedulePipeline(&p, gaia.StartReasonManual, prepareArgs())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -554,7 +554,7 @@ func TestStopPipelineRunFailIfPipelineNotInRunningState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.SchedulePipeline(&p, prepareArgs())
+	_, err = s.SchedulePipeline(&p, gaia.StartReasonManual, prepareArgs())
 	if err != nil {
 		t.Fatal(err)
 	}

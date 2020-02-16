@@ -193,7 +193,7 @@ func PipelineUpdate(c echo.Context) error {
 		// Iterate over all cron schedules.
 		for _, schedule := range p.PeriodicSchedules {
 			err := foundPipeline.CronInst.AddFunc(schedule, func() {
-				_, err := schedulerService.SchedulePipeline(&foundPipeline, []*gaia.Argument{})
+				_, err := schedulerService.SchedulePipeline(&foundPipeline, gaia.StartReasonScheduled, []*gaia.Argument{})
 				if err != nil {
 					gaia.Cfg.Logger.Error("cannot schedule pipeline from periodic schedule", "error", err, "pipeline", foundPipeline)
 					return
@@ -339,7 +339,7 @@ func PipelineTrigger(c echo.Context) error {
 	schedulerService, _ := services.SchedulerService()
 	var args []*gaia.Argument
 	_ = c.Bind(&args)
-	pipelineRun, err := schedulerService.SchedulePipeline(&foundPipeline, args)
+	pipelineRun, err := schedulerService.SchedulePipeline(&foundPipeline, gaia.StartReasonRemote, args)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	} else if pipelineRun != nil {
@@ -453,7 +453,7 @@ func PipelineStart(c echo.Context) error {
 	foundPipeline.Docker = docker
 
 	if foundPipeline.Name != "" {
-		pipelineRun, err := schedulerService.SchedulePipeline(&foundPipeline, args)
+		pipelineRun, err := schedulerService.SchedulePipeline(&foundPipeline, gaia.StartReasonManual, args)
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		} else if pipelineRun != nil {
