@@ -146,7 +146,7 @@ const (
 	// StartReasonManual label for pipelines which were triggered through the admin site.
 	StartReasonManual = "manual"
 
-	// StartReasonScheduled label for pipelines which were triggered automated process, i.e. cron job / schedule.
+	// StartReasonScheduled label for pipelines which were triggered automated process, i.e. cron job.
 	StartReasonScheduled = "scheduled"
 )
 
