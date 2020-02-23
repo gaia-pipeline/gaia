@@ -3,8 +3,6 @@ package services
 import (
 	"reflect"
 
-	"github.com/gaia-pipeline/gaia/workers/scheduler/gaiascheduler"
-
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
@@ -14,9 +12,6 @@ import (
 // storeService is an instance of store.
 // Use this to talk to the store.
 var storeService store.GaiaStore
-
-// schedulerService is an instance of scheduler.
-var schedulerService gaiascheduler.Scheduler
 
 // certificateService is the singleton holding the certificate manager.
 var certificateService security.CAAPI
