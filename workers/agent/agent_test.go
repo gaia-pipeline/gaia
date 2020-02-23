@@ -488,7 +488,10 @@ func TestRebuildWorkerBinary(t *testing.T) {
 	mStore := &mockStore{}
 	mScheduler := &mockScheduler{}
 	services.MockStorageService(mStore)
-	ag := InitAgent(nil, mScheduler, nil, mStore, "")
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: mScheduler,
+	})
+	ag := InitAgent(nil, mScheduler, pipelineService, mStore, "")
 	ag.client = client
 	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
 	gaia.Cfg = &gaia.Config{
@@ -526,7 +529,10 @@ func TestScheduleWork(t *testing.T) {
 	// Init agent
 	mStore := &mockStore{}
 	mScheduler := &mockScheduler{}
-	ag := InitAgent(nil, mScheduler, nil, mStore, "")
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: mScheduler,
+	})
+	ag := InitAgent(nil, mScheduler, pipelineService, mStore, "")
 	ag.client = client
 	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
 	gaia.Cfg = &gaia.Config{
@@ -590,7 +596,10 @@ func TestScheduleWork_RecvError(t *testing.T) {
 	// Init agent
 	mStore := &mockStore{}
 	mScheduler := &mockScheduler{}
-	ag := InitAgent(nil, mScheduler, nil, mStore, tmpFolder)
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: mScheduler,
+	})
+	ag := InitAgent(nil, mScheduler, pipelineService, mStore, tmpFolder)
 	ag.exitChan = make(chan os.Signal, 1)
 	ag.client = client
 	ag.self = &pb.WorkerInstance{UniqueId: "my-failed-worker"}
@@ -628,7 +637,10 @@ func TestStreamBinary(t *testing.T) {
 	// Init agent
 	mStore := &mockStore{}
 	mScheduler := &mockScheduler{}
-	ag := InitAgent(nil, mScheduler, nil, mStore, "")
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: mScheduler,
+	})
+	ag := InitAgent(nil, mScheduler, pipelineService, mStore, "")
 	ag.client = client
 	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
 	gaia.Cfg = &gaia.Config{
@@ -670,7 +682,10 @@ func TestUpdateWork(t *testing.T) {
 	// Init agent
 	mStore := &mockStore{}
 	mScheduler := &mockScheduler{}
-	ag := InitAgent(nil, mScheduler, nil, mStore, "")
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: mScheduler,
+	})
+	ag := InitAgent(nil, mScheduler, pipelineService, mStore, "")
 	ag.client = client
 	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
 	gaia.Cfg = &gaia.Config{
@@ -738,7 +753,10 @@ func TestScheduleWorkExecFormatError(t *testing.T) {
 	}
 	mScheduler := &mockScheduler{}
 	mScheduler.err = errors.New("exec format error")
-	ag := InitAgent(nil, mScheduler, nil, mStore, "")
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: mScheduler,
+	})
+	ag := InitAgent(nil, mScheduler, pipelineService, mStore, "")
 	ag.client = client
 	ag.self = &pb.WorkerInstance{UniqueId: "my-worker"}
 	gaia.Cfg = &gaia.Config{
