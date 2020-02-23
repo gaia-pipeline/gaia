@@ -1,6 +1,7 @@
-package handlers
+package providers
 
 import (
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -13,6 +14,11 @@ import (
 	"github.com/labstack/echo"
 )
 
+var (
+	// errPipelineRunNotFound is thrown when a pipeline run was not found with the given id
+	errPipelineRunNotFound = errors.New("pipeline run not found with the given id")
+)
+
 // jobLogs represents the json format which is returned
 // by GetJobLogs.
 type jobLogs struct {
@@ -22,7 +28,7 @@ type jobLogs struct {
 
 // PipelineRunGet returns details about a specific pipeline run.
 // Required parameters are pipelineid and runid.
-func PipelineRunGet(c echo.Context) error {
+func (pp *pipelineProvider) PipelineRunGet(c echo.Context) error {
 	// Convert string to int because id is int
 	storeService, _ := services.StorageService()
 	pipelineID, err := strconv.Atoi(c.Param("pipelineid"))
@@ -49,8 +55,7 @@ func PipelineRunGet(c echo.Context) error {
 }
 
 // PipelineStop stops a running pipeline.
-func PipelineStop(c echo.Context) error {
-	schedulerService, _ := services.SchedulerService()
+func (pp *pipelineProvider) PipelineStop(c echo.Context) error {
 	// Get parameters and validate
 	pipelineID := c.Param("pipelineid")
 	pipelineRunID := c.Param("runid")
@@ -77,7 +82,7 @@ func PipelineStop(c echo.Context) error {
 	}
 
 	if foundPipeline.Name != "" {
-		err = schedulerService.StopPipelineRun(&foundPipeline, r)
+		err = pp.deps.Scheduler.StopPipelineRun(&foundPipeline, r)
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		}
@@ -89,7 +94,7 @@ func PipelineStop(c echo.Context) error {
 }
 
 // PipelineGetAllRuns returns all runs about the given pipeline.
-func PipelineGetAllRuns(c echo.Context) error {
+func (pp *pipelineProvider) PipelineGetAllRuns(c echo.Context) error {
 	// Convert string to int because id is int
 	storeService, _ := services.StorageService()
 	pipelineID, err := strconv.Atoi(c.Param("pipelineid"))
@@ -107,7 +112,7 @@ func PipelineGetAllRuns(c echo.Context) error {
 }
 
 // PipelineGetLatestRun returns the latest run of a pipeline, given by id.
-func PipelineGetLatestRun(c echo.Context) error {
+func (pp *pipelineProvider) PipelineGetLatestRun(c echo.Context) error {
 	// Convert string to int because id is int
 	storeService, _ := services.StorageService()
 	pipelineID, err := strconv.Atoi(c.Param("pipelineid"))
@@ -129,7 +134,7 @@ func PipelineGetLatestRun(c echo.Context) error {
 // Required parameters:
 // pipelineid - Related pipeline id
 // pipelinerunid - Related pipeline run id
-func GetJobLogs(c echo.Context) error {
+func (pp *pipelineProvider) GetJobLogs(c echo.Context) error {
 	// Get parameters and validate
 	storeService, _ := services.StorageService()
 	pipelineID := c.Param("pipelineid")

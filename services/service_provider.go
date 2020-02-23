@@ -3,12 +3,12 @@ package services
 import (
 	"reflect"
 
+	"github.com/gaia-pipeline/gaia/workers/scheduler/gaiascheduler"
+
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/store/memdb"
-	"github.com/gaia-pipeline/gaia/workers/scheduler"
 )
 
 // storeService is an instance of store.
@@ -16,7 +16,7 @@ import (
 var storeService store.GaiaStore
 
 // schedulerService is an instance of scheduler.
-var schedulerService scheduler.GaiaScheduler
+var schedulerService gaiascheduler.Scheduler
 
 // certificateService is the singleton holding the certificate manager.
 var certificateService security.CAAPI
@@ -51,31 +51,6 @@ func StorageService() (store.GaiaStore, error) {
 // will use the mock instead.
 func MockStorageService(store store.GaiaStore) {
 	storeService = store
-}
-
-// SchedulerService initializes keeps track of the scheduler service.
-// The internal service is a singleton. This function retruns an error
-// but most of the times we don't care about it, because it's only ever
-// initialized once in the main.go. If it wouldn't work, main would
-// os.Exit(1) and the rest of the application would just stop.
-func SchedulerService() (scheduler.GaiaScheduler, error) {
-	if schedulerService != nil && !reflect.ValueOf(schedulerService).IsNil() {
-		return schedulerService, nil
-	}
-	pS := &plugin.GoPlugin{}
-	s, err := scheduler.NewScheduler(storeService, memDBService, pS, certificateService, vaultService)
-	if err != nil {
-		return nil, err
-	}
-	schedulerService = s
-	schedulerService.Init()
-	return schedulerService, nil
-}
-
-// MockSchedulerService which replaces the scheduler service
-// with a mocked one.
-func MockSchedulerService(scheduler scheduler.GaiaScheduler) {
-	schedulerService = scheduler
 }
 
 // CertificateService creates a certificate manager service.

@@ -1,4 +1,4 @@
-package handlers
+package workers
 
 import (
 	"encoding/base64"
@@ -35,7 +35,7 @@ type registerResponse struct {
 
 // RegisterWorker allows new workers to register themself at this Gaia instance.
 // It accepts a secret and returns valid certificates (base64 encoded) for further mTLS connection.
-func RegisterWorker(c echo.Context) error {
+func (wp *workerProvider) RegisterWorker(c echo.Context) error {
 	worker := registerWorker{}
 	if err := c.Bind(&worker); err != nil {
 		return c.String(http.StatusBadRequest, "secret for registration is invalid:"+err.Error())
@@ -127,7 +127,7 @@ func RegisterWorker(c echo.Context) error {
 }
 
 // DeregisterWorker deregister a registered worker.
-func DeregisterWorker(c echo.Context) error {
+func (wp *workerProvider) DeregisterWorker(c echo.Context) error {
 	workerID := c.Param("workerid")
 	if workerID == "" {
 		return c.String(http.StatusBadRequest, "worker id is missing")
@@ -156,7 +156,7 @@ func DeregisterWorker(c echo.Context) error {
 }
 
 // GetWorkerRegisterSecret returns the global secret for registering new worker.
-func GetWorkerRegisterSecret(c echo.Context) error {
+func (wp *workerProvider) GetWorkerRegisterSecret(c echo.Context) error {
 	globalSecret, err := getWorkerSecret()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "cannot get worker secret from vault")
@@ -192,7 +192,7 @@ type workerStatusOverviewRespoonse struct {
 }
 
 // GetWorkerStatusOverview returns general status information about all workers.
-func GetWorkerStatusOverview(c echo.Context) error {
+func (wp *workerProvider) GetWorkerStatusOverview(c echo.Context) error {
 	response := workerStatusOverviewRespoonse{}
 
 	// Get memdb service
@@ -217,23 +217,15 @@ func GetWorkerStatusOverview(c echo.Context) error {
 		// Store overall finished runs
 		response.FinishedRuns += w.FinishedRuns
 	}
-
-	// Get scheduler service
-	scheduler, err := services.SchedulerService()
-	if err != nil {
-		gaia.Cfg.Logger.Error("cannot get scheduler service from service store", "error", err.Error())
-		return c.String(http.StatusInternalServerError, err.Error())
-	}
-
 	// Get pipeline queue size
-	response.QueueSize = scheduler.CountScheduledRuns()
+	response.QueueSize = wp.deps.Scheduler.CountScheduledRuns()
 
 	// Send response back
 	return c.JSON(http.StatusOK, response)
 }
 
 // GetWorker returns all workers.
-func GetWorker(c echo.Context) error {
+func (wp *workerProvider) GetWorker(c echo.Context) error {
 	// Get memdb service
 	db, err := services.DefaultMemDBService()
 	if err != nil {
@@ -245,7 +237,7 @@ func GetWorker(c echo.Context) error {
 }
 
 // ResetWorkerRegisterSecret generates a new global worker registration secret
-func ResetWorkerRegisterSecret(c echo.Context) error {
+func (wp *workerProvider) ResetWorkerRegisterSecret(c echo.Context) error {
 	// Get vault service
 	v, err := services.DefaultVaultService()
 	if err != nil {

@@ -1,20 +1,21 @@
 package pipeline
 
 import (
-	"github.com/gaia-pipeline/gaia/store/memdb"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/store/memdb"
+	"github.com/gaia-pipeline/gaia/workers/scheduler/gaiascheduler"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
-	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	"github.com/hashicorp/go-hclog"
 )
 
 type mockScheduleService struct {
-	scheduler.GaiaScheduler
+	gaiascheduler.GaiaScheduler
 	err error
 }
 

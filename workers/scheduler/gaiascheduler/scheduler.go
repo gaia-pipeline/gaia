@@ -1,4 +1,4 @@
-package scheduler
+package gaiascheduler
 
 import (
 	"errors"
@@ -39,7 +39,7 @@ const (
 )
 
 var (
-	// errCreateCMDForPipeline is thrown when we couldnt create a command to start
+	// errCreateCMDForPipeline is thrown when we couldn't create a command to start
 	// a plugin.
 	errCreateCMDForPipeline = errors.New("could not create execute command for plugin")
 
@@ -59,19 +59,7 @@ var (
 	nodeJSExecName = "node"
 )
 
-// GaiaScheduler is a job scheduler for gaia pipeline runs.
-type GaiaScheduler interface {
-	Init()
-	SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error)
-	SetPipelineJobs(p *gaia.Pipeline) error
-	StopPipelineRun(p *gaia.Pipeline, runID int) error
-	GetFreeWorkers() int32
-	CountScheduledRuns() int
-}
-
-var _ GaiaScheduler = (*Scheduler)(nil)
-
-// Scheduler represents the schuler object
+// Scheduler represents the scheduler object
 type Scheduler struct {
 	// buffered channel which is used as queue
 	scheduledRuns chan gaia.PipelineRun
@@ -95,19 +83,27 @@ type Scheduler struct {
 	freeWorkers *int32
 }
 
-// NewScheduler creates a new instance of Scheduler.
-func NewScheduler(store store.GaiaStore, db memdb.GaiaMemDB, pS plugin.Plugin, ca security.CAAPI, vault security.GaiaVault) (*Scheduler, error) {
+// Dependencies defines the dependencies of the scheduler service.
+type Dependencies struct {
+	Store store.GaiaStore
+	DB    memdb.GaiaMemDB
+	PS    plugin.Plugin
+	CA    security.CAAPI
+	Vault security.GaiaVault
+}
+
+// NewScheduler creates a new Scheduler service.
+func NewScheduler(deps Dependencies) (*Scheduler, error) {
 	// Create new scheduler
 	s := &Scheduler{
 		scheduledRuns: make(chan gaia.PipelineRun, schedulerBufferLimit),
-		storeService:  store,
-		memDBService:  db,
-		pluginSystem:  pS,
-		ca:            ca,
-		vault:         vault,
+		storeService:  deps.Store,
+		memDBService:  deps.DB,
+		pluginSystem:  deps.PS,
+		ca:            deps.CA,
+		vault:         deps.Vault,
 		freeWorkers:   new(int32),
 	}
-
 	return s, nil
 }
 

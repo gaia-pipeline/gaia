@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gaia-pipeline/gaia/workers/pipeline"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/hashicorp/go-hclog"
@@ -33,8 +35,17 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 		t.Fatalf("cannot initialize certificate service: %v", err.Error())
 	}
 
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
 	e := echo.New()
-	_ = InitHandlers(e)
+	_ = handlerService.InitHandlers(e)
 	t.Run("can add secret", func(t *testing.T) {
 		body := map[string]string{
 			"Key":   "Key",

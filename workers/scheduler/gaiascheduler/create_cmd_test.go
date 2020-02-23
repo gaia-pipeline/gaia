@@ -1,10 +1,12 @@
-package scheduler
+package gaiascheduler
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestFindRubyGemName(t *testing.T) {
 	// Adjust gubyGemName (might be not available in test container)
-	rubyGemName = "echo"
+	gaiascheduler.rubyGemName = "echo"
 
 	// Overwrite gem commands
 	findRubyGemCommands = []string{"name: testruby"}

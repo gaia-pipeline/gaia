@@ -6,12 +6,13 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/gaia-pipeline/gaia/workers/scheduler/gaiascheduler"
+
 	"github.com/gaia-pipeline/gaia/store/memdb"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
-	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	"github.com/hashicorp/go-hclog"
 )
 
@@ -150,7 +151,7 @@ type testMockStorageService struct {
 }
 
 type testMockScheduleService struct {
-	scheduler.GaiaScheduler
+	gaiascheduler.GaiaScheduler
 }
 
 type testMockCertificateService struct {

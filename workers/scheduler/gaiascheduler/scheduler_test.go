@@ -1,4 +1,4 @@
-package scheduler
+package gaiascheduler
 
 import (
 	"crypto/tls"
@@ -355,7 +355,7 @@ func TestPrepareAndExecRubyType(t *testing.T) {
 	p.Type = gaia.PTypeRuby
 	rubyExecName = "go"
 	rubyGemName = "echo"
-	findRubyGemCommands = []string{"name: rubytest"}
+	scheduler.findRubyGemCommands = []string{"name: rubytest"}
 	_ = storeInstance.PipelinePut(&p)
 	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
 	if err != nil {

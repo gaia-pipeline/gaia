@@ -10,19 +10,20 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/gaia-pipeline/gaia/workers/server"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/hashicorp/go-hclog"
+	"github.com/labstack/echo"
 
-	"github.com/gaia-pipeline/gaia/workers/pipeline"
-
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/flag"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
+	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/agent"
-	hclog "github.com/hashicorp/go-hclog"
-	"github.com/labstack/echo"
+	"github.com/gaia-pipeline/gaia/workers/pipeline"
+	"github.com/gaia-pipeline/gaia/workers/scheduler/gaiascheduler"
+	"github.com/gaia-pipeline/gaia/workers/server"
 )
 
 var (
@@ -152,7 +153,7 @@ func Start() (err error) {
 	}
 
 	// Initialize the certificate manager service
-	_, err = services.CertificateService()
+	ca, err := services.CertificateService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot create CA", "error", err.Error())
 		return
@@ -231,17 +232,32 @@ func Start() (err error) {
 		}
 	}
 
-	// Initialize handlers
-	err = handlers.InitHandlers(echoInstance)
+	schedulerService, err := gaiascheduler.NewScheduler(gaiascheduler.Dependencies{
+		Store: store,
+		DB:    db,
+		CA:    ca,
+		PS:    &plugin.GoPlugin{},
+		Vault: v,
+	})
 	if err != nil {
-		gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
+		gaia.Cfg.Logger.Error("cannot initialize scheduler", "error", err.Error())
 		return err
 	}
 
-	// Initialize scheduler
-	scheduler, err := services.SchedulerService()
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: schedulerService,
+	})
+
+	// Initialize handlers
+	handlerService := handlers.NewGaiaHandler(handlers.Dependencies{
+		Scheduler:       schedulerService,
+		PipelineService: pipelineService,
+	})
+
+	err = handlerService.InitHandlers(echoInstance)
 	if err != nil {
-		return
+		gaia.Cfg.Logger.Error("cannot initialize handlers", "error", err.Error())
+		return err
 	}
 
 	// Allocate SIG channel
@@ -264,7 +280,7 @@ func Start() (err error) {
 	switch gaia.Cfg.Mode {
 	case gaia.ModeServer:
 		// Start ticker. Periodic job to check for new plugins.
-		pipeline.InitTicker()
+		pipelineService.InitTicker()
 
 		// Start API server
 		go func() {
@@ -285,7 +301,7 @@ func Start() (err error) {
 		}()
 
 		// Start agent
-		ag := agent.InitAgent(exitChan, scheduler, store, gaia.Cfg.HomePath)
+		ag := agent.InitAgent(exitChan, schedulerService, pipelineService, store, gaia.Cfg.HomePath)
 		go func() {
 			cleanUpFunc, err = ag.StartAgent()
 			if err != nil {

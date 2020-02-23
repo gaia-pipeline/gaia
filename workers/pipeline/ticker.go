@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/workers/scheduler/service"
+
 	"github.com/gaia-pipeline/gaia/helper/filehelper"
 	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 
@@ -70,12 +72,12 @@ func StartPoller() error {
 
 // InitTicker initiates the pipeline ticker.
 // This periodic job will check for new pipelines.
-func InitTicker() {
+func (s *gaiaPipelineService) InitTicker() {
 	// Init global active pipelines slice
 	GlobalActivePipelines = NewActivePipelines()
 
 	// Check immediately to make sure we fill the list as fast as possible.
-	checkActivePipelines()
+	checkActivePipelines(s.deps.Scheduler)
 
 	// Create ticker
 	ticker := time.NewTicker(tickerIntervalSeconds * time.Second)
@@ -84,7 +86,7 @@ func InitTicker() {
 		for {
 			select {
 			case <-ticker.C:
-				checkActivePipelines()
+				checkActivePipelines(s.deps.Scheduler)
 				updateWorker()
 			}
 		}
@@ -96,8 +98,7 @@ func InitTicker() {
 // checkActivePipelines looks up all files in the pipeline folder.
 // Every file will be handled as an active pipeline and therefore
 // saved in the global active pipelines slice.
-func checkActivePipelines() {
-	schedulerService, _ := services.SchedulerService()
+func checkActivePipelines(schedulerService service.GaiaScheduler) {
 	storeService, _ := services.StorageService()
 	var existingPipelineNames []string
 	files, err := ioutil.ReadDir(gaia.Cfg.PipelinePath)

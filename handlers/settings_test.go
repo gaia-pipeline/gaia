@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gaia-pipeline/gaia/workers/pipeline"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	gStore "github.com/gaia-pipeline/gaia/store"
@@ -44,9 +46,18 @@ func TestSetPollerToggle(t *testing.T) {
 		Poll:         false,
 	}
 
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
 	// // Initialize echo
 	e := echo.New()
-	_ = InitHandlers(e)
+	_ = handlerService.InitHandlers(e)
 	get := func() (*gaia.StoreConfig, error) {
 		return nil, nil
 	}
@@ -186,9 +197,17 @@ func TestGettingSettingFromDBTakesPrecedence(t *testing.T) {
 		Poll:         false,
 	}
 
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
 	// // Initialize echo
 	e := echo.New()
-	_ = InitHandlers(e)
+	_ = handlerService.InitHandlers(e)
 	get := func() (*gaia.StoreConfig, error) {
 		return &gaia.StoreConfig{
 			Poll: true,
@@ -230,9 +249,18 @@ func TestSettingPollerOnAlsoSavesSettingsInDB(t *testing.T) {
 		Poll:         false,
 	}
 
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
 	// // Initialize echo
 	e := echo.New()
-	_ = InitHandlers(e)
+	_ = handlerService.InitHandlers(e)
 	get := func() (*gaia.StoreConfig, error) {
 		return &gaia.StoreConfig{
 			Poll: true,
