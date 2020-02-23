@@ -9,7 +9,7 @@ import (
 // Dependencies define providers and services which this service needs.
 type Dependencies struct {
 	Scheduler       service.GaiaScheduler
-	PipelineService pipeline.PipelineService
+	PipelineService pipeline.Service
 }
 
 type pipelineProvider struct {

@@ -8,7 +8,7 @@ import (
 // Dependencies define dependencies for this service.
 type Dependencies struct {
 	Scheduler       service.GaiaScheduler
-	PipelineService pipeline.PipelineService
+	PipelineService pipeline.Service
 }
 
 // GaiaHandler defines handler functions throughout Gaia.

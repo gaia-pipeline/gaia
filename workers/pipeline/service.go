@@ -14,13 +14,13 @@ type gaiaPipelineService struct {
 	deps Dependencies
 }
 
-// PipelineService defines a scheduler service.
-type PipelineService interface {
+// Service defines a scheduler service.
+type Service interface {
 	CreatePipeline(p *gaia.CreatePipeline)
 	InitTicker()
 }
 
 // NewGaiaPipelineService creates a pipeline service with its required dependencies already wired up
-func NewGaiaPipelineService(deps Dependencies) PipelineService {
+func NewGaiaPipelineService(deps Dependencies) Service {
 	return &gaiaPipelineService{deps: deps}
 }
