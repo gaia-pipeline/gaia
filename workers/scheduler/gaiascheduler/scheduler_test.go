@@ -96,7 +96,7 @@ func TestInit(t *testing.T) {
 	if err := storeInstance.Init(tmp); err != nil {
 		t.Fatal(err)
 	}
-	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(Dependencies{storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +135,7 @@ func TestPrepareAndExecFail(t *testing.T) {
 	}
 	p, r := prepareTestData()
 	_ = storeInstance.PipelinePut(&p)
-	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(Dependencies{storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,7 +177,7 @@ func TestPrepareAndExecInvalidType(t *testing.T) {
 	p, r := prepareTestData()
 	p.Type = gaia.PTypeUnknown
 	_ = storeInstance.PipelinePut(&p)
-	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(Dependencies{storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -215,7 +215,7 @@ func TestPrepareAndExecJavaType(t *testing.T) {
 	javaExecName = "go"
 	p.Type = gaia.PTypeJava
 	_ = storeInstance.PipelinePut(&p)
-	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(Dependencies{storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -262,7 +262,7 @@ func TestPrepareAndExecPythonType(t *testing.T) {
 	pythonExecName = "go"
 	p.Type = gaia.PTypePython
 	_ = storeInstance.PipelinePut(&p)
-	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(Dependencies{storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -308,7 +308,7 @@ func TestPrepareAndExecCppType(t *testing.T) {
 	p, r := prepareTestData()
 	p.Type = gaia.PTypeCpp
 	_ = storeInstance.PipelinePut(&p)
-	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(Dependencies{storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -355,9 +355,9 @@ func TestPrepareAndExecRubyType(t *testing.T) {
 	p.Type = gaia.PTypeRuby
 	rubyExecName = "go"
 	rubyGemName = "echo"
-	scheduler.findRubyGemCommands = []string{"name: rubytest"}
+	findRubyGemCommands = []string{"name: rubytest"}
 	_ = storeInstance.PipelinePut(&p)
-	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(Dependencies{storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -402,7 +402,7 @@ func TestSchedulePipeline(t *testing.T) {
 	}
 	p, _ := prepareTestData()
 	_ = storeInstance.PipelinePut(&p)
-	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(Dependencies{storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -443,7 +443,7 @@ func TestSchedulePipelineParallel(t *testing.T) {
 	}
 	_ = storeInstance.PipelinePut(&p1)
 	_ = storeInstance.PipelinePut(&p2)
-	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(Dependencies{storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -484,7 +484,7 @@ func TestSchedule(t *testing.T) {
 	}
 	p, _ := prepareTestData()
 	_ = storeInstance.PipelinePut(&p)
-	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(Dependencies{storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -519,7 +519,7 @@ func TestSetPipelineJobs(t *testing.T) {
 	}
 	p, _ := prepareTestData()
 	p.Jobs = nil
-	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(Dependencies{storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -550,7 +550,7 @@ func TestStopPipelineRunFailIfPipelineNotInRunningState(t *testing.T) {
 	}
 	p, _ := prepareTestData()
 	_ = storeInstance.PipelinePut(&p)
-	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(Dependencies{storeInstance, &MemDBFake{}, &PluginFakeFailed{}, &CAFake{}, &VaultFake{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -593,7 +593,7 @@ func TestStopPipelineRun(t *testing.T) {
 	}
 	p, r := prepareTestData()
 	_ = storeInstance.PipelinePut(&p)
-	s, err := NewScheduler(storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{})
+	s, err := NewScheduler(Dependencies{storeInstance, &MemDBFake{}, &PluginFake{}, &CAFake{}, &VaultFake{}})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,7 +6,7 @@ import (
 
 func TestFindRubyGemName(t *testing.T) {
 	// Adjust gubyGemName (might be not available in test container)
-	gaiascheduler.rubyGemName = "echo"
+	rubyGemName = "echo"
 
 	// Overwrite gem commands
 	findRubyGemCommands = []string{"name: testruby"}
