@@ -581,7 +581,6 @@ func (a *Agent) rebuildWorkerBinary(ctx context.Context, pipeline *gaia.Pipeline
 	gitRepo.SelectedBranch = repo.SelectedBranch
 	pCreate.Pipeline.Repo = &gitRepo
 
-	// Todo: Fix this.
 	a.pipelineService.CreatePipeline(pCreate)
 	if pCreate.StatusType == gaia.CreatePipelineFailed {
 		return fmt.Errorf("error while creating pipeline: %s", pCreate.Output)
