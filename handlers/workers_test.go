@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	workers2 "github.com/gaia-pipeline/gaia/handlers/providers/workers"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -15,7 +16,6 @@ import (
 	"github.com/labstack/echo"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/handlers/workers"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/services"
 	gStore "github.com/gaia-pipeline/gaia/store"
@@ -64,7 +64,7 @@ func TestRegisterWorker(t *testing.T) {
 		DevMode:      true,
 	}
 
-	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil})
+	wp := workers2.NewWorkerProvider(workers2.Dependencies{Scheduler: nil})
 	// Initialize store
 	m := &mockStorageService{}
 	services.MockStorageService(m)
@@ -249,7 +249,7 @@ func TestDeregisterWorker(t *testing.T) {
 	if err := handlerService.InitHandlers(e); err != nil {
 		t.Fatal(err)
 	}
-	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil})
+	wp := workers2.NewWorkerProvider(workers2.Dependencies{Scheduler: nil})
 
 	// Test with non-existing worker
 	t.Run("non-existing worker", func(t *testing.T) {
@@ -371,7 +371,7 @@ func TestGetWorkerRegisterSecret(t *testing.T) {
 	if err := handlerService.InitHandlers(e); err != nil {
 		t.Fatal(err)
 	}
-	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil})
+	wp := workers2.NewWorkerProvider(workers2.Dependencies{Scheduler: nil})
 	// Test get global worker secret
 	t.Run("global secret success", func(t *testing.T) {
 		req := httptest.NewRequest(echo.GET, "/api/"+gaia.APIVersion+"/worker/secret", nil)
@@ -469,7 +469,7 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 
 	// Test empty worker status overview
 	{
-		wp := workers.NewWorkerProvider(workers.Dependencies{
+		wp := workers2.NewWorkerProvider(workers2.Dependencies{
 			Scheduler: scheduler,
 		})
 		req := httptest.NewRequest(echo.GET, "/api/"+gaia.APIVersion+"/worker/status", nil)
@@ -509,7 +509,7 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 
 	// Test with registered worker
 	{
-		wp := workers.NewWorkerProvider(workers.Dependencies{
+		wp := workers2.NewWorkerProvider(workers2.Dependencies{
 			Scheduler: scheduler,
 		})
 		body := registerWorker{
@@ -630,7 +630,7 @@ func TestGetWorker(t *testing.T) {
 	}
 
 	t.Run("get worker success", func(t *testing.T) {
-		wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil})
+		wp := workers2.NewWorkerProvider(workers2.Dependencies{Scheduler: nil})
 		workerName := "my-worker"
 		body := registerWorker{
 			Name:   workerName,
@@ -727,7 +727,7 @@ func TestResetWorkerRegisterSecret(t *testing.T) {
 	if err := handlerService.InitHandlers(e); err != nil {
 		t.Fatal(err)
 	}
-	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil})
+	wp := workers2.NewWorkerProvider(workers2.Dependencies{Scheduler: nil})
 	// Test reset global worker secret
 	t.Run("global secret reset success", func(t *testing.T) {
 		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/worker/secret", nil)

@@ -1,11 +1,9 @@
 package handlers
 
 import (
+	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
+	workers2 "github.com/gaia-pipeline/gaia/handlers/providers/workers"
 	"net/http"
-
-	"github.com/gaia-pipeline/gaia/handlers/workers"
-
-	"github.com/gaia-pipeline/gaia/handlers/providers"
 
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/gaia-pipeline/gaia"
@@ -43,7 +41,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 		// Pipelines
 		// Create pipeline provider
-		pipelineProvider := providers.NewPipelineProvider(providers.Dependencies{
+		pipelineProvider := pipelines.NewPipelineProvider(pipelines.Dependencies{
 			Scheduler:       s.deps.Scheduler,
 			PipelineService: s.deps.PipelineService,
 		})
@@ -83,7 +81,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 	// Worker
 	// initialize the worker provider
-	workerProvider := workers.NewWorkerProvider(workers.Dependencies{
+	workerProvider := workers2.NewWorkerProvider(workers2.Dependencies{
 		Scheduler: s.deps.Scheduler,
 	})
 	e.GET(p+"worker/secret", workerProvider.GetWorkerRegisterSecret)

@@ -1,4 +1,4 @@
-package providers
+package pipelines
 
 import (
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
