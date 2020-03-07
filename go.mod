@@ -5,6 +5,7 @@ require (
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/Pallinder/go-randomdata v1.1.0
+	github.com/Skarlso/gosdk v0.0.0-20200307162454-0dcb6224076b // indirect
 	github.com/Skarlso/protobuf v0.0.0-20200307140829-e2fe748a72a5
 	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
@@ -19,11 +20,11 @@ require (
 	github.com/emirpasic/gods v1.9.0 // indirect
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
 	github.com/gaia-pipeline/flag v1.7.4-pre
+	github.com/gaia-pipeline/gosdk v0.0.0-20180909192508-cc9f89055777
 	github.com/gaia-pipeline/protobuf v0.0.0-20180812091451-7be8a901b55a
 	github.com/gliderlabs/ssh v0.1.1 // indirect
 	github.com/gogo/protobuf v1.2.1 // indirect
-	github.com/golang/protobuf v1.3.1
-	github.com/google/go-cmp v0.2.0 // indirect
+	github.com/golang/protobuf v1.3.2
 	github.com/google/go-github v15.0.0+incompatible
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135 // indirect
 	github.com/gorilla/mux v1.7.3 // indirect
@@ -44,7 +45,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/pelletier/go-buffruneio v0.2.0 // indirect
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
 	github.com/satori/go.uuid v1.2.0
 	github.com/sergi/go-diff v1.0.0 // indirect
@@ -52,10 +53,10 @@ require (
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/xanzy/ssh-agent v0.2.0 // indirect
-	golang.org/x/crypto v0.0.0-20190211182817-74369b46fc67
+	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
-	google.golang.org/grpc v1.18.0
+	google.golang.org/grpc v1.27.1
 	gopkg.in/src-d/go-billy.v4 v4.3.0 // indirect
 	gopkg.in/src-d/go-git-fixtures.v3 v3.3.0 // indirect
 	gopkg.in/src-d/go-git.v4 v4.5.0

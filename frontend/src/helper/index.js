@@ -7,9 +7,14 @@ export default {
         if (pipeline.jobs[pipelineCurr].args) {
           for (let argsCurr = 0; argsCurr < pipeline.jobs[pipelineCurr].args.length; argsCurr++) {
             if (pipeline.jobs[pipelineCurr].args[argsCurr].type !== 'vault') {
-              // we found args. Redirect user to params view.
-              context.$router.push({ path: '/pipeline/params', query: { pipelineid: pipeline.id, docker: pipeline.docker } })
-              return
+              if (pipeline.jobs[pipelineCurr].args[argsCurr].type !== 'output') {
+                // we found args. Redirect user to params view.
+                context.$router.push({
+                  path: '/pipeline/params',
+                  query: { pipelineid: pipeline.id, docker: pipeline.docker }
+                })
+                return
+              }
             }
           }
         }

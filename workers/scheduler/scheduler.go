@@ -421,15 +421,10 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*
 					jobs[jobID].Args[argID].Value = string(s)
 				} else if arg.Type == argTypeOutput {
 					// Give ALL of its output to the job.
-					for _, job := range job.DependsOn {
-						for _, o := range job.Outs {
+					for _, j := range job.DependsOn {
+						for _, o := range j.Outs {
 							if o.Key == arg.Key {
-								jobs[jobID].Args[argID] = &gaia.Argument{
-									Key:         o.Key,
-									Value:       o.Value,
-									Description: "Provided by job output.",
-									Type:        argTypeOutput,
-								}
+								jobs[jobID].Args[argID].Value = o.Value
 							}
 						}
 					}
@@ -668,12 +663,15 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS plugin.Plugin) {
 				if job.ID == j.ID {
 					r.Jobs[id].Status = j.Status
 					r.Jobs[id].FailPipeline = j.FailPipeline
+					r.Jobs[id].Outs = j.Outs
 					break
 				}
 			}
 
 			// Store status update
-			_ = s.storeService.PipelinePutRun(r)
+			if err := s.storeService.PipelinePutRun(r); err != nil {
+				gaia.Cfg.Logger.Error("Error while storing pipeline run.", "error", err)
+			}
 
 			// Send signal to resolver that this job is finished.
 			if j.Status == gaia.JobSuccess || j.Status == gaia.JobFailed {
