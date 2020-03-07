@@ -9,6 +9,12 @@ github.com/Microsoft/go-winio v0.4.14 h1:+hMXMk01us9KgxGb7ftKQt2Xpf5hH/yky+TDA+q
 github.com/Microsoft/go-winio v0.4.14/go.mod h1:qXqCSQ3Xa7+6tgxaGTIe4Kpcdsi+P8jBhyzoq1bpyYA=
 github.com/Pallinder/go-randomdata v1.1.0 h1:gUubB1IEUliFmzjqjhf+bgkg1o6uoFIkRsP3VrhEcx8=
 github.com/Pallinder/go-randomdata v1.1.0/go.mod h1:yHmJgulpD2Nfrm0cR9tI/+oAgRqCQQixsA8HyRZfV9Y=
+github.com/Skarlso/protobuf v0.0.0-20180812091451-7be8a901b55a h1:4HqYngkMAP3NjNrDoLMeUL+UWAhSb1Y2NucsOSHAUeM=
+github.com/Skarlso/protobuf v0.0.0-20180812091451-7be8a901b55a/go.mod h1:D/ResgH7nQRyfO3W9YadC7oTWlF9M5YSGvbrRebmLhg=
+github.com/Skarlso/protobuf v0.0.0-20200307130307-c786b2468c2e h1:N8RjWy1dTXt85FSO9rnaQXC33s0XAQlnVSReKGGBAWs=
+github.com/Skarlso/protobuf v0.0.0-20200307130307-c786b2468c2e/go.mod h1:D/ResgH7nQRyfO3W9YadC7oTWlF9M5YSGvbrRebmLhg=
+github.com/Skarlso/protobuf v0.0.0-20200307140829-e2fe748a72a5 h1:GthyChPbR7o0AjYNtdFPCf73/NfWKAnc7riHfxrOFTg=
+github.com/Skarlso/protobuf v0.0.0-20200307140829-e2fe748a72a5/go.mod h1:D/ResgH7nQRyfO3W9YadC7oTWlF9M5YSGvbrRebmLhg=
 github.com/akavel/rsrc v0.8.0 h1:zjWn7ukO9Kc5Q62DOJCcxGpXC18RawVtYAGdz2aLlfw=
 github.com/akavel/rsrc v0.8.0/go.mod h1:uLoCtb9J+EyAqh+26kdrTgmzRBFPGOolLWKpdxkKq+c=
 github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 h1:uSoVVbwJiQipAclBbw+8quDsfcvFjOpI5iCf4p/cqCs=

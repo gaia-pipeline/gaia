@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
+	proto "github.com/Skarlso/protobuf"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/security"
-	proto "github.com/gaia-pipeline/protobuf"
 	"github.com/hashicorp/go-plugin"
 )
 
@@ -269,6 +269,18 @@ func (p *GoPlugin) Execute(j *gaia.Job) error {
 		timeString := time.Now().Format(timeFormat)
 		_, _ = p.logger.WriteString(fmt.Sprintf("%s Job '%s' threw an error: %s\n", timeString, j.Title, err.Error()))
 	} else {
+		// We set up the job's output if there was any
+		outs := resultObj.GetOutput()
+		if outs != nil {
+			o := make([]*gaia.Output, 0)
+			for _, out := range outs {
+				o = append(o, &gaia.Output{
+					Key:   out.GetKey(),
+					Value: out.GetValue(),
+				})
+			}
+			j.Outs = o
+		}
 		j.Status = gaia.JobSuccess
 	}
 
@@ -313,6 +325,15 @@ func (p *GoPlugin) GetJobs() ([]*gaia.Job, error) {
 			args = append(args, a)
 		}
 
+		outs := make([]*gaia.Output, 0, len(job.GetOuts()))
+		for _, out := range job.GetOuts() {
+			o := &gaia.Output{
+				Key:   out.GetKey(),
+				Value: out.GetValue(),
+			}
+			outs = append(outs, o)
+		}
+
 		// add proto object to separate list to rebuild dep later.
 		pList = append(pList, job)
 
@@ -323,6 +344,7 @@ func (p *GoPlugin) GetJobs() ([]*gaia.Job, error) {
 			Description: job.Description,
 			Status:      gaia.JobWaitingExec,
 			Args:        args,
+			Outs:        outs,
 		}
 		l = append(l, j)
 		jobsMap[j.ID] = j

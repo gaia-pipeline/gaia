@@ -34,6 +34,9 @@ const (
 	// argTypeVault is the argument type vault.
 	argTypeVault = "vault"
 
+	// argTypeOutput is the argument type for output arguments from previous jobs.
+	argTypeOutput = "output"
+
 	// logFlushInterval defines the interval where logs will be flushed to disk.
 	logFlushInterval = 1
 )
@@ -416,6 +419,20 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*
 						return nil, err
 					}
 					jobs[jobID].Args[argID].Value = string(s)
+				} else if arg.Type == argTypeOutput {
+					// Give ALL of its output to the job.
+					for _, job := range job.DependsOn {
+						for _, o := range job.Outs {
+							if o.Key == arg.Key {
+								jobs[jobID].Args[argID] = &gaia.Argument{
+									Key:         o.Key,
+									Value:       o.Value,
+									Description: "Provided by job output.",
+									Type:        argTypeOutput,
+								}
+							}
+						}
+					}
 				} else {
 					// Find related argument in given arguments
 					for _, givenArg := range args {

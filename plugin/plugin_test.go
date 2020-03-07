@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
+	proto "github.com/Skarlso/protobuf"
 	"github.com/gaia-pipeline/gaia"
-	proto "github.com/gaia-pipeline/protobuf"
 	"github.com/hashicorp/go-hclog"
 	"google.golang.org/grpc/metadata"
 )

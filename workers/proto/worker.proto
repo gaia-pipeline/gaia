@@ -58,6 +58,7 @@ message Job {
 	repeated Job depends_on = 4;
 	string   status         = 5;
 	repeated Argument args  = 6;
+    repeated Output outs    = 7;
 }
 
 // Argument represents one argument from a job.
@@ -66,6 +67,12 @@ message Argument {
 	string type        = 2;
 	string key         = 3;
 	string value       = 4;
+}
+
+// Output represents one output from a job.
+message Output {
+    string key         = 3;
+    string value       = 4;
 }
 
 // LogChunk represents one chunk of a log file.
