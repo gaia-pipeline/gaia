@@ -37,7 +37,7 @@ var (
 	errPipelineNameInUse = errors.New("pipeline name is already in use")
 
 	// errPipelineNameInvalid is thrown when the pipeline name contains invalid characters
-	errPipelineNameInvalid = errors.New("must match [A-z][0-9][-][_]")
+	errPipelineNameInvalid = errors.New("must match [A-z][0-9][-][_][ ]")
 )
 
 // CreatePipeline is the main function which executes step by step the creation

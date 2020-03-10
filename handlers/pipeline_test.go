@@ -889,7 +889,7 @@ func TestPipelineNameValidation(t *testing.T) {
 		if err != nil {
 			t.Fatalf("cannot read response body: %s", err.Error())
 		}
-		nameContainsInvalidCharacter := "must match [A-z][0-9][-][_]"
+		nameContainsInvalidCharacter := "must match [A-z][0-9][-][_][ ]"
 		if string(bodyBytes[:]) != nameContainsInvalidCharacter {
 			t.Fatalf("error message should be '%s' but was '%s'", nameContainsInvalidCharacter, string(bodyBytes[:]))
 		}
