@@ -779,8 +779,8 @@ func TestPipelineCheckPeriodicSchedules(t *testing.T) {
 	})
 }
 
-func TestPipelineNameAvailable(t *testing.T) {
-	tmp, _ := ioutil.TempDir("", "TestPipelineNameAvailable")
+func TestPipelineNameValidation(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestPipelineNameValidation")
 	dataDir := tmp
 
 	gaia.Cfg = &gaia.Config{
@@ -867,6 +867,31 @@ func TestPipelineNameAvailable(t *testing.T) {
 		nameTooLongMessage := "name of pipeline is empty or one of the path elements length exceeds 50 characters"
 		if string(bodyBytes[:]) != nameTooLongMessage {
 			t.Fatalf("error message should be '%s' but was '%s'", nameTooLongMessage, string(bodyBytes[:]))
+		}
+	})
+
+	t.Run("fails for pipeline name with invalid character", func(t *testing.T) {
+		req := httptest.NewRequest(echo.GET, "/", nil)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/api/" + gaia.APIVersion + "/pipeline/name")
+		q := req.URL.Query()
+		q.Add("name", "this[]isinvalid;")
+		req.URL.RawQuery = q.Encode()
+
+		_ = PipelineNameAvailable(c)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
+		}
+		bodyBytes, err := ioutil.ReadAll(rec.Body)
+		if err != nil {
+			t.Fatalf("cannot read response body: %s", err.Error())
+		}
+		nameContainsInvalidCharacter := "must match [A-z][0-9][-][_]"
+		if string(bodyBytes[:]) != nameContainsInvalidCharacter {
+			t.Fatalf("error message should be '%s' but was '%s'", nameContainsInvalidCharacter, string(bodyBytes[:]))
 		}
 	})
 
