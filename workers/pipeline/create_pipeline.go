@@ -174,7 +174,6 @@ func ValidatePipelineName(pName string) error {
 	validate := func(r rune) bool {
 		return unicode.IsDigit(r) || unicode.IsLetter(r) || unicode.IsSpace(r) || r == '-' || r == '_'
 	}
-	// Name must match ^[A-z]+|[0-9]+|[-]+|[_]+$
 	// Note, this is faster than regex.
 	for _, c := range pName {
 		if !validate(c) {
