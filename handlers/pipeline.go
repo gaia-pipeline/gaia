@@ -5,16 +5,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gaia-pipeline/gaia/helper/stringhelper"
-
-	"github.com/gaia-pipeline/gaia/security"
-
-	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/services"
-	"github.com/gaia-pipeline/gaia/workers/pipeline"
+	"github.com/gofrs/uuid"
 	"github.com/labstack/echo"
 	"github.com/robfig/cron"
-	uuid "github.com/satori/go.uuid"
+
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/helper/stringhelper"
+	"github.com/gaia-pipeline/gaia/security"
+	"github.com/gaia-pipeline/gaia/services"
+	"github.com/gaia-pipeline/gaia/workers/pipeline"
 )
 
 // PipelineGitLSRemote checks for available git remote branches.
@@ -52,7 +51,11 @@ func CreatePipeline(c echo.Context) error {
 	// Set initial value
 	p.Created = time.Now()
 	p.StatusType = gaia.CreatePipelineRunning
-	p.ID = uuid.Must(uuid.NewV4(), nil).String()
+	v4, err := uuid.NewV4()
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	p.ID = uuid.Must(v4, nil).String()
 
 	// Add pipeline type tag if not already existent
 	if !stringhelper.IsContainedInSlice(p.Pipeline.Tags, p.Pipeline.Type.String(), true) {
@@ -60,7 +63,7 @@ func CreatePipeline(c echo.Context) error {
 	}
 
 	// Save this pipeline to our store
-	err := storeService.CreatePipelinePut(p)
+	err = storeService.CreatePipelinePut(p)
 	if err != nil {
 		gaia.Cfg.Logger.Debug("cannot put pipeline into store", "error", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())

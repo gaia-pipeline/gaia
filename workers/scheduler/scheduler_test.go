@@ -17,8 +17,8 @@ import (
 	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
-	hclog "github.com/hashicorp/go-hclog"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
+	"github.com/hashicorp/go-hclog"
 )
 
 type PluginFake struct{}
@@ -673,11 +673,12 @@ func prepareTestData() (pipeline gaia.Pipeline, pipelineRun gaia.PipelineRun) {
 		Type: gaia.PTypeGolang,
 		Jobs: prepareJobs(),
 	}
+	v4, _ := uuid.NewV4()
 	pipelineRun = gaia.PipelineRun{
 		ID:         1,
 		PipelineID: 1,
 		Status:     gaia.RunNotScheduled,
-		UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:   uuid.Must(v4, nil).String(),
 		Jobs:       pipeline.Jobs,
 	}
 	return

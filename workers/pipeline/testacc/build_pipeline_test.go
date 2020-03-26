@@ -9,7 +9,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/server"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 )
 
 func TestBuildPipelineAcceptanceTestTearUp(t *testing.T) {
@@ -46,8 +46,9 @@ func TestBuildPipelineAcceptanceTestTearUp(t *testing.T) {
 
 func buildGoPluginTest(t *testing.T) {
 	// Create test pipeline.
+	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
-		ID: uuid.Must(uuid.NewV4(), nil).String(),
+		ID: uuid.Must(v4, nil).String(),
 		Pipeline: gaia.Pipeline{
 			Name: "GoTestPipeline",
 			Type: gaia.PTypeGolang,
@@ -66,8 +67,9 @@ func buildGoPluginTest(t *testing.T) {
 
 func buildJavaPluginTest(t *testing.T) {
 	// Create test pipeline.
+	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
-		ID: uuid.Must(uuid.NewV4(), nil).String(),
+		ID: uuid.Must(v4, nil).String(),
 		Pipeline: gaia.Pipeline{
 			Name: "JavaTestPipeline",
 			Type: gaia.PTypeJava,
@@ -86,8 +88,9 @@ func buildJavaPluginTest(t *testing.T) {
 
 func buildPythonPluginTest(t *testing.T) {
 	// Create test pipeline.
+	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
-		ID: uuid.Must(uuid.NewV4(), nil).String(),
+		ID: uuid.Must(v4, nil).String(),
 		Pipeline: gaia.Pipeline{
 			Name: "PythonTestPipeline",
 			Type: gaia.PTypePython,
@@ -106,8 +109,9 @@ func buildPythonPluginTest(t *testing.T) {
 
 func buildCppPluginTest(t *testing.T) {
 	// Create test pipeline.
+	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
-		ID: uuid.Must(uuid.NewV4(), nil).String(),
+		ID: uuid.Must(v4, nil).String(),
 		Pipeline: gaia.Pipeline{
 			Name: "CppTestPipeline",
 			Type: gaia.PTypeCpp,
@@ -126,8 +130,9 @@ func buildCppPluginTest(t *testing.T) {
 
 func buildRubyPluginTest(t *testing.T) {
 	// Create test pipeline.
+	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
-		ID: uuid.Must(uuid.NewV4(), nil).String(),
+		ID: uuid.Must(v4, nil).String(),
 		Pipeline: gaia.Pipeline{
 			Name: "RubyTestPipeline",
 			Type: gaia.PTypeRuby,
@@ -146,8 +151,9 @@ func buildRubyPluginTest(t *testing.T) {
 
 func buildNodeJSPluginTest(t *testing.T) {
 	// Create test pipeline.
+	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
-		ID: uuid.Must(uuid.NewV4(), nil).String(),
+		ID: uuid.Must(v4, nil).String(),
 		Pipeline: gaia.Pipeline{
 			Name: "NodeJSTestPipeline",
 			Type: gaia.PTypeNodeJS,

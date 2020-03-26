@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gaia-pipeline/gaia/security"
-
 	"github.com/Pallinder/go-randomdata"
-	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/services"
+	"github.com/gofrs/uuid"
 	"github.com/labstack/echo"
-	uuid "github.com/satori/go.uuid"
+
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/security"
+	"github.com/gaia-pipeline/gaia/services"
 )
 
 const (
@@ -57,8 +57,12 @@ func RegisterWorker(c echo.Context) error {
 		worker.Name = randomdata.SillyName() + "_" + randomdata.SillyName()
 	}
 
+	v4, err := uuid.NewV4()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "error generating uuid")
+	}
 	w := gaia.Worker{
-		UniqueID:     uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:     uuid.Must(v4, nil).String(),
 		Name:         worker.Name,
 		Tags:         worker.Tags,
 		RegisterDate: time.Now(),

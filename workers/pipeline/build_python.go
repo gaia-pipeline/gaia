@@ -14,7 +14,7 @@ import (
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 )
 
 var (
@@ -29,12 +29,13 @@ type BuildPipelinePython struct {
 // PrepareEnvironment prepares the environment before we start the build process.
 func (b *BuildPipelinePython) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	// create uniqueName for destination folder
-	uniqueName := uuid.Must(uuid.NewV4(), nil)
+	v4, err := uuid.NewV4()
+	uniqueName := uuid.Must(v4, nil)
 
 	// Create local temp folder for clone
 	rootPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder)
 	cloneFolder := filepath.Join(rootPath, srcFolder, uniqueName.String())
-	err := os.MkdirAll(cloneFolder, 0700)
+	err = os.MkdirAll(cloneFolder, 0700)
 	if err != nil {
 		return err
 	}
