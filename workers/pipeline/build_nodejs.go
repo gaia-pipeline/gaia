@@ -26,6 +26,10 @@ type BuildPipelineNodeJS struct {
 func (b *BuildPipelineNodeJS) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	// create uniqueName for destination folder
 	v4, err := uuid.NewV4()
+	if err != nil {
+		gaia.Cfg.Logger.Debug("unable to generate uuid", "error", err.Error())
+		return err
+	}
 	uniqueName := uuid.Must(v4, nil)
 
 	// Create local temp folder for clone
