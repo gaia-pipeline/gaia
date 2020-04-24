@@ -62,7 +62,7 @@ var (
 // GaiaScheduler is a job scheduler for gaia pipeline runs.
 type GaiaScheduler interface {
 	Init()
-	SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error)
+	SchedulePipeline(p *gaia.Pipeline, startedBy string, args []*gaia.Argument) (*gaia.PipelineRun, error)
 	SetPipelineJobs(p *gaia.Pipeline) error
 	StopPipelineRun(p *gaia.Pipeline, runID int) error
 	GetFreeWorkers() int32
@@ -368,7 +368,7 @@ var schedulerLock = sync.RWMutex{}
 
 // SchedulePipeline schedules a pipeline. We create a new schedule object
 // and save it in our store. The scheduler will later pick this up and will continue the work.
-func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error) {
+func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, startedReason string, args []*gaia.Argument) (*gaia.PipelineRun, error) {
 
 	// Introduce a semaphore locking here because this function can be called
 	// in parallel if multiple users happen to trigger a pipeline run at the same time.
@@ -443,6 +443,7 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*
 		PipelineType: p.Type,
 		PipelineTags: p.Tags,
 		Docker:       p.Docker,
+		StartReason:  startedReason,
 	}
 
 	// Put run into store

@@ -28,7 +28,7 @@ type mockScheduleService struct {
 	err         error
 }
 
-func (ms *mockScheduleService) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error) {
+func (ms *mockScheduleService) SchedulePipeline(p *gaia.Pipeline, startReason string, args []*gaia.Argument) (*gaia.PipelineRun, error) {
 	return ms.pipelineRun, ms.err
 }
 
@@ -442,7 +442,7 @@ func TestPipelineStart(t *testing.T) {
 			t.Fatalf("expected response code %v got %v", http.StatusCreated, rec.Code)
 		}
 
-		expectedBody := `{"uniqueid":"","id":999,"pipelineid":0,"startdate":"0001-01-01T00:00:00Z","finishdate":"0001-01-01T00:00:00Z","scheduledate":"0001-01-01T00:00:00Z"}
+		expectedBody := `{"uniqueid":"","id":999,"pipelineid":0,"startdate":"0001-01-01T00:00:00Z","started_reason":"","finishdate":"0001-01-01T00:00:00Z","scheduledate":"0001-01-01T00:00:00Z"}
 `
 		body, _ := ioutil.ReadAll(rec.Body)
 		if string(body) != expectedBody {

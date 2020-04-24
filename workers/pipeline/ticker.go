@@ -217,7 +217,7 @@ func checkActivePipelines() {
 				// Iterate over all cron schedules.
 				for _, schedule := range pipeline.PeriodicSchedules {
 					err := pipeline.CronInst.AddFunc(schedule, func() {
-						_, err := schedulerService.SchedulePipeline(pipeline, []*gaia.Argument{})
+						_, err := schedulerService.SchedulePipeline(pipeline, gaia.StartReasonScheduled, []*gaia.Argument{})
 						if err != nil {
 							gaia.Cfg.Logger.Error("cannot schedule pipeline from periodic schedule", "error", err, "pipeline", pipeline)
 							return
