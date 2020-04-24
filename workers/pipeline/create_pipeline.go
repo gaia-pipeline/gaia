@@ -171,12 +171,12 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 // returns the correct error back.
 func ValidatePipelineName(pName string) error {
 
-	validate := func(r rune) bool {
+	valid := func(r rune) bool {
 		return unicode.IsDigit(r) || unicode.IsLetter(r) || unicode.IsSpace(r) || r == '-' || r == '_'
 	}
 	// Note, this is faster than regex.
 	for _, c := range pName {
-		if !validate(c) {
+		if !valid(c) {
 			return errPipelineNameInvalid
 		}
 	}
