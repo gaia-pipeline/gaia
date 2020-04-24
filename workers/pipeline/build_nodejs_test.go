@@ -11,12 +11,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
-	hclog "github.com/hashicorp/go-hclog"
-
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
+	"github.com/hashicorp/go-hclog"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/store"
 )
@@ -64,7 +63,11 @@ func TestExecuteBuildNodeJS(t *testing.T) {
 	defer os.RemoveAll(tmp)
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
-	pipelineID := uuid.Must(uuid.NewV4(), nil)
+	v4, err := uuid.NewV4()
+	if err != nil {
+		t.Fatal(err)
+	}
+	pipelineID := uuid.Must(v4, nil)
 	buildDir := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpNodeJSFolder, srcFolder, pipelineID.String())
 	if err := os.MkdirAll(buildDir, 0700); err != nil {
 		t.Fatal(err)

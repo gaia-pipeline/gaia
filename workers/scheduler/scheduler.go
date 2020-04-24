@@ -17,7 +17,7 @@ import (
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/store/memdb"
 	"github.com/gaia-pipeline/gaia/workers/docker"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 )
 
 const (
@@ -429,8 +429,12 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*
 	}
 
 	// Create new not scheduled pipeline run
+	v4, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
 	run := gaia.PipelineRun{
-		UniqueID:     uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:     uuid.Must(v4, nil).String(),
 		ID:           highestID,
 		PipelineID:   p.ID,
 		ScheduleDate: time.Now(),

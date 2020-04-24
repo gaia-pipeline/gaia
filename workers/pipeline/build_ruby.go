@@ -14,7 +14,7 @@ import (
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 )
 
 var (
@@ -35,11 +35,16 @@ type BuildPipelineRuby struct {
 // PrepareEnvironment prepares the environment before we start the build process.
 func (b *BuildPipelineRuby) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	// create uniqueName for destination folder
-	uniqueName := uuid.Must(uuid.NewV4(), nil)
+	v4, err := uuid.NewV4()
+	if err != nil {
+		gaia.Cfg.Logger.Debug("unable to generate uuid", "error", err.Error())
+		return err
+	}
+	uniqueName := uuid.Must(v4, nil)
 
 	// Create local temp folder for clone
 	cloneFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpRubyFolder, srcFolder, uniqueName.String())
-	err := os.MkdirAll(cloneFolder, 0700)
+	err = os.MkdirAll(cloneFolder, 0700)
 	if err != nil {
 		return err
 	}
@@ -82,7 +87,11 @@ func (b *BuildPipelineRuby) ExecuteBuild(p *gaia.CreatePipeline) error {
 	}
 
 	// Generate a new UUID for the gem name to prevent conflicts with other gems.
-	uuid := uuid.Must(uuid.NewV4(), nil).String()
+	v4, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+	uuid := uuid.Must(v4, nil).String()
 
 	// Read gemspec file.
 	gemspecContent, err := ioutil.ReadFile(gemspec[0])
