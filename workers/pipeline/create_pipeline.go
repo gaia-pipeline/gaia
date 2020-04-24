@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode"
 
 	"github.com/gaia-pipeline/gaia/security"
 
@@ -34,6 +35,9 @@ var (
 
 	// errPipelineNameInUse is thrown when a pipelines name is already in use
 	errPipelineNameInUse = errors.New("pipeline name is already in use")
+
+	// errPipelineNameInvalid is thrown when the pipeline name contains invalid characters
+	errPipelineNameInvalid = errors.New("must match [A-z][0-9][-][_][ ]")
 )
 
 // CreatePipeline is the main function which executes step by step the creation
@@ -166,6 +170,17 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 // ValidatePipelineName validates a given pipeline name and
 // returns the correct error back.
 func ValidatePipelineName(pName string) error {
+
+	valid := func(r rune) bool {
+		return unicode.IsDigit(r) || unicode.IsLetter(r) || unicode.IsSpace(r) || r == '-' || r == '_'
+	}
+	// Note, this is faster than regex.
+	for _, c := range pName {
+		if !valid(c) {
+			return errPipelineNameInvalid
+		}
+	}
+
 	// The name could contain a path. Split it up.
 	path := strings.Split(pName, pipelinePathSplitChar)
 
