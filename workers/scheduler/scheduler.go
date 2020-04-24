@@ -350,8 +350,8 @@ func (s *Scheduler) StopPipelineRun(p *gaia.Pipeline, runID int) error {
 	if err != nil {
 		return err
 	}
-	if pr.Status != gaia.RunRunning {
-		return errors.New("pipeline is not in running state")
+	if pr.Status == gaia.RunFailed || pr.Status == gaia.RunCancelled || pr.Status == gaia.RunSuccess {
+		return errors.New("pipeline is not in a cancellable state")
 	}
 
 	pr.Status = gaia.RunCancelled
