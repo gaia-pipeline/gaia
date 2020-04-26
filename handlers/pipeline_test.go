@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +12,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
@@ -992,7 +993,7 @@ func TestPipelineNameValidation(t *testing.T) {
 		q.Add("name", "this[]isinvalid;")
 		req.URL.RawQuery = q.Encode()
 
-		_ = PipelineNameAvailable(c)
+		_ = pp.PipelineNameAvailable(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
