@@ -39,53 +39,53 @@ func (mm *mockMemDBService) UpsertWorker(w *gaia.Worker, persist bool) error {
 }
 
 //
-//func TestCheckActivePipelines(t *testing.T) {
-//	tmp, _ := ioutil.TempDir("", "TestCheckActivePipelines")
-//	dataDir := tmp
-//
-//	gaia.Cfg = &gaia.Config{
-//		Logger:       hclog.NewNullLogger(),
-//		DataPath:     dataDir,
-//		HomePath:     dataDir,
-//		PipelinePath: dataDir,
-//	}
-//	gaia.Cfg.Bolt.Mode = 0600
-//
-//	// Initialize store
-//	dataStore, err := services.StorageService()
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//	defer func() { services.MockStorageService(nil) }()
-//	// Initialize global active pipelines
-//	ap := NewActivePipelines()
-//	GlobalActivePipelines = ap
-//
-//	pipeline1 := gaia.Pipeline{
-//		ID:      1,
-//		Name:    "testpipe",
-//		Type:    gaia.PTypeGolang,
-//		Created: time.Now(),
-//	}
-//
-//	// Create fake binary
-//	src := GetExecPath(pipeline1)
-//	f, _ := os.Create(src)
-//	defer f.Close()
-//	defer os.Remove(src)
-//
-//	// Manually run check
-//	pipelineService := NewGaiaPipelineService(Dependencies{
-//		Scheduler: &mockScheduleService{},
-//	})
-//	pipelineService.checkActivePipelines()
-//
-//	// Check if pipeline was added to store
-//	_, err = dataStore.PipelineGet(pipeline1.ID)
-//	if err != nil {
-//		t.Error("cannot find pipeline in store")
-//	}
-//}
+func TestCheckActivePipelines(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestCheckActivePipelines")
+	dataDir := tmp
+
+	gaia.Cfg = &gaia.Config{
+		Logger:       hclog.NewNullLogger(),
+		DataPath:     dataDir,
+		HomePath:     dataDir,
+		PipelinePath: dataDir,
+	}
+	gaia.Cfg.Bolt.Mode = 0600
+
+	// Initialize store
+	dataStore, err := services.StorageService()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { services.MockStorageService(nil) }()
+	// Initialize global active pipelines
+	ap := NewActivePipelines()
+	GlobalActivePipelines = ap
+
+	pipeline1 := gaia.Pipeline{
+		ID:      1,
+		Name:    "testpipe",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+
+	// Create fake binary
+	src := GetExecPath(pipeline1)
+	f, _ := os.Create(src)
+	defer f.Close()
+	defer os.Remove(src)
+
+	// Manually run check
+	pipelineService := NewGaiaPipelineService(Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+	pipelineService.CheckActivePipelines()
+
+	// Check if pipeline was added to store
+	_, err = dataStore.PipelineGet(pipeline1.ID)
+	if err != nil {
+		t.Error("cannot find pipeline in store")
+	}
+}
 
 func TestTurningThePollerOn(t *testing.T) {
 	tmp, _ := ioutil.TempDir("", "TestTurningThePollerOn")

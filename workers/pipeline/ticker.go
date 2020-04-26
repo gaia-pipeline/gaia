@@ -74,7 +74,7 @@ func (s *gaiaPipelineService) InitTicker() {
 	GlobalActivePipelines = NewActivePipelines()
 
 	// Check immediately to make sure we fill the list as fast as possible.
-	s.checkActivePipelines()
+	s.CheckActivePipelines()
 
 	// Create ticker
 	ticker := time.NewTicker(tickerIntervalSeconds * time.Second)
@@ -83,7 +83,7 @@ func (s *gaiaPipelineService) InitTicker() {
 		for {
 			select {
 			case <-ticker.C:
-				s.checkActivePipelines()
+				s.CheckActivePipelines()
 				updateWorker()
 			}
 		}
@@ -95,7 +95,7 @@ func (s *gaiaPipelineService) InitTicker() {
 // checkActivePipelines looks up all files in the pipeline folder.
 // Every file will be handled as an active pipeline and therefore
 // saved in the global active pipelines slice.
-func (s *gaiaPipelineService) checkActivePipelines() {
+func (s *gaiaPipelineService) CheckActivePipelines() {
 	storeService, _ := services.StorageService()
 	var existingPipelineNames []string
 	files, err := ioutil.ReadDir(gaia.Cfg.PipelinePath)

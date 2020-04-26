@@ -18,6 +18,7 @@ type gaiaPipelineService struct {
 type Service interface {
 	CreatePipeline(p *gaia.CreatePipeline)
 	InitTicker()
+	CheckActivePipelines()
 }
 
 // NewGaiaPipelineService creates a pipeline service with its required dependencies already wired up
