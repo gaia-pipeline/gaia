@@ -9,12 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gaia-pipeline/gaia/workers/scheduler/service"
-
+	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/filehelper"
 	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
-
-	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/robfig/cron"
 )
@@ -77,7 +74,7 @@ func (s *gaiaPipelineService) InitTicker() {
 	GlobalActivePipelines = NewActivePipelines()
 
 	// Check immediately to make sure we fill the list as fast as possible.
-	checkActivePipelines(s.deps.Scheduler)
+	s.checkActivePipelines()
 
 	// Create ticker
 	ticker := time.NewTicker(tickerIntervalSeconds * time.Second)
@@ -86,7 +83,7 @@ func (s *gaiaPipelineService) InitTicker() {
 		for {
 			select {
 			case <-ticker.C:
-				checkActivePipelines(s.deps.Scheduler)
+				s.checkActivePipelines()
 				updateWorker()
 			}
 		}
@@ -98,7 +95,7 @@ func (s *gaiaPipelineService) InitTicker() {
 // checkActivePipelines looks up all files in the pipeline folder.
 // Every file will be handled as an active pipeline and therefore
 // saved in the global active pipelines slice.
-func checkActivePipelines(schedulerService service.GaiaScheduler) {
+func (s *gaiaPipelineService) checkActivePipelines() {
 	storeService, _ := services.StorageService()
 	var existingPipelineNames []string
 	files, err := ioutil.ReadDir(gaia.Cfg.PipelinePath)
@@ -144,7 +141,7 @@ func checkActivePipelines(schedulerService service.GaiaScheduler) {
 						}
 
 						// Let us try again to start the plugin and receive all implemented jobs
-						if err = schedulerService.SetPipelineJobs(p); err != nil {
+						if err = s.deps.Scheduler.SetPipelineJobs(p); err != nil {
 							// Mark that this pipeline is broken.
 							p.IsNotValid = true
 						}
@@ -200,7 +197,7 @@ func checkActivePipelines(schedulerService service.GaiaScheduler) {
 			}
 
 			// Let us try to start the plugin and receive all implemented jobs
-			if err = schedulerService.SetPipelineJobs(pipeline); err != nil {
+			if err = s.deps.Scheduler.SetPipelineJobs(pipeline); err != nil {
 				// Mark that this pipeline is broken.
 				pipeline.IsNotValid = true
 				gaia.Cfg.Logger.Error("cannot get pipeline jobs", "error", err.Error(), "pipeline", pipeline)
@@ -218,7 +215,7 @@ func checkActivePipelines(schedulerService service.GaiaScheduler) {
 				// Iterate over all cron schedules.
 				for _, schedule := range pipeline.PeriodicSchedules {
 					err := pipeline.CronInst.AddFunc(schedule, func() {
-						_, err := schedulerService.SchedulePipeline(pipeline, gaia.StartReasonScheduled, []*gaia.Argument{})
+						_, err := s.deps.Scheduler.SchedulePipeline(pipeline, gaia.StartReasonScheduled, []*gaia.Argument{})
 						if err != nil {
 							gaia.Cfg.Logger.Error("cannot schedule pipeline from periodic schedule", "error", err, "pipeline", pipeline)
 							return

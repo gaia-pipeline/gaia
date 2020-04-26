@@ -243,7 +243,8 @@ func Start() (err error) {
 		gaia.Cfg.Logger.Error("cannot initialize scheduler", "error", err.Error())
 		return err
 	}
-
+	// initiate the ticker
+	schedulerService.Init()
 	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
 		Scheduler: schedulerService,
 	})
