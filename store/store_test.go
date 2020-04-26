@@ -8,8 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gofrs/uuid"
+
 	"github.com/gaia-pipeline/gaia"
-	uuid "github.com/satori/go.uuid"
 )
 
 func TestInit(t *testing.T) {
@@ -172,8 +173,12 @@ func TestCreatePipelinePut(t *testing.T) {
 	}
 	defer store.Close()
 
+	v4, err := uuid.NewV4()
+	if err != nil {
+		t.Fatal(err)
+	}
 	p := &gaia.CreatePipeline{
-		ID:         uuid.Must(uuid.NewV4(), nil).String(),
+		ID:         uuid.Must(v4, nil).String(),
 		Created:    time.Now(),
 		StatusType: gaia.CreatePipelineRunning,
 		Pipeline: gaia.Pipeline{
@@ -206,8 +211,9 @@ func TestCreatePipelineGet(t *testing.T) {
 	var getIDs []string
 
 	for i := 0; i < 3; i++ {
+		v4, _ := uuid.NewV4()
 		p := gaia.CreatePipeline{
-			ID: uuid.Must(uuid.NewV4(), nil).String(),
+			ID: uuid.Must(v4, nil).String(),
 			Pipeline: gaia.Pipeline{
 				Repo: &gaia.GitRepo{},
 			},
@@ -388,11 +394,12 @@ func TestPipelineGetRunHighestID(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	v4, _ := uuid.NewV4()
 	pipelineRun1 := &gaia.PipelineRun{
 		ID:         1,
 		PipelineID: 1,
 		Status:     gaia.RunRunning,
-		UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:   uuid.Must(v4, nil).String(),
 		StartDate:  time.Now(),
 	}
 	err = store.PipelinePutRun(pipelineRun1)
@@ -400,11 +407,12 @@ func TestPipelineGetRunHighestID(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	newV4, _ := uuid.NewV4()
 	pipelineRun2 := &gaia.PipelineRun{
 		ID:         2,
 		PipelineID: 1,
 		Status:     gaia.RunRunning,
-		UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:   uuid.Must(newV4, nil).String(),
 		StartDate:  time.Now(),
 	}
 	err = store.PipelinePutRun(pipelineRun2)
@@ -439,8 +447,9 @@ func TestPipelinePutRun(t *testing.T) {
 	}
 	defer store.Close()
 
+	v4, _ := uuid.NewV4()
 	run := gaia.PipelineRun{
-		UniqueID:     uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:     uuid.Must(v4, nil).String(),
 		ID:           1,
 		PipelineID:   1,
 		ScheduleDate: time.Now(),
@@ -470,22 +479,24 @@ func TestPipelineGetScheduled(t *testing.T) {
 	}
 	defer store.Close()
 
+	v4, _ := uuid.NewV4()
 	pipelineRun1 := &gaia.PipelineRun{
 		ID:         1,
 		PipelineID: 1,
 		Status:     gaia.RunNotScheduled,
-		UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:   uuid.Must(v4, nil).String(),
 	}
 	err = store.PipelinePutRun(pipelineRun1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	v4, _ = uuid.NewV4()
 	pipelineRun2 := &gaia.PipelineRun{
 		ID:         2,
 		PipelineID: 1,
 		Status:     gaia.RunNotScheduled,
-		UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:   uuid.Must(v4, nil).String(),
 	}
 	err = store.PipelinePutRun(pipelineRun2)
 	if err != nil {
@@ -528,8 +539,9 @@ func TestPipelineGetRunByPipelineIDAndID(t *testing.T) {
 	}
 	defer store.Close()
 
+	v4, _ := uuid.NewV4()
 	run := gaia.PipelineRun{
-		UniqueID:     uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:     uuid.Must(v4, nil).String(),
 		ID:           1,
 		PipelineID:   1,
 		ScheduleDate: time.Now(),
@@ -582,11 +594,12 @@ func TestPipelineGetAllRuns(t *testing.T) {
 	}
 
 	for i := 0; i < 2; i++ {
+		v4, _ := uuid.NewV4()
 		p := &gaia.PipelineRun{
 			ID:         i,
 			PipelineID: 1,
 			Status:     gaia.RunNotScheduled,
-			UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
+			UniqueID:   uuid.Must(v4, nil).String(),
 		}
 		err = store.PipelinePutRun(p)
 		if err != nil {
@@ -646,11 +659,12 @@ func TestPipelineGetLatestRun(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	v4, _ := uuid.NewV4()
 	pipelineRun1 := &gaia.PipelineRun{
 		ID:         1,
 		PipelineID: 1,
 		Status:     gaia.RunRunning,
-		UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:   uuid.Must(v4, nil).String(),
 		StartDate:  time.Now(),
 	}
 	err = store.PipelinePutRun(pipelineRun1)
@@ -658,11 +672,12 @@ func TestPipelineGetLatestRun(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	v4, _ = uuid.NewV4()
 	pipelineRun2 := &gaia.PipelineRun{
 		ID:         2,
 		PipelineID: 1,
 		Status:     gaia.RunRunning,
-		UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:   uuid.Must(v4, nil).String(),
 		StartDate:  time.Now(),
 	}
 	err = store.PipelinePutRun(pipelineRun2)

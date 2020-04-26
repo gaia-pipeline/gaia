@@ -44,7 +44,7 @@ type mockScheduler struct {
 
 func (ms *mockScheduler) SetPipelineJobs(p *gaia.Pipeline) error { return ms.err }
 func (ms *mockScheduler) GetFreeWorkers() int32                  { return int32(0) }
-func (ms *mockScheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error) {
+func (ms *mockScheduler) SchedulePipeline(p *gaia.Pipeline, startedBy string, args []*gaia.Argument) (*gaia.PipelineRun, error) {
 	return nil, ms.err
 }
 

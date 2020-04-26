@@ -6,16 +6,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gaia-pipeline/gaia/helper/stringhelper"
-
-	"github.com/gaia-pipeline/gaia/security"
-
-	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/services"
-	"github.com/gaia-pipeline/gaia/workers/pipeline"
+	"github.com/gofrs/uuid"
 	"github.com/labstack/echo"
 	"github.com/robfig/cron"
-	uuid "github.com/satori/go.uuid"
+
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/helper/stringhelper"
+	"github.com/gaia-pipeline/gaia/security"
+	"github.com/gaia-pipeline/gaia/services"
+	"github.com/gaia-pipeline/gaia/workers/pipeline"
 )
 
 var (
@@ -70,7 +69,11 @@ func (pp *pipelineProvider) CreatePipeline(c echo.Context) error {
 	// Set initial value
 	p.Created = time.Now()
 	p.StatusType = gaia.CreatePipelineRunning
-	p.ID = uuid.Must(uuid.NewV4(), nil).String()
+	v4, err := uuid.NewV4()
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	p.ID = uuid.Must(v4, nil).String()
 
 	// Add pipeline type tag if not already existent
 	if !stringhelper.IsContainedInSlice(p.Pipeline.Tags, p.Pipeline.Type.String(), true) {
@@ -78,7 +81,7 @@ func (pp *pipelineProvider) CreatePipeline(c echo.Context) error {
 	}
 
 	// Save this pipeline to our store
-	err := storeService.CreatePipelinePut(p)
+	err = storeService.CreatePipelinePut(p)
 	if err != nil {
 		gaia.Cfg.Logger.Debug("cannot put pipeline into store", "error", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
@@ -210,7 +213,7 @@ func (pp *pipelineProvider) PipelineUpdate(c echo.Context) error {
 		// Iterate over all cron schedules.
 		for _, schedule := range p.PeriodicSchedules {
 			err := foundPipeline.CronInst.AddFunc(schedule, func() {
-				_, err := pp.deps.Scheduler.SchedulePipeline(&foundPipeline, []*gaia.Argument{})
+				_, err := pp.deps.Scheduler.SchedulePipeline(&foundPipeline, gaia.StartReasonScheduled, []*gaia.Argument{})
 				if err != nil {
 					gaia.Cfg.Logger.Error("cannot schedule pipeline from periodic schedule", "error", err, "pipeline", foundPipeline)
 					return
@@ -355,7 +358,7 @@ func (pp *pipelineProvider) PipelineTrigger(c echo.Context) error {
 
 	var args []*gaia.Argument
 	_ = c.Bind(&args)
-	pipelineRun, err := pp.deps.Scheduler.SchedulePipeline(&foundPipeline, args)
+	pipelineRun, err := pp.deps.Scheduler.SchedulePipeline(&foundPipeline, gaia.StartReasonRemote, args)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	} else if pipelineRun != nil {
@@ -468,7 +471,7 @@ func (pp *pipelineProvider) PipelineStart(c echo.Context) error {
 	foundPipeline.Docker = docker
 
 	if foundPipeline.Name != "" {
-		pipelineRun, err := pp.deps.Scheduler.SchedulePipeline(&foundPipeline, args)
+		pipelineRun, err := pp.deps.Scheduler.SchedulePipeline(&foundPipeline, gaia.StartReasonManual, args)
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		} else if pipelineRun != nil {

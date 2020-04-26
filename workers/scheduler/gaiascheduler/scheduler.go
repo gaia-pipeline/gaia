@@ -17,7 +17,7 @@ import (
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/store/memdb"
 	"github.com/gaia-pipeline/gaia/workers/docker"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 )
 
 const (
@@ -59,7 +59,19 @@ var (
 	nodeJSExecName = "node"
 )
 
-// Scheduler represents the scheduler object
+// GaiaScheduler is a job scheduler for gaia pipeline runs.
+type GaiaScheduler interface {
+	Init()
+	SchedulePipeline(p *gaia.Pipeline, startedBy string, args []*gaia.Argument) (*gaia.PipelineRun, error)
+	SetPipelineJobs(p *gaia.Pipeline) error
+	StopPipelineRun(p *gaia.Pipeline, runID int) error
+	GetFreeWorkers() int32
+	CountScheduledRuns() int
+}
+
+var _ GaiaScheduler = (*Scheduler)(nil)
+
+// Scheduler represents the schuler object
 type Scheduler struct {
 	// buffered channel which is used as queue
 	scheduledRuns chan gaia.PipelineRun
@@ -346,8 +358,8 @@ func (s *Scheduler) StopPipelineRun(p *gaia.Pipeline, runID int) error {
 	if err != nil {
 		return err
 	}
-	if pr.Status != gaia.RunRunning {
-		return errors.New("pipeline is not in running state")
+	if pr.Status == gaia.RunFailed || pr.Status == gaia.RunCancelled || pr.Status == gaia.RunSuccess {
+		return errors.New("pipeline is not in a cancellable state")
 	}
 
 	pr.Status = gaia.RunCancelled
@@ -364,7 +376,7 @@ var schedulerLock = sync.RWMutex{}
 
 // SchedulePipeline schedules a pipeline. We create a new schedule object
 // and save it in our store. The scheduler will later pick this up and will continue the work.
-func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error) {
+func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, startedReason string, args []*gaia.Argument) (*gaia.PipelineRun, error) {
 
 	// Introduce a semaphore locking here because this function can be called
 	// in parallel if multiple users happen to trigger a pipeline run at the same time.
@@ -425,8 +437,12 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*
 	}
 
 	// Create new not scheduled pipeline run
+	v4, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
 	run := gaia.PipelineRun{
-		UniqueID:     uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:     uuid.Must(v4, nil).String(),
 		ID:           highestID,
 		PipelineID:   p.ID,
 		ScheduleDate: time.Now(),
@@ -435,6 +451,7 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*
 		PipelineType: p.Type,
 		PipelineTags: p.Tags,
 		Docker:       p.Docker,
+		StartReason:  startedReason,
 	}
 
 	// Put run into store

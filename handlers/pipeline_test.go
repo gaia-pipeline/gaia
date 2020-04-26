@@ -30,7 +30,7 @@ type mockScheduleService struct {
 	err         error
 }
 
-func (ms *mockScheduleService) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error) {
+func (ms *mockScheduleService) SchedulePipeline(p *gaia.Pipeline, startReason string, args []*gaia.Argument) (*gaia.PipelineRun, error) {
 	return ms.pipelineRun, ms.err
 }
 
@@ -512,7 +512,7 @@ func TestPipelineStart(t *testing.T) {
 			t.Fatalf("expected response code %v got %v", http.StatusCreated, rec.Code)
 		}
 
-		expectedBody := `{"uniqueid":"","id":999,"pipelineid":0,"startdate":"0001-01-01T00:00:00Z","finishdate":"0001-01-01T00:00:00Z","scheduledate":"0001-01-01T00:00:00Z"}
+		expectedBody := `{"uniqueid":"","id":999,"pipelineid":0,"startdate":"0001-01-01T00:00:00Z","started_reason":"","finishdate":"0001-01-01T00:00:00Z","scheduledate":"0001-01-01T00:00:00Z"}
 `
 		body, _ := ioutil.ReadAll(rec.Body)
 		if string(body) != expectedBody {
@@ -877,8 +877,8 @@ func TestPipelineCheckPeriodicSchedules(t *testing.T) {
 	})
 }
 
-func TestPipelineNameAvailable(t *testing.T) {
-	tmp, _ := ioutil.TempDir("", "TestPipelineNameAvailable")
+func TestPipelineNameValidation(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestPipelineNameValidation")
 	dataDir := tmp
 
 	gaia.Cfg = &gaia.Config{
@@ -979,6 +979,31 @@ func TestPipelineNameAvailable(t *testing.T) {
 		nameTooLongMessage := "name of pipeline is empty or one of the path elements length exceeds 50 characters"
 		if string(bodyBytes[:]) != nameTooLongMessage {
 			t.Fatalf("error message should be '%s' but was '%s'", nameTooLongMessage, string(bodyBytes[:]))
+		}
+	})
+
+	t.Run("fails for pipeline name with invalid character", func(t *testing.T) {
+		req := httptest.NewRequest(echo.GET, "/", nil)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/api/" + gaia.APIVersion + "/pipeline/name")
+		q := req.URL.Query()
+		q.Add("name", "this[]isinvalid;")
+		req.URL.RawQuery = q.Encode()
+
+		_ = PipelineNameAvailable(c)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
+		}
+		bodyBytes, err := ioutil.ReadAll(rec.Body)
+		if err != nil {
+			t.Fatalf("cannot read response body: %s", err.Error())
+		}
+		nameContainsInvalidCharacter := "must match [A-z][0-9][-][_][ ]"
+		if string(bodyBytes[:]) != nameContainsInvalidCharacter {
+			t.Fatalf("error message should be '%s' but was '%s'", nameContainsInvalidCharacter, string(bodyBytes[:]))
 		}
 	})
 
