@@ -11,6 +11,9 @@ import (
 // createPipelineCmd creates the execute command for the plugin system
 // dependent on the plugin type.
 func createPipelineCmd(p *gaia.Pipeline) *exec.Cmd {
+	if p == nil {
+		return nil
+	}
 	c := &exec.Cmd{}
 
 	// Dependent on the pipeline type

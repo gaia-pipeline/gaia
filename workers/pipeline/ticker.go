@@ -218,6 +218,9 @@ func (s *gaiaPipelineService) CheckActivePipelines() {
 						_, err := s.deps.Scheduler.SchedulePipeline(pipeline, gaia.StartReasonScheduled, []*gaia.Argument{})
 						if err != nil {
 							gaia.Cfg.Logger.Error("cannot schedule pipeline from periodic schedule", "error", err, "pipeline", pipeline)
+							// stopping the pipeline scheduler if there was an error in any of the pipeline scheduling
+							// example: The pipeline was deleted
+							pipeline.CronInst.Stop()
 							return
 						}
 
@@ -226,6 +229,9 @@ func (s *gaiaPipelineService) CheckActivePipelines() {
 					})
 					if err != nil {
 						gaia.Cfg.Logger.Error("failed to schedule periodic schedule", "error", err)
+						// do not schedule if there was an error
+						pipeline.CronInst.Stop()
+						continue
 					}
 				}
 

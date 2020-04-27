@@ -299,6 +299,9 @@ func (pp *pipelineProvider) PipelineDelete(c echo.Context) error {
 		return c.String(http.StatusNotFound, errPipelineNotFound.Error())
 	}
 
+	// Stop any schedulers running
+	foundPipeline.CronInst.Stop()
+
 	// Delete pipeline binary
 	err = pipeline.DeleteBinary(foundPipeline)
 	if err != nil {
