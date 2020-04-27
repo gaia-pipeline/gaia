@@ -300,7 +300,9 @@ func (pp *pipelineProvider) PipelineDelete(c echo.Context) error {
 	}
 
 	// Stop any schedulers running
-	foundPipeline.CronInst.Stop()
+	if ct := foundPipeline.CronInst; ct != nil {
+		ct.Stop()
+	}
 
 	// Delete pipeline binary
 	err = pipeline.DeleteBinary(foundPipeline)
