@@ -8,17 +8,34 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hashicorp/go-hclog"
+	"github.com/labstack/echo"
+
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/handlers/providers/workers"
+	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/services"
 	gStore "github.com/gaia-pipeline/gaia/store"
-	"github.com/hashicorp/go-hclog"
-	"github.com/labstack/echo"
+	"github.com/gaia-pipeline/gaia/workers/scheduler/gaiascheduler"
 )
 
 type mockStorageService struct {
 	worker gaia.Worker
 	gStore.GaiaStore
+}
+
+type registerWorker struct {
+	Secret string   `json:"secret"`
+	Name   string   `json:"name"`
+	Tags   []string `json:"tags"`
+}
+
+type registerResponse struct {
+	UniqueID string `json:"uniqueid"`
+	Cert     string `json:"cert"`
+	Key      string `json:"key"`
+	CACert   string `json:"cacert"`
 }
 
 func (m *mockStorageService) WorkerPut(worker *gaia.Worker) error {
@@ -46,6 +63,7 @@ func TestRegisterWorker(t *testing.T) {
 		DevMode:      true,
 	}
 
+	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil})
 	// Initialize store
 	m := &mockStorageService{}
 	services.MockStorageService(m)
@@ -77,9 +95,13 @@ func TestRegisterWorker(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       nil,
+		PipelineService: nil,
+	})
 	// Initialize echo
 	e := echo.New()
-	if err := InitHandlers(e); err != nil {
+	if err := handlerService.InitHandlers(e); err != nil {
 		t.Fatal(err)
 	}
 
@@ -94,7 +116,7 @@ func TestRegisterWorker(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		if err := RegisterWorker(c); err != nil {
+		if err := wp.RegisterWorker(c); err != nil {
 			t.Fatal(err)
 		}
 
@@ -123,7 +145,7 @@ func TestRegisterWorker(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		if err := RegisterWorker(c); err != nil {
+		if err := wp.RegisterWorker(c); err != nil {
 			t.Fatal(err)
 		}
 
@@ -217,11 +239,16 @@ func TestDeregisterWorker(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       nil,
+		PipelineService: nil,
+	})
 	// Initialize echo
 	e := echo.New()
-	if err := InitHandlers(e); err != nil {
+	if err := handlerService.InitHandlers(e); err != nil {
 		t.Fatal(err)
 	}
+	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil})
 
 	// Test with non-existing worker
 	t.Run("non-existing worker", func(t *testing.T) {
@@ -232,7 +259,7 @@ func TestDeregisterWorker(t *testing.T) {
 		c.SetParamNames("workerid")
 		c.SetParamValues("non-existing-id")
 
-		if err := DeregisterWorker(c); err != nil {
+		if err := wp.DeregisterWorker(c); err != nil {
 			t.Fatal(err)
 		}
 
@@ -261,7 +288,7 @@ func TestDeregisterWorker(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		if err := RegisterWorker(c); err != nil {
+		if err := wp.RegisterWorker(c); err != nil {
 			t.Fatal(err)
 		}
 
@@ -286,7 +313,7 @@ func TestDeregisterWorker(t *testing.T) {
 		c.SetParamValues(resp.UniqueID)
 
 		// Deregister worker
-		if err := DeregisterWorker(c); err != nil {
+		if err := wp.DeregisterWorker(c); err != nil {
 			t.Fatal(err)
 		}
 
@@ -334,12 +361,16 @@ func TestGetWorkerRegisterSecret(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       nil,
+		PipelineService: nil,
+	})
 	// Initialize echo
 	e := echo.New()
-	if err := InitHandlers(e); err != nil {
+	if err := handlerService.InitHandlers(e); err != nil {
 		t.Fatal(err)
 	}
-
+	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil})
 	// Test get global worker secret
 	t.Run("global secret success", func(t *testing.T) {
 		req := httptest.NewRequest(echo.GET, "/api/"+gaia.APIVersion+"/worker/secret", nil)
@@ -347,7 +378,7 @@ func TestGetWorkerRegisterSecret(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		if err := GetWorkerRegisterSecret(c); err != nil {
+		if err := wp.GetWorkerRegisterSecret(c); err != nil {
 			t.Fatal(err)
 		}
 
@@ -362,6 +393,14 @@ func TestGetWorkerRegisterSecret(t *testing.T) {
 			t.Fatalf("returned global worker secret is incorrect. Got %s want %s", string(bodyBytes[:]), string(secret[:]))
 		}
 	})
+}
+
+type workerStatusOverviewRespoonse struct {
+	ActiveWorker    int   `json:"activeworker"`
+	SuspendedWorker int   `json:"suspendedworker"`
+	InactiveWorker  int   `json:"inactiveworker"`
+	FinishedRuns    int64 `json:"finishedruns"`
+	QueueSize       int   `json:"queuesize"`
 }
 
 func TestGetWorkerStatusOverview(t *testing.T) {
@@ -385,7 +424,7 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 	defer func() { services.MockStorageService(nil) }()
 
 	// Initialize certificate store
-	_, err = services.CertificateService()
+	ca, err := services.CertificateService()
 	if err != nil {
 		t.Fatalf("cannot initialize certificate service: %v", err)
 	}
@@ -397,10 +436,18 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 	}
 
 	// Initialize memdb service
-	_, err = services.MemDBService(dataStore)
+	db, err := services.MemDBService(dataStore)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	scheduler, _ := gaiascheduler.NewScheduler(gaiascheduler.Dependencies{
+		Store: m,
+		DB:    db,
+		PS:    &plugin.GoPlugin{},
+		CA:    ca,
+		Vault: v,
+	})
 
 	// Generate global worker secret
 	secret := []byte(security.GenerateRandomUUIDV5())
@@ -409,20 +456,27 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       scheduler,
+		PipelineService: nil,
+	})
 	// Initialize echo
 	e := echo.New()
-	if err := InitHandlers(e); err != nil {
+	if err := handlerService.InitHandlers(e); err != nil {
 		t.Fatal(err)
 	}
 
 	// Test empty worker status overview
 	{
+		wp := workers.NewWorkerProvider(workers.Dependencies{
+			Scheduler: scheduler,
+		})
 		req := httptest.NewRequest(echo.GET, "/api/"+gaia.APIVersion+"/worker/status", nil)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		if err := GetWorkerStatusOverview(c); err != nil {
+		if err := wp.GetWorkerStatusOverview(c); err != nil {
 			t.Fatal(err)
 		}
 
@@ -454,6 +508,9 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 
 	// Test with registered worker
 	{
+		wp := workers.NewWorkerProvider(workers.Dependencies{
+			Scheduler: scheduler,
+		})
 		body := registerWorker{
 			Name:   "my-worker",
 			Secret: string(secret[:]),
@@ -465,7 +522,7 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		if err := RegisterWorker(c); err != nil {
+		if err := wp.RegisterWorker(c); err != nil {
 			t.Fatal(err)
 		}
 
@@ -482,7 +539,7 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 		rec = httptest.NewRecorder()
 		c = e.NewContext(req, rec)
 
-		if err := GetWorkerStatusOverview(c); err != nil {
+		if err := wp.GetWorkerStatusOverview(c); err != nil {
 			t.Fatal(err)
 		}
 
@@ -561,13 +618,18 @@ func TestGetWorker(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       nil,
+		PipelineService: nil,
+	})
 	// Initialize echo
 	e := echo.New()
-	if err := InitHandlers(e); err != nil {
+	if err := handlerService.InitHandlers(e); err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("get worker success", func(t *testing.T) {
+		wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil})
 		workerName := "my-worker"
 		body := registerWorker{
 			Name:   workerName,
@@ -580,7 +642,7 @@ func TestGetWorker(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		if err := RegisterWorker(c); err != nil {
+		if err := wp.RegisterWorker(c); err != nil {
 			t.Fatal(err)
 		}
 
@@ -601,7 +663,7 @@ func TestGetWorker(t *testing.T) {
 		rec = httptest.NewRecorder()
 		c = e.NewContext(req, rec)
 
-		if err := GetWorker(c); err != nil {
+		if err := wp.GetWorker(c); err != nil {
 			t.Fatal(err)
 		}
 
@@ -655,12 +717,16 @@ func TestResetWorkerRegisterSecret(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       nil,
+		PipelineService: nil,
+	})
 	// Initialize echo
 	e := echo.New()
-	if err := InitHandlers(e); err != nil {
+	if err := handlerService.InitHandlers(e); err != nil {
 		t.Fatal(err)
 	}
-
+	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil})
 	// Test reset global worker secret
 	t.Run("global secret reset success", func(t *testing.T) {
 		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/worker/secret", nil)
@@ -668,7 +734,7 @@ func TestResetWorkerRegisterSecret(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		if err := ResetWorkerRegisterSecret(c); err != nil {
+		if err := wp.ResetWorkerRegisterSecret(c); err != nil {
 			t.Fatal(err)
 		}
 
@@ -689,7 +755,7 @@ func TestResetWorkerRegisterSecret(t *testing.T) {
 		rec = httptest.NewRecorder()
 		c = e.NewContext(req, rec)
 
-		if err := GetWorkerRegisterSecret(c); err != nil {
+		if err := wp.GetWorkerRegisterSecret(c); err != nil {
 			t.Fatal(err)
 		}
 

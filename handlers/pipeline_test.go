@@ -13,17 +13,20 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
+
+	"github.com/hashicorp/go-hclog"
+	"github.com/labstack/echo"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	gStore "github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
-	"github.com/gaia-pipeline/gaia/workers/scheduler"
-	hclog "github.com/hashicorp/go-hclog"
-	"github.com/labstack/echo"
+	"github.com/gaia-pipeline/gaia/workers/scheduler/service"
 )
 
 type mockScheduleService struct {
-	scheduler.GaiaScheduler
+	service.GaiaScheduler
 	pipelineRun *gaia.PipelineRun
 	err         error
 }
@@ -44,8 +47,22 @@ func TestPipelineGitLSRemote(t *testing.T) {
 		DataPath: dataDir,
 	}
 
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
 	e := echo.New()
-	_ = InitHandlers(e)
+	_ = handlerService.InitHandlers(e)
 
 	t.Run("fails with invalid data", func(t *testing.T) {
 		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/gitlsremote", nil)
@@ -53,7 +70,7 @@ func TestPipelineGitLSRemote(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		_ = PipelineGitLSRemote(c)
+		_ = pp.PipelineGitLSRemote(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -73,7 +90,7 @@ func TestPipelineGitLSRemote(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		_ = PipelineGitLSRemote(c)
+		_ = pp.PipelineGitLSRemote(c)
 
 		if rec.Code != http.StatusForbidden {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -91,7 +108,7 @@ func TestPipelineGitLSRemote(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		_ = PipelineGitLSRemote(c)
+		_ = pp.PipelineGitLSRemote(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -117,8 +134,22 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 		DataPath: dataDir,
 	}
 
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
 	e := echo.New()
-	_ = InitHandlers(e)
+	_ = handlerService.InitHandlers(e)
 
 	t.Run("invalid hostconfig for github in known_hosts file", func(t *testing.T) {
 		buf := new(bytes.Buffer)
@@ -149,7 +180,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		_ = PipelineGitLSRemote(c)
+		_ = pp.PipelineGitLSRemote(c)
 
 		// This will fail because the above SSH key is invalid. But that is fine,
 		// because the initial host file will fail earlier than that.
@@ -177,6 +208,20 @@ func TestPipelineUpdate(t *testing.T) {
 	}
 	gaia.Cfg.Bolt.Mode = 0600
 
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
 	// Initialize store
 	dataStore, err := services.StorageService()
 	if err != nil {
@@ -189,7 +234,7 @@ func TestPipelineUpdate(t *testing.T) {
 
 	// Initialize echo
 	e := echo.New()
-	_ = InitHandlers(e)
+	_ = handlerService.InitHandlers(e)
 
 	pipeline1 := gaia.Pipeline{
 		ID:                1,
@@ -229,7 +274,7 @@ func TestPipelineUpdate(t *testing.T) {
 		c.SetParamNames("pipelineid")
 		c.SetParamValues("2")
 
-		_ = PipelineUpdate(c)
+		_ = pp.PipelineUpdate(c)
 
 		if rec.Code != http.StatusNotFound {
 			t.Fatalf("expected response code %v got %v", http.StatusNotFound, rec.Code)
@@ -246,7 +291,7 @@ func TestPipelineUpdate(t *testing.T) {
 		c.SetParamNames("pipelineid")
 		c.SetParamValues("1")
 
-		_ = PipelineUpdate(c)
+		_ = pp.PipelineUpdate(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -272,9 +317,8 @@ func TestPipelineUpdate(t *testing.T) {
 		pRun := new(gaia.PipelineRun)
 		pRun.ID = 999
 		ms.pipelineRun = pRun
-		services.MockSchedulerService(ms)
 
-		_ = PipelineUpdate(c)
+		_ = pp.PipelineUpdate(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -300,9 +344,8 @@ func TestPipelineUpdate(t *testing.T) {
 		pRun := new(gaia.PipelineRun)
 		pRun.ID = 999
 		ms.pipelineRun = pRun
-		services.MockSchedulerService(ms)
 
-		_ = PipelineUpdate(c)
+		_ = pp.PipelineUpdate(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
@@ -332,9 +375,23 @@ func TestPipelineDelete(t *testing.T) {
 	ap := pipeline.NewActivePipelines()
 	pipeline.GlobalActivePipelines = ap
 
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
 	// Initialize echo
 	e := echo.New()
-	_ = InitHandlers(e)
+	_ = handlerService.InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:      1,
@@ -367,7 +424,7 @@ func TestPipelineDelete(t *testing.T) {
 		c.SetParamNames("pipelineid")
 		c.SetParamValues("2")
 
-		_ = PipelineDelete(c)
+		_ = pp.PipelineDelete(c)
 
 		if rec.Code != http.StatusNotFound {
 			t.Fatalf("expected response code %v got %v", http.StatusNotFound, rec.Code)
@@ -383,7 +440,7 @@ func TestPipelineDelete(t *testing.T) {
 		c.SetParamNames("pipelineid")
 		c.SetParamValues("1")
 
-		_ = PipelineDelete(c)
+		_ = pp.PipelineDelete(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusNotFound, rec.Code)
@@ -405,9 +462,23 @@ func TestPipelineStart(t *testing.T) {
 	ap := pipeline.NewActivePipelines()
 	pipeline.GlobalActivePipelines = ap
 
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
 	// Initialize echo
 	e := echo.New()
-	_ = InitHandlers(e)
+	_ = handlerService.InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:      1,
@@ -430,13 +501,13 @@ func TestPipelineStart(t *testing.T) {
 		c.SetParamNames("pipelineid")
 		c.SetParamValues("1")
 
-		ms := new(mockScheduleService)
 		pRun := new(gaia.PipelineRun)
 		pRun.ID = 999
-		ms.pipelineRun = pRun
-		services.MockSchedulerService(ms)
-
-		_ = PipelineStart(c)
+		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+			Scheduler:       &mockScheduleService{pipelineRun: pRun},
+			PipelineService: pipelineService,
+		})
+		_ = pp.PipelineStart(c)
 
 		if rec.Code != http.StatusCreated {
 			t.Fatalf("expected response code %v got %v", http.StatusCreated, rec.Code)
@@ -461,14 +532,13 @@ func TestPipelineStart(t *testing.T) {
 		c.SetParamNames("pipelineid")
 		c.SetParamValues("1")
 
-		ms := new(mockScheduleService)
 		pRun := new(gaia.PipelineRun)
 		pRun.ID = 999
-		ms.pipelineRun = pRun
-		ms.err = errors.New("failed to run pipeline")
-		services.MockSchedulerService(ms)
-
-		_ = PipelineStart(c)
+		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+			Scheduler:       &mockScheduleService{pipelineRun: pRun, err: errors.New("failed to run pipeline")},
+			PipelineService: pipelineService,
+		})
+		_ = pp.PipelineStart(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
@@ -486,10 +556,7 @@ func TestPipelineStart(t *testing.T) {
 		c.SetParamNames("pipelineid")
 		c.SetParamValues("1")
 
-		ms := new(mockScheduleService)
-		services.MockSchedulerService(ms)
-
-		_ = PipelineStart(c)
+		_ = pp.PipelineStart(c)
 
 		if rec.Code != http.StatusNotFound {
 			t.Fatalf("expected response code %v got %v", http.StatusNotFound, rec.Code)
@@ -520,9 +587,18 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 	ap := pipeline.NewActivePipelines()
 	pipeline.GlobalActivePipelines = ap
 
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
 	// Initialize echo
 	e := echo.New()
-	_ = InitHandlers(e)
+	_ = handlerService.InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:           1,
@@ -543,7 +619,6 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		services.MockStorageService(&m)
 		defer func() {
 			services.MockStorageService(nil)
-			services.MockSchedulerService(nil)
 		}()
 
 		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/1/triggerToken/trigger", nil)
@@ -553,13 +628,14 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetParamNames("pipelineid", "pipelinetoken")
 		c.SetParamValues("1", "triggerToken")
-		ms := new(mockScheduleService)
 		pRun := new(gaia.PipelineRun)
 		pRun.ID = 999
-		ms.pipelineRun = pRun
-		services.MockSchedulerService(ms)
+		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+			Scheduler:       &mockScheduleService{pipelineRun: pRun},
+			PipelineService: pipelineService,
+		})
 
-		_ = PipelineTrigger(c)
+		_ = pp.PipelineTrigger(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -573,7 +649,6 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		services.MockStorageService(&m)
 		defer func() {
 			services.MockStorageService(nil)
-			services.MockSchedulerService(nil)
 		}()
 
 		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/1/triggerToken/trigger", nil)
@@ -583,13 +658,14 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetParamNames("pipelineid", "pipelinetoken")
 		c.SetParamValues("1", "triggerToken")
-		ms := new(mockScheduleService)
 		pRun := new(gaia.PipelineRun)
 		pRun.ID = 999
-		ms.pipelineRun = pRun
-		services.MockSchedulerService(ms)
+		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+			Scheduler:       &mockScheduleService{pipelineRun: pRun},
+			PipelineService: pipelineService,
+		})
 
-		_ = PipelineTrigger(c)
+		_ = pp.PipelineTrigger(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
@@ -603,7 +679,6 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		services.MockStorageService(&m)
 		defer func() {
 			services.MockStorageService(nil)
-			services.MockSchedulerService(nil)
 		}()
 
 		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/1/invalid/trigger", nil)
@@ -613,13 +688,14 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetParamNames("pipelineid", "pipelinetoken")
 		c.SetParamValues("1", "invalid")
-		ms := new(mockScheduleService)
 		pRun := new(gaia.PipelineRun)
 		pRun.ID = 999
-		ms.pipelineRun = pRun
-		services.MockSchedulerService(ms)
+		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+			Scheduler:       &mockScheduleService{pipelineRun: pRun},
+			PipelineService: pipelineService,
+		})
 
-		_ = PipelineTrigger(c)
+		_ = pp.PipelineTrigger(c)
 
 		if rec.Code != http.StatusForbidden {
 			t.Fatalf("expected response code %v got %v", http.StatusForbidden, rec.Code)
@@ -633,7 +709,6 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		services.MockStorageService(&m)
 		defer func() {
 			services.MockStorageService(nil)
-			services.MockSchedulerService(nil)
 		}()
 
 		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/1/invalid/trigger", nil)
@@ -642,13 +717,14 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetParamNames("pipelineid", "pipelinetoken")
 		c.SetParamValues("1", "invalid")
-		ms := new(mockScheduleService)
 		pRun := new(gaia.PipelineRun)
 		pRun.ID = 999
-		ms.pipelineRun = pRun
-		services.MockSchedulerService(ms)
+		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+			Scheduler:       &mockScheduleService{pipelineRun: pRun},
+			PipelineService: pipelineService,
+		})
 
-		_ = PipelineTrigger(c)
+		_ = pp.PipelineTrigger(c)
 
 		if rec.Code != http.StatusForbidden {
 			t.Fatalf("expected response code %v got %v", http.StatusForbidden, rec.Code)
@@ -680,9 +756,18 @@ func TestPipelineResetToken(t *testing.T) {
 	ap := pipeline.NewActivePipelines()
 	pipeline.GlobalActivePipelines = ap
 
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
 	// Initialize echo
 	e := echo.New()
-	_ = InitHandlers(e)
+	_ = handlerService.InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:           1,
@@ -700,21 +785,21 @@ func TestPipelineResetToken(t *testing.T) {
 	c := e.NewContext(req, rec)
 	c.SetParamNames("pipelineid")
 	c.SetParamValues("1")
-	ms := new(mockScheduleService)
 	pRun := new(gaia.PipelineRun)
 	pRun.ID = 999
-	ms.pipelineRun = pRun
-	services.MockSchedulerService(ms)
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{pipelineRun: pRun},
+		PipelineService: pipelineService,
+	})
 
 	m := mockPipelineResetStorageService{}
 	services.MockStorageService(&m)
 
 	defer func() {
 		services.MockStorageService(nil)
-		services.MockSchedulerService(nil)
 	}()
 
-	_ = PipelineResetToken(c)
+	_ = pp.PipelineResetToken(c)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -738,9 +823,23 @@ func TestPipelineCheckPeriodicSchedules(t *testing.T) {
 	ap := pipeline.NewActivePipelines()
 	pipeline.GlobalActivePipelines = ap
 
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
 	// Initialize echo
 	e := echo.New()
-	_ = InitHandlers(e)
+	_ = handlerService.InitHandlers(e)
 
 	t.Run("invalid cron added", func(t *testing.T) {
 		body := []string{
@@ -753,7 +852,7 @@ func TestPipelineCheckPeriodicSchedules(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		_ = PipelineCheckPeriodicSchedules(c)
+		_ = pp.PipelineCheckPeriodicSchedules(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
@@ -771,7 +870,7 @@ func TestPipelineCheckPeriodicSchedules(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		_ = PipelineCheckPeriodicSchedules(c)
+		_ = pp.PipelineCheckPeriodicSchedules(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -801,9 +900,23 @@ func TestPipelineNameValidation(t *testing.T) {
 	ap := pipeline.NewActivePipelines()
 	pipeline.GlobalActivePipelines = ap
 
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
 	// Initialize echo
 	e := echo.New()
-	_ = InitHandlers(e)
+	_ = handlerService.InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:      1,
@@ -830,7 +943,7 @@ func TestPipelineNameValidation(t *testing.T) {
 		q.Add("name", "pipeline a")
 		req.URL.RawQuery = q.Encode()
 
-		_ = PipelineNameAvailable(c)
+		_ = pp.PipelineNameAvailable(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
@@ -855,7 +968,7 @@ func TestPipelineNameValidation(t *testing.T) {
 		q.Add("name", "pipeline a pipeline a pipeline a pipeline a pipeline a pipeline a pipeline a pipeline a pipeline a pipeline a")
 		req.URL.RawQuery = q.Encode()
 
-		_ = PipelineNameAvailable(c)
+		_ = pp.PipelineNameAvailable(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
@@ -880,7 +993,7 @@ func TestPipelineNameValidation(t *testing.T) {
 		q.Add("name", "this[]isinvalid;")
 		req.URL.RawQuery = q.Encode()
 
-		_ = PipelineNameAvailable(c)
+		_ = pp.PipelineNameAvailable(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
@@ -905,7 +1018,7 @@ func TestPipelineNameValidation(t *testing.T) {
 		q.Add("name", "pipeline b")
 		req.URL.RawQuery = q.Encode()
 
-		_ = PipelineNameAvailable(c)
+		_ = pp.PipelineNameAvailable(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)

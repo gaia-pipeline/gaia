@@ -1,20 +1,22 @@
 package pipeline
 
 import (
-	"github.com/gaia-pipeline/gaia/store/memdb"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/workers/scheduler/service"
+
+	"github.com/gaia-pipeline/gaia/store/memdb"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
-	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	"github.com/hashicorp/go-hclog"
 )
 
 type mockScheduleService struct {
-	scheduler.GaiaScheduler
+	service.GaiaScheduler
 	err error
 }
 
@@ -36,6 +38,7 @@ func (mm *mockMemDBService) UpsertWorker(w *gaia.Worker, persist bool) error {
 	return nil
 }
 
+//
 func TestCheckActivePipelines(t *testing.T) {
 	tmp, _ := ioutil.TempDir("", "TestCheckActivePipelines")
 	dataDir := tmp
@@ -57,9 +60,6 @@ func TestCheckActivePipelines(t *testing.T) {
 	// Initialize global active pipelines
 	ap := NewActivePipelines()
 	GlobalActivePipelines = ap
-	// Mock scheduler service
-	ms := new(mockScheduleService)
-	services.MockSchedulerService(ms)
 
 	pipeline1 := gaia.Pipeline{
 		ID:      1,
@@ -75,7 +75,10 @@ func TestCheckActivePipelines(t *testing.T) {
 	defer os.Remove(src)
 
 	// Manually run check
-	checkActivePipelines()
+	pipelineService := NewGaiaPipelineService(Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+	pipelineService.CheckActivePipelines()
 
 	// Check if pipeline was added to store
 	_, err = dataStore.PipelineGet(pipeline1.ID)

@@ -1,6 +1,7 @@
-package handlers
+package pipelines
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -16,9 +17,26 @@ import (
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 )
 
+var (
+	// errPipelineNotFound is thrown when a pipeline was not found with the given id
+	errPipelineNotFound = errors.New("pipeline not found with the given id")
+
+	// errInvalidPipelineID is thrown when the given pipeline id is not valid
+	errInvalidPipelineID = errors.New("the given pipeline id is not valid")
+
+	// errPipelineDelete is thrown when a pipeline binary could not be deleted
+	errPipelineDelete = errors.New("pipeline could not be deleted. Perhaps you don't have the right permissions")
+
+	// errPipelineRename is thrown when a pipeline binary could not be renamed
+	errPipelineRename = errors.New("pipeline could not be renamed")
+
+	// errWrongDockerValue is thrown when docker has been specified for a pipeline run but the value is invalid
+	errWrongDockerValue = errors.New("invalid value for docker parameter")
+)
+
 // PipelineGitLSRemote checks for available git remote branches.
 // This is the perfect way to check if we have access to a given repo.
-func PipelineGitLSRemote(c echo.Context) error {
+func (pp *pipelineProvider) PipelineGitLSRemote(c echo.Context) error {
 	repo := &gaia.GitRepo{}
 	if err := c.Bind(repo); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
@@ -36,7 +54,7 @@ func PipelineGitLSRemote(c echo.Context) error {
 
 // CreatePipeline accepts all data needed to create a pipeline.
 // It then starts the create pipeline execution process async.
-func CreatePipeline(c echo.Context) error {
+func (pp *pipelineProvider) CreatePipeline(c echo.Context) error {
 	storeService, _ := services.StorageService()
 	p := &gaia.CreatePipeline{}
 	if err := c.Bind(p); err != nil {
@@ -70,7 +88,7 @@ func CreatePipeline(c echo.Context) error {
 	}
 
 	// Cloning the repo and compiling the pipeline will be done async
-	go pipeline.CreatePipeline(p)
+	go pp.deps.PipelineService.CreatePipeline(p)
 
 	return c.JSON(http.StatusOK, nil)
 }
@@ -78,7 +96,7 @@ func CreatePipeline(c echo.Context) error {
 // CreatePipelineGetAll returns a json array of
 // all pipelines which are about to get compiled and
 // all pipelines which have been compiled.
-func CreatePipelineGetAll(c echo.Context) error {
+func (pp *pipelineProvider) CreatePipelineGetAll(c echo.Context) error {
 	// Get all create pipelines
 	storeService, _ := services.StorageService()
 	pipelineList, err := storeService.CreatePipelineGet()
@@ -93,7 +111,7 @@ func CreatePipelineGetAll(c echo.Context) error {
 
 // PipelineNameAvailable looks up if the given pipeline name is
 // available and valid.
-func PipelineNameAvailable(c echo.Context) error {
+func (pp *pipelineProvider) PipelineNameAvailable(c echo.Context) error {
 	pName := c.QueryParam("name")
 	if err := pipeline.ValidatePipelineName(pName); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
@@ -103,7 +121,7 @@ func PipelineNameAvailable(c echo.Context) error {
 }
 
 // PipelineGetAll returns all registered pipelines.
-func PipelineGetAll(c echo.Context) error {
+func (pp *pipelineProvider) PipelineGetAll(c echo.Context) error {
 	// Get all active pipelines
 	pipelines := pipeline.GlobalActivePipelines.GetAll()
 
@@ -117,7 +135,7 @@ func PipelineGetAll(c echo.Context) error {
 }
 
 // PipelineGet accepts a pipeline id and returns the pipeline object.
-func PipelineGet(c echo.Context) error {
+func (pp *pipelineProvider) PipelineGet(c echo.Context) error {
 	pipelineIDStr := c.Param("pipelineid")
 
 	// Convert string to int because id is int
@@ -138,9 +156,8 @@ func PipelineGet(c echo.Context) error {
 }
 
 // PipelineUpdate updates the given pipeline.
-func PipelineUpdate(c echo.Context) error {
+func (pp *pipelineProvider) PipelineUpdate(c echo.Context) error {
 	storeService, _ := services.StorageService()
-	schedulerService, _ := services.SchedulerService()
 	p := gaia.Pipeline{}
 	if err := c.Bind(&p); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
@@ -196,7 +213,7 @@ func PipelineUpdate(c echo.Context) error {
 		// Iterate over all cron schedules.
 		for _, schedule := range p.PeriodicSchedules {
 			err := foundPipeline.CronInst.AddFunc(schedule, func() {
-				_, err := schedulerService.SchedulePipeline(&foundPipeline, gaia.StartReasonScheduled, []*gaia.Argument{})
+				_, err := pp.deps.Scheduler.SchedulePipeline(&foundPipeline, gaia.StartReasonScheduled, []*gaia.Argument{})
 				if err != nil {
 					gaia.Cfg.Logger.Error("cannot schedule pipeline from periodic schedule", "error", err, "pipeline", foundPipeline)
 					return
@@ -258,7 +275,7 @@ func stringSliceEqual(a, b []string) bool {
 
 // PipelineDelete accepts a pipeline id and deletes it from the
 // store. It also removes the binary inside the pipeline folder.
-func PipelineDelete(c echo.Context) error {
+func (pp *pipelineProvider) PipelineDelete(c echo.Context) error {
 	storeService, _ := services.StorageService()
 	pipelineIDStr := c.Param("pipelineid")
 
@@ -280,6 +297,11 @@ func PipelineDelete(c echo.Context) error {
 
 	if foundPipeline.Name == "" {
 		return c.String(http.StatusNotFound, errPipelineNotFound.Error())
+	}
+
+	// Stop any schedulers running
+	if ct := foundPipeline.CronInst; ct != nil {
+		ct.Stop()
 	}
 
 	// Delete pipeline binary
@@ -306,8 +328,8 @@ func PipelineDelete(c echo.Context) error {
 // This endpoint does not require authentication. It will use a TOKEN
 // that is specific to a pipeline. It can only be used by the `auto`
 // user.
-func PipelineTrigger(c echo.Context) error {
-	err := PipelineTriggerAuth(c)
+func (pp *pipelineProvider) PipelineTrigger(c echo.Context) error {
+	err := pp.PipelineTriggerAuth(c)
 	if err != nil {
 		return c.String(http.StatusForbidden, "User rejected")
 	}
@@ -339,10 +361,9 @@ func PipelineTrigger(c echo.Context) error {
 		return c.String(http.StatusForbidden, "Invalid remote trigger token.")
 	}
 
-	schedulerService, _ := services.SchedulerService()
 	var args []*gaia.Argument
 	_ = c.Bind(&args)
-	pipelineRun, err := schedulerService.SchedulePipeline(&foundPipeline, gaia.StartReasonRemote, args)
+	pipelineRun, err := pp.deps.Scheduler.SchedulePipeline(&foundPipeline, gaia.StartReasonRemote, args)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	} else if pipelineRun != nil {
@@ -354,7 +375,7 @@ func PipelineTrigger(c echo.Context) error {
 
 // PipelineResetToken generates a new remote trigger token for a given
 // pipeline.
-func PipelineResetToken(c echo.Context) error {
+func (pp *pipelineProvider) PipelineResetToken(c echo.Context) error {
 	// Check here against the pipeline's token.
 	pipelineIDStr := c.Param("pipelineid")
 
@@ -391,7 +412,7 @@ func PipelineResetToken(c echo.Context) error {
 
 // PipelineTriggerAuth is a barrier before remote trigger which checks if
 // the user is `auto`.
-func PipelineTriggerAuth(c echo.Context) error {
+func (pp *pipelineProvider) PipelineTriggerAuth(c echo.Context) error {
 	// check headers
 	s, err := services.StorageService()
 	if err != nil {
@@ -415,8 +436,7 @@ func PipelineTriggerAuth(c echo.Context) error {
 // PipelineStart starts a pipeline by the given id.
 // It accepts arguments for the given pipeline.
 // Afterwards it returns the created/scheduled pipeline run.
-func PipelineStart(c echo.Context) error {
-	schedulerService, _ := services.SchedulerService()
+func (pp *pipelineProvider) PipelineStart(c echo.Context) error {
 	pipelineIDStr := c.Param("pipelineid")
 
 	// Decode content
@@ -456,7 +476,7 @@ func PipelineStart(c echo.Context) error {
 	foundPipeline.Docker = docker
 
 	if foundPipeline.Name != "" {
-		pipelineRun, err := schedulerService.SchedulePipeline(&foundPipeline, gaia.StartReasonManual, args)
+		pipelineRun, err := pp.deps.Scheduler.SchedulePipeline(&foundPipeline, gaia.StartReasonManual, args)
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		} else if pipelineRun != nil {
@@ -475,7 +495,7 @@ type getAllWithLatestRun struct {
 
 // PipelineGetAllWithLatestRun returns the latest of all registered pipelines
 // included with the latest run.
-func PipelineGetAllWithLatestRun(c echo.Context) error {
+func (pp *pipelineProvider) PipelineGetAllWithLatestRun(c echo.Context) error {
 	// Get all active pipelines
 	storeService, _ := services.StorageService()
 	pipelines := pipeline.GlobalActivePipelines.GetAll()
@@ -505,7 +525,7 @@ func PipelineGetAllWithLatestRun(c echo.Context) error {
 }
 
 // PipelineCheckPeriodicSchedules validates the added periodic schedules.
-func PipelineCheckPeriodicSchedules(c echo.Context) error {
+func (pp *pipelineProvider) PipelineCheckPeriodicSchedules(c echo.Context) error {
 	var pSchedules []string
 	if err := c.Bind(&pSchedules); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())

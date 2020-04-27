@@ -1,41 +1,25 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 
 	rice "github.com/GeertJohan/go.rice"
-	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
+	"github.com/gaia-pipeline/gaia/handlers/providers/workers"
+	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 )
 
 var (
-	// errPipelineNotFound is thrown when a pipeline was not found with the given id
-	errPipelineNotFound = errors.New("pipeline not found with the given id")
-
-	// errInvalidPipelineID is thrown when the given pipeline id is not valid
-	errInvalidPipelineID = errors.New("the given pipeline id is not valid")
-
-	// errPipelineRunNotFound is thrown when a pipeline run was not found with the given id
-	errPipelineRunNotFound = errors.New("pipeline run not found with the given id")
-
-	// errPipelineDelete is thrown when a pipeline binary could not be deleted
-	errPipelineDelete = errors.New("pipeline could not be deleted. Perhaps you don't have the right permissions")
-
-	// errPipelineRename is thrown when a pipeline binary could not be renamed
-	errPipelineRename = errors.New("pipeline could not be renamed")
-
-	// errWrongDockerValue is thrown when docker has been specified for a pipeline run but the value is invalid
-	errWrongDockerValue = errors.New("invalid value for docker parameter")
-
 	// List of secret keys which cannot be modified via the normal Vault API.
 	ignoredVaultKeys []string
 )
 
 // InitHandlers initializes(registers) all handlers.
-func InitHandlers(e *echo.Echo) error {
+func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	// Define prefix
 	p := "/api/" + gaia.APIVersion + "/"
 
@@ -57,20 +41,25 @@ func InitHandlers(e *echo.Echo) error {
 		perms.GET("", PermissionGetAll)
 
 		// Pipelines
-		e.POST(p+"pipeline", CreatePipeline)
-		e.POST(p+"pipeline/gitlsremote", PipelineGitLSRemote)
-		e.GET(p+"pipeline/name", PipelineNameAvailable)
+		// Create pipeline provider
+		pipelineProvider := pipelines.NewPipelineProvider(pipelines.Dependencies{
+			Scheduler:       s.deps.Scheduler,
+			PipelineService: s.deps.PipelineService,
+		})
+		e.POST(p+"pipeline", pipelineProvider.CreatePipeline)
+		e.POST(p+"pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote)
+		e.GET(p+"pipeline/name", pipelineProvider.PipelineNameAvailable)
 		e.POST(p+"pipeline/githook", GitWebHook)
-		e.GET(p+"pipeline/created", CreatePipelineGetAll)
-		e.GET(p+"pipeline", PipelineGetAll)
-		e.GET(p+"pipeline/:pipelineid", PipelineGet)
-		e.PUT(p+"pipeline/:pipelineid", PipelineUpdate)
-		e.DELETE(p+"pipeline/:pipelineid", PipelineDelete)
-		e.POST(p+"pipeline/:pipelineid/start", PipelineStart)
-		e.POST(p+"pipeline/:pipelineid/:pipelinetoken/trigger", PipelineTrigger)
-		e.PUT(p+"pipeline/:pipelineid/reset-trigger-token", PipelineResetToken)
-		e.GET(p+"pipeline/latest", PipelineGetAllWithLatestRun)
-		e.POST(p+"pipeline/periodicschedules", PipelineCheckPeriodicSchedules)
+		e.GET(p+"pipeline/created", pipelineProvider.CreatePipelineGetAll)
+		e.GET(p+"pipeline", pipelineProvider.PipelineGetAll)
+		e.GET(p+"pipeline/:pipelineid", pipelineProvider.PipelineGet)
+		e.PUT(p+"pipeline/:pipelineid", pipelineProvider.PipelineUpdate)
+		e.DELETE(p+"pipeline/:pipelineid", pipelineProvider.PipelineDelete)
+		e.POST(p+"pipeline/:pipelineid/start", pipelineProvider.PipelineStart)
+		e.POST(p+"pipeline/:pipelineid/:pipelinetoken/trigger", pipelineProvider.PipelineTrigger)
+		e.PUT(p+"pipeline/:pipelineid/reset-trigger-token", pipelineProvider.PipelineResetToken)
+		e.GET(p+"pipeline/latest", pipelineProvider.PipelineGetAllWithLatestRun)
+		e.POST(p+"pipeline/periodicschedules", pipelineProvider.PipelineCheckPeriodicSchedules)
 
 		// Settings
 		e.POST(p+"settings/poll/on", SettingsPollOn)
@@ -78,11 +67,11 @@ func InitHandlers(e *echo.Echo) error {
 		e.GET(p+"settings/poll", SettingsPollGet)
 
 		// PipelineRun
-		e.POST(p+"pipelinerun/:pipelineid/:runid/stop", PipelineStop)
-		e.GET(p+"pipelinerun/:pipelineid/:runid", PipelineRunGet)
-		e.GET(p+"pipelinerun/:pipelineid", PipelineGetAllRuns)
-		e.GET(p+"pipelinerun/:pipelineid/latest", PipelineGetLatestRun)
-		e.GET(p+"pipelinerun/:pipelineid/:runid/log", GetJobLogs)
+		e.POST(p+"pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop)
+		e.GET(p+"pipelinerun/:pipelineid/:runid", pipelineProvider.PipelineRunGet)
+		e.GET(p+"pipelinerun/:pipelineid", pipelineProvider.PipelineGetAllRuns)
+		e.GET(p+"pipelinerun/:pipelineid/latest", pipelineProvider.PipelineGetLatestRun)
+		e.GET(p+"pipelinerun/:pipelineid/:runid/log", pipelineProvider.GetJobLogs)
 
 		// Secrets
 		e.GET(p+"secrets", ListSecrets)
@@ -92,12 +81,16 @@ func InitHandlers(e *echo.Echo) error {
 	}
 
 	// Worker
-	e.GET(p+"worker/secret", GetWorkerRegisterSecret)
-	e.POST(p+"worker/register", RegisterWorker)
-	e.GET(p+"worker/status", GetWorkerStatusOverview)
-	e.GET(p+"worker", GetWorker)
-	e.DELETE(p+"worker/:workerid", DeregisterWorker)
-	e.POST(p+"worker/secret", ResetWorkerRegisterSecret)
+	// initialize the worker provider
+	workerProvider := workers.NewWorkerProvider(workers.Dependencies{
+		Scheduler: s.deps.Scheduler,
+	})
+	e.GET(p+"worker/secret", workerProvider.GetWorkerRegisterSecret)
+	e.POST(p+"worker/register", workerProvider.RegisterWorker)
+	e.GET(p+"worker/status", workerProvider.GetWorkerStatusOverview)
+	e.GET(p+"worker", workerProvider.GetWorker)
+	e.DELETE(p+"worker/:workerid", workerProvider.DeregisterWorker)
+	e.POST(p+"worker/secret", workerProvider.ResetWorkerRegisterSecret)
 
 	// Middleware
 	e.Use(middleware.Recover())

@@ -42,7 +42,14 @@ func TestHookReceive(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating data dir %v", err.Error())
 	}
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
 
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
 	defer func() {
 		gaia.Cfg = nil
 		_ = os.RemoveAll(dataDir)
@@ -84,7 +91,7 @@ func TestHookReceive(t *testing.T) {
 
 	ap.Append(p)
 
-	_ = InitHandlers(e)
+	_ = handlerService.InitHandlers(e)
 
 	t.Run("successfully extracting path information from payload", func(t *testing.T) {
 		payload, _ := ioutil.ReadFile(filepath.Join("fixtures", "hook_basic_push_payload.json"))

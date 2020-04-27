@@ -43,7 +43,7 @@ var (
 // CreatePipeline is the main function which executes step by step the creation
 // of a plugin.
 // After each step, the status is written to store and can be retrieved via API.
-func CreatePipeline(p *gaia.CreatePipeline) {
+func (s *gaiaPipelineService) CreatePipeline(p *gaia.CreatePipeline) {
 	gitToken := p.GitHubToken
 	p.GitHubToken = ""
 	storeService, _ := services.StorageService()
@@ -111,8 +111,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	}
 
 	// Try to get pipeline jobs to check if this pipeline is valid.
-	schedulerService, _ := services.SchedulerService()
-	if err = schedulerService.SetPipelineJobs(&p.Pipeline); err != nil {
+	if err = s.deps.Scheduler.SetPipelineJobs(&p.Pipeline); err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot validate pipeline: %s", err.Error())
 		_ = storeService.CreatePipelinePut(p)
