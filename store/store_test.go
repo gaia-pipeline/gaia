@@ -1,57 +1,49 @@
 package store
 
 import (
-	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"sort"
 	"testing"
 	"time"
 
+	"github.com/gofrs/uuid"
+
 	"github.com/gaia-pipeline/gaia"
-	uuid "github.com/satori/go.uuid"
 )
 
-var store *BoltStore
-
-func TestMain(m *testing.M) {
-	store = NewBoltStore()
-	gaia.Cfg = &gaia.Config{}
-	gaia.Cfg.DataPath = "data"
-	gaia.Cfg.Bolt.Mode = 0600
-
-	// Create test folder
-	err := os.MkdirAll(gaia.Cfg.DataPath, 0700)
-	if err != nil {
-		fmt.Printf("cannot create data folder: %s\n", err.Error())
-		os.Exit(1)
-	}
-
-	r := m.Run()
-
-	// cleanup
-	err = os.Remove("data")
-	if err != nil {
-		fmt.Printf("cannot remove data folder: %s\n", err.Error())
-		r = 1
-	}
-	os.Exit(r)
-}
-
 func TestInit(t *testing.T) {
-	err := store.Init()
+	// Create tmp folder
+	tmp, err := ioutil.TempDir("", "TestStoreInit")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove("data/gaia.db")
+	defer os.RemoveAll(tmp)
+
+	store := NewBoltStore()
+	gaia.Cfg.Bolt.Mode = 0600
+	err = store.Init(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestUserGet(t *testing.T) {
-	err := store.Init()
+	// Create tmp folder
+	tmp, err := ioutil.TempDir("", "TestStoreUserGet")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove("data/gaia.db")
+	defer os.RemoveAll(tmp)
+
+	store := NewBoltStore()
+	gaia.Cfg.Bolt.Mode = 0600
+	err = store.Init(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
 
 	u := &gaia.User{}
 	u.Username = "testuser"
@@ -80,11 +72,20 @@ func TestUserGet(t *testing.T) {
 }
 
 func TestUserPut(t *testing.T) {
-	err := store.Init()
+	// Create tmp folder
+	tmp, err := ioutil.TempDir("", "TestStoreUserPut")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove("data/gaia.db")
+	defer os.RemoveAll(tmp)
+
+	store := NewBoltStore()
+	gaia.Cfg.Bolt.Mode = 0600
+	err = store.Init(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
 
 	u := &gaia.User{}
 	u.Username = "testuser"
@@ -97,11 +98,20 @@ func TestUserPut(t *testing.T) {
 }
 
 func TestUserAuth(t *testing.T) {
-	err := store.Init()
+	// Create tmp folder
+	tmp, err := ioutil.TempDir("", "TestStoreUserAuth")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove("data/gaia.db")
+	defer os.RemoveAll(tmp)
+
+	store := NewBoltStore()
+	gaia.Cfg.Bolt.Mode = 0600
+	err = store.Init(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
 
 	u := &gaia.User{}
 	u.Username = "testuser"
@@ -148,16 +158,32 @@ func TestUserAuth(t *testing.T) {
 }
 
 func TestCreatePipelinePut(t *testing.T) {
-	err := store.Init()
+	// Create tmp folder
+	tmp, err := ioutil.TempDir("", "TestStoreCreatePipelinePut")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove("data/gaia.db")
+	defer os.RemoveAll(tmp)
 
+	store := NewBoltStore()
+	gaia.Cfg.Bolt.Mode = 0600
+	err = store.Init(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	v4, err := uuid.NewV4()
+	if err != nil {
+		t.Fatal(err)
+	}
 	p := &gaia.CreatePipeline{
-		ID:         uuid.Must(uuid.NewV4(), nil).String(),
+		ID:         uuid.Must(v4, nil).String(),
 		Created:    time.Now(),
 		StatusType: gaia.CreatePipelineRunning,
+		Pipeline: gaia.Pipeline{
+			Repo: &gaia.GitRepo{},
+		},
 	}
 	err = store.CreatePipelinePut(p)
 	if err != nil {
@@ -166,18 +192,31 @@ func TestCreatePipelinePut(t *testing.T) {
 }
 
 func TestCreatePipelineGet(t *testing.T) {
-	err := store.Init()
+	// Create tmp folder
+	tmp, err := ioutil.TempDir("", "TestStoreCreatePipelineGet")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove("data/gaia.db")
+	defer os.RemoveAll(tmp)
+
+	store := NewBoltStore()
+	gaia.Cfg.Bolt.Mode = 0600
+	err = store.Init(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
 
 	var putIDs []string
 	var getIDs []string
 
 	for i := 0; i < 3; i++ {
+		v4, _ := uuid.NewV4()
 		p := gaia.CreatePipeline{
-			ID: uuid.Must(uuid.NewV4(), nil).String(),
+			ID: uuid.Must(v4, nil).String(),
+			Pipeline: gaia.Pipeline{
+				Repo: &gaia.GitRepo{},
+			},
 		}
 		err = store.CreatePipelinePut(&p)
 		if err != nil {
@@ -210,11 +249,20 @@ func TestCreatePipelineGet(t *testing.T) {
 }
 
 func TestPipelinePut(t *testing.T) {
-	err := store.Init()
+	// Create tmp folder
+	tmp, err := ioutil.TempDir("", "TestStorePipelinePut")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove("data/gaia.db")
+	defer os.RemoveAll(tmp)
+
+	store := NewBoltStore()
+	gaia.Cfg.Bolt.Mode = 0600
+	err = store.Init(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
 
 	p := &gaia.Pipeline{
 		Name:    "Test Pipeline",
@@ -244,11 +292,20 @@ func TestPipelinePut(t *testing.T) {
 }
 
 func TestPipelineGet(t *testing.T) {
-	err := store.Init()
+	// Create tmp folder
+	tmp, err := ioutil.TempDir("", "TestStorePipelineGet")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove("data/gaia.db")
+	defer os.RemoveAll(tmp)
+
+	store := NewBoltStore()
+	gaia.Cfg.Bolt.Mode = 0600
+	err = store.Init(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
 
 	p := &gaia.Pipeline{
 		Name:    "Test Pipeline",
@@ -273,11 +330,20 @@ func TestPipelineGet(t *testing.T) {
 }
 
 func TestPipelineGetByName(t *testing.T) {
-	err := store.Init()
+	// Create tmp folder
+	tmp, err := ioutil.TempDir("", "TestStorePipelineGetByName")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove("data/gaia.db")
+	defer os.RemoveAll(tmp)
+
+	store := NewBoltStore()
+	gaia.Cfg.Bolt.Mode = 0600
+	err = store.Init(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
 
 	p := &gaia.Pipeline{
 		Name:    "Test Pipeline",
@@ -302,11 +368,20 @@ func TestPipelineGetByName(t *testing.T) {
 }
 
 func TestPipelineGetRunHighestID(t *testing.T) {
-	err := store.Init()
+	// Create tmp folder
+	tmp, err := ioutil.TempDir("", "TestStorePipelineGetRunHighestID")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove("data/gaia.db")
+	defer os.RemoveAll(tmp)
+
+	store := NewBoltStore()
+	gaia.Cfg.Bolt.Mode = 0600
+	err = store.Init(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
 
 	pipeline := &gaia.Pipeline{
 		ID:   1,
@@ -319,11 +394,12 @@ func TestPipelineGetRunHighestID(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	v4, _ := uuid.NewV4()
 	pipelineRun1 := &gaia.PipelineRun{
 		ID:         1,
 		PipelineID: 1,
 		Status:     gaia.RunRunning,
-		UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:   uuid.Must(v4, nil).String(),
 		StartDate:  time.Now(),
 	}
 	err = store.PipelinePutRun(pipelineRun1)
@@ -331,11 +407,12 @@ func TestPipelineGetRunHighestID(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	newV4, _ := uuid.NewV4()
 	pipelineRun2 := &gaia.PipelineRun{
 		ID:         2,
 		PipelineID: 1,
 		Status:     gaia.RunRunning,
-		UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:   uuid.Must(newV4, nil).String(),
 		StartDate:  time.Now(),
 	}
 	err = store.PipelinePutRun(pipelineRun2)
@@ -355,14 +432,24 @@ func TestPipelineGetRunHighestID(t *testing.T) {
 }
 
 func TestPipelinePutRun(t *testing.T) {
-	err := store.Init()
+	// Create tmp folder
+	tmp, err := ioutil.TempDir("", "TestStorePipelinePutRun")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove("data/gaia.db")
+	defer os.RemoveAll(tmp)
 
+	store := NewBoltStore()
+	gaia.Cfg.Bolt.Mode = 0600
+	err = store.Init(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	v4, _ := uuid.NewV4()
 	run := gaia.PipelineRun{
-		UniqueID:     uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:     uuid.Must(v4, nil).String(),
 		ID:           1,
 		PipelineID:   1,
 		ScheduleDate: time.Now(),
@@ -377,28 +464,39 @@ func TestPipelinePutRun(t *testing.T) {
 }
 
 func TestPipelineGetScheduled(t *testing.T) {
-	err := store.Init()
+	// Create tmp folder
+	tmp, err := ioutil.TempDir("", "TestStorePipelineGetScheduled")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove("data/gaia.db")
+	defer os.RemoveAll(tmp)
 
+	store := NewBoltStore()
+	gaia.Cfg.Bolt.Mode = 0600
+	err = store.Init(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	v4, _ := uuid.NewV4()
 	pipelineRun1 := &gaia.PipelineRun{
 		ID:         1,
 		PipelineID: 1,
 		Status:     gaia.RunNotScheduled,
-		UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:   uuid.Must(v4, nil).String(),
 	}
 	err = store.PipelinePutRun(pipelineRun1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	v4, _ = uuid.NewV4()
 	pipelineRun2 := &gaia.PipelineRun{
 		ID:         2,
 		PipelineID: 1,
 		Status:     gaia.RunNotScheduled,
-		UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:   uuid.Must(v4, nil).String(),
 	}
 	err = store.PipelinePutRun(pipelineRun2)
 	if err != nil {
@@ -426,14 +524,24 @@ func TestPipelineGetScheduled(t *testing.T) {
 }
 
 func TestPipelineGetRunByPipelineIDAndID(t *testing.T) {
-	err := store.Init()
+	// Create tmp folder
+	tmp, err := ioutil.TempDir("", "TestStorePipelineGetRunByPipelineIDAndID")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove("data/gaia.db")
+	defer os.RemoveAll(tmp)
 
+	store := NewBoltStore()
+	gaia.Cfg.Bolt.Mode = 0600
+	err = store.Init(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	v4, _ := uuid.NewV4()
 	run := gaia.PipelineRun{
-		UniqueID:     uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:     uuid.Must(v4, nil).String(),
 		ID:           1,
 		PipelineID:   1,
 		ScheduleDate: time.Now(),
@@ -456,11 +564,20 @@ func TestPipelineGetRunByPipelineIDAndID(t *testing.T) {
 }
 
 func TestPipelineGetAllRuns(t *testing.T) {
-	err := store.Init()
+	// Create tmp folder
+	tmp, err := ioutil.TempDir("", "TestStorePipelineGetAllRuns")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove("data/gaia.db")
+	defer os.RemoveAll(tmp)
+
+	store := NewBoltStore()
+	gaia.Cfg.Bolt.Mode = 0600
+	err = store.Init(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
 
 	var putUniqueIDs []string
 	var getUniqueIDs []string
@@ -477,11 +594,12 @@ func TestPipelineGetAllRuns(t *testing.T) {
 	}
 
 	for i := 0; i < 2; i++ {
+		v4, _ := uuid.NewV4()
 		p := &gaia.PipelineRun{
 			ID:         i,
 			PipelineID: 1,
 			Status:     gaia.RunNotScheduled,
-			UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
+			UniqueID:   uuid.Must(v4, nil).String(),
 		}
 		err = store.PipelinePutRun(p)
 		if err != nil {
@@ -490,7 +608,7 @@ func TestPipelineGetAllRuns(t *testing.T) {
 		putUniqueIDs = append(putUniqueIDs, p.UniqueID)
 	}
 
-	pipelineRuns, err := store.PipelineGetAllRuns(1)
+	pipelineRuns, err := store.PipelineGetAllRuns()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -515,11 +633,20 @@ func TestPipelineGetAllRuns(t *testing.T) {
 }
 
 func TestPipelineGetLatestRun(t *testing.T) {
-	err := store.Init()
+	// Create tmp folder
+	tmp, err := ioutil.TempDir("", "TestStorePipelineGetLatestRun")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove("data/gaia.db")
+	defer os.RemoveAll(tmp)
+
+	store := NewBoltStore()
+	gaia.Cfg.Bolt.Mode = 0600
+	err = store.Init(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
 
 	pipeline := &gaia.Pipeline{
 		ID:   1,
@@ -532,11 +659,12 @@ func TestPipelineGetLatestRun(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	v4, _ := uuid.NewV4()
 	pipelineRun1 := &gaia.PipelineRun{
 		ID:         1,
 		PipelineID: 1,
 		Status:     gaia.RunRunning,
-		UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:   uuid.Must(v4, nil).String(),
 		StartDate:  time.Now(),
 	}
 	err = store.PipelinePutRun(pipelineRun1)
@@ -544,11 +672,12 @@ func TestPipelineGetLatestRun(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	v4, _ = uuid.NewV4()
 	pipelineRun2 := &gaia.PipelineRun{
 		ID:         2,
 		PipelineID: 1,
 		Status:     gaia.RunRunning,
-		UniqueID:   uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:   uuid.Must(v4, nil).String(),
 		StartDate:  time.Now(),
 	}
 	err = store.PipelinePutRun(pipelineRun2)
@@ -563,6 +692,73 @@ func TestPipelineGetLatestRun(t *testing.T) {
 
 	if latestRun.UniqueID != pipelineRun2.UniqueID {
 		t.Fatalf("expected unique ID %s, got %s", pipelineRun2.UniqueID, latestRun.UniqueID)
+	}
+}
+
+func TestUserPermissionsPutGetDelete(t *testing.T) {
+	// Create tmp folder
+	tmp, err := ioutil.TempDir("", "TestUserPermissionsPutGetDelete")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmp)
+
+	store := NewBoltStore()
+	gaia.Cfg.Bolt.Mode = 0600
+	err = store.Init(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	// Put user permissions
+	perm := &gaia.UserPermission{
+		Username: "michel",
+		Groups:   []string{"my-group"},
+		Roles:    []string{"my-role"},
+	}
+	if err := store.UserPermissionsPut(perm); err != nil {
+		t.Fatal(err)
+	}
+
+	// Read user permissions
+	storePerm, err := store.UserPermissionsGet("michel")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Validate
+	if storePerm == nil {
+		t.Fatal("expected user permissions but it is nil")
+	}
+	if storePerm.Username != "michel" {
+		t.Fatalf("expected '%s' but got '%s'", "michel", storePerm.Username)
+	}
+	if len(storePerm.Roles) != 1 {
+		t.Fatalf("expected %d but got %d", 1, len(storePerm.Roles))
+	}
+	if storePerm.Roles[0] != "my-role" {
+		t.Fatalf("expected '%s' but got '%s'", "my-role", storePerm.Roles[0])
+	}
+	if len(storePerm.Groups) != 1 {
+		t.Fatalf("expected %d but got %d", 1, len(storePerm.Groups))
+	}
+	if storePerm.Groups[0] != "my-group" {
+		t.Fatalf("expected '%s' but got '%s'", "m-group", storePerm.Groups[0])
+	}
+
+	// Delete
+	if err := store.UserPermissionsDelete("michel"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Validate
+	storePerm, err = store.UserPermissionsGet("michel")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if storePerm != nil {
+		t.Fatalf("expected nil object but it is: %#v", storePerm)
 	}
 
 }

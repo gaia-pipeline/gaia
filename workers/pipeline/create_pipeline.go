@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode"
+
+	"github.com/gaia-pipeline/gaia/security"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
@@ -32,12 +35,15 @@ var (
 
 	// errPipelineNameInUse is thrown when a pipelines name is already in use
 	errPipelineNameInUse = errors.New("pipeline name is already in use")
+
+	// errPipelineNameInvalid is thrown when the pipeline name contains invalid characters
+	errPipelineNameInvalid = errors.New("must match [A-z][0-9][-][_][ ]")
 )
 
 // CreatePipeline is the main function which executes step by step the creation
 // of a plugin.
 // After each step, the status is written to store and can be retrieved via API.
-func CreatePipeline(p *gaia.CreatePipeline) {
+func (s *gaiaPipelineService) CreatePipeline(p *gaia.CreatePipeline) {
 	gitToken := p.GitHubToken
 	p.GitHubToken = ""
 	storeService, _ := services.StorageService()
@@ -47,7 +53,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 		// Pipeline type is not supported
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("create pipeline failed. Pipeline type is not supported %s is not supported", p.Pipeline.Type)
-		storeService.CreatePipelinePut(p)
+		_ = storeService.CreatePipelinePut(p)
 		return
 	}
 
@@ -56,16 +62,16 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot prepare build: %s", err.Error())
-		storeService.CreatePipelinePut(p)
+		_ = storeService.CreatePipelinePut(p)
 		return
 	}
 
 	// Clone git repo
-	err = gitCloneRepo(&p.Pipeline.Repo)
+	err = gitCloneRepo(p.Pipeline.Repo)
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot prepare build: %s", err.Error())
-		storeService.CreatePipelinePut(p)
+		_ = storeService.CreatePipelinePut(p)
 		return
 	}
 
@@ -82,7 +88,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	err = bP.ExecuteBuild(p)
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
-		storeService.CreatePipelinePut(p)
+		_ = storeService.CreatePipelinePut(p)
 		return
 	}
 
@@ -100,16 +106,15 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot update pipeline: %s", err.Error())
-		storeService.CreatePipelinePut(p)
+		_ = storeService.CreatePipelinePut(p)
 		return
 	}
 
 	// Try to get pipeline jobs to check if this pipeline is valid.
-	schedulerService, _ := services.SchedulerService()
-	if err = schedulerService.SetPipelineJobs(&p.Pipeline); err != nil {
+	if err = s.deps.Scheduler.SetPipelineJobs(&p.Pipeline); err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot validate pipeline: %s", err.Error())
-		storeService.CreatePipelinePut(p)
+		_ = storeService.CreatePipelinePut(p)
 		return
 	}
 
@@ -121,12 +126,14 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 		return
 	}
 
+	p.Pipeline.TriggerToken = security.GenerateRandomUUIDV5()
+
 	// Save the generated pipeline data
 	err = bP.SavePipeline(&p.Pipeline)
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("failed to save the created pipeline: %s", err.Error())
-		storeService.CreatePipelinePut(p)
+		_ = storeService.CreatePipelinePut(p)
 		return
 	}
 
@@ -135,7 +142,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot copy compiled binary: %s", err.Error())
-		storeService.CreatePipelinePut(p)
+		_ = storeService.CreatePipelinePut(p)
 		return
 	}
 
@@ -151,7 +158,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 
 	if !gaia.Cfg.Poll && len(gitToken) > 0 {
 		// if there is a githubtoken provided, that means that a webhook was requested to be added.
-		err = createGithubWebhook(gitToken, &p.Pipeline.Repo, nil)
+		err = createGithubWebhook(gitToken, p.Pipeline.Repo, nil)
 		if err != nil {
 			gaia.Cfg.Logger.Error("error while creating webhook for repository", "error", err.Error())
 			return
@@ -162,6 +169,17 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 // ValidatePipelineName validates a given pipeline name and
 // returns the correct error back.
 func ValidatePipelineName(pName string) error {
+
+	valid := func(r rune) bool {
+		return unicode.IsDigit(r) || unicode.IsLetter(r) || unicode.IsSpace(r) || r == '-' || r == '_'
+	}
+	// Note, this is faster than regex.
+	for _, c := range pName {
+		if !valid(c) {
+			return errPipelineNameInvalid
+		}
+	}
+
 	// The name could contain a path. Split it up.
 	path := strings.Split(pName, pipelinePathSplitChar)
 
@@ -173,16 +191,10 @@ func ValidatePipelineName(pName string) error {
 		}
 
 		// Check if pipeline name is already in use.
-		alreadyInUse := false
-		for activePipeline := range GlobalActivePipelines.Iter() {
+		for _, activePipeline := range GlobalActivePipelines.GetAll() {
 			if strings.ToLower(s) == strings.ToLower(activePipeline.Name) {
-				alreadyInUse = true
+				return errPipelineNameInUse
 			}
-		}
-
-		// Throw error because it's already in use.
-		if alreadyInUse {
-			return errPipelineNameInUse
 		}
 	}
 	return nil

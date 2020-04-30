@@ -32,7 +32,7 @@ spec:
         env:
         - name: GAIA_PORT
           value: "8080"
-        - name: GAIA_HOSTNAME
+        - name: GAIA_HOST_NAME
           value: http:0.0.0.0
         ports:
         - containerPort: 8080

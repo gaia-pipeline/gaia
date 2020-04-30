@@ -4,27 +4,27 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/rand"
-	"encoding/base64"
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/gaia-pipeline/gaia"
 )
 
 const (
-	vaultName        = ".gaia_vault"
-	secretCheckKey   = "GAIA_CHECK_SECRET"
-	secretCheckValue = "!CHECK_ME!"
+	vaultName = ".gaia_vault"
+	keySize   = 32
 )
 
-// VaultAPI defines a set of apis that a Vault must provide in order to be a Gaia Vault.
-type VaultAPI interface {
+// GaiaVault defines a set of apis that a Vault must provide in order to be a Gaia Vault.
+type GaiaVault interface {
 	LoadSecrets() error
 	GetAll() []string
 	SaveSecrets() error
@@ -57,6 +57,8 @@ type Vault struct {
 	cert   []byte
 	data   map[string][]byte
 	sync.RWMutex
+	counter uint64
+	key     []byte
 }
 
 // NewVault creates a vault which is a simple k/v storage medium with AES encryption.
@@ -70,8 +72,9 @@ func NewVault(ca CAAPI, storer VaultStorer) (*Vault, error) {
 	v := new(Vault)
 
 	if storer == nil {
-		storer = new(FileVaultStorer)
+		return nil, errors.New("vault must be created with a valid VaultStore")
 	}
+
 	err := storer.Init()
 	if err != nil {
 		return nil, err
@@ -82,9 +85,16 @@ func NewVault(ca CAAPI, storer VaultStorer) (*Vault, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(data) < keySize {
+		return nil, errors.New("key lenght should be longer than 32")
+	}
+	h := sha256.New()
+	_, _ = h.Write(data)
+	sum := h.Sum(nil)
 	v.storer = storer
 	v.cert = data
-	v.data = make(map[string][]byte, 0)
+	v.key = sum[:keySize]
+	v.data = make(map[string][]byte)
 	return v, nil
 }
 
@@ -110,7 +120,7 @@ func (v *Vault) SaveSecrets() error {
 		return err
 	}
 	// clear the hash after saving so the system always has a fresh view of the vault.
-	v.data = make(map[string][]byte, 0)
+	v.data = make(map[string][]byte)
 	return v.storer.Write([]byte(encryptedData))
 }
 
@@ -182,74 +192,80 @@ func (fvs *FileVaultStorer) Write(data []byte) error {
 }
 
 // encrypt uses an aes cipher provided by the certificate file for encryption.
-// We don't store the password in the file. an error will be thrown in case the encryption
-// operation encounters a problem which will most likely be due to a mistyped password.
-// We will return this possibility but we won't know for sure if that's the cause.
-// The password is padded with 0x04 to Blocklenght. IV randomized to blocksize and length of the message.
+// We don't store the password anywhere. An error will be thrown in case the encryption
+// operation encounters a problem. Gaia uses AES GCM to encrypt the vault file. For Nonce it's
+// using a constantly increasing number which is stored with the file. GCM allows for better
+// password verification in which case we don't have to guess what was wrong any longer.
 // In the end we encrypt the whole thing to Base64 for ease of saving an handling.
 func (v *Vault) encrypt(data []byte) (string, error) {
 	if len(data) < 1 {
 		// User has deleted all the secrets. the file will be empty.
 		return "", nil
 	}
-	secretCheck := fmt.Sprintf("\n%s=%s", secretCheckKey, secretCheckValue)
-	data = append(data, []byte(secretCheck)...)
-	paddedPassword := v.pad(v.cert)
-	ci := base64.URLEncoding.EncodeToString(paddedPassword)
-	block, err := aes.NewCipher([]byte(ci[:aes.BlockSize]))
+	key := v.key
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", err
 	}
 
-	msg := v.pad(data)
-	ciphertext := make([]byte, aes.BlockSize+len(msg))
-	iv := ciphertext[:aes.BlockSize]
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+	v.counter++
+	nonce := make([]byte, 12)
+	binary.LittleEndian.PutUint64(nonce, v.counter)
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
 		return "", err
 	}
 
-	cfb := cipher.NewCFBEncrypter(block, iv)
-	cfb.XORKeyStream(ciphertext[aes.BlockSize:], []byte(msg))
-	finalMsg := base64.URLEncoding.EncodeToString(ciphertext)
+	ciphertext := aesgcm.Seal(nil, nonce, data, nil)
+	hexNonce := hex.EncodeToString(nonce)
+	hexChiperText := hex.EncodeToString(ciphertext)
+	content := fmt.Sprintf("%s||%s", hexNonce, hexChiperText)
+	finalMsg := hex.EncodeToString([]byte(content))
 	return finalMsg, nil
 }
 
-func (v *Vault) decrypt(data []byte) ([]byte, error) {
-	if len(data) < 1 {
+func (v *Vault) decrypt(encodedData []byte) ([]byte, error) {
+	if len(encodedData) < 1 {
 		gaia.Cfg.Logger.Info("the vault is empty")
 		return []byte{}, nil
 	}
-	paddedPassword := v.pad(v.cert)
-	ci := base64.URLEncoding.EncodeToString(paddedPassword)
-	block, err := aes.NewCipher([]byte(ci[:aes.BlockSize]))
+	key := v.key
+	decodedMsg, err := hex.DecodeString(string(encodedData))
+	if err != nil {
+		if msg, err := v.legacyDecrypt(encodedData); err == nil {
+			return msg, nil
+		}
+		return []byte{}, err
+	}
+	split := strings.Split(string(decodedMsg), "||")
+	if len(split) < 2 {
+		message := fmt.Sprintln("invalid number of returned splits from data. was: ", len(split))
+		return []byte{}, errors.New(message)
+	}
+	nonce, err := hex.DecodeString(split[0])
+	if err != nil {
+		return []byte{}, err
+	}
+	data, err := hex.DecodeString(split[1])
+	if err != nil {
+		return []byte{}, err
+	}
+	v.counter = binary.LittleEndian.Uint64(nonce)
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return []byte{}, err
 	}
 
-	decodedMsg, err := base64.URLEncoding.DecodeString(string(data))
+	aesgcm, err := cipher.NewGCM(block)
 	if err != nil {
 		return []byte{}, err
 	}
 
-	if (len(decodedMsg) % aes.BlockSize) != 0 {
-		return []byte{}, errors.New("blocksize must be multiple of decoded message length")
-	}
-
-	iv := decodedMsg[:aes.BlockSize]
-	msg := decodedMsg[aes.BlockSize:]
-
-	cfb := cipher.NewCFBDecrypter(block, iv)
-	cfb.XORKeyStream(msg, msg)
-
-	unpadMsg, err := v.unpad(msg)
+	plaintext, err := aesgcm.Open(nil, nonce, []byte(data), nil)
 	if err != nil {
 		return []byte{}, err
 	}
-
-	if !bytes.Contains(unpadMsg, []byte(secretCheckValue)) {
-		return []byte{}, errors.New("possible mistyped password")
-	}
-	return unpadMsg, nil
+	return plaintext, nil
 }
 
 // ParseToMap will update the Vault data map with values from
@@ -279,23 +295,4 @@ func (v *Vault) parseFromMap() []byte {
 	}
 
 	return bytes.Join(data, []byte("\n"))
-}
-
-// Pad pads the src with 0x04 until block length.
-func (v *Vault) pad(src []byte) []byte {
-	padding := aes.BlockSize - len(src)%aes.BlockSize
-	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
-	return append(src, padtext...)
-}
-
-// Unpad removes the padding from pad.
-func (v *Vault) unpad(src []byte) ([]byte, error) {
-	length := len(src)
-	unpadding := int(src[length-1])
-
-	if unpadding > length {
-		return nil, errors.New("possible mistyped password")
-	}
-
-	return src[:(length - unpadding)], nil
 }

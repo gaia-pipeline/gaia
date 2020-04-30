@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
-	"log"
 	gohttp "net/http"
 	"path"
 	"regexp"
@@ -15,6 +14,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/google/go-github/github"
+	gossh "golang.org/x/crypto/ssh"
 	"golang.org/x/oauth2"
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -32,6 +32,11 @@ const (
 // without actually cloning the repo. This is great
 // for looking if we have access to this repo.
 func GitLSRemote(repo *gaia.GitRepo) error {
+	// Validate provided git url
+	if strings.Contains(repo.URL, "@") {
+		return errors.New("git url should not include username and/or password")
+	}
+
 	// Create new endpoint
 	ep, err := transport.NewEndpoint(repo.URL)
 	if err != nil {
@@ -39,7 +44,7 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 	}
 
 	// Attach credentials if provided
-	auth, err := getAuthInfo(repo)
+	auth, err := getAuthInfo(repo, nil)
 	if err != nil {
 		return err
 	}
@@ -53,7 +58,19 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 	// Open new session
 	s, err := cl.NewUploadPackSession(ep, auth)
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "knownhosts: key is unknown") {
+			gaia.Cfg.Logger.Warn("Warning: Unknown host key.", "error", err.Error(), "URL", repo.URL)
+			auth, err := getAuthInfo(repo, gossh.InsecureIgnoreHostKey())
+			if err != nil {
+				return err
+			}
+			s, err = cl.NewUploadPackSession(ep, auth)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
 	}
 	defer s.Close()
 
@@ -79,7 +96,6 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 // it by pulling in new code if it's available.
 func UpdateRepository(pipe *gaia.Pipeline) error {
 	r, err := git.PlainOpen(pipe.Repo.LocalDest)
-	log.Println(pipe.Repo.LocalDest)
 	if err != nil {
 		// We don't stop gaia working because of an automated update failed.
 		// So we just move on.
@@ -88,31 +104,49 @@ func UpdateRepository(pipe *gaia.Pipeline) error {
 	}
 	gaia.Cfg.Logger.Debug("checking pipeline: ", "message", pipe.Name)
 	gaia.Cfg.Logger.Debug("selected branch: ", "message", pipe.Repo.SelectedBranch)
-	auth, err := getAuthInfo(&pipe.Repo)
+	auth, err := getAuthInfo(pipe.Repo, nil)
 	if err != nil {
 		// It's also an error if the repo is already up to date so we just move on.
 		gaia.Cfg.Logger.Error("error getting auth info while doing a pull request: ", "error", err.Error())
 		return err
 	}
 	tree, _ := r.Worktree()
-	err = tree.Pull(&git.PullOptions{
+	o := &git.PullOptions{
 		ReferenceName: plumbing.ReferenceName(pipe.Repo.SelectedBranch),
 		SingleBranch:  true,
 		RemoteName:    "origin",
 		Auth:          auth,
-	})
+	}
+	err = tree.Pull(o)
 	if err != nil {
-		// It's also an error if the repo is already up to date so we just move on.
-		gaia.Cfg.Logger.Error("error while doing a pull request: ", "error", err.Error())
-		return err
+		if strings.Contains(err.Error(), "knownhosts: key is unknown") {
+			gaia.Cfg.Logger.Warn("Warning: Unknown host key.", "error", err.Error(), "host", "URL", pipe.Repo.URL)
+			auth, err = getAuthInfo(pipe.Repo, gossh.InsecureIgnoreHostKey())
+			if err != nil {
+				return err
+			}
+			o.Auth = auth
+			err = tree.Pull(o)
+			if err != nil {
+				return err
+			}
+		} else {
+			// It's also an error if the repo is already up to date so we just move on.
+			gaia.Cfg.Logger.Error("error while doing a pull request: ", "error", err.Error())
+			return err
+		}
 	}
 
 	gaia.Cfg.Logger.Debug("updating pipeline: ", "message", pipe.Name)
 	b := newBuildPipeline(pipe.Type)
-	createPipeline := &gaia.CreatePipeline{}
+	createPipeline := &gaia.CreatePipeline{
+		Pipeline: gaia.Pipeline{
+			Repo: &gaia.GitRepo{},
+		},
+	}
 	createPipeline.Pipeline = *pipe
-	b.ExecuteBuild(createPipeline)
-	b.CopyBinary(createPipeline)
+	_ = b.ExecuteBuild(createPipeline)
+	_ = b.CopyBinary(createPipeline)
 	gaia.Cfg.Logger.Debug("successfully updated: ", "message", pipe.Name)
 	return nil
 }
@@ -121,21 +155,35 @@ func UpdateRepository(pipe *gaia.Pipeline) error {
 // The destination will be attached to the given repo obj.
 func gitCloneRepo(repo *gaia.GitRepo) error {
 	// Check if credentials were provided
-	auth, err := getAuthInfo(repo)
+	auth, err := getAuthInfo(repo, nil)
 	if err != nil {
 		return err
 	}
-
-	// Clone repo
-	_, err = git.PlainClone(repo.LocalDest, false, &git.CloneOptions{
+	o := &git.CloneOptions{
 		Auth:              auth,
 		URL:               repo.URL,
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 		SingleBranch:      true,
 		ReferenceName:     plumbing.ReferenceName(repo.SelectedBranch),
-	})
+	}
+	// Clone repo
+	_, err = git.PlainClone(repo.LocalDest, false, o)
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "knownhosts: key is unknown") {
+			gaia.Cfg.Logger.Warn("Warning: Unknown host key.", "error", err.Error(), "URL", repo.URL)
+			auth, err = getAuthInfo(repo, gossh.InsecureIgnoreHostKey())
+			if err != nil {
+				return err
+			}
+			o.Auth = auth
+			// Clone repo again with no host key verification.
+			_, err = git.PlainClone(repo.LocalDest, false, o)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
 	}
 
 	return nil
@@ -143,19 +191,16 @@ func gitCloneRepo(repo *gaia.GitRepo) error {
 
 func updateAllCurrentPipelines() {
 	gaia.Cfg.Logger.Debug("starting updating of pipelines...")
-	var allPipelines []gaia.Pipeline
+	allPipelines := GlobalActivePipelines.GetAll()
 	var wg sync.WaitGroup
 	sem := make(chan int, 4)
-	for pipeline := range GlobalActivePipelines.Iter() {
-		allPipelines = append(allPipelines, pipeline)
-	}
 	for _, p := range allPipelines {
 		wg.Add(1)
 		go func(pipe gaia.Pipeline) {
 			defer wg.Done()
 			sem <- 1
 			defer func() { <-sem }()
-			UpdateRepository(&pipe)
+			_ = UpdateRepository(&pipe)
 		}(p)
 	}
 	wg.Wait()
@@ -184,15 +229,15 @@ func NewGithubClient(httpClient *gohttp.Client, repoMock GithubRepoService) Gith
 			Repositories: repoMock,
 		}
 	}
-	client := github.NewClient(httpClient)
+	githubClient := github.NewClient(httpClient)
 
 	return GithubClient{
-		Repositories: client.Repositories,
+		Repositories: githubClient.Repositories,
 	}
 }
 
 func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoService) error {
-	vault, err := services.VaultService(nil)
+	vault, err := services.DefaultVaultService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("unable to initialize vault: ", "error", err.Error())
 		return err
@@ -223,17 +268,17 @@ func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoSer
 	config["secret"] = string(secret)
 	config["content_type"] = "json"
 
-	client := NewGithubClient(tc, gitRepo)
+	githubClient := NewGithubClient(tc, gitRepo)
 	repoName := path.Base(repo.URL)
 	repoName = strings.TrimSuffix(repoName, ".git")
 	// var repoLocation string
-	re := regexp.MustCompile("^(https|git)(:\\/\\/|@)([^\\/:]+)[\\/:]([^\\/:]+)\\/(.+)$")
+	re := regexp.MustCompile("^(https|git)(://|@)([^/:]+)[/:]([^/:]+)/(.+)$")
 	m := re.FindAllStringSubmatch(repo.URL, -1)
 	if m == nil {
 		return errors.New("failed to extract url parameters from git url")
 	}
 	repoUser := m[0][4]
-	hook, resp, err := client.Repositories.CreateHook(context.Background(), repoUser, repoName, &github.Hook{
+	hook, resp, err := githubClient.Repositories.CreateHook(context.Background(), repoUser, repoName, &github.Hook{
 		Events: []string{"push"},
 		Name:   github.String("web"),
 		Active: github.Bool(true),
@@ -250,12 +295,12 @@ func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoSer
 
 func generateWebhookSecret() string {
 	secret := make([]byte, 16)
-	rand.Read(secret)
+	_, _ = rand.Read(secret)
 	based := base64.URLEncoding.EncodeToString(secret)
 	return strings.TrimSuffix(based, "==")
 }
 
-func getAuthInfo(repo *gaia.GitRepo) (transport.AuthMethod, error) {
+func getAuthInfo(repo *gaia.GitRepo, callBack gossh.HostKeyCallback) (transport.AuthMethod, error) {
 	var auth transport.AuthMethod
 	if repo.Username != "" && repo.Password != "" {
 		// Basic auth provided
@@ -269,6 +314,14 @@ func getAuthInfo(repo *gaia.GitRepo) (transport.AuthMethod, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		if callBack == nil {
+			callBack, err = ssh.NewKnownHostsCallback()
+			if err != nil {
+				return nil, err
+			}
+		}
+		auth.(*ssh.PublicKeys).HostKeyCallback = callBack
 	}
 	return auth, nil
 }

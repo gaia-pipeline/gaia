@@ -4,9 +4,11 @@ import (
 	"encoding/binary"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/coreos/bbolt"
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/security"
 )
 
 var (
@@ -28,12 +30,23 @@ var (
 
 	// Name of the bucket where we store all pipeline runs.
 	pipelineRunBucket = []byte("PipelineRun")
+
+	// Name of the bucket where we store information about settings
+	settingsBucket = []byte("Settings")
+
+	// Name of the bucket where we store all worker.
+	workerBucket = []byte("Worker")
+
+	// SHA pair bucket.
+	shaPairBucket = []byte("SHAPair")
 )
 
 const (
 	// Username and password of the first admin user
 	adminUsername = "admin"
 	adminPassword = "admin"
+	autoUsername  = "auto"
+	autoPassword  = "auto"
 
 	// Bolt database file name
 	boltDBFileName = "gaia.db"
@@ -47,7 +60,8 @@ type BoltStore struct {
 // GaiaStore is the interface that defines methods needed to store
 // pipeline and user related information.
 type GaiaStore interface {
-	Init() error
+	Init(dataPath string) error
+	Close() error
 	CreatePipelinePut(createPipeline *gaia.CreatePipeline) error
 	CreatePipelineGet() (listOfPipelines []gaia.CreatePipeline, err error)
 	PipelinePut(pipeline *gaia.Pipeline) error
@@ -57,9 +71,12 @@ type GaiaStore interface {
 	PipelinePutRun(r *gaia.PipelineRun) error
 	PipelineGetScheduled(limit int) ([]*gaia.PipelineRun, error)
 	PipelineGetRunByPipelineIDAndID(pipelineid int, runid int) (*gaia.PipelineRun, error)
-	PipelineGetAllRuns(pipelineID int) ([]gaia.PipelineRun, error)
+	PipelineGetAllRuns() ([]gaia.PipelineRun, error)
+	PipelineGetAllRunsByPipelineID(pipelineID int) ([]gaia.PipelineRun, error)
 	PipelineGetLatestRun(pipelineID int) (*gaia.PipelineRun, error)
+	PipelineGetRunByID(runID string) (*gaia.PipelineRun, error)
 	PipelineDelete(id int) error
+	PipelineRunDelete(uniqueID string) error
 	UserPut(u *gaia.User, encryptPassword bool) error
 	UserAuth(u *gaia.User, updateLastLogin bool) (*gaia.User, error)
 	UserGet(username string) (*gaia.User, error)
@@ -72,6 +89,15 @@ type GaiaStore interface {
 	UserPermissionGroupGet(name string) (*gaia.UserPermissionGroup, error)
 	UserPermissionGroupGetAll() ([]*gaia.UserPermissionGroup, error)
 	UserPermissionGroupDelete(name string) error
+	SettingsPut(config *gaia.StoreConfig) error
+	SettingsGet() (*gaia.StoreConfig, error)
+	WorkerPut(w *gaia.Worker) error
+	WorkerGetAll() ([]*gaia.Worker, error)
+	WorkerDelete(id string) error
+	WorkerDeleteAll() error
+	WorkerGet(id string) (*gaia.Worker, error)
+	UpsertSHAPair(pair gaia.SHAPair) error
+	GetSHAPair(pipelineID int) (bool, gaia.SHAPair, error)
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore
@@ -89,10 +115,12 @@ func NewBoltStore() *BoltStore {
 // generates private key and bolt database.
 // This should be called only once per database
 // because bolt holds a lock on the database file.
-func (s *BoltStore) Init() error {
+func (s *BoltStore) Init(dataPath string) error {
 	// Open connection to bolt database
-	path := filepath.Join(gaia.Cfg.DataPath, boltDBFileName)
-	db, err := bolt.Open(path, gaia.Cfg.Bolt.Mode, nil)
+	path := filepath.Join(dataPath, boltDBFileName)
+	// Give boltdb 5 seconds to try and open up a db file.
+	// If another process is already holding that file, this will time-out.
+	db, err := bolt.Open(path, gaia.Cfg.Bolt.Mode, &bolt.Options{Timeout: 5 * time.Second})
 	if err != nil {
 		return err
 	}
@@ -102,11 +130,22 @@ func (s *BoltStore) Init() error {
 	return s.setupDatabase()
 }
 
-// setupDatabase create all buckets in the db.
-// Additionally, it makes sure that the admin user exists.
-func (s *BoltStore) setupDatabase() error {
-	// Create bucket if not exists function
-	var bucketName []byte
+// Close closes the active boltdb connection.
+func (s *BoltStore) Close() error {
+	return s.db.Close()
+}
+
+type setup struct {
+	bs  *BoltStore
+	err error
+}
+
+// Create bucket if not exists function
+func (s *setup) update(bucketName []byte) {
+	// update is a no-op in case there was already an error
+	if s.err != nil {
+		return
+	}
 	c := func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists(bucketName)
 		if err != nil {
@@ -114,37 +153,31 @@ func (s *BoltStore) setupDatabase() error {
 		}
 		return nil
 	}
+	s.err = s.bs.db.Update(c)
+}
+
+// setupDatabase create all buckets in the db.
+// Additionally, it makes sure that the admin user exists.
+func (s *BoltStore) setupDatabase() error {
+	// Create bucket if not exists function
+	setP := &setup{
+		bs:  s,
+		err: nil,
+	}
 
 	// Make sure buckets exist
-	bucketName = userBucket
-	err := s.db.Update(c)
-	if err != nil {
-		return err
-	}
-	bucketName = userPermsBucket
-	err = s.db.Update(c)
-	if err != nil {
-		return err
-	}
-	bucketName = permissionGroupBucket
-	err = s.db.Update(c)
-	if err != nil {
-		return err
-	}
-	bucketName = pipelineBucket
-	err = s.db.Update(c)
-	if err != nil {
-		return err
-	}
-	bucketName = createPipelineBucket
-	err = s.db.Update(c)
-	if err != nil {
-		return err
-	}
-	bucketName = pipelineRunBucket
-	err = s.db.Update(c)
-	if err != nil {
-		return err
+	setP.update(userBucket)
+	setP.update(userPermsBucket)
+	setP.update(permissionGroupBucket)
+	setP.update(pipelineBucket)
+	setP.update(createPipelineBucket)
+	setP.update(pipelineRunBucket)
+	setP.update(settingsBucket)
+	setP.update(workerBucket)
+	setP.update(shaPairBucket)
+
+	if setP.err != nil {
+		return setP.err
 	}
 
 	// Make sure that the user "admin" does exist
@@ -169,6 +202,28 @@ func (s *BoltStore) setupDatabase() error {
 	err = s.CreatePermissionsIfNotExisting()
 	if err != nil {
 		return err
+	}
+
+	u, err := s.UserGet(autoUsername)
+	if err != nil {
+		return err
+	}
+
+	if u == nil {
+		triggerToken := security.GenerateRandomUUIDV5()
+		auto := gaia.User{
+			DisplayName:  "Auto User",
+			JwtExpiry:    0,
+			Password:     autoPassword,
+			Tokenstring:  "",
+			TriggerToken: triggerToken,
+			Username:     autoUsername,
+			LastLogin:    time.Now(),
+		}
+		err = s.UserPut(&auto, true)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

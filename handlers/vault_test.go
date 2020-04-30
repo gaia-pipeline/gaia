@@ -8,9 +8,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gaia-pipeline/gaia/workers/pipeline"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
 
@@ -33,8 +35,17 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 		t.Fatalf("cannot initialize certificate service: %v", err.Error())
 	}
 
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
 	e := echo.New()
-	InitHandlers(e)
+	_ = handlerService.InitHandlers(e)
 	t.Run("can add secret", func(t *testing.T) {
 		body := map[string]string{
 			"Key":   "Key",
@@ -46,7 +57,7 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		SetSecret(c)
+		_ = SetSecret(c)
 
 		if rec.Code != http.StatusCreated {
 			t.Fatalf("expected response code %v got %v", http.StatusCreated, rec.Code)
@@ -64,7 +75,7 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		SetSecret(c)
+		_ = SetSecret(c)
 
 		if rec.Code != http.StatusCreated {
 			t.Fatalf("expected response code %v got %v", http.StatusCreated, rec.Code)
@@ -77,13 +88,13 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		ListSecrets(c)
+		_ = ListSecrets(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusCreated, rec.Code)
 		}
 		body, _ := ioutil.ReadAll(rec.Body)
-		expectedBody := "[{\"key\":\"Key\",\"value\":\"**********\"}]"
+		expectedBody := "[{\"key\":\"Key\",\"value\":\"**********\"}]\n"
 		if string(body) != expectedBody {
 			t.Fatalf("response body did not equal expected body: expected: %s, actual: %s", expectedBody, string(body))
 		}
@@ -97,7 +108,7 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 		c.SetParamNames("key")
 		c.SetParamValues("Key")
 
-		RemoveSecret(c)
+		_ = RemoveSecret(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v", http.StatusCreated, rec.Code)
@@ -110,7 +121,7 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		RemoveSecret(c)
+		_ = RemoveSecret(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v", http.StatusCreated, rec.Code)

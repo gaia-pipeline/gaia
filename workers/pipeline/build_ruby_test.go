@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/store"
@@ -57,7 +59,7 @@ func TestExecuteBuildRuby(t *testing.T) {
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = gaia.PTypeRuby
-	p.Pipeline.Repo.LocalDest = tmp
+	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: tmp}
 	src := filepath.Join(tmp, p.Pipeline.Name+".gemspec")
 	if err := ioutil.WriteFile(src, []byte("testcontent"), 0666); err != nil {
 		t.Fatal(err)
@@ -67,7 +69,7 @@ func TestExecuteBuildRuby(t *testing.T) {
 		t.Fatal(err)
 	}
 	libFolder := filepath.Join(tmp, "lib")
-	if err := os.MkdirAll(libFolder, 0766); err != nil {
+	if err := os.MkdirAll(libFolder, gaia.ExecutablePermission); err != nil {
 		t.Fatal(err)
 	}
 	initFile := filepath.Join(libFolder, gemInitFile)
@@ -107,15 +109,15 @@ func TestExecuteBuildContextTimeoutRuby(t *testing.T) {
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = gaia.PTypeRuby
-	p.Pipeline.Repo.LocalDest = tmp
+	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: tmp}
 	src := filepath.Join(tmp, p.Pipeline.Name+".gemspec")
 	f, err := os.Create(src)
 	if err != nil {
 		t.Fatal(err)
 	}
-	f.Close()
+	_ = f.Close()
 	libFolder := filepath.Join(tmp, "lib")
-	if err = os.MkdirAll(libFolder, 0766); err != nil {
+	if err = os.MkdirAll(libFolder, gaia.ExecutablePermission); err != nil {
 		t.Fatal(err)
 	}
 	initFile := filepath.Join(libFolder, gemInitFile)
@@ -146,13 +148,13 @@ func TestCopyBinaryRuby(t *testing.T) {
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = gaia.PTypeRuby
-	p.Pipeline.Repo.LocalDest = tmp
+	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: tmp}
 	src := filepath.Join(tmp, "test.gem")
-	dst := appendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
+	dst := pipelinehelper.AppendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
 	f, _ := os.Create(src)
 	defer f.Close()
 	defer os.Remove(dst)
-	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	_ = ioutil.WriteFile(src, []byte("testcontent"), 0666)
 	err := b.CopyBinary(p)
 	if err != nil {
 		t.Fatal("error was not expected when copying binary: ", err)
@@ -181,7 +183,7 @@ func TestCopyBinarySrcDoesNotExistRuby(t *testing.T) {
 	p := new(gaia.CreatePipeline)
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = gaia.PTypeRuby
-	p.Pipeline.Repo.LocalDest = "/noneexistent"
+	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: "/noneexistent"}
 	err := b.CopyBinary(p)
 	if err == nil {
 		t.Fatal("error was expected when copying binary but none occurred ")

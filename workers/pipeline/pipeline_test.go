@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+
 	"github.com/gaia-pipeline/gaia"
 )
 
@@ -44,7 +46,10 @@ func TestUpdate(t *testing.T) {
 		Created: time.Now(),
 	}
 
-	ap.Update(0, p2)
+	err := ap.Update(0, p2)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	ret := ap.GetByName("Pipeline B")
 
@@ -52,6 +57,28 @@ func TestUpdate(t *testing.T) {
 		t.Fatalf("Pipeline should have been updated.")
 	}
 
+}
+
+func TestUpdateIndexOutOfBounds(t *testing.T) {
+	ap := NewActivePipelines()
+
+	p1 := gaia.Pipeline{
+		Name:    "Pipeline A",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+	ap.Append(p1)
+
+	p2 := gaia.Pipeline{
+		Name:    "Pipeline B",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+
+	err := ap.Update(1, p2)
+	if err == nil {
+		t.Fatal("expected error to occur since we are out of bounds")
+	}
 }
 
 func TestRemove(t *testing.T) {
@@ -71,10 +98,13 @@ func TestRemove(t *testing.T) {
 	}
 	ap.Append(p2)
 
-	ap.Remove(1)
+	err := ap.Remove(1)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	count := 0
-	for pipeline := range ap.Iter() {
+	for _, pipeline := range ap.GetAll() {
 		count++
 		if pipeline.Name == "Pipeline B" {
 			t.Fatalf("Pipeline B still exists. It should have been removed.")
@@ -83,6 +113,34 @@ func TestRemove(t *testing.T) {
 
 	if count != 1 {
 		t.Fatalf("Expected pipeline count to be %v. Got %v.", 1, count)
+	}
+}
+
+func TestRemoveInvalidIndex(t *testing.T) {
+	ap := NewActivePipelines()
+
+	p1 := gaia.Pipeline{
+		Name:    "Pipeline A",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+	ap.Append(p1)
+
+	p2 := gaia.Pipeline{
+		Name:    "Pipeline B",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+	ap.Append(p2)
+
+	err := ap.Remove(2)
+	if err == nil {
+		t.Fatal("expected error when accessing something outside the length ")
+	}
+
+	err = ap.Remove(3)
+	if err == nil {
+		t.Fatal("expected error when accessing something outside the length ")
 	}
 }
 
@@ -114,7 +172,7 @@ func TestReplace(t *testing.T) {
 	p1 := gaia.Pipeline{
 		Name: "Pipeline A",
 		Type: gaia.PTypeGolang,
-		Repo: gaia.GitRepo{
+		Repo: &gaia.GitRepo{
 			URL:       "https://github.com/gaia-pipeline/pipeline-test-1",
 			LocalDest: "tmp",
 		},
@@ -125,7 +183,7 @@ func TestReplace(t *testing.T) {
 	p2 := gaia.Pipeline{
 		Name: "Pipeline A",
 		Type: gaia.PTypeGolang,
-		Repo: gaia.GitRepo{
+		Repo: &gaia.GitRepo{
 			URL:       "https://github.com/gaia-pipeline/pipeline-test-2",
 			LocalDest: "tmp",
 		},
@@ -185,7 +243,7 @@ func TestIter(t *testing.T) {
 	}
 
 	count := 0
-	for pipeline := range ap.Iter() {
+	for _, pipeline := range ap.GetAll() {
 		count++
 		retrievedNames = append(retrievedNames, pipeline.Name)
 	}
@@ -246,7 +304,7 @@ func TestRemoveDeletedPipelines(t *testing.T) {
 
 	ap.RemoveDeletedPipelines(existingPipelineNames)
 
-	for pipeline := range ap.Iter() {
+	for _, pipeline := range ap.GetAll() {
 		if pipeline.Name == "Pipeline B" {
 			t.Fatalf("Pipeline B still exists. It should have been removed.")
 		}
@@ -270,14 +328,14 @@ func TestRenameBinary(t *testing.T) {
 
 	newName := "PipelineB"
 
-	src := filepath.Join(tmp, appendTypeToName(p.Name, p.Type))
-	dst := filepath.Join(tmp, appendTypeToName(newName, p.Type))
+	src := filepath.Join(tmp, pipelinehelper.AppendTypeToName(p.Name, p.Type))
+	dst := filepath.Join(tmp, pipelinehelper.AppendTypeToName(newName, p.Type))
 	f, _ := os.Create(src)
 	defer f.Close()
 	defer os.Remove(src)
 	defer os.Remove(dst)
 
-	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	_ = ioutil.WriteFile(src, []byte("testcontent"), 0666)
 
 	err := RenameBinary(p, newName)
 	if err != nil {
@@ -307,12 +365,12 @@ func TestDeleteBinary(t *testing.T) {
 		Created: time.Now(),
 	}
 
-	src := filepath.Join(tmp, appendTypeToName(p.Name, p.Type))
+	src := filepath.Join(tmp, pipelinehelper.AppendTypeToName(p.Name, p.Type))
 	f, _ := os.Create(src)
 	defer f.Close()
 	defer os.Remove(src)
 
-	ioutil.WriteFile(src, []byte("testcontent"), 0666)
+	_ = ioutil.WriteFile(src, []byte("testcontent"), 0666)
 
 	err := DeleteBinary(p)
 	if err != nil {
@@ -338,7 +396,7 @@ func TestGetExecPath(t *testing.T) {
 		Created: time.Now(),
 	}
 
-	expectedPath := filepath.Join(tmp, appendTypeToName(p.Name, p.Type))
+	expectedPath := filepath.Join(tmp, pipelinehelper.AppendTypeToName(p.Name, p.Type))
 	execPath := GetExecPath(p)
 
 	if execPath != expectedPath {
@@ -349,22 +407,26 @@ func TestGetExecPath(t *testing.T) {
 func TestNewBuildPipeline(t *testing.T) {
 	goBuildPipeline := newBuildPipeline(gaia.PTypeGolang)
 	if goBuildPipeline == nil {
-		t.Errorf("should be of type %s but is nil\n", gaia.PTypeGolang)
+		t.Fatalf("should be of type %s but is nil\n", gaia.PTypeGolang)
 	}
 	javaBuildPipeline := newBuildPipeline(gaia.PTypeJava)
 	if javaBuildPipeline == nil {
-		t.Errorf("should be of type %s but is nil\n", gaia.PTypeJava)
+		t.Fatalf("should be of type %s but is nil\n", gaia.PTypeJava)
 	}
 	pythonBuildPipeline := newBuildPipeline(gaia.PTypePython)
 	if pythonBuildPipeline == nil {
-		t.Errorf("should be of type %s but is nil\n", gaia.PTypePython)
+		t.Fatalf("should be of type %s but is nil\n", gaia.PTypePython)
 	}
 	cppBuildPipeline := newBuildPipeline(gaia.PTypeCpp)
 	if cppBuildPipeline == nil {
-		t.Errorf("should be of type %s but is nil\n", gaia.PTypeCpp)
+		t.Fatalf("should be of type %s but is nil\n", gaia.PTypeCpp)
 	}
 	rubyBuildPipeline := newBuildPipeline(gaia.PTypeRuby)
 	if rubyBuildPipeline == nil {
-		t.Errorf("should be of type %s but is nil\n", gaia.PTypeRuby)
+		t.Fatalf("should be of type %s but is nil\n", gaia.PTypeRuby)
+	}
+	nodeJSBuildPipeline := newBuildPipeline(gaia.PTypeNodeJS)
+	if nodeJSBuildPipeline == nil {
+		t.Fatalf("should be of type %s but is nil\n", gaia.PTypeNodeJS)
 	}
 }

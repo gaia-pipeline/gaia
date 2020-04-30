@@ -19,8 +19,8 @@ import (
 
 const (
 	rsaBits      = 2048
-	maxValidCA   = 17520 // 2 years
-	maxValidCERT = 48    // 48 hours
+	maxValidCA   = 175200 // 20 years
+	maxValidCERT = 48     // 48 hours
 	orgName      = "gaia-pipeline"
 	orgDNS       = "gaia-pipeline.io"
 
@@ -49,6 +49,12 @@ type CAAPI interface {
 	// First return param is the public cert.
 	// Second return param is the private key.
 	CreateSignedCert() (string, string, error)
+
+	// CreateSignedCertWithValidOpts create a new signed certificate
+	// with the given options.
+	// First return param is the public cert.
+	// Second return param is the private key.
+	CreateSignedCertWithValidOpts(hostname string, hoursBeforeValid, hoursAfterValid time.Duration) (string, string, error)
 
 	// GenerateTLSConfig generates a TLS config.
 	// It requires the path to the cert and the key.
@@ -127,8 +133,14 @@ func (c *CA) generateCA() error {
 	if err != nil {
 		return err
 	}
-	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-	certOut.Close()
+	err = pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	if err != nil {
+		return err
+	}
+	err = certOut.Close()
+	if err != nil {
+		return err
+	}
 
 	// Write out the ca.key file
 	keyOut, err := os.OpenFile(c.caKeyPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
@@ -141,14 +153,21 @@ func (c *CA) generateCA() error {
 	if err != nil {
 		return err
 	}
-	pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privateKey})
-	keyOut.Close()
+	err = pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privateKey})
+	if err != nil {
+		return err
+	}
+	err = keyOut.Close()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
-// CreateSignedCert creates a new key pair which is signed by the CA.
-func (c *CA) CreateSignedCert() (string, string, error) {
+// CreateSignedCertWithValidOpts creates a signed certificate by the CA.
+// It accepts hoursBeforeValid and hoursAfterValid.
+func (c *CA) CreateSignedCertWithValidOpts(hostname string, hoursBeforeValid, hoursAfterValid time.Duration) (string, string, error) {
 	// Load CA plain
 	caPlain, err := tls.LoadX509KeyPair(c.caCertPath, c.caKeyPath)
 	if err != nil {
@@ -169,8 +188,8 @@ func (c *CA) CreateSignedCert() (string, string, error) {
 	}
 
 	// Set time range for cert validation
-	notBefore := time.Now()
-	notAfter := notBefore.Add(time.Hour * maxValidCERT)
+	notBefore := time.Now().Add(time.Hour * (-1 * hoursBeforeValid))
+	notAfter := time.Now().Add(time.Hour * hoursAfterValid)
 
 	// Prepare certificate
 	cert := &x509.Certificate{
@@ -185,6 +204,12 @@ func (c *CA) CreateSignedCert() (string, string, error) {
 		KeyUsage:     x509.KeyUsageDigitalSignature,
 		DNSNames:     []string{orgDNS, goPluginHostname},
 	}
+
+	// Add additional hostname if provided
+	if hostname != "" {
+		cert.DNSNames = append(cert.DNSNames, hostname)
+	}
+
 	priv, _ := rsa.GenerateKey(rand.Reader, rsaBits)
 	pub := &priv.PublicKey
 
@@ -200,8 +225,14 @@ func (c *CA) CreateSignedCert() (string, string, error) {
 		return "", "", err
 	}
 
-	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certSigned})
-	certOut.Close()
+	err = pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certSigned})
+	if err != nil {
+		return "", "", err
+	}
+	err = certOut.Close()
+	if err != nil {
+		return "", "", err
+	}
 
 	// Private key
 	keyOut, err := ioutil.TempFile("", "key")
@@ -215,10 +246,21 @@ func (c *CA) CreateSignedCert() (string, string, error) {
 		return "", "", err
 	}
 
-	pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privateKey})
-	keyOut.Close()
+	err = pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privateKey})
+	if err != nil {
+		return "", "", err
+	}
+	err = keyOut.Close()
+	if err != nil {
+		return "", "", err
+	}
 
 	return certOut.Name(), keyOut.Name(), nil
+}
+
+// CreateSignedCert creates a new key pair which is signed by the CA.
+func (c *CA) CreateSignedCert() (string, string, error) {
+	return c.CreateSignedCertWithValidOpts("", 1, maxValidCERT)
 }
 
 // GenerateTLSConfig generates a new TLS config based on given

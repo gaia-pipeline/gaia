@@ -19,8 +19,14 @@ type CreatePipelineType string
 // can have.
 type PipelineRunStatus string
 
-// JobStatus represents the different status a job can have.
+// JobStatus represents the different status a job can have
 type JobStatus string
+
+// Mode represents the different modes for Gaia
+type Mode string
+
+// WorkerStatus represents the different status a worker can have
+type WorkerStatus string
 
 const (
 	// PTypeUnknown unknown plugin type
@@ -40,6 +46,9 @@ const (
 
 	// PTypeRuby ruby plugin type
 	PTypeRuby PipelineType = "ruby"
+
+	// PTypeNodeJS NodeJS plugin type
+	PTypeNodeJS PipelineType = "nodejs"
 
 	// CreatePipelineFailed status
 	CreatePipelineFailed CreatePipelineType = "failed"
@@ -68,6 +77,9 @@ const (
 	// RunCancelled status
 	RunCancelled PipelineRunStatus = "cancelled"
 
+	// RunReschedule status
+	RunReschedule PipelineRunStatus = "reschedule"
+
 	// JobWaitingExec status
 	JobWaitingExec JobStatus = "waiting for execution"
 
@@ -79,6 +91,21 @@ const (
 
 	// JobRunning status
 	JobRunning JobStatus = "running"
+
+	// ModeServer mode
+	ModeServer Mode = "server"
+
+	// ModeWorker mode
+	ModeWorker Mode = "worker"
+
+	// WorkerActive status
+	WorkerActive WorkerStatus = "active"
+
+	// WorkerInactive status
+	WorkerInactive WorkerStatus = "inactive"
+
+	// WorkerSuspended status
+	WorkerSuspended WorkerStatus = "suspended"
 
 	// LogsFolderName represents the Name of the logs folder in pipeline run folder
 	LogsFolderName = "logs"
@@ -103,16 +130,35 @@ const (
 
 	// TmpRubyFolder is the name of the ruby temporary folder
 	TmpRubyFolder = "ruby"
+
+	// TmpNodeJSFolder is the name of the nodejs temporary folder
+	TmpNodeJSFolder = "nodejs"
+
+	// WorkerRegisterKey is the used key for worker registration secret
+	WorkerRegisterKey = "WORKER_REGISTER_KEY"
+
+	// ExecutablePermission is the permission used for gaia created executables.
+	ExecutablePermission = 0700
+
+	// StartReasonRemote label for pipelines which were triggered through a remote token.
+	StartReasonRemote = "remote"
+
+	// StartReasonManual label for pipelines which were triggered through the admin site.
+	StartReasonManual = "manual"
+
+	// StartReasonScheduled label for pipelines which were triggered automated process, i.e. cron job.
+	StartReasonScheduled = "scheduled"
 )
 
 // User is the user object
 type User struct {
-	Username    string    `json:"username,omitempty"`
-	Password    string    `json:"password,omitempty"`
-	DisplayName string    `json:"display_name,omitempty"`
-	Tokenstring string    `json:"tokenstring,omitempty"`
-	JwtExpiry   int64     `json:"jwtexpiry,omitempty"`
-	LastLogin   time.Time `json:"lastlogin,omitempty"`
+	Username     string    `json:"username,omitempty"`
+	Password     string    `json:"password,omitempty"`
+	DisplayName  string    `json:"display_name,omitempty"`
+	Tokenstring  string    `json:"tokenstring,omitempty"`
+	JwtExpiry    int64     `json:"jwtexpiry,omitempty"`
+	LastLogin    time.Time `json:"lastlogin,omitempty"`
+	TriggerToken string    `json:"trigger_token,omitempty"`
 }
 
 // UserPermissionGroup represents a single permission group.
@@ -154,15 +200,18 @@ type UserRoleEndpoint struct {
 type Pipeline struct {
 	ID                int          `json:"id,omitempty"`
 	Name              string       `json:"name,omitempty"`
-	Repo              GitRepo      `json:"repo,omitempty"`
+	Repo              *GitRepo     `json:"repo,omitempty"`
 	Type              PipelineType `json:"type,omitempty"`
 	ExecPath          string       `json:"execpath,omitempty"`
 	SHA256Sum         []byte       `json:"sha256sum,omitempty"`
-	Jobs              []Job        `json:"jobs,omitempty"`
+	Jobs              []*Job       `json:"jobs,omitempty"`
 	Created           time.Time    `json:"created,omitempty"`
 	UUID              string       `json:"uuid,omitempty"`
 	IsNotValid        bool         `json:"notvalid,omitempty"`
 	PeriodicSchedules []string     `json:"periodicschedules,omitempty"`
+	TriggerToken      string       `json:"trigger_token,omitempty"`
+	Tags              []string     `json:"tags,omitempty"`
+	Docker            bool         `json:"docker"`
 	CronInst          *cron.Cron   `json:"-"`
 }
 
@@ -179,13 +228,13 @@ type GitRepo struct {
 
 // Job represents a single job of a pipeline
 type Job struct {
-	ID           uint32     `json:"id,omitempty"`
-	Title        string     `json:"title,omitempty"`
-	Description  string     `json:"desc,omitempty"`
-	DependsOn    []*Job     `json:"dependson,omitempty"`
-	Status       JobStatus  `json:"status,omitempty"`
-	Args         []Argument `json:"args,omitempty"`
-	FailPipeline bool       `json:"failpipeline,omitempty"`
+	ID           uint32      `json:"id,omitempty"`
+	Title        string      `json:"title,omitempty"`
+	Description  string      `json:"desc,omitempty"`
+	DependsOn    []*Job      `json:"dependson,omitempty"`
+	Status       JobStatus   `json:"status,omitempty"`
+	Args         []*Argument `json:"args,omitempty"`
+	FailPipeline bool        `json:"failpipeline,omitempty"`
 }
 
 // Argument represents a single argument of a job
@@ -217,14 +266,39 @@ type PrivateKey struct {
 
 // PipelineRun represents a single run of a pipeline.
 type PipelineRun struct {
-	UniqueID     string            `json:"uniqueid"`
-	ID           int               `json:"id"`
-	PipelineID   int               `json:"pipelineid"`
-	StartDate    time.Time         `json:"startdate,omitempty"`
-	FinishDate   time.Time         `json:"finishdate,omitempty"`
-	ScheduleDate time.Time         `json:"scheduledate,omitempty"`
-	Status       PipelineRunStatus `json:"status,omitempty"`
-	Jobs         []Job             `json:"jobs,omitempty"`
+	UniqueID       string            `json:"uniqueid"`
+	ID             int               `json:"id"`
+	PipelineID     int               `json:"pipelineid"`
+	StartDate      time.Time         `json:"startdate,omitempty"`
+	StartReason    string            `json:"started_reason"`
+	FinishDate     time.Time         `json:"finishdate,omitempty"`
+	ScheduleDate   time.Time         `json:"scheduledate,omitempty"`
+	Status         PipelineRunStatus `json:"status,omitempty"`
+	Jobs           []*Job            `json:"jobs,omitempty"`
+	PipelineType   PipelineType      `json:"pipelinetype,omitempty"`
+	PipelineTags   []string          `json:"pipelinetags,omitempty"`
+	Docker         bool              `json:"docker,omitempty"`
+	DockerWorkerID string            `json:"dockerworkerid,omitempty"`
+}
+
+// Worker represents a single registered worker.
+type Worker struct {
+	UniqueID     string       `json:"uniqueid"`
+	Name         string       `json:"name"`
+	Status       WorkerStatus `json:"status"`
+	Slots        int32        `json:"slots"`
+	RegisterDate time.Time    `json:"registerdate"`
+	LastContact  time.Time    `json:"lastcontact"`
+	FinishedRuns int64        `json:"finishedruns"`
+	Tags         []string     `json:"tags"`
+}
+
+// SHAPair struct contains the original sha of a pipeline executable and the
+// new sha which was created when the worker had to rebuild it.
+type SHAPair struct {
+	Original   []byte `json:"original"`
+	Worker     []byte `json:"worker"`
+	PipelineID int    `json:"pipelineid"`
 }
 
 // Cfg represents the global config instance
@@ -232,26 +306,48 @@ var Cfg = &Config{}
 
 // Config holds all config options
 type Config struct {
-	DevMode           bool
-	VersionSwitch     bool
-	Poll              bool
-	PVal              int
-	ListenPort        string
-	HomePath          string
-	Hostname          string
-	VaultPath         string
-	DataPath          string
-	PipelinePath      string
-	WorkspacePath     string
-	Worker            string
-	JwtPrivateKeyPath string
-	JWTKey            interface{}
-	Logger            hclog.Logger
-	CAPath            string
+	DevMode                 bool
+	ModeRaw                 string
+	Mode                    Mode
+	VersionSwitch           bool
+	Poll                    bool
+	PVal                    int
+	ListenPort              string
+	HomePath                string
+	Hostname                string
+	VaultPath               string
+	DataPath                string
+	PipelinePath            string
+	WorkspacePath           string
+	Worker                  int
+	JwtPrivateKeyPath       string
+	JWTKey                  interface{}
+	Logger                  hclog.Logger
+	CAPath                  string
+	WorkerServerPort        string
+	PreventPrimaryWork      bool
+	AutoDockerMode          bool
+	DockerHostURL           string
+	DockerRunImage          string
+	DockerWorkerHostURL     string
+	DockerWorkerGRPCHostURL string
+
+	// Worker
+	WorkerName        string
+	WorkerHostURL     string
+	WorkerGRPCHostURL string
+	WorkerSecret      string
+	WorkerTags        string
 
 	Bolt struct {
 		Mode os.FileMode
 	}
+}
+
+// StoreConfig defines config settings to be stored in DB.
+type StoreConfig struct {
+	ID   int
+	Poll bool
 }
 
 // String returns a pipeline type string back

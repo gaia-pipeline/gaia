@@ -4,12 +4,13 @@ NAMESPACE=${NAME}
 RELEASE_NAME=${NAME}
 HELM_DIR=$(shell pwd)/helm
 TEST=$$(go list ./... | grep -v /vendor/ | grep /testacc)
-TEST_TIMEOUT?=20m
+TEST_TIMEOUT_ACC?=20m
+TEST_TIMEOUT?=50s
 
 default: dev
 
 dev:
-	go run ./cmd/gaia/main.go -homepath=${PWD}/tmp -dev=true
+	go run ./cmd/gaia/main.go -home-path=${PWD}/tmp -dev=true
 
 compile_frontend:
 	cd ./frontend && \
@@ -34,13 +35,13 @@ get:
 	go get ./...
 
 test:
-	go test -v ./...
+	go test -v -race -timeout=$(TEST_TIMEOUT) ./...
 
 test-cover:
-	go test -v ./... --coverprofile=cover.out
+	go test -v -timeout=$(TEST_TIMEOUT) ./... --coverprofile=cover.out
 
 test-acc:
-	GAIA_RUN_ACC=true GAIA_DEV=true go test -v $(TEST) -timeout=$(TEST_TIMEOUT)
+	GAIA_RUN_ACC=true GAIA_DEV=true go test -v $(TEST) -timeout=$(TEST_TIMEOUT_ACC)
 
 release: compile_frontend static_assets compile_backend
 
@@ -49,3 +50,6 @@ deploy-kube:
 
 kube-ingress-lb:
 	kubectl apply -R -f ${HELM_DIR}/_system
+
+lint:
+	golint -set_exit_status ./...

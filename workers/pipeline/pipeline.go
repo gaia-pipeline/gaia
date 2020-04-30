@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 
 	"github.com/gaia-pipeline/gaia"
 )
@@ -93,6 +94,10 @@ func newBuildPipeline(t gaia.PipelineType) BuildPipeline {
 		bP = &BuildPipelineRuby{
 			Type: t,
 		}
+	case gaia.PTypeNodeJS:
+		bP = &BuildPipelineNodeJS{
+			Type: t,
+		}
 	}
 
 	return bP
@@ -116,35 +121,39 @@ func (ap *ActivePipelines) Append(p gaia.Pipeline) {
 }
 
 // Update updates a pipeline at the given index with the given pipeline.
-func (ap *ActivePipelines) Update(index int, p gaia.Pipeline) {
+func (ap *ActivePipelines) Update(index int, p gaia.Pipeline) error {
 	ap.Lock()
 	defer ap.Unlock()
 
+	if index >= len(ap.Pipelines) || index < 0 {
+		return fmt.Errorf("invalid index for len %d. index was: %d", len(ap.Pipelines), index)
+	}
 	ap.Pipelines[index] = p
+	return nil
 }
 
 // Remove removes a pipeline at the given index from ActivePipelines.
-func (ap *ActivePipelines) Remove(index int) {
+func (ap *ActivePipelines) Remove(index int) error {
 	ap.Lock()
 	defer ap.Unlock()
 
+	l := len(ap.Pipelines)
+	if index >= l || index+1 > l || index < 0 {
+		return fmt.Errorf("invalid index for len %d. index was: %d", len(ap.Pipelines), index)
+	}
 	ap.Pipelines = append(ap.Pipelines[:index], ap.Pipelines[index+1:]...)
+	return nil
 }
 
 // GetByName looks up the pipeline by the given name.
 func (ap *ActivePipelines) GetByName(n string) *gaia.Pipeline {
-	var foundPipeline gaia.Pipeline
-	for pipeline := range ap.Iter() {
+	for _, pipeline := range ap.GetAll() {
 		if pipeline.Name == n {
-			foundPipeline = pipeline
+			return &pipeline
 		}
 	}
 
-	if foundPipeline.Name == "" {
-		return nil
-	}
-
-	return &foundPipeline
+	return nil
 }
 
 // Replace takes the given pipeline and replaces it in the ActivePipelines
@@ -174,62 +183,43 @@ func (ap *ActivePipelines) Replace(p gaia.Pipeline) bool {
 
 // ReplaceByName replaces the pipeline that has the given name with the given pipeline.
 func (ap *ActivePipelines) ReplaceByName(n string, p gaia.Pipeline) bool {
-
-	var index int
-	var pipelineIndex int
-	var found bool
-
-	for pipeline := range ap.Iter() {
+	for index, pipeline := range ap.GetAll() {
 		if pipeline.Name == n {
-			found = true
-			pipelineIndex = index
+			// We can safely ignore the error here, since it wouldn't even
+			// come this far if it didn't find what to update.
+			_ = ap.Update(index, p)
+			return true
 		}
-		index++
 	}
-
-	if found {
-		ap.Update(pipelineIndex, p)
-	}
-
-	return found
-
+	return false
 }
 
-// Iter iterates over the pipelines in the concurrent slice.
-func (ap *ActivePipelines) Iter() <-chan gaia.Pipeline {
-	c := make(chan gaia.Pipeline)
-
-	go func() {
-		ap.RLock()
-		defer ap.RUnlock()
-		for _, pipeline := range ap.Pipelines {
-			c <- pipeline
-		}
-		close(c)
-	}()
-
+// GetAll iterates over the pipelines in the concurrent slice.
+func (ap *ActivePipelines) GetAll() []gaia.Pipeline {
+	c := make([]gaia.Pipeline, 0)
+	ap.RLock()
+	defer ap.RUnlock()
+	c = append(c, ap.Pipelines...)
 	return c
 }
 
 // Contains checks if the given pipeline name has been already appended
 // to the given ActivePipelines instance.
 func (ap *ActivePipelines) Contains(n string) bool {
-	var foundPipeline bool
-	for pipeline := range ap.Iter() {
+	for _, pipeline := range ap.GetAll() {
 		if pipeline.Name == n {
-			foundPipeline = true
+			return true
 		}
 	}
 
-	return foundPipeline
+	return false
 }
 
 // RemoveDeletedPipelines removes the pipelines whose names are NOT
 // present in `existingPipelineNames` from the given ActivePipelines instance.
 func (ap *ActivePipelines) RemoveDeletedPipelines(existingPipelineNames []string) {
 	var deletedPipelineIndices []int
-	var index int
-	for pipeline := range ap.Iter() {
+	for index, pipeline := range ap.GetAll() {
 		found := false
 		for _, name := range existingPipelineNames {
 			if pipeline.Name == name {
@@ -240,35 +230,31 @@ func (ap *ActivePipelines) RemoveDeletedPipelines(existingPipelineNames []string
 		if !found {
 			deletedPipelineIndices = append(deletedPipelineIndices, index)
 		}
-		index++
 	}
 	for _, idx := range deletedPipelineIndices {
-		ap.Remove(idx)
+		if err := ap.Remove(idx); err != nil {
+			gaia.Cfg.Logger.Error("failed to remove pipeline with index", "index", idx, "error", err.Error())
+			break
+		}
 	}
 }
 
 // RenameBinary renames the binary file for the given pipeline.
 func RenameBinary(p gaia.Pipeline, newName string) error {
-	currentBinaryName := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
-	newBinaryName := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(newName, p.Type))
+	currentBinaryName := filepath.Join(gaia.Cfg.PipelinePath, pipelinehelper.AppendTypeToName(p.Name, p.Type))
+	newBinaryName := filepath.Join(gaia.Cfg.PipelinePath, pipelinehelper.AppendTypeToName(newName, p.Type))
 	return os.Rename(currentBinaryName, newBinaryName)
 }
 
 // DeleteBinary deletes the binary for the given pipeline.
 func DeleteBinary(p gaia.Pipeline) error {
-	binaryFile := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
+	binaryFile := filepath.Join(gaia.Cfg.PipelinePath, pipelinehelper.AppendTypeToName(p.Name, p.Type))
 	return os.Remove(binaryFile)
 }
 
 // GetExecPath returns the path to the executable for the given pipeline.
 func GetExecPath(p gaia.Pipeline) string {
-	return filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
-}
-
-// appendTypeToName appends the type to the output binary name.
-// This allows us later to define the pipeline type by the name.
-func appendTypeToName(n string, pType gaia.PipelineType) string {
-	return fmt.Sprintf("%s%s%s", n, typeDelimiter, pType.String())
+	return filepath.Join(gaia.Cfg.PipelinePath, pipelinehelper.AppendTypeToName(p.Name, p.Type))
 }
 
 // executeCmd wraps a context around the command and executes it.
@@ -284,28 +270,4 @@ func executeCmd(path string, args []string, env []string, dir string) ([]byte, e
 
 	// Execute command
 	return cmd.CombinedOutput()
-}
-
-// copyFileContents copies the content from source to destination.
-func copyFileContents(src, dst string) (err error) {
-	in, err := os.Open(src)
-	if err != nil {
-		return
-	}
-	defer in.Close()
-	out, err := os.Create(dst)
-	if err != nil {
-		return
-	}
-	defer func() {
-		cerr := out.Close()
-		if err == nil {
-			err = cerr
-		}
-	}()
-	if _, err = io.Copy(out, in); err != nil {
-		return
-	}
-	err = out.Sync()
-	return
 }

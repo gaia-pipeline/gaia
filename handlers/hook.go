@@ -41,7 +41,7 @@ type Payload struct {
 
 func signBody(secret, body []byte) []byte {
 	computed := hmac.New(sha1.New, secret)
-	computed.Write(body)
+	_, _ = computed.Write(body)
 	return []byte(computed.Sum(nil))
 }
 
@@ -54,7 +54,7 @@ func verifySignature(secret []byte, signature string, body []byte) bool {
 	}
 
 	actual := make([]byte, 20)
-	hex.Decode(actual, []byte(signature[5:]))
+	_, _ = hex.Decode(actual, []byte(signature[5:]))
 	expected := signBody(secret, body)
 	return hmac.Equal(expected, actual)
 }
@@ -94,7 +94,7 @@ func parse(secret []byte, req *http.Request) (Hook, error) {
 
 // GitWebHook handles callbacks from GitHub's webhook system.
 func GitWebHook(c echo.Context) error {
-	vault, err := services.VaultService(nil)
+	vault, err := services.DefaultVaultService()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "unable to initialize vault: "+err.Error())
 	}
@@ -122,9 +122,10 @@ func GitWebHook(c echo.Context) error {
 	}
 
 	var foundPipe *gaia.Pipeline
-	for pipe := range pipeline.GlobalActivePipelines.Iter() {
+	for _, pipe := range pipeline.GlobalActivePipelines.GetAll() {
 		if pipe.Repo.URL == p.Repo.GitURL || pipe.Repo.URL == p.Repo.HTMLURL || pipe.Repo.URL == p.Repo.SSHURL {
 			foundPipe = &pipe
+			break
 		}
 	}
 	err = pipeline.UpdateRepository(foundPipe)

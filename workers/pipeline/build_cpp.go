@@ -7,9 +7,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/helper/filehelper"
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 )
 
 const (
@@ -24,20 +27,27 @@ type BuildPipelineCpp struct {
 
 // PrepareEnvironment prepares the environment before we start the build process.
 func (b *BuildPipelineCpp) PrepareEnvironment(p *gaia.CreatePipeline) error {
-	// create uuid for destination folder
-	uuid := uuid.Must(uuid.NewV4(), nil)
+	// create uniqueName for destination folder
+	v4, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+	uniqueName := uuid.Must(v4, nil)
 
 	// Create local temp folder for clone
-	cloneFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpCppFolder, srcFolder, uuid.String())
-	err := os.MkdirAll(cloneFolder, 0700)
+	cloneFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpCppFolder, srcFolder, uniqueName.String())
+	err = os.MkdirAll(cloneFolder, 0700)
 	if err != nil {
 		return err
 	}
 
 	// Set new generated path in pipeline obj for later usage
+	if p.Pipeline.Repo == nil {
+		p.Pipeline.Repo = &gaia.GitRepo{}
+	}
 	p.Pipeline.Repo.LocalDest = cloneFolder
-	p.Pipeline.UUID = uuid.String()
-	return err
+	p.Pipeline.UUID = uniqueName.String()
+	return nil
 }
 
 // ExecuteBuild executes the c++ build process
@@ -52,8 +62,14 @@ func (b *BuildPipelineCpp) ExecuteBuild(p *gaia.CreatePipeline) error {
 	// Set command args for build
 	args := []string{}
 
+	// Set local destination
+	localDest := ""
+	if p.Pipeline.Repo != nil {
+		localDest = p.Pipeline.Repo.LocalDest
+	}
+
 	// Execute and wait until finish or timeout
-	output, err := executeCmd(path, args, os.Environ(), p.Pipeline.Repo.LocalDest)
+	output, err := executeCmd(path, args, os.Environ(), localDest)
 	p.Output = string(output)
 	if err != nil {
 		gaia.Cfg.Logger.Debug("cannot build pipeline", "error", err.Error(), "output", string(output))
@@ -62,7 +78,7 @@ func (b *BuildPipelineCpp) ExecuteBuild(p *gaia.CreatePipeline) error {
 
 	// Build has been finished. Set execution path to the build result archive.
 	// This will be used during pipeline verification phase which will happen after this step.
-	p.Pipeline.ExecPath = filepath.Join(p.Pipeline.Repo.LocalDest, cppFinalBinaryName)
+	p.Pipeline.ExecPath = filepath.Join(localDest, cppFinalBinaryName)
 
 	return nil
 }
@@ -72,20 +88,20 @@ func (b *BuildPipelineCpp) ExecuteBuild(p *gaia.CreatePipeline) error {
 func (b *BuildPipelineCpp) CopyBinary(p *gaia.CreatePipeline) error {
 	// Define src and destination
 	src := filepath.Join(p.Pipeline.Repo.LocalDest, cppFinalBinaryName)
-	dest := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
+	dest := filepath.Join(gaia.Cfg.PipelinePath, pipelinehelper.AppendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
 
 	// Copy binary
-	if err := copyFileContents(src, dest); err != nil {
+	if err := filehelper.CopyFileContents(src, dest); err != nil {
 		return err
 	}
 
 	// Set +x (execution right) for pipeline
-	return os.Chmod(dest, 0766)
+	return os.Chmod(dest, gaia.ExecutablePermission)
 }
 
 // SavePipeline saves the current pipeline configuration.
 func (b *BuildPipelineCpp) SavePipeline(p *gaia.Pipeline) error {
-	dest := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
+	dest := filepath.Join(gaia.Cfg.PipelinePath, pipelinehelper.AppendTypeToName(p.Name, p.Type))
 	p.ExecPath = dest
 	p.Type = gaia.PTypeCpp
 	p.Name = strings.TrimSuffix(filepath.Base(dest), typeDelimiter+gaia.PTypeCpp.String())

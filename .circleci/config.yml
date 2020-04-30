@@ -1,10 +1,26 @@
 version: 2
 
 jobs:
+  linter:
+    working_directory: /go/src/github.com/gaia-pipeline/gaia
+    docker:
+      - image: circleci/golang:1.12.5
+        environment:
+          GO111MODULE: "on"
+    steps:
+      - checkout
+      - run:
+          name: Install linter
+          command: |
+            go get -u golang.org/x/lint/golint
+      - run:
+          name: Run linter
+          command: |
+            make lint
   test_and_coverage:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
-      - image: circleci/golang:1.11.4
+      - image: circleci/golang:1.12.5
         environment:
           GO111MODULE: "on"
     steps:
@@ -16,7 +32,7 @@ jobs:
             echo "" > coverage.txt
 
             for d in $(go list ./... | grep -v vendor | grep -v /testacc); do
-              go test -v -race -coverprofile=profile.out -covermode=atomic $d
+              go test -v -timeout 50s -race -coverprofile=profile.out -covermode=atomic $d
               if [ -f profile.out ]; then
                 cat profile.out >> coverage.txt
                 rm profile.out
@@ -34,7 +50,7 @@ jobs:
   acceptance_tests:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
-        - image: gaiapipeline/circleci:0.0.3
+        - image: gaiapipeline/circleci:0.0.5
           environment:
             GO111MODULE: "on"
     steps:
@@ -48,7 +64,7 @@ jobs:
   compile:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
-      - image: circleci/golang:1.11.4
+      - image: circleci/golang:1.12.5
         environment:
           GO111MODULE: "on"
     steps:
@@ -64,7 +80,7 @@ jobs:
           name: Compile frontend and final binary
           command: |
             cd frontend
-            nvm install v10.5.0
+            nvm install v12.6.0
             npm cache clean --force
             cd ..
             make download
@@ -76,6 +92,7 @@ workflows:
   version: 2
   test_and_compile:
     jobs:
+      - linter
       - test_and_coverage
       - acceptance_tests
       - compile

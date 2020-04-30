@@ -2,7 +2,7 @@ package store
 
 import (
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/auth"
+	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 )
 
 // CreatePermissionsIfNotExisting iterates any existing users and creates default permissions if they don't exist.
@@ -17,7 +17,7 @@ func (s *BoltStore) CreatePermissionsIfNotExisting() error {
 		if perms == nil {
 			perms := &gaia.UserPermission{
 				Username: user.Username,
-				Roles:    auth.FlattenUserCategoryRoles(auth.DefaultUserRoles),
+				Roles:    rolehelper.FlattenUserCategoryRoles(rolehelper.DefaultUserRoles),
 				Groups:   []string{},
 			}
 			err := s.UserPermissionsPut(perms)

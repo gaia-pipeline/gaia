@@ -11,15 +11,19 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gaia-pipeline/gaia"
 	proto "github.com/gaia-pipeline/protobuf"
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-hclog"
 	"google.golang.org/grpc/metadata"
 )
 
 type fakeCAAPI struct{}
 
+func (c *fakeCAAPI) CreateSignedCertWithValidOpts(hostname string, hoursBeforeValid, hoursAfterValid time.Duration) (string, string, error) {
+	return "", "", nil
+}
 func (c *fakeCAAPI) CreateSignedCert() (string, string, error) { return "", "", nil }
 func (c *fakeCAAPI) GenerateTLSConfig(certPath, keyPath string) (*tls.Config, error) {
 	return &tls.Config{}, nil
@@ -29,16 +33,16 @@ func (c *fakeCAAPI) GetCACertPath() (string, string)    { return "", "" }
 
 type fakeClientProtocol struct{}
 
-func (cp *fakeClientProtocol) Dispense(s string) (interface{}, error) { return &fakePluginGRPC{}, nil }
+func (cp *fakeClientProtocol) Dispense(s string) (interface{}, error) { return &fakeGaiaPlugin{}, nil }
 func (cp *fakeClientProtocol) Ping() error                            { return nil }
 func (cp *fakeClientProtocol) Close() error                           { return nil }
 
-type fakePluginGRPC struct{}
+type fakeGaiaPlugin struct{}
 
-func (p *fakePluginGRPC) GetJobs() (proto.Plugin_GetJobsClient, error) {
+func (p *fakeGaiaPlugin) GetJobs() (proto.Plugin_GetJobsClient, error) {
 	return &fakeJobsClient{}, nil
 }
-func (p *fakePluginGRPC) ExecuteJob(job *proto.Job) (*proto.JobResult, error) {
+func (p *fakeGaiaPlugin) ExecuteJob(job *proto.Job) (*proto.JobResult, error) {
 	return &proto.JobResult{}, nil
 }
 
@@ -47,9 +51,18 @@ type fakeJobsClient struct {
 }
 
 func (jc *fakeJobsClient) Recv() (*proto.Job, error) {
+	j := &proto.Job{
+		Args: []*proto.Argument{
+			{
+				Key:   "key",
+				Value: "value",
+			},
+		},
+	}
+
 	if jc.counter == 0 {
 		jc.counter++
-		return &proto.Job{}, nil
+		return j, nil
 	}
 	return nil, io.EOF
 }
@@ -61,7 +74,7 @@ func (jc *fakeJobsClient) SendMsg(m interface{}) error  { return nil }
 func (jc *fakeJobsClient) RecvMsg(m interface{}) error  { return nil }
 
 func TestNewPlugin(t *testing.T) {
-	p := &Plugin{}
+	p := &GoPlugin{}
 	p.NewPlugin(new(fakeCAAPI))
 }
 
@@ -73,12 +86,18 @@ func TestInit(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	emptyPlugin := &Plugin{}
+	emptyPlugin := &GoPlugin{}
 	p := emptyPlugin.NewPlugin(new(fakeCAAPI))
 	logpath := filepath.Join(tmp, "test")
 	err := p.Init(exec.Command("echo", "world"), &logpath)
+	if err == nil {
+		t.Fatal("was expecting an error. non happened")
+	}
 	if !strings.Contains(err.Error(), "Unrecognized remote plugin message") {
-		t.Fatalf("Error should contain 'Unrecognized remote plugin message' but was '%s'", err.Error())
+		// Sometimes go-plugin throws this error instead...
+		if !strings.Contains(err.Error(), "plugin exited before we could connect") {
+			t.Fatalf("Error should contain 'Unrecognized remote plugin message' but was '%s'", err.Error())
+		}
 	}
 }
 
@@ -89,7 +108,7 @@ func TestValidate(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	p := &Plugin{clientProtocol: new(fakeClientProtocol)}
+	p := &GoPlugin{clientProtocol: new(fakeClientProtocol)}
 	err := p.Validate()
 	if err != nil {
 		t.Fatal(err)
@@ -103,10 +122,19 @@ func TestExecute(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	p := &Plugin{pluginConn: new(fakePluginGRPC)}
+	p := &GoPlugin{pluginConn: new(fakeGaiaPlugin)}
 	buf := new(bytes.Buffer)
-	p.writer = bufio.NewWriter(buf)
-	err := p.Execute(&gaia.Job{})
+	p.logger = GaiaLogWriter{}
+	p.logger.writer = bufio.NewWriter(buf)
+	j := &gaia.Job{
+		Args: []*gaia.Argument{
+			{
+				Key:   "key",
+				Value: "value",
+			},
+		},
+	}
+	err := p.Execute(j)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,30 +147,13 @@ func TestGetJobs(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	p := &Plugin{pluginConn: new(fakePluginGRPC)}
+	p := &GoPlugin{pluginConn: new(fakeGaiaPlugin)}
 	buf := new(bytes.Buffer)
-	p.writer = bufio.NewWriter(buf)
+	p.logger = GaiaLogWriter{}
+	p.logger.writer = bufio.NewWriter(buf)
 	_, err := p.GetJobs()
 	if err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestRebuildDepTree(t *testing.T) {
-	l := []gaia.Job{
-		{ID: 12345},
-		{ID: 1234},
-		{ID: 123},
-	}
-	dep := []uint32{1234, 123}
-	depTree := rebuildDepTree(dep, l)
-	if len(depTree) != 2 {
-		t.Fatalf("dependency length should be 2 but is %d", len(depTree))
-	}
-	for _, depJob := range depTree {
-		if depJob.ID != 1234 && depJob.ID != 123 {
-			t.Fatalf("wrong dependency detected %d", depJob.ID)
-		}
 	}
 }
 
@@ -154,10 +165,10 @@ func TestClose(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	emptyPlugin := &Plugin{}
+	emptyPlugin := &GoPlugin{}
 	p := emptyPlugin.NewPlugin(new(fakeCAAPI))
 	logpath := filepath.Join(tmp, "test")
-	p.Init(exec.Command("echo", "world"), &logpath)
+	_ = p.Init(exec.Command("echo", "world"), &logpath)
 	p.Close()
 }
 
@@ -169,10 +180,10 @@ func TestFlushLogs(t *testing.T) {
 		Output: hclog.DefaultOutput,
 		Name:   "Gaia",
 	})
-	emptyPlugin := &Plugin{}
+	emptyPlugin := &GoPlugin{}
 	p := emptyPlugin.NewPlugin(new(fakeCAAPI))
 	logpath := filepath.Join(tmp, "test")
-	p.Init(exec.Command("echo", "world"), &logpath)
+	_ = p.Init(exec.Command("echo", "world"), &logpath)
 	err := p.FlushLogs()
 	if err != nil {
 		t.Fatal(err)

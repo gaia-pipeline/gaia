@@ -10,10 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gaia-pipeline/gaia/auth"
-
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 	"github.com/labstack/echo"
 )
 
@@ -25,14 +24,14 @@ var mockRoleAuth = &AuthConfig{
 				{
 					Name: "GetSingle",
 					APIEndpoint: []*gaia.UserRoleEndpoint{
-						auth.NewUserRoleEndpoint("GET", "/catone/:id"),
-						auth.NewUserRoleEndpoint("GET", "/catone/latest"),
+						rolehelper.NewUserRoleEndpoint("GET", "/catone/:id"),
+						rolehelper.NewUserRoleEndpoint("GET", "/catone/latest"),
 					},
 				},
 				{
 					Name: "PostSingle",
 					APIEndpoint: []*gaia.UserRoleEndpoint{
-						auth.NewUserRoleEndpoint("POST", "/catone"),
+						rolehelper.NewUserRoleEndpoint("POST", "/catone"),
 					},
 				},
 			},
@@ -43,13 +42,13 @@ var mockRoleAuth = &AuthConfig{
 				{
 					Name: "GetSingle",
 					APIEndpoint: []*gaia.UserRoleEndpoint{
-						auth.NewUserRoleEndpoint("GET", "/cattwo/:first/:second"),
+						rolehelper.NewUserRoleEndpoint("GET", "/cattwo/:first/:second"),
 					},
 				},
 				{
 					Name: "PostSingle",
 					APIEndpoint: []*gaia.UserRoleEndpoint{
-						auth.NewUserRoleEndpoint("POST", "/cattwo/:first/:second/start"),
+						rolehelper.NewUserRoleEndpoint("POST", "/cattwo/:first/:second/start"),
 					},
 				},
 			},

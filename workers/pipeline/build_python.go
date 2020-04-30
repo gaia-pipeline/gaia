@@ -9,9 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/helper/filehelper"
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 )
 
 var (
@@ -25,21 +28,29 @@ type BuildPipelinePython struct {
 
 // PrepareEnvironment prepares the environment before we start the build process.
 func (b *BuildPipelinePython) PrepareEnvironment(p *gaia.CreatePipeline) error {
-	// create uuid for destination folder
-	uuid := uuid.Must(uuid.NewV4(), nil)
+	// create uniqueName for destination folder
+	v4, err := uuid.NewV4()
+	if err != nil {
+		gaia.Cfg.Logger.Debug("unable to generate uuid", "error", err.Error())
+		return err
+	}
+	uniqueName := uuid.Must(v4, nil)
 
 	// Create local temp folder for clone
 	rootPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder)
-	cloneFolder := filepath.Join(rootPath, srcFolder, uuid.String())
-	err := os.MkdirAll(cloneFolder, 0700)
+	cloneFolder := filepath.Join(rootPath, srcFolder, uniqueName.String())
+	err = os.MkdirAll(cloneFolder, 0700)
 	if err != nil {
 		return err
 	}
 
 	// Set new generated path in pipeline obj for later usage
+	if p.Pipeline.Repo == nil {
+		p.Pipeline.Repo = &gaia.GitRepo{}
+	}
 	p.Pipeline.Repo.LocalDest = cloneFolder
-	p.Pipeline.UUID = uuid.String()
-	return err
+	p.Pipeline.UUID = uniqueName.String()
+	return nil
 }
 
 // ExecuteBuild executes the python build process
@@ -57,8 +68,14 @@ func (b *BuildPipelinePython) ExecuteBuild(p *gaia.CreatePipeline) error {
 		"sdist",
 	}
 
+	// Set local destination
+	localDest := ""
+	if p.Pipeline.Repo != nil {
+		localDest = p.Pipeline.Repo.LocalDest
+	}
+
 	// Execute and wait until finish or timeout
-	output, err := executeCmd(path, args, os.Environ(), p.Pipeline.Repo.LocalDest)
+	output, err := executeCmd(path, args, os.Environ(), localDest)
 	if err != nil {
 		gaia.Cfg.Logger.Debug("cannot generate python distribution package", "error", err.Error(), "output", string(output))
 		p.Output = string(output)
@@ -114,20 +131,20 @@ func (b *BuildPipelinePython) CopyBinary(p *gaia.CreatePipeline) error {
 	if err != nil {
 		return err
 	}
-	dest := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
+	dest := filepath.Join(gaia.Cfg.PipelinePath, pipelinehelper.AppendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
 
 	// Copy binary
-	if err := copyFileContents(src, dest); err != nil {
+	if err := filehelper.CopyFileContents(src, dest); err != nil {
 		return err
 	}
 
 	// Set +x (execution right) for pipeline
-	return os.Chmod(dest, 0766)
+	return os.Chmod(dest, gaia.ExecutablePermission)
 }
 
 // SavePipeline saves the current pipeline configuration.
 func (b *BuildPipelinePython) SavePipeline(p *gaia.Pipeline) error {
-	dest := filepath.Join(gaia.Cfg.PipelinePath, appendTypeToName(p.Name, p.Type))
+	dest := filepath.Join(gaia.Cfg.PipelinePath, pipelinehelper.AppendTypeToName(p.Name, p.Type))
 	p.ExecPath = dest
 	p.Type = gaia.PTypePython
 	p.Name = strings.TrimSuffix(filepath.Base(dest), typeDelimiter+gaia.PTypePython.String())
