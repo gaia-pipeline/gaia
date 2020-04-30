@@ -10,8 +10,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gaia-pipeline/gaia/handlers/mocks"
-
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 
 	"github.com/gaia-pipeline/gaia/services"
@@ -279,30 +277,53 @@ func TestUserLoginRSAKey(t *testing.T) {
 	}
 }
 
+type mockPermissionsUserStoreService struct {
+	gStore.GaiaStore
+	ua   func(u *gaia.User, updateLastLogin bool) (*gaia.User, error)
+	upg  func(username string) (*gaia.UserPermission, error)
+	upgg func(name string) (*gaia.UserPermissionGroup, error)
+}
+
+func (m mockPermissionsUserStoreService) UserPermissionsGet(username string) (*gaia.UserPermission, error) {
+	return m.upg(username)
+}
+
+func (m mockPermissionsUserStoreService) UserPermissionGroupGet(name string) (*gaia.UserPermissionGroup, error) {
+	return m.upgg(name)
+}
+
+func (m mockPermissionsUserStoreService) UserAuth(u *gaia.User, updateLastLogin bool) (*gaia.User, error) {
+	return m.ua(u, updateLastLogin)
+}
+
 func TestUserLoginPerms(t *testing.T) {
 	// Create a mock service which returns new and conflicting roles on purpose. All should merge together so there is
 	// no duplicates.
-	services.MockStorageService(&mocks.Store{
-		UserPermissionsGroupGet: func(name string) (*gaia.UserPermissionGroup, error) {
+	storeService := mockPermissionsUserStoreService{
+		upgg: func(name string) (*gaia.UserPermissionGroup, error) {
 			return &gaia.UserPermissionGroup{
 				Name:  "TestGroup",
 				Roles: []string{"TestRoleA", "TestRoleB", "TestRoleC", "TestRoleE"},
 			}, nil
 		},
-		UserPermissionsGetFunc: func(username string) (*gaia.UserPermission, error) {
+		upg: func(username string) (*gaia.UserPermission, error) {
 			return &gaia.UserPermission{
 				Username: "admin",
 				Roles:    []string{"TestRoleA", "TestRoleB", "TestRoleD", "TestRoleF"},
 				Groups:   []string{"TestGroup"},
 			}, nil
 		},
-		UserAuthFunc: func(u *gaia.User, updateLastLogin bool) (user *gaia.User, e error) {
+		ua: func(u *gaia.User, updateLastLogin bool) (*gaia.User, error) {
 			return &gaia.User{
 				Username: "admin",
 			}, nil
 		},
-	})
+	}
 
+	tmp, _ := ioutil.TempDir("", "TestUserLoginHMACKey")
+	dataDir := tmp
+
+	services.MockStorageService(&storeService)
 	defer func() {
 		services.MockStorageService(nil)
 		gaia.Cfg = nil
@@ -315,6 +336,8 @@ func TestUserLoginPerms(t *testing.T) {
 			Output: hclog.DefaultOutput,
 			Name:   "Gaia",
 		}),
+		DataPath: dataDir,
+		Mode:     gaia.ModeServer,
 	}
 
 	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
