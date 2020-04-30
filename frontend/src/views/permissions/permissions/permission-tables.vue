@@ -37,15 +37,12 @@ export default {
   },
   data () {
     return {
-      roles: []
+      roles: this.value,
     }
   },
   watch: {
     roles: function (val) {
       this.$emit('input', val)
-    },
-    value: function (val) {
-      this.roles = val === undefined ? [] : val
     }
   },
   methods: {

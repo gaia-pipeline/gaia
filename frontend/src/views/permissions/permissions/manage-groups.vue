@@ -42,7 +42,7 @@
             <input class="input is-medium input-bar" v-focus v-model="description" type="text"
                    placeholder="Description">
             <br><br>
-            <permission-tables @input="setRoles" :permission-options="permissionOptions"></permission-tables>
+            <permission-tables @input="setRoles" :permission-options="permissionOptions"/>
             <div style="float: left;">
               <button class="button is-primary" v-on:click="addNew">Add</button>
             </div>
@@ -50,9 +50,8 @@
           <div v-if="!isNew && name !== ''">
             <h4 class="title">User Groups: {{name}}</h4>
             <h4 class="subtitle">{{description ? description : 'No description'}}</h4>
-            <permission-tables :value="roles" @input="setRoles"
-                               :permission-options="permissionOptions"></permission-tables>
-            <div style="float: left;">
+            <permission-tables :value="roles" @input="setRoles" :permission-options="permissionOptions"/>
+            <div style="float: left; margin-top: 20px;">
               <button class="button is-primary" v-on:click="save">Save</button>
             </div>
           </div>
@@ -100,9 +99,18 @@ export default {
     },
     selectGroup (group) {
       this.toggleNew(false)
-      this.name = group.name
-      this.description = group.description
-      this.roles = group.roles
+      this.$http
+        .get(`/api/v1/permission/group/${group.name}`, { showProgressBar: false })
+        .then(response => {
+          if (response.data) {
+            this.name = group.name
+            this.description = group.description
+            this.roles = response.data.roles
+          }
+        })
+        .catch((error) => {
+          this.$onError(error)
+        })
     },
     toggleNew (value) {
       this.name = ''
