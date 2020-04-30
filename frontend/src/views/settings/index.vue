@@ -54,9 +54,6 @@
             </div>
           </div>
         </tab-pane>
-        <tab-pane label="Permissions" icon="fa fa-users">
-          <manage-permissions :users="userRows"/>
-        </tab-pane>
         <tab-pane label="Pipelines" icon="fa fa-cog">
           <div class="tile is-ancestor">
             <div class="tile is-vertical">
@@ -369,7 +366,6 @@ import VueTippy from 'vue-tippy'
 import moment from 'moment'
 import Notification from 'vue-bulma-notification-fixed'
 import { mapGetters } from 'vuex'
-import ManagePermissions from './permissions/manage-permissions'
 import ManageSettings from './settings/manage-settings'
 import ManageWorker from './worker/manage-worker'
 import { EventBus } from '../../main.js'
@@ -393,7 +389,6 @@ Vue.use(VueTippy)
 
 export default {
   components: {
-    ManagePermissions,
     Tabs,
     TabPane,
     Modal,

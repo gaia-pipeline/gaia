@@ -2,8 +2,8 @@
   <div class="tile is-ancestor">
     <div class="tile is-vertical">
       <tabs type="boxed" :is-fullwidth="false" alignment="centered" size="large">
-        <tab-pane label="User Permissions" icon="fa fa-user">
-          <manage-permissions :users="users" :groups="groups" :permission-options="permissionOptions"/>
+        <tab-pane label="User Roles" icon="fa fa-user">
+          <manage-permissions :users="users" :permission-options="permissionOptions"/>
         </tab-pane>
         <tab-pane label="User Groups" icon="fa fa-users">
           <manage-groups :groups="groups" :permission-options="permissionOptions"/>
@@ -15,9 +15,9 @@
 
 <script>
 import { TabPane, Tabs } from 'vue-bulma-tabs'
-import ManagePermissions from './manage-permissions'
-import ManageGroups from './manage-groups'
-import { EventBus } from '../../../main'
+import ManagePermissions from './permissions/manage-permissions'
+import ManageGroups from './permissions/manage-groups'
+import { EventBus } from '../../main'
 
 export default {
   components: {

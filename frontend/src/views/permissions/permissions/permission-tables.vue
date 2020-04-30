@@ -2,7 +2,7 @@
   <div>
     <div v-if="permissionOptions && permissionOptions.length > 0">
       <div v-for="category in permissionOptions" :key="category.name">
-        <p>{{ category.name }}: {{ category.description }}</p><br>
+        <p style="margin-top: 20px;">{{ category.name }}: {{ category.description }}</p><br>
         <table class="table is-narrow is-fullwidth table-general">
           <thead>
           <tr>

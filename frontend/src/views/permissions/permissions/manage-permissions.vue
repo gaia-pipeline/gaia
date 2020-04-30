@@ -14,14 +14,14 @@
           </tr>
           </thead>
           <tbody>
-            <div v-if="filteredUsers.length > 0" >
-              <tr v-for="user in filteredUsers" :key="user.username">
-                <td class="user-row" @click="fetchData(user)">{{user.username}}</td>
-              </tr>
-            </div>
-            <tr v-if="filteredUsers.length === 0">
-              <td class="user-row"><i>No results.</i></td>
+          <div v-if="filteredUsers.length > 0" >
+            <tr v-for="user in filteredUsers" :key="user.username">
+              <td class="user-row" @click="fetchData(user)">{{user.username}}</td>
             </tr>
+          </div>
+          <tr v-if="filteredUsers.length === 0">
+            <td class="user-row"><i>No results.</i></td>
+          </tr>
           </tbody>
         </table>
       </article>
