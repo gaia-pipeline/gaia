@@ -11,7 +11,6 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/store"
-	"github.com/gaia-pipeline/gaia/workers/scheduler"
 	"github.com/hashicorp/go-hclog"
 )
 
@@ -33,32 +32,6 @@ func TestStorageService(t *testing.T) {
 	defer func() { storeService = nil }()
 	if storeService == nil {
 		t.Fatal("storage service should not be nil")
-	}
-}
-
-func TestSchedulerService(t *testing.T) {
-	tmp, _ := ioutil.TempDir("", "TestSchedulerService")
-	gaia.Cfg = new(gaia.Config)
-	gaia.Cfg.HomePath = tmp
-	gaia.Cfg.DataPath = tmp
-	buf := new(bytes.Buffer)
-	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
-		Level:  hclog.Trace,
-		Output: buf,
-		Name:   "Gaia",
-	})
-	if schedulerService != nil {
-		t.Fatal("initial service should be nil. was: ", schedulerService)
-	}
-	if _, err := StorageService(); err != nil {
-		t.Fatal(err)
-	}
-	sService, err := SchedulerService()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if sService == nil {
-		t.Fatal("scheduler service should not be nil")
 	}
 }
 
@@ -149,10 +122,6 @@ type testMockStorageService struct {
 	store.GaiaStore
 }
 
-type testMockScheduleService struct {
-	scheduler.GaiaScheduler
-}
-
 type testMockCertificateService struct {
 	security.CAAPI
 }
@@ -193,20 +162,6 @@ func TestCanMockServiceToNil(t *testing.T) {
 		s2, _ := StorageService()
 		if reflect.TypeOf(s2).String() == "*services.testMockStorageService" {
 			t.Fatalf("want type: '%s' got: '%s'", "BoltStorage", reflect.TypeOf(s2).String())
-		}
-	})
-
-	t.Run("can mock scheduler to nil", func(t *testing.T) {
-		mcp := new(testMockScheduleService)
-		MockSchedulerService(mcp)
-		s1, _ := SchedulerService()
-		if _, ok := s1.(*testMockScheduleService); !ok {
-			t.Fatalf("want type: '%s' got: '%s'", "testMockScheduleService", reflect.TypeOf(s1).String())
-		}
-		MockSchedulerService(nil)
-		s2, _ := SchedulerService()
-		if reflect.TypeOf(s2).String() == "*services.testMockScheduleService" {
-			t.Fatalf("got: '%s'", reflect.TypeOf(s2).String())
 		}
 	})
 

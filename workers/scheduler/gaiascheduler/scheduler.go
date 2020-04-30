@@ -1,4 +1,4 @@
-package scheduler
+package gaiascheduler
 
 import (
 	"errors"
@@ -17,7 +17,7 @@ import (
 	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/store/memdb"
 	"github.com/gaia-pipeline/gaia/workers/docker"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 )
 
 const (
@@ -42,7 +42,7 @@ const (
 )
 
 var (
-	// errCreateCMDForPipeline is thrown when we couldnt create a command to start
+	// errCreateCMDForPipeline is thrown when we couldn't create a command to start
 	// a plugin.
 	errCreateCMDForPipeline = errors.New("could not create execute command for plugin")
 
@@ -65,7 +65,7 @@ var (
 // GaiaScheduler is a job scheduler for gaia pipeline runs.
 type GaiaScheduler interface {
 	Init()
-	SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error)
+	SchedulePipeline(p *gaia.Pipeline, startedBy string, args []*gaia.Argument) (*gaia.PipelineRun, error)
 	SetPipelineJobs(p *gaia.Pipeline) error
 	StopPipelineRun(p *gaia.Pipeline, runID int) error
 	GetFreeWorkers() int32
@@ -98,19 +98,27 @@ type Scheduler struct {
 	freeWorkers *int32
 }
 
-// NewScheduler creates a new instance of Scheduler.
-func NewScheduler(store store.GaiaStore, db memdb.GaiaMemDB, pS plugin.Plugin, ca security.CAAPI, vault security.GaiaVault) (*Scheduler, error) {
+// Dependencies defines the dependencies of the scheduler service.
+type Dependencies struct {
+	Store store.GaiaStore
+	DB    memdb.GaiaMemDB
+	PS    plugin.Plugin
+	CA    security.CAAPI
+	Vault security.GaiaVault
+}
+
+// NewScheduler creates a new Scheduler service.
+func NewScheduler(deps Dependencies) (*Scheduler, error) {
 	// Create new scheduler
 	s := &Scheduler{
 		scheduledRuns: make(chan gaia.PipelineRun, schedulerBufferLimit),
-		storeService:  store,
-		memDBService:  db,
-		pluginSystem:  pS,
-		ca:            ca,
-		vault:         vault,
+		storeService:  deps.Store,
+		memDBService:  deps.DB,
+		pluginSystem:  deps.PS,
+		ca:            deps.CA,
+		vault:         deps.Vault,
 		freeWorkers:   new(int32),
 	}
-
 	return s, nil
 }
 
@@ -353,8 +361,8 @@ func (s *Scheduler) StopPipelineRun(p *gaia.Pipeline, runID int) error {
 	if err != nil {
 		return err
 	}
-	if pr.Status != gaia.RunRunning {
-		return errors.New("pipeline is not in running state")
+	if pr.Status == gaia.RunFailed || pr.Status == gaia.RunCancelled || pr.Status == gaia.RunSuccess {
+		return errors.New("pipeline is not in a cancellable state")
 	}
 
 	pr.Status = gaia.RunCancelled
@@ -371,7 +379,7 @@ var schedulerLock = sync.RWMutex{}
 
 // SchedulePipeline schedules a pipeline. We create a new schedule object
 // and save it in our store. The scheduler will later pick this up and will continue the work.
-func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*gaia.PipelineRun, error) {
+func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, startedReason string, args []*gaia.Argument) (*gaia.PipelineRun, error) {
 
 	// Introduce a semaphore locking here because this function can be called
 	// in parallel if multiple users happen to trigger a pipeline run at the same time.
@@ -441,8 +449,12 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*
 	}
 
 	// Create new not scheduled pipeline run
+	v4, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
 	run := gaia.PipelineRun{
-		UniqueID:     uuid.Must(uuid.NewV4(), nil).String(),
+		UniqueID:     uuid.Must(v4, nil).String(),
 		ID:           highestID,
 		PipelineID:   p.ID,
 		ScheduleDate: time.Now(),
@@ -451,6 +463,7 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, args []*gaia.Argument) (*
 		PipelineType: p.Type,
 		PipelineTags: p.Tags,
 		Docker:       p.Docker,
+		StartReason:  startedReason,
 	}
 
 	// Put run into store

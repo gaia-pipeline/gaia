@@ -139,6 +139,15 @@ const (
 
 	// ExecutablePermission is the permission used for gaia created executables.
 	ExecutablePermission = 0700
+
+	// StartReasonRemote label for pipelines which were triggered through a remote token.
+	StartReasonRemote = "remote"
+
+	// StartReasonManual label for pipelines which were triggered through the admin site.
+	StartReasonManual = "manual"
+
+	// StartReasonScheduled label for pipelines which were triggered automated process, i.e. cron job.
+	StartReasonScheduled = "scheduled"
 )
 
 // User is the user object
@@ -261,6 +270,7 @@ type PipelineRun struct {
 	ID             int               `json:"id"`
 	PipelineID     int               `json:"pipelineid"`
 	StartDate      time.Time         `json:"startdate,omitempty"`
+	StartReason    string            `json:"started_reason"`
 	FinishDate     time.Time         `json:"finishdate,omitempty"`
 	ScheduleDate   time.Time         `json:"scheduledate,omitempty"`
 	Status         PipelineRunStatus `json:"status,omitempty"`

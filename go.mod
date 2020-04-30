@@ -23,6 +23,7 @@ require (
 	github.com/gaia-pipeline/gosdk v0.0.0-20180909192508-cc9f89055777
 	github.com/gaia-pipeline/protobuf v0.0.0-20180812091451-7be8a901b55a
 	github.com/gliderlabs/ssh v0.1.1 // indirect
+	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/golang/protobuf v1.3.2
 	github.com/google/go-github v15.0.0+incompatible
@@ -47,7 +48,6 @@ require (
 	github.com/pelletier/go-buffruneio v0.2.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
-	github.com/satori/go.uuid v1.2.0
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/src-d/gcfg v1.3.0 // indirect

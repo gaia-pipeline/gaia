@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode"
 
 	"github.com/gaia-pipeline/gaia/security"
 
@@ -34,12 +35,15 @@ var (
 
 	// errPipelineNameInUse is thrown when a pipelines name is already in use
 	errPipelineNameInUse = errors.New("pipeline name is already in use")
+
+	// errPipelineNameInvalid is thrown when the pipeline name contains invalid characters
+	errPipelineNameInvalid = errors.New("must match [A-z][0-9][-][_][ ]")
 )
 
 // CreatePipeline is the main function which executes step by step the creation
 // of a plugin.
 // After each step, the status is written to store and can be retrieved via API.
-func CreatePipeline(p *gaia.CreatePipeline) {
+func (s *gaiaPipelineService) CreatePipeline(p *gaia.CreatePipeline) {
 	gitToken := p.GitHubToken
 	p.GitHubToken = ""
 	storeService, _ := services.StorageService()
@@ -107,8 +111,7 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 	}
 
 	// Try to get pipeline jobs to check if this pipeline is valid.
-	schedulerService, _ := services.SchedulerService()
-	if err = schedulerService.SetPipelineJobs(&p.Pipeline); err != nil {
+	if err = s.deps.Scheduler.SetPipelineJobs(&p.Pipeline); err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot validate pipeline: %s", err.Error())
 		_ = storeService.CreatePipelinePut(p)
@@ -166,6 +169,17 @@ func CreatePipeline(p *gaia.CreatePipeline) {
 // ValidatePipelineName validates a given pipeline name and
 // returns the correct error back.
 func ValidatePipelineName(pName string) error {
+
+	valid := func(r rune) bool {
+		return unicode.IsDigit(r) || unicode.IsLetter(r) || unicode.IsSpace(r) || r == '-' || r == '_'
+	}
+	// Note, this is faster than regex.
+	for _, c := range pName {
+		if !valid(c) {
+			return errPipelineNameInvalid
+		}
+	}
+
 	// The name could contain a path. Split it up.
 	path := strings.Split(pName, pipelinePathSplitChar)
 

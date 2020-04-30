@@ -6,16 +6,22 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/plugin"
+
+	"github.com/gaia-pipeline/gaia/services"
+
+	"github.com/gaia-pipeline/gaia/workers/scheduler/gaiascheduler"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/server"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 )
 
 func TestBuildPipelineAcceptanceTestTearUp(t *testing.T) {
-	if os.Getenv("GAIA_RUN_ACC") != "true" {
-		t.Skip("skipping acceptance tests because GAIA_RUN_ACC is not 'true'")
-	}
+	//if os.Getenv("GAIA_RUN_ACC") != "true" {
+	//	t.Skip("skipping acceptance tests because GAIA_RUN_ACC is not 'true'")
+	//}
 
 	// Create temp folder for acceptance test.
 	tmp, _ := ioutil.TempDir("", "TestBuildPipelineAcceptanceTestTearUp")
@@ -46,8 +52,9 @@ func TestBuildPipelineAcceptanceTestTearUp(t *testing.T) {
 
 func buildGoPluginTest(t *testing.T) {
 	// Create test pipeline.
+	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
-		ID: uuid.Must(uuid.NewV4(), nil).String(),
+		ID: uuid.Must(v4, nil).String(),
 		Pipeline: gaia.Pipeline{
 			Name: "GoTestPipeline",
 			Type: gaia.PTypeGolang,
@@ -55,8 +62,23 @@ func buildGoPluginTest(t *testing.T) {
 		},
 	}
 
+	store, _ := services.StorageService()
+	db, _ := services.DefaultMemDBService()
+	va, _ := services.DefaultVaultService()
+	ca, _ := services.CertificateService()
+	scheduler, _ := gaiascheduler.NewScheduler(gaiascheduler.Dependencies{
+		Store: store,
+		DB:    db,
+		PS:    &plugin.GoPlugin{},
+		CA:    ca,
+		Vault: va,
+	})
+
+	ps := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: scheduler,
+	})
 	// Build pipeline.
-	pipeline.CreatePipeline(testPipeline)
+	ps.CreatePipeline(testPipeline)
 
 	// Check if everything went smoothly.
 	if testPipeline.StatusType != gaia.CreatePipelineSuccess {
@@ -66,8 +88,9 @@ func buildGoPluginTest(t *testing.T) {
 
 func buildJavaPluginTest(t *testing.T) {
 	// Create test pipeline.
+	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
-		ID: uuid.Must(uuid.NewV4(), nil).String(),
+		ID: uuid.Must(v4, nil).String(),
 		Pipeline: gaia.Pipeline{
 			Name: "JavaTestPipeline",
 			Type: gaia.PTypeJava,
@@ -75,8 +98,23 @@ func buildJavaPluginTest(t *testing.T) {
 		},
 	}
 
+	store, _ := services.StorageService()
+	db, _ := services.DefaultMemDBService()
+	va, _ := services.DefaultVaultService()
+	ca, _ := services.CertificateService()
+	scheduler, _ := gaiascheduler.NewScheduler(gaiascheduler.Dependencies{
+		Store: store,
+		DB:    db,
+		PS:    &plugin.GoPlugin{},
+		CA:    ca,
+		Vault: va,
+	})
+
+	ps := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: scheduler,
+	})
 	// Build pipeline.
-	pipeline.CreatePipeline(testPipeline)
+	ps.CreatePipeline(testPipeline)
 
 	// Check if everything went smoothly.
 	if testPipeline.StatusType != gaia.CreatePipelineSuccess {
@@ -86,17 +124,32 @@ func buildJavaPluginTest(t *testing.T) {
 
 func buildPythonPluginTest(t *testing.T) {
 	// Create test pipeline.
+	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
-		ID: uuid.Must(uuid.NewV4(), nil).String(),
+		ID: uuid.Must(v4, nil).String(),
 		Pipeline: gaia.Pipeline{
 			Name: "PythonTestPipeline",
 			Type: gaia.PTypePython,
 			Repo: &gaia.GitRepo{URL: "https://github.com/gaia-pipeline/python-example"},
 		},
 	}
+	store, _ := services.StorageService()
+	db, _ := services.DefaultMemDBService()
+	va, _ := services.DefaultVaultService()
+	ca, _ := services.CertificateService()
+	scheduler, _ := gaiascheduler.NewScheduler(gaiascheduler.Dependencies{
+		Store: store,
+		DB:    db,
+		PS:    &plugin.GoPlugin{},
+		CA:    ca,
+		Vault: va,
+	})
 
+	ps := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: scheduler,
+	})
 	// Build pipeline.
-	pipeline.CreatePipeline(testPipeline)
+	ps.CreatePipeline(testPipeline)
 
 	// Check if everything went smoothly.
 	if testPipeline.StatusType != gaia.CreatePipelineSuccess {
@@ -106,17 +159,32 @@ func buildPythonPluginTest(t *testing.T) {
 
 func buildCppPluginTest(t *testing.T) {
 	// Create test pipeline.
+	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
-		ID: uuid.Must(uuid.NewV4(), nil).String(),
+		ID: uuid.Must(v4, nil).String(),
 		Pipeline: gaia.Pipeline{
 			Name: "CppTestPipeline",
 			Type: gaia.PTypeCpp,
 			Repo: &gaia.GitRepo{URL: "https://github.com/gaia-pipeline/cpp-example"},
 		},
 	}
+	store, _ := services.StorageService()
+	db, _ := services.DefaultMemDBService()
+	va, _ := services.DefaultVaultService()
+	ca, _ := services.CertificateService()
+	scheduler, _ := gaiascheduler.NewScheduler(gaiascheduler.Dependencies{
+		Store: store,
+		DB:    db,
+		PS:    &plugin.GoPlugin{},
+		CA:    ca,
+		Vault: va,
+	})
 
+	ps := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: scheduler,
+	})
 	// Build pipeline.
-	pipeline.CreatePipeline(testPipeline)
+	ps.CreatePipeline(testPipeline)
 
 	// Check if everything went smoothly.
 	if testPipeline.StatusType != gaia.CreatePipelineSuccess {
@@ -126,17 +194,32 @@ func buildCppPluginTest(t *testing.T) {
 
 func buildRubyPluginTest(t *testing.T) {
 	// Create test pipeline.
+	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
-		ID: uuid.Must(uuid.NewV4(), nil).String(),
+		ID: uuid.Must(v4, nil).String(),
 		Pipeline: gaia.Pipeline{
 			Name: "RubyTestPipeline",
 			Type: gaia.PTypeRuby,
 			Repo: &gaia.GitRepo{URL: "https://github.com/gaia-pipeline/ruby-example"},
 		},
 	}
+	store, _ := services.StorageService()
+	db, _ := services.DefaultMemDBService()
+	va, _ := services.DefaultVaultService()
+	ca, _ := services.CertificateService()
+	scheduler, _ := gaiascheduler.NewScheduler(gaiascheduler.Dependencies{
+		Store: store,
+		DB:    db,
+		PS:    &plugin.GoPlugin{},
+		CA:    ca,
+		Vault: va,
+	})
 
+	ps := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: scheduler,
+	})
 	// Build pipeline.
-	pipeline.CreatePipeline(testPipeline)
+	ps.CreatePipeline(testPipeline)
 
 	// Check if everything went smoothly.
 	if testPipeline.StatusType != gaia.CreatePipelineSuccess {
@@ -146,17 +229,32 @@ func buildRubyPluginTest(t *testing.T) {
 
 func buildNodeJSPluginTest(t *testing.T) {
 	// Create test pipeline.
+	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
-		ID: uuid.Must(uuid.NewV4(), nil).String(),
+		ID: uuid.Must(v4, nil).String(),
 		Pipeline: gaia.Pipeline{
 			Name: "NodeJSTestPipeline",
 			Type: gaia.PTypeNodeJS,
 			Repo: &gaia.GitRepo{URL: "https://github.com/gaia-pipeline/nodejs-example"},
 		},
 	}
+	store, _ := services.StorageService()
+	db, _ := services.DefaultMemDBService()
+	va, _ := services.DefaultVaultService()
+	ca, _ := services.CertificateService()
+	scheduler, _ := gaiascheduler.NewScheduler(gaiascheduler.Dependencies{
+		Store: store,
+		DB:    db,
+		PS:    &plugin.GoPlugin{},
+		CA:    ca,
+		Vault: va,
+	})
 
+	ps := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: scheduler,
+	})
 	// Build pipeline.
-	pipeline.CreatePipeline(testPipeline)
+	ps.CreatePipeline(testPipeline)
 
 	// Check if everything went smoothly.
 	if testPipeline.StatusType != gaia.CreatePipelineSuccess {

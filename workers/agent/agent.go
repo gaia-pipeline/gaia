@@ -25,7 +25,7 @@ import (
 	"github.com/gaia-pipeline/gaia/workers/agent/api"
 	gp "github.com/gaia-pipeline/gaia/workers/pipeline"
 	pb "github.com/gaia-pipeline/gaia/workers/proto"
-	"github.com/gaia-pipeline/gaia/workers/scheduler"
+	"github.com/gaia-pipeline/gaia/workers/scheduler/service"
 	"google.golang.org/grpc"
 	_ "google.golang.org/grpc/balancer/grpclb" // needed because of https://github.com/grpc/grpc-go/issues/2575
 	"google.golang.org/grpc/credentials"
@@ -67,7 +67,10 @@ type Agent struct {
 	caCertFile string
 
 	// Instance of scheduler
-	scheduler scheduler.GaiaScheduler
+	scheduler service.GaiaScheduler
+
+	// Pipeline Service
+	pipelineService gp.Service
 
 	// Instance of store
 	store store.GaiaStore
@@ -77,11 +80,12 @@ type Agent struct {
 }
 
 // InitAgent initiates the agent instance
-func InitAgent(exitChan chan os.Signal, scheduler scheduler.GaiaScheduler, store store.GaiaStore, certPath string) *Agent {
+func InitAgent(exitChan chan os.Signal, scheduler service.GaiaScheduler, pipelineService gp.Service, store store.GaiaStore, certPath string) *Agent {
 	ag := &Agent{
-		exitChan:  exitChan,
-		scheduler: scheduler,
-		store:     store,
+		exitChan:        exitChan,
+		scheduler:       scheduler,
+		store:           store,
+		pipelineService: pipelineService,
 	}
 
 	// Set path to local certificates
@@ -586,7 +590,7 @@ func (a *Agent) rebuildWorkerBinary(ctx context.Context, pipeline *gaia.Pipeline
 	gitRepo.SelectedBranch = repo.SelectedBranch
 	pCreate.Pipeline.Repo = &gitRepo
 
-	gp.CreatePipeline(pCreate)
+	a.pipelineService.CreatePipeline(pCreate)
 	if pCreate.StatusType == gaia.CreatePipelineFailed {
 		return fmt.Errorf("error while creating pipeline: %s", pCreate.Output)
 	}
