@@ -14,6 +14,7 @@ type RBACMiddleware struct {
 	category gaia.UserRoleCategory
 }
 
+// NewRBACMiddleware creates a new RBACMiddleware.
 func NewRBACMiddleware(category gaia.UserRoleCategory) *RBACMiddleware {
 	if _, ok := rolehelper.DefaultUserRoles[category]; !ok {
 		gaia.Cfg.Logger.Warn("invalid rbac category: %s", category)

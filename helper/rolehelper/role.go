@@ -5,11 +5,6 @@ import (
 	"github.com/gaia-pipeline/gaia"
 )
 
-// NewUserRoleEndpoint is a constructor for creating new UserRoleEndpoints.
-func NewUserRoleEndpoint(method string, path string) *gaia.UserRoleEndpoint {
-	return &gaia.UserRoleEndpoint{Path: path, Method: method}
-}
-
 // FullUserRoleName returns a full user role name in the form {category}{role}.
 func FullUserRoleName(category gaia.UserRoleCategory, role gaia.UserRole) string {
 	return fmt.Sprintf("%s%s", category, role)
@@ -20,39 +15,61 @@ func FullUserRoleName(category gaia.UserRoleCategory, role gaia.UserRole) string
 func FlattenUserCategoryRoles(cats map[gaia.UserRoleCategory]*gaia.UserRoleCategoryDetails) []string {
 	var roles []string
 	for categoryName, category := range cats {
-		for roleName, _ := range category.Roles {
+		for roleName := range category.Roles {
 			roles = append(roles, FullUserRoleName(categoryName, roleName))
 		}
 	}
-		return roles
+	return roles
 }
 
-var (
-	PipelineCategory       gaia.UserRoleCategory = "Pipeline"
-	PipelineRunCategory    gaia.UserRoleCategory = "PipelineRun"
-	SecretCategory         gaia.UserRoleCategory = "Secret"
-	UserCategory           gaia.UserRoleCategory = "User"
+const (
+	// PipelineCategory (DO NOT CHANGE)
+	PipelineCategory gaia.UserRoleCategory = "Pipeline"
+	// PipelineRunCategory (DO NOT CHANGE)
+	PipelineRunCategory gaia.UserRoleCategory = "PipelineRun"
+	// SecretCategory (DO NOT CHANGE)
+	SecretCategory gaia.UserRoleCategory = "Secret"
+	// UserCategory (DO NOT CHANGE)
+	UserCategory gaia.UserRoleCategory = "User"
+	// UserPermissionCategory (DO NOT CHANGE)
 	UserPermissionCategory gaia.UserRoleCategory = "UserPermission"
-	WorkerCategory         gaia.UserRoleCategory = "Worker"
+	// WorkerCategory (DO NOT CHANGE)
+	WorkerCategory gaia.UserRoleCategory = "Worker"
 
+	// CreateRole (DO NOT CHANGE)
 	CreateRole gaia.UserRole = "Create"
-	ListRole   gaia.UserRole = "List"
-	GetRole    gaia.UserRole = "Get"
+	// ListRole (DO NOT CHANGE)
+	ListRole gaia.UserRole = "List"
+	// GetRole (DO NOT CHANGE)
+	GetRole gaia.UserRole = "Get"
+	// UpdateRole (DO NOT CHANGE)
 	UpdateRole gaia.UserRole = "Update"
+	// DeleteRole (DO NOT CHANGE)
 	DeleteRole gaia.UserRole = "Delete"
 
+	// StartRole (DO NOT CHANGE)
 	StartRole gaia.UserRole = "Start"
-	StopRole  gaia.UserRole = "Stop"
-	LogsRole  gaia.UserRole = "Logs"
+	// StopRole (DO NOT CHANGE)
+	StopRole gaia.UserRole = "Stop"
+	// LogsRole (DO NOT CHANGE)
+	LogsRole gaia.UserRole = "Logs"
 
+	// ChangePasswordRole (DO NOT CHANGE)
 	ChangePasswordRole gaia.UserRole = "ChangePassword"
 
-	GetRegistrationSecretRole     gaia.UserRole = "GetRegistrationSecret"
-	GetOverviewRole               gaia.UserRole = "GetOverview"
-	GetWorkerRole                 gaia.UserRole = "GetWorker"
-	DeregisterWorkerRole          gaia.UserRole = "DeregisterWorker"
+	// GetRegistrationSecretRole (DO NOT CHANGE)
+	GetRegistrationSecretRole gaia.UserRole = "GetRegistrationSecret"
+	// GetOverviewRole (DO NOT CHANGE)
+	GetOverviewRole gaia.UserRole = "GetOverview"
+	// GetWorkerRole (DO NOT CHANGE)
+	GetWorkerRole gaia.UserRole = "GetWorker"
+	// DeregisterWorkerRole (DO NOT CHANGE)
+	DeregisterWorkerRole gaia.UserRole = "DeregisterWorker"
+	// ResetWorkerRegisterSecretRole (DO NOT CHANGE)
 	ResetWorkerRegisterSecretRole gaia.UserRole = "ResetWorkerRegisterSecret"
+)
 
+var (
 	// DefaultUserRoles contains all the default user categories and roles.
 	DefaultUserRoles = map[gaia.UserRoleCategory]*gaia.UserRoleCategoryDetails{
 		PipelineCategory: {

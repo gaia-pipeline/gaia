@@ -6,33 +6,23 @@ import (
 	"github.com/gaia-pipeline/gaia"
 )
 
-var mockData = []*gaia.UserRoleCategoryDetails{
-	{
-		Name: "CategoryA",
-		Roles: []*gaia.UserRoleDetails{
-			{
-				Name: "RoleA",
-			},
-			{
-				Name: "RoleB",
-			},
+var mockData = map[gaia.UserRoleCategory]*gaia.UserRoleCategoryDetails{
+	"CategoryA": {
+		Roles: map[gaia.UserRole]*gaia.UserRoleDetails{
+			"RoleA": {},
+			"RoleB": {},
 		},
 	},
-	{
-		Name: "CategoryB",
-		Roles: []*gaia.UserRoleDetails{
-			{
-				Name: "RoleA",
-			},
-			{
-				Name: "RoleB",
-			},
+	"CategoryB": {
+		Roles: map[gaia.UserRole]*gaia.UserRoleDetails{
+			"RoleA": {},
+			"RoleB": {},
 		},
 	},
 }
 
 func TestFlatRoleName(t *testing.T) {
-	value := FullUserRoleName(mockData[0], mockData[0].Roles[0])
+	value := FullUserRoleName("CategoryA", "RoleA")
 	expect := "CategoryARoleA"
 	if value != expect {
 		t.Fatalf("value %s should equal: %s", value, expect)

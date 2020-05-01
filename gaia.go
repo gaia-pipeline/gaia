@@ -186,12 +186,6 @@ type UserRoleDetails struct {
 	Description string              `json:"description"`
 }
 
-// UserRoleEndpoint represents the path and method of the API endpoint to be secured.
-type UserRoleEndpoint struct {
-	Path   string `json:"path"`
-	Method string `json:"method"`
-}
-
 // Pipeline represents a single pipeline
 type Pipeline struct {
 	ID                int          `json:"id,omitempty"`
