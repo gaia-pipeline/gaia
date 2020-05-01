@@ -209,6 +209,7 @@ func UserAdd(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
+
 	// Add default perms
 	perms := &gaia.UserPermission{
 		Username: u.Username,

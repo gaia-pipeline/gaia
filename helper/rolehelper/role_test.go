@@ -6,10 +6,10 @@ import (
 	"github.com/gaia-pipeline/gaia"
 )
 
-var mockData = []*gaia.UserRoleCategory{
+var mockData = []*gaia.UserRoleCategoryDetails{
 	{
 		Name: "CategoryA",
-		Roles: []*gaia.UserRole{
+		Roles: []*gaia.UserRoleDetails{
 			{
 				Name: "RoleA",
 			},
@@ -20,7 +20,7 @@ var mockData = []*gaia.UserRoleCategory{
 	},
 	{
 		Name: "CategoryB",
-		Roles: []*gaia.UserRole{
+		Roles: []*gaia.UserRoleDetails{
 			{
 				Name: "RoleA",
 			},

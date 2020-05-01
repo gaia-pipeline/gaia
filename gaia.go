@@ -161,6 +161,9 @@ type User struct {
 	TriggerToken string    `json:"trigger_token,omitempty"`
 }
 
+// UserRoleCategory represents the name of a user role category.
+type UserRoleCategory string
+
 // UserPermission is stored in its own data structure away from the core user. It represents all permission data
 // for a single user.
 type UserPermission struct {
@@ -169,18 +172,18 @@ type UserPermission struct {
 	Groups   []string `json:"groups"`
 }
 
-// UserRoleCategory represents the top-level of the permission role system
-type UserRoleCategory struct {
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
-	Roles       []*UserRole `json:"roles"`
+// UserRoleCategoryDetails represents the top-level of the permission role system
+type UserRoleCategoryDetails struct {
+	Description string                        `json:"description"`
+	Roles       map[UserRole]*UserRoleDetails `json:"roles"`
 }
 
-// UserRole represents a single permission role.
-type UserRole struct {
-	Name        string              `json:"name"`
+// UserRole represents the name of a user role.
+type UserRole string
+
+// UserRoleDetails represents a single permission role.
+type UserRoleDetails struct {
 	Description string              `json:"description"`
-	APIEndpoint []*UserRoleEndpoint `json:"api_endpoints"`
 }
 
 // UserRoleEndpoint represents the path and method of the API endpoint to be secured.

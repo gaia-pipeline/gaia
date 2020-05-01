@@ -1,6 +1,9 @@
 package rolehelper
 
-import "github.com/gaia-pipeline/gaia"
+import (
+	"fmt"
+	"github.com/gaia-pipeline/gaia"
+)
 
 // NewUserRoleEndpoint is a constructor for creating new UserRoleEndpoints.
 func NewUserRoleEndpoint(method string, path string) *gaia.UserRoleEndpoint {
@@ -8,238 +11,151 @@ func NewUserRoleEndpoint(method string, path string) *gaia.UserRoleEndpoint {
 }
 
 // FullUserRoleName returns a full user role name in the form {category}{role}.
-func FullUserRoleName(category *gaia.UserRoleCategory, role *gaia.UserRole) string {
-	return category.Name + role.Name
+func FullUserRoleName(category gaia.UserRoleCategory, role gaia.UserRole) string {
+	return fmt.Sprintf("%s%s", category, role)
 }
 
 // FlattenUserCategoryRoles flattens the given user categories into a single slice with items in the form off
 // {category}{role}s.
-func FlattenUserCategoryRoles(cats []*gaia.UserRoleCategory) []string {
+func FlattenUserCategoryRoles(cats map[gaia.UserRoleCategory]*gaia.UserRoleCategoryDetails) []string {
 	var roles []string
-	for _, category := range cats {
-		for _, r := range category.Roles {
-			roles = append(roles, FullUserRoleName(category, r))
+	for categoryName, category := range cats {
+		for roleName, _ := range category.Roles {
+			roles = append(roles, FullUserRoleName(categoryName, roleName))
 		}
 	}
-	return roles
+		return roles
 }
 
 var (
+	PipelineCategory       gaia.UserRoleCategory = "Pipeline"
+	PipelineRunCategory    gaia.UserRoleCategory = "PipelineRun"
+	SecretCategory         gaia.UserRoleCategory = "Secret"
+	UserCategory           gaia.UserRoleCategory = "User"
+	UserPermissionCategory gaia.UserRoleCategory = "UserPermission"
+	WorkerCategory         gaia.UserRoleCategory = "Worker"
+
+	CreateRole gaia.UserRole = "Create"
+	ListRole   gaia.UserRole = "List"
+	GetRole    gaia.UserRole = "Get"
+	UpdateRole gaia.UserRole = "Update"
+	DeleteRole gaia.UserRole = "Delete"
+
+	StartRole gaia.UserRole = "Start"
+	StopRole  gaia.UserRole = "Stop"
+	LogsRole  gaia.UserRole = "Logs"
+
+	ChangePasswordRole gaia.UserRole = "ChangePassword"
+
+	GetRegistrationSecretRole     gaia.UserRole = "GetRegistrationSecret"
+	GetOverviewRole               gaia.UserRole = "GetOverview"
+	GetWorkerRole                 gaia.UserRole = "GetWorker"
+	DeregisterWorkerRole          gaia.UserRole = "DeregisterWorker"
+	ResetWorkerRegisterSecretRole gaia.UserRole = "ResetWorkerRegisterSecret"
+
 	// DefaultUserRoles contains all the default user categories and roles.
-	DefaultUserRoles = []*gaia.UserRoleCategory{
-		{
-			Name:        "Pipeline",
+	DefaultUserRoles = map[gaia.UserRoleCategory]*gaia.UserRoleCategoryDetails{
+		PipelineCategory: {
 			Description: "Managing and initiating pipelines.",
-			Roles: []*gaia.UserRole{
-				{
-					Name: "Create",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("POST", "/api/v1/pipeline"),
-						NewUserRoleEndpoint("POST", "/api/v1/pipeline/gitlsremote"),
-						NewUserRoleEndpoint("GET", "/api/v1/pipeline/name"),
-						NewUserRoleEndpoint("POST", "/api/v1/pipeline/githook"),
-					},
+			Roles: map[gaia.UserRole]*gaia.UserRoleDetails{
+				CreateRole: {
 					Description: "Create new pipelines.",
 				},
-				{
-					Name: "List",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("GET", "/api/v1/pipeline/created"),
-						NewUserRoleEndpoint("GET", "/api/v1/pipeline"),
-						NewUserRoleEndpoint("GET", "/api/v1/pipeline/latest"),
-					},
+				ListRole: {
 					Description: "List created pipelines.",
 				},
-				{
-					Name: "Get",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("GET", "/api/v1/pipeline/:pipelineid"),
-					},
+				GetRole: {
 					Description: "Get created pipelines.",
 				},
-				{
-					Name: "Update",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("PUT", "/api/v1/pipeline/:pipelineid"),
-					},
+				UpdateRole: {
 					Description: "Update created pipelines.",
 				},
-				{
-					Name: "Delete",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("DELETE", "/api/v1/pipeline/:pipelineid"),
-					},
+				DeleteRole: {
 					Description: "Delete created pipelines.",
 				},
-				{
-					Name: "Start",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("POST", "/api/v1/pipeline/:pipelineid/start"),
-					},
+				StartRole: {
 					Description: "Start created pipelines.",
 				},
 			},
 		},
-		{
-			Name:        "PipelineRun",
+		PipelineRunCategory: {
 			Description: "Managing of pipeline runs.",
-			Roles: []*gaia.UserRole{
-				{
-					Name: "Stop",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("POST", "/api/v1/pipelinerun/:pipelineid/:runid/stop"),
-					},
+			Roles: map[gaia.UserRole]*gaia.UserRoleDetails{
+				StopRole: {
 					Description: "Stop running pipelines.",
 				},
-				{
-					Name: "Get",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("GET", "/api/v1/pipelinerun/:pipelineid/:runid"),
-						NewUserRoleEndpoint("GET", "/api/v1/pipelinerun/:pipelineid/latest"),
-					},
+				GetRole: {
 					Description: "Get pipeline runs.",
 				},
-				{
-					Name: "List",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("GET", "pipelinerun/:pipelineid"),
-					},
+				ListRole: {
 					Description: "List pipeline runs.",
 				},
-				{
-					Name: "Logs",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("GET", "/api/v1/pipelinerun/:pipelineid/:runid/latest"),
-					},
+				LogsRole: {
 					Description: "Get logs for pipeline runs.",
 				},
 			},
 		},
-		{
-			Name:        "Secret",
+		SecretCategory: {
 			Description: "Managing of stored secrets used within pipelines.",
-			Roles: []*gaia.UserRole{
-				{
-					Name: "List",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("GET", "/api/v1/secrets"),
-					},
+			Roles: map[gaia.UserRole]*gaia.UserRoleDetails{
+				ListRole: {
 					Description: "List created secrets.",
 				},
-				{
-					Name: "Delete",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("DELETE", "/api/v1/secret/:key"),
-					},
+				DeleteRole: {
 					Description: "Delete created secrets.",
 				},
-				{
-					Name: "Create",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("POST", "/api/v1/secret"),
-					},
+				CreateRole: {
 					Description: "Create new secrets.",
 				},
-				{
-					Name: "Update",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("PUT", "/api/v1/secret/update"),
-					},
+				UpdateRole: {
 					Description: "Update created secrets.",
 				},
 			},
 		},
-		{
-			Name:        "User",
+		UserCategory: {
 			Description: "Managing of users.",
-			Roles: []*gaia.UserRole{
-				{
-					Name: "Create",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("POST", "/api/v1/user"),
-					},
+			Roles: map[gaia.UserRole]*gaia.UserRoleDetails{
+				CreateRole: {
 					Description: "Create new users.",
 				},
-				{
-					Name: "List",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("GET", "/api/v1/users"),
-					},
+				ListRole: {
 					Description: "List created users.",
 				},
-				{
-					Name: "ChangePassword",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("POST", "/api/v1/user/password"),
-					},
+				ChangePasswordRole: {
 					Description: "Change created users passwords.",
 				},
-				{
-					Name: "Delete",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("DELETE", "/api/v1/user/:username"),
-					},
+				DeleteRole: {
 					Description: "Delete created users.",
 				},
 			},
 		},
-		{
-			Name:        "UserPermission",
+		UserPermissionCategory: {
 			Description: "Managing of user permissions.",
-			Roles: []*gaia.UserRole{
-				{
-					Name: "Get",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("GET", "/api/v1/user/:username/permissions"),
-					},
+			Roles: map[gaia.UserRole]*gaia.UserRoleDetails{
+				GetRole: {
 					Description: "Get created users permissions.",
 				},
-				{
-					Name: "Update",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("PUT", "/api/v1/user/:username/permissions"),
-					},
+				UpdateRole: {
 					Description: "Update created users permissions.",
 				},
 			},
 		},
-		{
-			Name:        "Worker",
+		WorkerCategory: {
 			Description: "Managing of worker permissions.",
-			Roles: []*gaia.UserRole{
-				{
-					Name: "GetRegistrationSecret",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("GET", "/api/v1/worker/secret"),
-					},
+			Roles: map[gaia.UserRole]*gaia.UserRoleDetails{
+				GetRegistrationSecretRole: {
 					Description: "Get global worker registration secret.",
 				},
-				{
-					Name: "GetOverview",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("GET", "/api/v1/worker/status"),
-					},
+				GetOverviewRole: {
 					Description: "Get status overview of all workers.",
 				},
-				{
-					Name: "GetWorker",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("GET", "/api/v1/worker"),
-					},
+				GetWorkerRole: {
 					Description: "Get all worker for the worker overview table.",
 				},
-				{
-					Name: "DeregisterWorker",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("DELETE", "/api/v1/worker/:workerid"),
-					},
+				DeregisterWorkerRole: {
 					Description: "Deregister a worker from the Gaia primary instance.",
 				},
-				{
-					Name: "ResetWorkerRegisterSecret",
-					APIEndpoint: []*gaia.UserRoleEndpoint{
-						NewUserRoleEndpoint("POST", "/api/v1/worker/secret"),
-					},
+				ResetWorkerRegisterSecretRole: {
 					Description: "Reset the global worker registration secret.",
 				},
 			},
