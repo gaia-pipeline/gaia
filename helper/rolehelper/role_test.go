@@ -1,6 +1,7 @@
 package rolehelper
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/gaia-pipeline/gaia"
@@ -32,7 +33,12 @@ func TestFlatRoleName(t *testing.T) {
 func TestFlattenUserCategoryRoles(t *testing.T) {
 	value := FlattenUserCategoryRoles(mockData)
 	expect := []string{"CategoryARoleA", "CategoryARoleB", "CategoryBRoleA", "CategoryBRoleB"}
-
+	sort.Slice(value, func(i, j int) bool {
+		return value[i] < value[j]
+	})
+	sort.Slice(expect, func(i, j int) bool {
+		return expect[i] < expect[j]
+	})
 	for i := range expect {
 		if expect[i] != value[i] {
 			t.Fatalf("value %s should exist: %s", expect[i], value[i])
