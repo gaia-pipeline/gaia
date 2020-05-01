@@ -25,30 +25,30 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 	// --- Register handlers at echo instance ---
 
+	userRBAC := NewRBACMiddleware(rolehelper.UserCategory)
+	userPermRBAC := NewRBACMiddleware(rolehelper.UserPermissionCategory)
+	pipelineRBAC := NewRBACMiddleware(rolehelper.PipelineCategory)
+	pipelineRunRBAC := NewRBACMiddleware(rolehelper.PipelineRunCategory)
+	secretsRBAC := NewRBACMiddleware(rolehelper.SecretCategory)
+	workerRBAC := NewRBACMiddleware(rolehelper.WorkerCategory)
+
 	// Endpoints for Gaia primary instance
 	if gaia.Cfg.Mode == gaia.ModeServer {
 		// Users
-		{
-			e.POST(p+"login", UserLogin)
-			e.PUT(p+"user/:username/reset-trigger-token", UserResetTriggerToken)
-			rbac := NewRBACMiddleware(rolehelper.UserCategory)
-			e.GET(p+"users", UserGetAll, rbac.Do(rolehelper.ListRole))
-			e.POST(p+"user/password", UserChangePassword, rbac.Do(rolehelper.ChangePasswordRole))
-			e.DELETE(p+"user/:username", UserDelete, rbac.Do(rolehelper.DeleteRole))
-			e.POST(p+"user", UserAdd, rbac.Do(rolehelper.CreateRole))
-		}
+		e.POST(p+"login", UserLogin)
+		e.PUT(p+"user/:username/reset-trigger-token", UserResetTriggerToken)
+		e.GET(p+"users", UserGetAll, userRBAC.Do(rolehelper.ListRole))
+		e.POST(p+"user/password", UserChangePassword, userRBAC.Do(rolehelper.ChangePasswordRole))
+		e.DELETE(p+"user/:username", UserDelete, userRBAC.Do(rolehelper.DeleteRole))
+		e.POST(p+"user", UserAdd, userRBAC.Do(rolehelper.CreateRole))
+		e.GET(p+"user/:username/permissions", UserGetPermissions, userPermRBAC.Do(rolehelper.GetRole))
+		e.PUT(p+"user/:username/permissions", UserPutPermissions, userPermRBAC.Do(rolehelper.UpdateRole))
 
-		// User Permissions
-		perms := e.Group(p + "permission")
-		{
-			ph := permissionHandler{
-				defaultRoles: rolehelper.DefaultUserRoles,
-			}
-			perms.GET("", ph.PermissionGetAll)
-			rbac := NewRBACMiddleware(rolehelper.UserPermissionCategory)
-			e.GET(p+"user/:username/permissions", UserGetPermissions, rbac.Do(rolehelper.GetRole))
-			e.PUT(p+"user/:username/permissions", UserPutPermissions, rbac.Do(rolehelper.UpdateRole))
+		// Permissions
+		ph := permissionHandler{
+			defaultRoles: rolehelper.DefaultUserRoles,
 		}
+		e.GET(p+"permission", ph.PermissionGetAll)
 
 		// Pipelines
 		// Create pipeline provider
@@ -56,49 +56,38 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 			Scheduler:       s.deps.Scheduler,
 			PipelineService: s.deps.PipelineService,
 		})
-		{
-			e.POST(p+"pipeline/:pipelineid/:pipelinetoken/trigger", pipelineProvider.PipelineTrigger)
-			e.PUT(p+"pipeline/:pipelineid/reset-trigger-token", pipelineProvider.PipelineResetToken)
-			e.POST(p+"pipeline/periodicschedules", pipelineProvider.PipelineCheckPeriodicSchedules)
-			rbac := NewRBACMiddleware(rolehelper.PipelineCategory)
-			e.POST(p+"pipeline", pipelineProvider.CreatePipeline, rbac.Do(rolehelper.CreateRole))
-			e.POST(p+"pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote, rbac.Do(rolehelper.CreateRole))
-			e.GET(p+"pipeline/name", pipelineProvider.PipelineNameAvailable, rbac.Do(rolehelper.CreateRole))
-			e.POST(p+"pipeline/githook", GitWebHook, rbac.Do(rolehelper.CreateRole))
-			e.GET(p+"pipeline/created", pipelineProvider.CreatePipelineGetAll, rbac.Do(rolehelper.ListRole))
-			e.GET(p+"pipeline", pipelineProvider.PipelineGetAll, rbac.Do(rolehelper.ListRole))
-			e.GET(p+"pipeline/latest", pipelineProvider.PipelineGetAllWithLatestRun, rbac.Do(rolehelper.ListRole))
-			e.GET(p+"pipeline/:pipelineid", pipelineProvider.PipelineGet, rbac.Do(rolehelper.GetRole))
-			e.PUT(p+"pipeline/:pipelineid", pipelineProvider.PipelineUpdate, rbac.Do(rolehelper.UpdateRole))
-			e.DELETE(p+"pipeline/:pipelineid", pipelineProvider.PipelineDelete, rbac.Do(rolehelper.DeleteRole))
-			e.POST(p+"pipeline/:pipelineid/start", pipelineProvider.PipelineStart, rbac.Do(rolehelper.StartRole))
-		}
+		e.POST(p+"pipeline/:pipelineid/:pipelinetoken/trigger", pipelineProvider.PipelineTrigger)
+		e.PUT(p+"pipeline/:pipelineid/reset-trigger-token", pipelineProvider.PipelineResetToken)
+		e.POST(p+"pipeline/periodicschedules", pipelineProvider.PipelineCheckPeriodicSchedules)
+		e.POST(p+"pipeline", pipelineProvider.CreatePipeline, pipelineRBAC.Do(rolehelper.CreateRole))
+		e.POST(p+"pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote, pipelineRBAC.Do(rolehelper.CreateRole))
+		e.GET(p+"pipeline/name", pipelineProvider.PipelineNameAvailable, pipelineRBAC.Do(rolehelper.CreateRole))
+		e.POST(p+"pipeline/githook", GitWebHook, pipelineRBAC.Do(rolehelper.CreateRole))
+		e.GET(p+"pipeline/created", pipelineProvider.CreatePipelineGetAll, pipelineRBAC.Do(rolehelper.ListRole))
+		e.GET(p+"pipeline", pipelineProvider.PipelineGetAll, pipelineRBAC.Do(rolehelper.ListRole))
+		e.GET(p+"pipeline/latest", pipelineProvider.PipelineGetAllWithLatestRun, pipelineRBAC.Do(rolehelper.ListRole))
+		e.GET(p+"pipeline/:pipelineid", pipelineProvider.PipelineGet, pipelineRBAC.Do(rolehelper.GetRole))
+		e.PUT(p+"pipeline/:pipelineid", pipelineProvider.PipelineUpdate, pipelineRBAC.Do(rolehelper.UpdateRole))
+		e.DELETE(p+"pipeline/:pipelineid", pipelineProvider.PipelineDelete, pipelineRBAC.Do(rolehelper.DeleteRole))
+		e.POST(p+"pipeline/:pipelineid/start", pipelineProvider.PipelineStart, pipelineRBAC.Do(rolehelper.StartRole))
 
 		// Pipeline Run
-		{
-			rbac := NewRBACMiddleware(rolehelper.PipelineRunCategory)
-			e.POST(p+"pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop, rbac.Do(rolehelper.StopRole))
-			e.GET(p+"pipelinerun/:pipelineid/:runid", pipelineProvider.PipelineRunGet, rbac.Do(rolehelper.GetRole))
-			e.GET(p+"pipelinerun/:pipelineid/latest", pipelineProvider.PipelineGetLatestRun, rbac.Do(rolehelper.GetRole))
-			e.GET(p+"pipelinerun/:pipelineid", pipelineProvider.PipelineGetAllRuns, rbac.Do(rolehelper.ListRole))
-			e.GET(p+"pipelinerun/:pipelineid/:runid/log", pipelineProvider.GetJobLogs, rbac.Do(rolehelper.LogsRole))
-		}
+		e.POST(p+"pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop, pipelineRunRBAC.Do(rolehelper.StopRole))
+		e.GET(p+"pipelinerun/:pipelineid/:runid", pipelineProvider.PipelineRunGet, pipelineRunRBAC.Do(rolehelper.GetRole))
+		e.GET(p+"pipelinerun/:pipelineid/latest", pipelineProvider.PipelineGetLatestRun, pipelineRunRBAC.Do(rolehelper.GetRole))
+		e.GET(p+"pipelinerun/:pipelineid", pipelineProvider.PipelineGetAllRuns, pipelineRunRBAC.Do(rolehelper.ListRole))
+		e.GET(p+"pipelinerun/:pipelineid/:runid/log", pipelineProvider.GetJobLogs, pipelineRunRBAC.Do(rolehelper.LogsRole))
 
 		// Settings
-		{
-			e.POST(p+"settings/poll/on", SettingsPollOn)
-			e.POST(p+"settings/poll/off", SettingsPollOff)
-			e.GET(p+"settings/poll", SettingsPollGet)
-		}
+		e.POST(p+"settings/poll/on", SettingsPollOn)
+		e.POST(p+"settings/poll/off", SettingsPollOff)
+		e.GET(p+"settings/poll", SettingsPollGet)
 
 		// Secrets
-		{
-			rbac := NewRBACMiddleware(rolehelper.SecretCategory)
-			e.GET(p+"secrets", ListSecrets, rbac.Do(rolehelper.ListRole))
-			e.DELETE(p+"secret/:key", RemoveSecret, rbac.Do(rolehelper.DeleteRole))
-			e.POST(p+"secret", SetSecret, rbac.Do(rolehelper.CreateRole))
-			e.PUT(p+"secret/update", SetSecret, rbac.Do(rolehelper.UpdateRole))
-		}
+		e.GET(p+"secrets", ListSecrets, secretsRBAC.Do(rolehelper.ListRole))
+		e.DELETE(p+"secret/:key", RemoveSecret, secretsRBAC.Do(rolehelper.DeleteRole))
+		e.POST(p+"secret", SetSecret, secretsRBAC.Do(rolehelper.CreateRole))
+		e.PUT(p+"secret/update", SetSecret, secretsRBAC.Do(rolehelper.UpdateRole))
 	}
 
 	// Worker
@@ -106,15 +95,12 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	workerProvider := workers.NewWorkerProvider(workers.Dependencies{
 		Scheduler: s.deps.Scheduler,
 	})
-	{
-		rbac := NewRBACMiddleware(rolehelper.WorkerCategory)
-		e.GET(p+"worker/secret", workerProvider.GetWorkerRegisterSecret, rbac.Do(rolehelper.GetRegistrationSecretRole))
-		e.POST(p+"worker/register", workerProvider.RegisterWorker)
-		e.GET(p+"worker/status", workerProvider.GetWorkerStatusOverview, rbac.Do(rolehelper.GetOverviewRole))
-		e.GET(p+"worker", workerProvider.GetWorker, rbac.Do(rolehelper.GetWorkerRole))
-		e.DELETE(p+"worker/:workerid", workerProvider.DeregisterWorker, rbac.Do(rolehelper.DeregisterWorkerRole))
-		e.POST(p+"worker/secret", workerProvider.ResetWorkerRegisterSecret, rbac.Do(rolehelper.ResetWorkerRegisterSecretRole))
-	}
+	e.POST(p+"worker/register", workerProvider.RegisterWorker)
+	e.GET(p+"worker/secret", workerProvider.GetWorkerRegisterSecret, workerRBAC.Do(rolehelper.GetRegistrationSecretRole))
+	e.GET(p+"worker/status", workerProvider.GetWorkerStatusOverview, workerRBAC.Do(rolehelper.GetOverviewRole))
+	e.GET(p+"worker", workerProvider.GetWorker, workerRBAC.Do(rolehelper.GetWorkerRole))
+	e.DELETE(p+"worker/:workerid", workerProvider.DeregisterWorker, workerRBAC.Do(rolehelper.DeregisterWorkerRole))
+	e.POST(p+"worker/secret", workerProvider.ResetWorkerRegisterSecret, workerRBAC.Do(rolehelper.ResetWorkerRegisterSecretRole))
 
 	// Middleware
 	e.Use(middleware.Recover())
