@@ -5,13 +5,16 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 	"github.com/labstack/echo"
 )
 
+type permissionHandler struct {
+	defaultRoles map[gaia.UserRoleCategory]*gaia.UserRoleCategoryDetails
+}
+
 // PermissionGetAll simply returns a list of all the roles available.
-func PermissionGetAll(c echo.Context) error {
-	return c.JSON(http.StatusOK, mapToPermissionCategories(rolehelper.DefaultUserRoles))
+func (h permissionHandler) PermissionGetAll(c echo.Context) error {
+	return c.JSON(http.StatusOK, mapToPermissionCategories(h.defaultRoles))
 }
 
 func mapToPermissionCategories(perms map[gaia.UserRoleCategory]*gaia.UserRoleCategoryDetails) []permissionCategory {

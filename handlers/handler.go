@@ -39,9 +39,12 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		}
 
 		// User Permissions
+		perms := e.Group(p + "permission")
 		{
-			perms := e.Group(p + "permission")
-			perms.GET("", PermissionGetAll)
+			ph := permissionHandler{
+				defaultRoles: rolehelper.DefaultUserRoles,
+			}
+			perms.GET("", ph.PermissionGetAll)
 			rbac := NewRBACMiddleware(rolehelper.UserPermissionCategory)
 			e.GET(p+"user/:username/permissions", UserGetPermissions, rbac.Do(rolehelper.GetRole))
 			e.PUT(p+"user/:username/permissions", UserPutPermissions, rbac.Do(rolehelper.UpdateRole))
