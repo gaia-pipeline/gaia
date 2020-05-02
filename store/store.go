@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/helper/resourcehelper"
+
 	bolt "github.com/coreos/bbolt"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/security"
@@ -36,6 +38,8 @@ var (
 
 	// SHA pair bucket.
 	shaPairBucket = []byte("SHAPair")
+
+	resourceAuthRBACBucket = []byte("resource.authorization.rbac")
 )
 
 const (
@@ -51,7 +55,8 @@ const (
 
 // BoltStore represents the access type for store
 type BoltStore struct {
-	db *bolt.DB
+	db             *bolt.DB
+	rbacMarshaller resourcehelper.Marshaller
 }
 
 // GaiaStore is the interface that defines methods needed to store
@@ -91,6 +96,8 @@ type GaiaStore interface {
 	WorkerGet(id string) (*gaia.Worker, error)
 	UpsertSHAPair(pair gaia.SHAPair) error
 	GetSHAPair(pipelineID int) (bool, gaia.SHAPair, error)
+	ResourceAuthRBACPut(spec gaia.RBACPolicyV1) error
+	ResourceAuthRBACGet(name string) (gaia.RBACPolicyV1, error)
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore
@@ -99,7 +106,9 @@ var _ GaiaStore = (*BoltStore)(nil)
 
 // NewBoltStore creates a new instance of Store.
 func NewBoltStore() *BoltStore {
-	s := &BoltStore{}
+	s := &BoltStore{
+		rbacMarshaller: resourcehelper.NewMarshaller(),
+	}
 
 	return s
 }
@@ -167,6 +176,7 @@ func (s *BoltStore) setupDatabase() error {
 	setP.update(settingsBucket)
 	setP.update(workerBucket)
 	setP.update(shaPairBucket)
+	setP.update(resourceAuthRBACBucket)
 
 	if setP.err != nil {
 		return setP.err

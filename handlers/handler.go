@@ -3,6 +3,9 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/gaia-pipeline/gaia/helper/resourcehelper"
+	"github.com/gaia-pipeline/gaia/services"
+
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -24,6 +27,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	p := "/api/" + gaia.APIVersion + "/"
 
 	// --- Register handlers at echo instance ---
+	storeService, _ := services.StorageService()
 
 	// Endpoints for Gaia primary instance
 	if gaia.Cfg.Mode == gaia.ModeServer {
@@ -39,6 +43,11 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 		perms := e.Group(p + "permission")
 		perms.GET("", PermissionGetAll)
+
+		// RBAC
+		rbacHandler := newRBACHandler(storeService, resourcehelper.NewMarshaller())
+		e.GET(p+"rbac/policy/:name", rbacHandler.RBACPolicyGet)
+		e.POST(p+"rbac/policy", rbacHandler.RBACPolicyPut)
 
 		// Pipelines
 		// Create pipeline provider
@@ -94,7 +103,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 	// Middleware
 	e.Use(middleware.Recover())
-	//e.Use(middleware.Logger())
+	// e.Use(middleware.Logger())
 	e.Use(middleware.BodyLimit("32M"))
 	e.Use(AuthMiddleware(&AuthConfig{
 		RoleCategories: rolehelper.DefaultUserRoles,

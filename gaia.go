@@ -347,3 +347,29 @@ type StoreConfig struct {
 func (p PipelineType) String() string {
 	return string(p)
 }
+
+// ResourceType is the base version and type for a defined resource.
+type ResourceType struct {
+	Version string `yaml:"version"`
+	Type    string `yaml:"type"`
+}
+
+// ResourceMetadataV1 is the standard v1 metadata object.
+type ResourceMetadataV1 struct {
+	Name        string `yaml:"name"`
+	Description string `yaml:"description"`
+}
+
+// RBACPolicyV1 is used to define authorization RBAC.
+type RBACPolicyV1 struct {
+	ResourceType       `yaml:",inline"`
+	ResourceMetadataV1 `yaml:"metadata"`
+	Statement          []RBACPolicyStatementV1 `yaml:"statement"`
+}
+
+// RBACPolicyStatementV1 is used to define an individual policy statement.
+type RBACPolicyStatementV1 struct {
+	ID     string   `yaml:"id"`
+	Effect string   `yaml:"effect"`
+	Action []string `yaml:"action"`
+}
