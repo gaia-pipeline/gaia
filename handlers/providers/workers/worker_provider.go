@@ -1,13 +1,16 @@
 package workers
 
 import (
-	"github.com/gaia-pipeline/gaia/workers/scheduler/service"
 	"github.com/labstack/echo"
+
+	"github.com/gaia-pipeline/gaia/security"
+	"github.com/gaia-pipeline/gaia/workers/scheduler/service"
 )
 
 // Dependencies define dependencies which this service needs.
 type Dependencies struct {
-	Scheduler service.GaiaScheduler
+	Scheduler   service.GaiaScheduler
+	Certificate security.CAAPI
 }
 
 type workerProvider struct {

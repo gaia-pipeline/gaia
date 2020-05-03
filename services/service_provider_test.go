@@ -51,37 +51,12 @@ func TestVaultService(t *testing.T) {
 	if vaultService != nil {
 		t.Fatal("initial service should be nil. was: ", vaultService)
 	}
-	_, _ = CertificateService()
 	_, _ = DefaultVaultService()
 	defer func() {
-		certificateService = nil
 		vaultService = nil
 	}()
 
 	if vaultService == nil {
-		t.Fatal("service should not be nil")
-	}
-}
-
-func TestCertificateService(t *testing.T) {
-	tmp, _ := ioutil.TempDir("", "TestCertificateService")
-	gaia.Cfg = new(gaia.Config)
-	gaia.Cfg.HomePath = tmp
-	gaia.Cfg.DataPath = tmp
-	gaia.Cfg.CAPath = tmp
-	gaia.Cfg.VaultPath = tmp
-	buf := new(bytes.Buffer)
-	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
-		Level:  hclog.Trace,
-		Output: buf,
-		Name:   "Gaia",
-	})
-	if certificateService != nil {
-		t.Fatal("initial service should be nil. was: ", certificateService)
-	}
-	_, _ = CertificateService()
-	defer func() { certificateService = nil }()
-	if certificateService == nil {
 		t.Fatal("service should not be nil")
 	}
 }
@@ -122,10 +97,6 @@ type testMockStorageService struct {
 	store.GaiaStore
 }
 
-type testMockCertificateService struct {
-	security.CAAPI
-}
-
 type testMockVaultService struct {
 	security.GaiaVault
 }
@@ -147,9 +118,6 @@ func TestCanMockServiceToNil(t *testing.T) {
 		Output: buf,
 		Name:   "Gaia",
 	})
-	if certificateService != nil {
-		t.Fatal("initial service should be nil. was: ", certificateService)
-	}
 
 	t.Run("can mock storage to nil", func(t *testing.T) {
 		mcp := new(testMockStorageService)
@@ -162,20 +130,6 @@ func TestCanMockServiceToNil(t *testing.T) {
 		s2, _ := StorageService()
 		if reflect.TypeOf(s2).String() == "*services.testMockStorageService" {
 			t.Fatalf("want type: '%s' got: '%s'", "BoltStorage", reflect.TypeOf(s2).String())
-		}
-	})
-
-	t.Run("can mock certificate to nil", func(t *testing.T) {
-		mcp := new(testMockCertificateService)
-		MockCertificateService(mcp)
-		s1, _ := CertificateService()
-		if _, ok := s1.(*testMockCertificateService); !ok {
-			t.Fatalf("want type: '%s' got: '%s'", "testMockCertificateService", reflect.TypeOf(s1).String())
-		}
-		MockCertificateService(nil)
-		s2, _ := CertificateService()
-		if reflect.TypeOf(s2).String() == "*services.testMockCertificateService" {
-			t.Fatalf("got: '%s'", reflect.TypeOf(s2).String())
 		}
 	})
 
@@ -223,7 +177,6 @@ func TestDefaultVaultStorer(t *testing.T) {
 		Output: buf,
 		Name:   "Gaia",
 	})
-	_, _ = CertificateService()
 	v, err := DefaultVaultService()
 	if err != nil {
 		t.Fatal(err)

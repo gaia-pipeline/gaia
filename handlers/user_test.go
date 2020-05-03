@@ -100,11 +100,6 @@ func TestDeleteUserNotAllowedForAutoUser(t *testing.T) {
 		VaultPath: dataDir,
 	}
 
-	_, err := services.CertificateService()
-	if err != nil {
-		t.Fatalf("cannot initialize certificate service: %v", err.Error())
-	}
-
 	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
 		Scheduler: &mockScheduleService{},
 	})
@@ -165,10 +160,6 @@ func TestResetAutoUserTriggerToken(t *testing.T) {
 		PipelineService: pipelineService,
 	})
 
-	_, err := services.CertificateService()
-	if err != nil {
-		t.Fatalf("cannot initialize certificate service: %v", err.Error())
-	}
 	t.Run("reset auto user token", func(t *testing.T) {
 		user := gaia.User{}
 		user.Username = "auto"

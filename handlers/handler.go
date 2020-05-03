@@ -83,7 +83,8 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	// Worker
 	// initialize the worker provider
 	workerProvider := workers.NewWorkerProvider(workers.Dependencies{
-		Scheduler: s.deps.Scheduler,
+		Scheduler:   s.deps.Scheduler,
+		Certificate: s.deps.Certificate,
 	})
 	e.GET(p+"worker/secret", workerProvider.GetWorkerRegisterSecret)
 	e.POST(p+"worker/register", workerProvider.RegisterWorker)

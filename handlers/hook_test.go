@@ -61,17 +61,12 @@ func TestHookReceive(t *testing.T) {
 		VaultPath: dataDir,
 		HomePath:  dataDir,
 	}
-	_, err = services.CertificateService()
-	if err != nil {
-		t.Fatalf("cannot initialize certificate service: %v", err.Error())
-	}
 
 	m := new(MockVaultStorer)
 	v, _ := services.VaultService(m)
 	v.Add("GITHUB_WEBHOOK_SECRET", []byte("superawesomesecretgithubpassword"))
 	defer func() {
 		services.MockVaultService(nil)
-		services.MockCertificateService(nil)
 	}()
 	e := echo.New()
 

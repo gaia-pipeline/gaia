@@ -63,7 +63,6 @@ func TestRegisterWorker(t *testing.T) {
 		DevMode:      true,
 	}
 
-	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil})
 	// Initialize store
 	m := &mockStorageService{}
 	services.MockStorageService(m)
@@ -71,11 +70,11 @@ func TestRegisterWorker(t *testing.T) {
 	defer func() { services.MockStorageService(nil) }()
 
 	// Initialize certificate store
-	_, err = services.CertificateService()
+	ca, err := security.InitCA()
 	if err != nil {
 		t.Fatalf("cannot initialize certificate service: %v", err)
 	}
-
+	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil, Certificate: ca})
 	// Initialize vault
 	v, err := services.DefaultVaultService()
 	if err != nil {
@@ -98,6 +97,7 @@ func TestRegisterWorker(t *testing.T) {
 	handlerService := NewGaiaHandler(Dependencies{
 		Scheduler:       nil,
 		PipelineService: nil,
+		Certificate:     ca,
 	})
 	// Initialize echo
 	e := echo.New()
@@ -213,12 +213,6 @@ func TestDeregisterWorker(t *testing.T) {
 	services.MockStorageService(m)
 	dataStore, _ := services.StorageService()
 	defer func() { services.MockStorageService(nil) }()
-
-	// Initialize certificate store
-	_, err = services.CertificateService()
-	if err != nil {
-		t.Fatalf("cannot initialize certificate service: %v", err)
-	}
 
 	// Initialize vault
 	v, err := services.DefaultVaultService()
@@ -342,12 +336,6 @@ func TestGetWorkerRegisterSecret(t *testing.T) {
 		DevMode:      true,
 	}
 
-	// Initialize certificate store
-	_, err = services.CertificateService()
-	if err != nil {
-		t.Fatalf("cannot initialize certificate service: %v", err)
-	}
-
 	// Initialize vault
 	v, err := services.DefaultVaultService()
 	if err != nil {
@@ -424,7 +412,7 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 	defer func() { services.MockStorageService(nil) }()
 
 	// Initialize certificate store
-	ca, err := services.CertificateService()
+	ca, err := security.InitCA()
 	if err != nil {
 		t.Fatalf("cannot initialize certificate service: %v", err)
 	}
@@ -593,12 +581,6 @@ func TestGetWorker(t *testing.T) {
 	dataStore, _ := services.StorageService()
 	defer func() { services.MockStorageService(nil) }()
 
-	// Initialize certificate store
-	_, err = services.CertificateService()
-	if err != nil {
-		t.Fatalf("cannot initialize certificate service: %v", err)
-	}
-
 	// Initialize vault
 	v, err := services.DefaultVaultService()
 	if err != nil {
@@ -696,12 +678,6 @@ func TestResetWorkerRegisterSecret(t *testing.T) {
 		HomePath:     tmp,
 		PipelinePath: tmp,
 		DevMode:      true,
-	}
-
-	// Initialize certificate store
-	_, err = services.CertificateService()
-	if err != nil {
-		t.Fatalf("cannot initialize certificate service: %v", err)
 	}
 
 	// Initialize vault
