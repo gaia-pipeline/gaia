@@ -350,17 +350,18 @@ func TestGetWorkerRegisterSecret(t *testing.T) {
 	if err := v.SaveSecrets(); err != nil {
 		t.Fatal(err)
 	}
-
+	ca, _ := security.InitCA()
 	handlerService := NewGaiaHandler(Dependencies{
 		Scheduler:       nil,
 		PipelineService: nil,
+		Certificate:     ca,
 	})
 	// Initialize echo
 	e := echo.New()
 	if err := handlerService.InitHandlers(e); err != nil {
 		t.Fatal(err)
 	}
-	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil})
+	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil, Certificate: ca})
 	// Test get global worker secret
 	t.Run("global secret success", func(t *testing.T) {
 		req := httptest.NewRequest(echo.GET, "/api/"+gaia.APIVersion+"/worker/secret", nil)
@@ -449,6 +450,7 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 	handlerService := NewGaiaHandler(Dependencies{
 		Scheduler:       scheduler,
 		PipelineService: nil,
+		Certificate:     ca,
 	})
 	// Initialize echo
 	e := echo.New()
@@ -459,7 +461,8 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 	// Test empty worker status overview
 	{
 		wp := workers.NewWorkerProvider(workers.Dependencies{
-			Scheduler: scheduler,
+			Scheduler:   scheduler,
+			Certificate: ca,
 		})
 		req := httptest.NewRequest(echo.GET, "/api/"+gaia.APIVersion+"/worker/status", nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -499,7 +502,8 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 	// Test with registered worker
 	{
 		wp := workers.NewWorkerProvider(workers.Dependencies{
-			Scheduler: scheduler,
+			Scheduler:   scheduler,
+			Certificate: ca,
 		})
 		body := registerWorker{
 			Name:   "my-worker",
