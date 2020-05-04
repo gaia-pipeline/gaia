@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/gaia-pipeline/gaia/helper/filehelper"
+	"github.com/gaia-pipeline/gaia/security"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/services"
 	pb "github.com/gaia-pipeline/gaia/workers/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -21,12 +21,21 @@ const (
 	hoursAfterValid  = 87600 // 10 years
 )
 
+// Dependencies defines dependencies of this service.
+type Dependencies struct {
+	Certificate security.CAAPI
+}
+
 // WorkerServer represents an instance of the worker server implementation
-type WorkerServer struct{}
+type WorkerServer struct {
+	Dependencies
+}
 
 // InitWorkerServer creates a new worker server instance.
-func InitWorkerServer() *WorkerServer {
-	return &WorkerServer{}
+func InitWorkerServer(deps Dependencies) *WorkerServer {
+	return &WorkerServer{
+		Dependencies: deps,
+	}
 }
 
 // Start starts the gRPC worker server.
@@ -40,13 +49,6 @@ func (w *WorkerServer) Start() error {
 
 	// Print info message
 	gaia.Cfg.Logger.Info("worker gRPC server about to start on port: " + gaia.Cfg.WorkerServerPort)
-
-	// Setup TLS
-	certService, err := services.CertificateService()
-	if err != nil {
-		gaia.Cfg.Logger.Error("failed to initiate certificate service", "error", err.Error())
-		return err
-	}
 
 	// Check if certificates exist for the gRPC server
 	certPath := filepath.Join(gaia.Cfg.DataPath, "worker_cert.pem")
@@ -62,7 +64,7 @@ func (w *WorkerServer) Start() error {
 		}
 
 		// Generate certs
-		certTmpPath, keyTmpPath, err := certService.CreateSignedCertWithValidOpts(s[0], hoursBeforeValid, hoursAfterValid)
+		certTmpPath, keyTmpPath, err := w.Certificate.CreateSignedCertWithValidOpts(s[0], hoursBeforeValid, hoursAfterValid)
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to generate cert pair for gRPC server", "error", err.Error())
 			return err
@@ -88,7 +90,7 @@ func (w *WorkerServer) Start() error {
 	}
 
 	// Generate tls config
-	tlsConfig, err := certService.GenerateTLSConfig(certPath, keyPath)
+	tlsConfig, err := w.Certificate.GenerateTLSConfig(certPath, keyPath)
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to generate tls config for gRPC server", "error", err.Error())
 		return err

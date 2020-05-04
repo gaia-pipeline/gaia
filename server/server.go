@@ -153,7 +153,7 @@ func Start() (err error) {
 	}
 
 	// Initialize the certificate manager service
-	ca, err := services.CertificateService()
+	ca, err := security.InitCA()
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot create CA", "error", err.Error())
 		return
@@ -253,6 +253,7 @@ func Start() (err error) {
 	handlerService := handlers.NewGaiaHandler(handlers.Dependencies{
 		Scheduler:       schedulerService,
 		PipelineService: pipelineService,
+		Certificate:     ca,
 	})
 
 	err = handlerService.InitHandlers(echoInstance)
@@ -269,7 +270,9 @@ func Start() (err error) {
 
 	// Start worker gRPC server.
 	// We need this in both modes (server and worker) for docker worker to run.
-	workerServer := server.InitWorkerServer()
+	workerServer := server.InitWorkerServer(server.Dependencies{
+		Certificate: ca,
+	})
 	go func() {
 		if err := workerServer.Start(); err != nil {
 			gaia.Cfg.Logger.Error("failed to start gRPC worker server", "error", err)

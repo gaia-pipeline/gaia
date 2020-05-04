@@ -346,17 +346,12 @@ func TestCreateGithubWebhook(t *testing.T) {
 		Output: buf,
 		Name:   "Gaia",
 	})
-	_, err := services.CertificateService()
-	if err != nil {
-		t.Fatalf("cannot initialize certificate service: %v", err.Error())
-	}
 
 	m := new(MockGitVaultStorer)
 	v, _ := services.VaultService(m)
 	v.Add("GITHUB_WEBHOOK_SECRET", []byte("superawesomesecretgithubpassword"))
 	defer func() {
 		services.MockVaultService(nil)
-		services.MockCertificateService(nil)
 	}()
 
 	t.Run("successfully create webhook", func(t *testing.T) {
@@ -378,7 +373,7 @@ func TestCreateGithubWebhook(t *testing.T) {
 		mock.Owner = "gaia-pipeline"
 		mock.Repo = "gaia"
 
-		err = createGithubWebhook("asdf", &repo, mock)
+		err := createGithubWebhook("asdf", &repo, mock)
 		if err != nil {
 			t.Fatal("did not expect error to occur. was: ", err)
 		}
@@ -413,7 +408,7 @@ func TestCreateGithubWebhook(t *testing.T) {
 		mock.Owner = "gaia-pipeline"
 		mock.Repo = "gaia"
 
-		err = createGithubWebhook("asdf", &repo, mock)
+		err := createGithubWebhook("asdf", &repo, mock)
 		if err == nil {
 			t.Fatal("CreateWebhook should have failed.")
 		}
@@ -440,7 +435,7 @@ func TestCreateGithubWebhook(t *testing.T) {
 		mock.Owner = "gaia-pipeline"
 		mock.Repo = "gaia"
 
-		err = createGithubWebhook("asdf", &repo, mock)
+		err := createGithubWebhook("asdf", &repo, mock)
 		if err != nil {
 			t.Fatal("did not expect error to occur. was: ", err)
 		}
@@ -476,7 +471,7 @@ func TestCreateGithubWebhook(t *testing.T) {
 		mock.Owner = "gaia-pipeline"
 		mock.Repo = "gaia"
 
-		err = createGithubWebhook("asdf", &repo, mock)
+		err := createGithubWebhook("asdf", &repo, mock)
 		if err != nil {
 			t.Fatal("did not expect error to occur. was: ", err)
 		}
@@ -507,17 +502,11 @@ func TestMultipleGithubWebHookURLTypes(t *testing.T) {
 		Output: buf,
 		Name:   "Gaia",
 	})
-	_, err := services.CertificateService()
-	if err != nil {
-		t.Fatalf("cannot initialize certificate service: %v", err.Error())
-	}
-
 	m := new(MockGitVaultStorer)
 	v, _ := services.VaultService(m)
 	v.Add("GITHUB_WEBHOOK_SECRET", []byte("superawesomesecretgithubpassword"))
 	defer func() {
 		services.MockVaultService(nil)
-		services.MockCertificateService(nil)
 	}()
 
 	t.Run("https url", func(t *testing.T) {
@@ -539,7 +528,7 @@ func TestMultipleGithubWebHookURLTypes(t *testing.T) {
 		mock.Owner = "gaia-pipeline"
 		mock.Repo = "gaia"
 
-		err = createGithubWebhook("asdf", &repo, mock)
+		err := createGithubWebhook("asdf", &repo, mock)
 		if err != nil {
 			t.Fatal("did not expect error to occur. was: ", err)
 		}
@@ -564,7 +553,7 @@ func TestMultipleGithubWebHookURLTypes(t *testing.T) {
 		mock.Owner = "gaia-pipeline"
 		mock.Repo = "gaia"
 
-		err = createGithubWebhook("asdf", &repo, mock)
+		err := createGithubWebhook("asdf", &repo, mock)
 		if err != nil {
 			t.Fatal("did not expect error to occur. was: ", err)
 		}
@@ -589,7 +578,7 @@ func TestMultipleGithubWebHookURLTypes(t *testing.T) {
 		mock.Owner = "gaia-pipeline"
 		mock.Repo = "gaia"
 
-		err = createGithubWebhook("asdf", &repo, mock)
+		err := createGithubWebhook("asdf", &repo, mock)
 		if err != nil {
 			t.Fatal("did not expect error to occur. was: ", err)
 		}
@@ -614,7 +603,7 @@ func TestMultipleGithubWebHookURLTypes(t *testing.T) {
 		mock.Owner = "gaia-pipeline"
 		mock.Repo = "gaia"
 
-		err = createGithubWebhook("asdf", &repo, mock)
+		err := createGithubWebhook("asdf", &repo, mock)
 		if err == nil {
 			t.Fatal("expected error. none found")
 		}

@@ -71,24 +71,19 @@ func (wp *workerProvider) RegisterWorker(c echo.Context) error {
 	}
 
 	// Generate certificates for worker
-	cert, err := services.CertificateService()
-	if err != nil {
-		gaia.Cfg.Logger.Error("cannot get certificate service", "error", err.Error())
-		return c.String(http.StatusInternalServerError, "cannot get certificate service")
-	}
-	crtPath, keyPath, err := cert.CreateSignedCertWithValidOpts("", hoursBeforeValid, hoursAfterValid)
+	crtPath, keyPath, err := wp.deps.Certificate.CreateSignedCertWithValidOpts("", hoursBeforeValid, hoursAfterValid)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot create signed certificate", "error", err.Error())
 		return c.String(http.StatusInternalServerError, "cannot create signed certificate")
 	}
 	defer func() {
-		if err := cert.CleanupCerts(crtPath, keyPath); err != nil {
+		if err := wp.deps.Certificate.CleanupCerts(crtPath, keyPath); err != nil {
 			gaia.Cfg.Logger.Error("failed to remove worker certificates", "error", err)
 		}
 	}()
 
 	// Get public cert from CA (required for mTLS)
-	caCertPath, _ := cert.GetCACertPath()
+	caCertPath, _ := wp.deps.Certificate.GetCACertPath()
 	caCert, err := ioutil.ReadFile(caCertPath)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot load CA cert", "error", err.Error())
