@@ -233,16 +233,18 @@ func TestDeregisterWorker(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	ca, _ := security.InitCA()
 	handlerService := NewGaiaHandler(Dependencies{
 		Scheduler:       nil,
 		PipelineService: nil,
+		Certificate:     ca,
 	})
 	// Initialize echo
 	e := echo.New()
 	if err := handlerService.InitHandlers(e); err != nil {
 		t.Fatal(err)
 	}
-	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil})
+	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil, Certificate: ca})
 
 	// Test with non-existing worker
 	t.Run("non-existing worker", func(t *testing.T) {
