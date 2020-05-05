@@ -46,8 +46,8 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 		// RBAC
 		rbacHandler := newRBACHandler(storeService, resourcehelper.NewMarshaller())
-		e.GET(p+"rbac/policy/:name", rbacHandler.RBACPolicyGet)
-		e.POST(p+"rbac/policy", rbacHandler.RBACPolicyPut)
+		e.GET(p+"rbac/policy/:name", rbacHandler.AuthPolicyResourceGet)
+		e.POST(p+"rbac/policy", rbacHandler.AuthPolicyResourcePut)
 
 		// Pipelines
 		// Create pipeline provider

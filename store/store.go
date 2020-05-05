@@ -39,7 +39,8 @@ var (
 	// SHA pair bucket.
 	shaPairBucket = []byte("SHAPair")
 
-	resourceAuthRBACBucket = []byte("resource.authorization.rbac")
+	authPolicyResources   = []byte("authorization.policy.resources")
+	authPolicyAssignments = []byte("authorization.policy.assignments")
 )
 
 const (
@@ -96,8 +97,10 @@ type GaiaStore interface {
 	WorkerGet(id string) (*gaia.Worker, error)
 	UpsertSHAPair(pair gaia.SHAPair) error
 	GetSHAPair(pipelineID int) (bool, gaia.SHAPair, error)
-	ResourceAuthRBACPut(spec gaia.RBACPolicyV1) error
-	ResourceAuthRBACGet(name string) (gaia.RBACPolicyV1, error)
+	AuthPolicyAssignmentPut(assignment gaia.AuthPolicyAssignment) error
+	AuthPolicyAssignmentGet(username string) (*gaia.AuthPolicyAssignment, error)
+	AuthPolicyResourcePut(spec gaia.AuthPolicyResourceV1) error
+	AuthPolicyResourceGet(name string) (gaia.AuthPolicyResourceV1, error)
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore
@@ -176,7 +179,7 @@ func (s *BoltStore) setupDatabase() error {
 	setP.update(settingsBucket)
 	setP.update(workerBucket)
 	setP.update(shaPairBucket)
-	setP.update(resourceAuthRBACBucket)
+	setP.update(authPolicyResources)
 
 	if setP.err != nil {
 		return setP.err

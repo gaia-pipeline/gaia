@@ -37,12 +37,12 @@ func (f marshaller) Unmarshal(bytes []byte, out interface{}) error {
 	}
 
 	// Check for version mismatches.
-	if v1, ok := out.(*gaia.RBACPolicyV1); ok {
-		if v1.Type != "authorization.rbac" {
-			return errors.New("failed to unmarshal policy type: no a authorization.rbac type")
+	if v1, ok := out.(*gaia.AuthPolicyResourceV1); ok {
+		if v1.Type != "authorization.policy" {
+			return errors.New("failed to unmarshal policy type: not an authorization.policy type")
 		}
 		if v1.Version != "v1" {
-			return errors.New("version does not match struct RBACPolicyV1")
+			return errors.New("version does not match struct AuthPolicyResourceV1")
 		}
 		// TODO: add more validation?
 		return nil

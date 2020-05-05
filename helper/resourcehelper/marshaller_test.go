@@ -8,16 +8,16 @@ import (
 	"github.com/gaia-pipeline/gaia"
 )
 
-var specV1 = gaia.RBACPolicyV1{
+var specV1 = gaia.AuthPolicyResourceV1{
 	ResourceType: gaia.ResourceType{
 		Version: "v1",
-		Type:    "authorization.rbac",
+		Type:    "authorization.policy",
 	},
 	ResourceMetadataV1: gaia.ResourceMetadataV1{
 		Name:        "test-name",
 		Description: "test description",
 	},
-	Statement: []gaia.RBACPolicyStatementV1{
+	Statement: []gaia.AuthPolicyStatementV1{
 		{
 			ID:     "test-id",
 			Effect: "allow",
@@ -30,7 +30,7 @@ var specV1 = gaia.RBACPolicyV1{
 }
 
 var yamlSpecV1 = `version: v1
-type: authorization.rbac
+type: authorization.policy
 metadata:
   name: test-name
   description: test description
@@ -43,7 +43,7 @@ statement:
 `
 
 var yamlSpecV2 = `version: v2
-type: authorization.rbac
+type: authorization.policy
 metadata:
   name: test-name
   description: test description
@@ -72,7 +72,7 @@ func Test_SpecMarshaller_MarshalV1(t *testing.T) {
 func Test_SpecMarshaller_Unmarshal(t *testing.T) {
 	sm := NewMarshaller()
 
-	var unmarshalledSpec gaia.RBACPolicyV1
+	var unmarshalledSpec gaia.AuthPolicyResourceV1
 	if err := sm.Unmarshal([]byte(yamlSpecV1), &unmarshalledSpec); err != nil {
 		t.Errorf("Unmarshal() error = %v, wantErr no error", err)
 		return
@@ -85,9 +85,9 @@ func Test_SpecMarshaller_Unmarshal(t *testing.T) {
 func Test_SpecMarshaller_Unmarshal_VersionMismatch_Errors(t *testing.T) {
 	sm := NewMarshaller()
 
-	expected := errors.New("version does not match struct RBACPolicyV1")
+	expected := errors.New("version does not match struct AuthPolicyResourceV1")
 
-	var unmarshalledSpec gaia.RBACPolicyV1
+	var unmarshalledSpec gaia.AuthPolicyResourceV1
 	err := sm.Unmarshal([]byte(yamlSpecV2), &unmarshalledSpec)
 	if err == nil {
 		t.Errorf("Unmarshal error = %v, wantErr = %v", err, expected)

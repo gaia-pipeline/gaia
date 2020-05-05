@@ -19,36 +19,41 @@ func newRBACHandler(store store.GaiaStore, rbacMarshaller resourcehelper.Marshal
 	return &rbacHandler{store: store, rbacMarshaller: rbacMarshaller}
 }
 
-// RBACPolicyPut creates or updates a new authorization.rbac resource.
-func (h rbacHandler) RBACPolicyPut(c echo.Context) error {
+// AuthPolicyResourcePut creates or updates a new authorization.policy resource.
+func (h rbacHandler) AuthPolicyResourcePut(c echo.Context) error {
 	bts, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
+		gaia.Cfg.Logger.Error("failed to read request body: " + err.Error())
 		return c.String(http.StatusBadRequest, "Error saving new policy.")
 	}
 
-	var spec gaia.RBACPolicyV1
+	var spec gaia.AuthPolicyResourceV1
 	if err := h.rbacMarshaller.Unmarshal(bts, &spec); err != nil {
+		gaia.Cfg.Logger.Error("failed to unmarshal auth policy: " + err.Error())
 		return c.String(http.StatusBadRequest, "Error saving new policy.")
 	}
 
-	if err := h.store.ResourceAuthRBACPut(spec); err != nil {
+	if err := h.store.AuthPolicyResourcePut(spec); err != nil {
+		gaia.Cfg.Logger.Error("failed to put auth policy: " + err.Error())
 		return c.String(http.StatusBadRequest, "Error saving new policy.")
 	}
 
 	return c.String(http.StatusOK, "Policy saved successfully.")
 }
 
-// RBACPolicyPut gets an authorization.rbac resource.
-func (h rbacHandler) RBACPolicyGet(c echo.Context) error {
+// AuthPolicyResourcePut gets an authorization.policy resource.
+func (h rbacHandler) AuthPolicyResourceGet(c echo.Context) error {
 	name := c.Param("name")
 
-	policy, err := h.store.ResourceAuthRBACGet(name)
+	policy, err := h.store.AuthPolicyResourceGet(name)
 	if err != nil {
+		gaia.Cfg.Logger.Error("failed to get auth policy: " + err.Error())
 		return c.String(http.StatusBadRequest, "Error getting policy.")
 	}
 
 	bts, err := h.rbacMarshaller.Marshal(policy)
 	if err != nil {
+		gaia.Cfg.Logger.Error("failed to marshal auth policy: " + err.Error())
 		return c.String(http.StatusBadRequest, "Error getting policy.")
 	}
 
