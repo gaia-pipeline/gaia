@@ -4,8 +4,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/gaia-pipeline/gaia/security/rbac"
-
 	gStore "github.com/gaia-pipeline/gaia/store"
 
 	"github.com/gaia-pipeline/gaia"
@@ -84,28 +82,4 @@ func (h rbacHandler) AuthPolicyAssignmentPut(c echo.Context) error {
 	}
 
 	return c.String(http.StatusOK, "Successfully assignment role")
-}
-
-type policyEnforcerMiddleware struct {
-	enforcer rbac.PolicyEnforcer
-}
-
-func newPolicyEnforcerMiddleware(enforcer rbac.PolicyEnforcer) *policyEnforcerMiddleware {
-	return &policyEnforcerMiddleware{
-		enforcer: enforcer,
-	}
-}
-
-func (pe *policyEnforcerMiddleware) do(namespace gaia.AuthPolicyNamespace, action gaia.AuthPolicyAction) echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			if ctx, ok := c.(AuthContext); ok {
-				if !pe.enforcer.Enforce(ctx.policies, namespace, action) {
-					return c.String(http.StatusForbidden, "You do not have the required permissions.")
-				}
-				return next(c)
-			}
-			return c.String(http.StatusInternalServerError, "An error has occurred.")
-		}
-	}
 }
