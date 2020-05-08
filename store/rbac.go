@@ -21,7 +21,7 @@ func (s *BoltStore) AuthPolicyAssignmentPut(assignment gaia.AuthPolicyAssignment
 }
 
 func (s *BoltStore) AuthPolicyAssignmentGet(username string) (*gaia.AuthPolicyAssignment, error) {
-	var assignment *gaia.AuthPolicyAssignment
+	assignment := &gaia.AuthPolicyAssignment{}
 
 	err := s.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(authPolicyAssignments)
@@ -73,4 +73,24 @@ func (s *BoltStore) AuthPolicyResourceGet(name string) (gaia.AuthPolicyResourceV
 	}
 
 	return spec, nil
+}
+
+func (s *BoltStore) AuthPolicyResourceGetAll() ([]gaia.AuthPolicyResourceV1, error) {
+	var policies []gaia.AuthPolicyResourceV1
+
+	return policies, s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(workerBucket)
+
+		return b.ForEach(func(k, v []byte) error {
+			p := gaia.AuthPolicyResourceV1{}
+
+			if err := json.Unmarshal(v, &p); err != nil {
+				return err
+			}
+
+			policies = append(policies, p)
+
+			return nil
+		})
+	})
 }

@@ -18,7 +18,7 @@ var (
 	errNotAuthorized = errors.New("no or invalid jwt token provided. You are not authorized")
 
 	// Non-protected URL paths which are prefix checked
-	nonProtectedPathsPrefix = []string {
+	nonProtectedPathsPrefix = []string{
 		"/login",
 		"/pipeline/githook",
 		"/trigger",
@@ -30,11 +30,16 @@ var (
 	}
 
 	// Non-protected URL paths which are explicitly checked
-	nonProtectedPaths = []string {
+	nonProtectedPaths = []string{
 		"/",
 		"/favicon.ico",
 	}
 )
+
+type AuthContext struct {
+	echo.Context
+	policies []string
+}
 
 // AuthMiddleware is middleware used for each request. Includes functionality that validates the JWT tokens and user
 // permissions.
@@ -69,14 +74,19 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 				// All ok, continue
 				username, okUsername := claims["username"]
 				roles, okPerms := claims["roles"]
-				if okUsername && okPerms && roles != nil {
+				policies, okPolicies := claims["policies"]
+				if okUsername && okPerms && okPolicies && roles != nil {
 					// Look through the perms until we find that the user has this permission
 					err := roleAuth.checkRole(roles, c.Request().Method, c.Path())
 					if err != nil {
 						return c.String(http.StatusForbidden, fmt.Sprintf("Permission denied for user %s. %s", username, err.Error()))
 					}
 				}
-				return next(c)
+				ctx := AuthContext{
+					Context:  c,
+					policies: getPoliciesFromClaims(policies),
+				}
+				return next(ctx)
 			}
 			return c.String(http.StatusUnauthorized, errNotAuthorized.Error())
 		}
@@ -87,6 +97,17 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 // the permission roles required for each echo endpoint.
 type AuthConfig struct {
 	RoleCategories []*gaia.UserRoleCategory
+}
+
+func getPoliciesFromClaims(policyClaims interface{}) []string {
+	policies := []string{}
+	if policyClaims == nil {
+		return policies
+	}
+	for _, p := range policyClaims.([]interface{}) {
+		policies = append(policies, p.(string))
+	}
+	return policies
 }
 
 // Finds the required role for the metho & path specified. If it exists we validate that the provided user roles have

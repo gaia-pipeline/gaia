@@ -377,5 +377,9 @@ type AuthPolicyStatementV1 struct {
 // AuthPolicyAssignment contains a mapping of username to policies.
 type AuthPolicyAssignment struct {
 	Username string
-	Policies map[string]interface{}
+	Policies []string
 }
+
+type AuthPolicyNamespace string
+
+type AuthPolicyAction string

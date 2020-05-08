@@ -101,6 +101,7 @@ type GaiaStore interface {
 	AuthPolicyAssignmentGet(username string) (*gaia.AuthPolicyAssignment, error)
 	AuthPolicyResourcePut(spec gaia.AuthPolicyResourceV1) error
 	AuthPolicyResourceGet(name string) (gaia.AuthPolicyResourceV1, error)
+	AuthPolicyResourceGetAll() ([]gaia.AuthPolicyResourceV1, error)
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore
@@ -180,6 +181,7 @@ func (s *BoltStore) setupDatabase() error {
 	setP.update(workerBucket)
 	setP.update(shaPairBucket)
 	setP.update(authPolicyResources)
+	setP.update(authPolicyAssignments)
 
 	if setP.err != nil {
 		return setP.err

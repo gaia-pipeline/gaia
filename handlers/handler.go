@@ -2,6 +2,11 @@ package handlers
 
 import (
 	"net/http"
+	"time"
+
+	"github.com/gaia-pipeline/gaia/security/rbac"
+
+	"github.com/gaia-pipeline/gaia/helper/cachehelper"
 
 	"github.com/gaia-pipeline/gaia/helper/resourcehelper"
 	"github.com/gaia-pipeline/gaia/services"
@@ -29,17 +34,23 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	// --- Register handlers at echo instance ---
 	storeService, _ := services.StorageService()
 
+	service := rbac.NewService(storeService, cachehelper.NewCache(time.Minute*10))
+	enforcer := rbac.NewPolicyEnforcer(service)
+	policyEnforcer := newPolicyEnforcerMiddleware(enforcer)
+
 	// Endpoints for Gaia primary instance
 	if gaia.Cfg.Mode == gaia.ModeServer {
 		// Users
 		e.POST(p+"login", UserLogin)
-		e.GET(p+"users", UserGetAll)
-		e.POST(p+"user/password", UserChangePassword)
-		e.DELETE(p+"user/:username", UserDelete)
-		e.GET(p+"user/:username/permissions", UserGetPermissions)
-		e.PUT(p+"user/:username/permissions", UserPutPermissions)
-		e.POST(p+"user", UserAdd)
 		e.PUT(p+"user/:username/reset-trigger-token", UserResetTriggerToken)
+
+		e.GET(p+"users", UserGetAll, policyEnforcer.do(resourcehelper.UserNamespace, resourcehelper.GetAction))
+		e.POST(p+"user/password", UserChangePassword, policyEnforcer.do(resourcehelper.UserNamespace, resourcehelper.ChangePasswordAction))
+		e.DELETE(p+"user/:username", UserDelete, policyEnforcer.do(resourcehelper.UserNamespace, resourcehelper.DeleteAction))
+		e.POST(p+"user", UserAdd, policyEnforcer.do(resourcehelper.UserNamespace, resourcehelper.CreateAction))
+
+		e.GET(p+"user/:username/permissions", UserGetPermissions, policyEnforcer.do(resourcehelper.UserPermissionNamespace, resourcehelper.GetAction))
+		e.PUT(p+"user/:username/permissions", UserPutPermissions, policyEnforcer.do(resourcehelper.UserPermissionNamespace, resourcehelper.UpdateAction))
 
 		perms := e.Group(p + "permission")
 		perms.GET("", PermissionGetAll)
@@ -48,6 +59,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		rbacHandler := newRBACHandler(storeService, resourcehelper.NewMarshaller())
 		e.GET(p+"rbac/policy/:name", rbacHandler.AuthPolicyResourceGet)
 		e.POST(p+"rbac/policy", rbacHandler.AuthPolicyResourcePut)
+		e.PUT(p+"rbac/policy/:name/assign/:username", rbacHandler.AuthPolicyAssignmentPut)
 
 		// Pipelines
 		// Create pipeline provider
@@ -55,19 +67,21 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 			Scheduler:       s.deps.Scheduler,
 			PipelineService: s.deps.PipelineService,
 		})
-		e.POST(p+"pipeline", pipelineProvider.CreatePipeline)
-		e.POST(p+"pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote)
-		e.GET(p+"pipeline/name", pipelineProvider.PipelineNameAvailable)
-		e.POST(p+"pipeline/githook", GitWebHook)
-		e.GET(p+"pipeline/created", pipelineProvider.CreatePipelineGetAll)
-		e.GET(p+"pipeline", pipelineProvider.PipelineGetAll)
-		e.GET(p+"pipeline/:pipelineid", pipelineProvider.PipelineGet)
-		e.PUT(p+"pipeline/:pipelineid", pipelineProvider.PipelineUpdate)
-		e.DELETE(p+"pipeline/:pipelineid", pipelineProvider.PipelineDelete)
-		e.POST(p+"pipeline/:pipelineid/start", pipelineProvider.PipelineStart)
+
+		e.POST(p+"pipeline", pipelineProvider.CreatePipeline, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.CreateAction))
+		e.POST(p+"pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.CreateAction))
+		e.GET(p+"pipeline/name", pipelineProvider.PipelineNameAvailable, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.CreateAction))
+		e.POST(p+"pipeline/githook", GitWebHook, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.CreateAction))
+		e.GET(p+"pipeline/created", pipelineProvider.CreatePipelineGetAll, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.ListAction))
+		e.GET(p+"pipeline", pipelineProvider.PipelineGetAll, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.ListAction))
+		e.GET(p+"pipeline/latest", pipelineProvider.PipelineGetAllWithLatestRun, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.ListAction))
+		e.GET(p+"pipeline/:pipelineid", pipelineProvider.PipelineGet, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.GetAction))
+		e.PUT(p+"pipeline/:pipelineid", pipelineProvider.PipelineUpdate, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.UpdateAction))
+		e.DELETE(p+"pipeline/:pipelineid", pipelineProvider.PipelineDelete, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.DeleteAction))
+		e.POST(p+"pipeline/:pipelineid/start", pipelineProvider.PipelineStart, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.StartAction))
+
 		e.POST(p+"pipeline/:pipelineid/:pipelinetoken/trigger", pipelineProvider.PipelineTrigger)
 		e.PUT(p+"pipeline/:pipelineid/reset-trigger-token", pipelineProvider.PipelineResetToken)
-		e.GET(p+"pipeline/latest", pipelineProvider.PipelineGetAllWithLatestRun)
 		e.POST(p+"pipeline/periodicschedules", pipelineProvider.PipelineCheckPeriodicSchedules)
 
 		// Settings
@@ -76,17 +90,17 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		e.GET(p+"settings/poll", SettingsPollGet)
 
 		// PipelineRun
-		e.POST(p+"pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop)
-		e.GET(p+"pipelinerun/:pipelineid/:runid", pipelineProvider.PipelineRunGet)
-		e.GET(p+"pipelinerun/:pipelineid", pipelineProvider.PipelineGetAllRuns)
-		e.GET(p+"pipelinerun/:pipelineid/latest", pipelineProvider.PipelineGetLatestRun)
-		e.GET(p+"pipelinerun/:pipelineid/:runid/log", pipelineProvider.GetJobLogs)
+		e.POST(p+"pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop, policyEnforcer.do(resourcehelper.PipelineRunNamespace, resourcehelper.StopAction))
+		e.GET(p+"pipelinerun/:pipelineid/:runid", pipelineProvider.PipelineRunGet, policyEnforcer.do(resourcehelper.PipelineRunNamespace, resourcehelper.GetAction))
+		e.GET(p+"pipelinerun/:pipelineid/latest", pipelineProvider.PipelineGetLatestRun, policyEnforcer.do(resourcehelper.PipelineRunNamespace, resourcehelper.GetAction))
+		e.GET(p+"pipelinerun/:pipelineid", pipelineProvider.PipelineGetAllRuns, policyEnforcer.do(resourcehelper.PipelineRunNamespace, resourcehelper.ListAction))
+		e.GET(p+"pipelinerun/:pipelineid/:runid/log", pipelineProvider.GetJobLogs, policyEnforcer.do(resourcehelper.PipelineRunNamespace, resourcehelper.LogsAction))
 
 		// Secrets
-		e.GET(p+"secrets", ListSecrets)
-		e.DELETE(p+"secret/:key", RemoveSecret)
-		e.POST(p+"secret", SetSecret)
-		e.PUT(p+"secret/update", SetSecret)
+		e.GET(p+"secrets", ListSecrets, policyEnforcer.do(resourcehelper.SecretNamespace, resourcehelper.ListAction))
+		e.DELETE(p+"secret/:key", RemoveSecret, policyEnforcer.do(resourcehelper.SecretNamespace, resourcehelper.DeleteAction))
+		e.POST(p+"secret", SetSecret, policyEnforcer.do(resourcehelper.SecretNamespace, resourcehelper.CreateAction))
+		e.PUT(p+"secret/update", SetSecret, policyEnforcer.do(resourcehelper.SecretNamespace, resourcehelper.UpdateAction))
 	}
 
 	// Worker
@@ -94,12 +108,13 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	workerProvider := workers.NewWorkerProvider(workers.Dependencies{
 		Scheduler: s.deps.Scheduler,
 	})
-	e.GET(p+"worker/secret", workerProvider.GetWorkerRegisterSecret)
+
 	e.POST(p+"worker/register", workerProvider.RegisterWorker)
-	e.GET(p+"worker/status", workerProvider.GetWorkerStatusOverview)
-	e.GET(p+"worker", workerProvider.GetWorker)
-	e.DELETE(p+"worker/:workerid", workerProvider.DeregisterWorker)
-	e.POST(p+"worker/secret", workerProvider.ResetWorkerRegisterSecret)
+	e.GET(p+"worker/secret", workerProvider.GetWorkerRegisterSecret, policyEnforcer.do(resourcehelper.WorkerNamespace, resourcehelper.GetRegistrationSecretAction))
+	e.POST(p+"worker/secret", workerProvider.ResetWorkerRegisterSecret, policyEnforcer.do(resourcehelper.WorkerNamespace, resourcehelper.ResetWorkerRegisterSecretAction))
+	e.GET(p+"worker/status", workerProvider.GetWorkerStatusOverview, policyEnforcer.do(resourcehelper.WorkerNamespace, resourcehelper.GetOverviewAction))
+	e.GET(p+"worker", workerProvider.GetWorker, policyEnforcer.do(resourcehelper.WorkerNamespace, resourcehelper.GetWorkerAction))
+	e.DELETE(p+"worker/:workerid", workerProvider.DeregisterWorker, policyEnforcer.do(resourcehelper.WorkerNamespace, resourcehelper.DeregisterWorkerAction))
 
 	// Middleware
 	e.Use(middleware.Recover())

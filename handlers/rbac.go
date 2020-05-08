@@ -4,18 +4,21 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/gaia-pipeline/gaia/security/rbac"
+
+	gStore "github.com/gaia-pipeline/gaia/store"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/resourcehelper"
-	"github.com/gaia-pipeline/gaia/store"
 	"github.com/labstack/echo"
 )
 
 type rbacHandler struct {
-	store          store.GaiaStore
+	store          gStore.GaiaStore
 	rbacMarshaller resourcehelper.Marshaller
 }
 
-func newRBACHandler(store store.GaiaStore, rbacMarshaller resourcehelper.Marshaller) *rbacHandler {
+func newRBACHandler(store gStore.GaiaStore, rbacMarshaller resourcehelper.Marshaller) *rbacHandler {
 	return &rbacHandler{store: store, rbacMarshaller: rbacMarshaller}
 }
 
@@ -58,4 +61,51 @@ func (h rbacHandler) AuthPolicyResourceGet(c echo.Context) error {
 	}
 
 	return c.String(http.StatusOK, string(bts))
+}
+
+func (h rbacHandler) AuthPolicyAssignmentPut(c echo.Context) error {
+	name := c.Param("name")
+	username := c.Param("username")
+
+	policies, err := h.store.AuthPolicyAssignmentGet(username)
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to get auth assignment: " + err.Error())
+		return c.String(http.StatusBadRequest, "Error getting policy assignment.")
+	}
+
+	newAssignment := gaia.AuthPolicyAssignment{
+		Username: username,
+		Policies: append(policies.Policies, name),
+	}
+
+	if err := h.store.AuthPolicyAssignmentPut(newAssignment); err != nil {
+		gaia.Cfg.Logger.Error("failed to put auth assignment: " + err.Error())
+		return c.String(http.StatusBadRequest, "Error getting policy.")
+	}
+
+	return c.String(http.StatusOK, "Successfully assignment role")
+}
+
+type policyEnforcerMiddleware struct {
+	enforcer rbac.PolicyEnforcer
+}
+
+func newPolicyEnforcerMiddleware(enforcer rbac.PolicyEnforcer) *policyEnforcerMiddleware {
+	return &policyEnforcerMiddleware{
+		enforcer: enforcer,
+	}
+}
+
+func (pe *policyEnforcerMiddleware) do(namespace gaia.AuthPolicyNamespace, action gaia.AuthPolicyAction) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if ctx, ok := c.(AuthContext); ok {
+				if !pe.enforcer.Enforce(ctx.policies, namespace, action) {
+					return c.String(http.StatusForbidden, "You do not have the required permissions.")
+				}
+				return next(c)
+			}
+			return c.String(http.StatusInternalServerError, "An error has occurred.")
+		}
+	}
 }
