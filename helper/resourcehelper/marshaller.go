@@ -26,7 +26,7 @@ func NewMarshaller() Marshaller {
 func (f marshaller) Marshal(in interface{}) ([]byte, error) {
 	bts, err := yaml.Marshal(in)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal policy: %w", err)
+		return nil, fmt.Errorf("failed to marshal policy: %v", err.Error())
 	}
 
 	return bts, nil
@@ -35,7 +35,7 @@ func (f marshaller) Marshal(in interface{}) ([]byte, error) {
 // Unmarshal is a wrapper around the yaml.Unmarshal func that allows us to unmarshal and validate the specification.
 func (f marshaller) Unmarshal(bytes []byte, out interface{}) error {
 	if err := yaml.Unmarshal(bytes, out); err != nil {
-		return fmt.Errorf("failed to unmarhsal policy: %w", err)
+		return fmt.Errorf("failed to unmarhsal policy: %v", err.Error())
 	}
 
 	// Check for version mismatches.
