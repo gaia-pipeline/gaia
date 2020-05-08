@@ -44,13 +44,13 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		e.POST(p+"login", UserLogin)
 		e.PUT(p+"user/:username/reset-trigger-token", UserResetTriggerToken)
 
-		e.GET(p+"users", UserGetAll, policyEnforcer.do(resourcehelper.UserNamespace, resourcehelper.GetAction))
-		e.POST(p+"user/password", UserChangePassword, policyEnforcer.do(resourcehelper.UserNamespace, resourcehelper.ChangePasswordAction))
-		e.DELETE(p+"user/:username", UserDelete, policyEnforcer.do(resourcehelper.UserNamespace, resourcehelper.DeleteAction))
-		e.POST(p+"user", UserAdd, policyEnforcer.do(resourcehelper.UserNamespace, resourcehelper.CreateAction))
+		e.GET(p+"users", UserGetAll, policyEnforcer.do(rbac.UserNamespace, rbac.GetAction))
+		e.POST(p+"user/password", UserChangePassword, policyEnforcer.do(rbac.UserNamespace, rbac.ChangePasswordAction))
+		e.DELETE(p+"user/:username", UserDelete, policyEnforcer.do(rbac.UserNamespace, rbac.DeleteAction))
+		e.POST(p+"user", UserAdd, policyEnforcer.do(rbac.UserNamespace, rbac.CreateAction))
 
-		e.GET(p+"user/:username/permissions", UserGetPermissions, policyEnforcer.do(resourcehelper.UserPermissionNamespace, resourcehelper.GetAction))
-		e.PUT(p+"user/:username/permissions", UserPutPermissions, policyEnforcer.do(resourcehelper.UserPermissionNamespace, resourcehelper.UpdateAction))
+		e.GET(p+"user/:username/permissions", UserGetPermissions, policyEnforcer.do(rbac.UserPermissionNamespace, rbac.GetAction))
+		e.PUT(p+"user/:username/permissions", UserPutPermissions, policyEnforcer.do(rbac.UserPermissionNamespace, rbac.UpdateAction))
 
 		perms := e.Group(p + "permission")
 		perms.GET("", PermissionGetAll)
@@ -68,17 +68,17 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 			PipelineService: s.deps.PipelineService,
 		})
 
-		e.POST(p+"pipeline", pipelineProvider.CreatePipeline, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.CreateAction))
-		e.POST(p+"pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.CreateAction))
-		e.GET(p+"pipeline/name", pipelineProvider.PipelineNameAvailable, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.CreateAction))
-		e.POST(p+"pipeline/githook", GitWebHook, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.CreateAction))
-		e.GET(p+"pipeline/created", pipelineProvider.CreatePipelineGetAll, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.ListAction))
-		e.GET(p+"pipeline", pipelineProvider.PipelineGetAll, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.ListAction))
-		e.GET(p+"pipeline/latest", pipelineProvider.PipelineGetAllWithLatestRun, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.ListAction))
-		e.GET(p+"pipeline/:pipelineid", pipelineProvider.PipelineGet, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.GetAction))
-		e.PUT(p+"pipeline/:pipelineid", pipelineProvider.PipelineUpdate, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.UpdateAction))
-		e.DELETE(p+"pipeline/:pipelineid", pipelineProvider.PipelineDelete, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.DeleteAction))
-		e.POST(p+"pipeline/:pipelineid/start", pipelineProvider.PipelineStart, policyEnforcer.do(resourcehelper.PipelineNamespace, resourcehelper.StartAction))
+		e.POST(p+"pipeline", pipelineProvider.CreatePipeline, policyEnforcer.do(rbac.PipelineNamespace, rbac.CreateAction))
+		e.POST(p+"pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote, policyEnforcer.do(rbac.PipelineNamespace, rbac.CreateAction))
+		e.GET(p+"pipeline/name", pipelineProvider.PipelineNameAvailable, policyEnforcer.do(rbac.PipelineNamespace, rbac.CreateAction))
+		e.POST(p+"pipeline/githook", GitWebHook, policyEnforcer.do(rbac.PipelineNamespace, rbac.CreateAction))
+		e.GET(p+"pipeline/created", pipelineProvider.CreatePipelineGetAll, policyEnforcer.do(rbac.PipelineNamespace, rbac.ListAction))
+		e.GET(p+"pipeline", pipelineProvider.PipelineGetAll, policyEnforcer.do(rbac.PipelineNamespace, rbac.ListAction))
+		e.GET(p+"pipeline/latest", pipelineProvider.PipelineGetAllWithLatestRun, policyEnforcer.do(rbac.PipelineNamespace, rbac.ListAction))
+		e.GET(p+"pipeline/:pipelineid", pipelineProvider.PipelineGet, policyEnforcer.do(rbac.PipelineNamespace, rbac.GetAction))
+		e.PUT(p+"pipeline/:pipelineid", pipelineProvider.PipelineUpdate, policyEnforcer.do(rbac.PipelineNamespace, rbac.UpdateAction))
+		e.DELETE(p+"pipeline/:pipelineid", pipelineProvider.PipelineDelete, policyEnforcer.do(rbac.PipelineNamespace, rbac.DeleteAction))
+		e.POST(p+"pipeline/:pipelineid/start", pipelineProvider.PipelineStart, policyEnforcer.do(rbac.PipelineNamespace, rbac.StartAction))
 
 		e.POST(p+"pipeline/:pipelineid/:pipelinetoken/trigger", pipelineProvider.PipelineTrigger)
 		e.PUT(p+"pipeline/:pipelineid/reset-trigger-token", pipelineProvider.PipelineResetToken)
@@ -90,17 +90,17 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		e.GET(p+"settings/poll", SettingsPollGet)
 
 		// PipelineRun
-		e.POST(p+"pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop, policyEnforcer.do(resourcehelper.PipelineRunNamespace, resourcehelper.StopAction))
-		e.GET(p+"pipelinerun/:pipelineid/:runid", pipelineProvider.PipelineRunGet, policyEnforcer.do(resourcehelper.PipelineRunNamespace, resourcehelper.GetAction))
-		e.GET(p+"pipelinerun/:pipelineid/latest", pipelineProvider.PipelineGetLatestRun, policyEnforcer.do(resourcehelper.PipelineRunNamespace, resourcehelper.GetAction))
-		e.GET(p+"pipelinerun/:pipelineid", pipelineProvider.PipelineGetAllRuns, policyEnforcer.do(resourcehelper.PipelineRunNamespace, resourcehelper.ListAction))
-		e.GET(p+"pipelinerun/:pipelineid/:runid/log", pipelineProvider.GetJobLogs, policyEnforcer.do(resourcehelper.PipelineRunNamespace, resourcehelper.LogsAction))
+		e.POST(p+"pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop, policyEnforcer.do(rbac.PipelineRunNamespace, rbac.StopAction))
+		e.GET(p+"pipelinerun/:pipelineid/:runid", pipelineProvider.PipelineRunGet, policyEnforcer.do(rbac.PipelineRunNamespace, rbac.GetAction))
+		e.GET(p+"pipelinerun/:pipelineid/latest", pipelineProvider.PipelineGetLatestRun, policyEnforcer.do(rbac.PipelineRunNamespace, rbac.GetAction))
+		e.GET(p+"pipelinerun/:pipelineid", pipelineProvider.PipelineGetAllRuns, policyEnforcer.do(rbac.PipelineRunNamespace, rbac.ListAction))
+		e.GET(p+"pipelinerun/:pipelineid/:runid/log", pipelineProvider.GetJobLogs, policyEnforcer.do(rbac.PipelineRunNamespace, rbac.LogsAction))
 
 		// Secrets
-		e.GET(p+"secrets", ListSecrets, policyEnforcer.do(resourcehelper.SecretNamespace, resourcehelper.ListAction))
-		e.DELETE(p+"secret/:key", RemoveSecret, policyEnforcer.do(resourcehelper.SecretNamespace, resourcehelper.DeleteAction))
-		e.POST(p+"secret", SetSecret, policyEnforcer.do(resourcehelper.SecretNamespace, resourcehelper.CreateAction))
-		e.PUT(p+"secret/update", SetSecret, policyEnforcer.do(resourcehelper.SecretNamespace, resourcehelper.UpdateAction))
+		e.GET(p+"secrets", ListSecrets, policyEnforcer.do(rbac.SecretNamespace, rbac.ListAction))
+		e.DELETE(p+"secret/:key", RemoveSecret, policyEnforcer.do(rbac.SecretNamespace, rbac.DeleteAction))
+		e.POST(p+"secret", SetSecret, policyEnforcer.do(rbac.SecretNamespace, rbac.CreateAction))
+		e.PUT(p+"secret/update", SetSecret, policyEnforcer.do(rbac.SecretNamespace, rbac.UpdateAction))
 	}
 
 	// Worker
@@ -111,11 +111,11 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	})
 
 	e.POST(p+"worker/register", workerProvider.RegisterWorker)
-	e.GET(p+"worker/secret", workerProvider.GetWorkerRegisterSecret, policyEnforcer.do(resourcehelper.WorkerNamespace, resourcehelper.GetRegistrationSecretAction))
-	e.POST(p+"worker/secret", workerProvider.ResetWorkerRegisterSecret, policyEnforcer.do(resourcehelper.WorkerNamespace, resourcehelper.ResetWorkerRegisterSecretAction))
-	e.GET(p+"worker/status", workerProvider.GetWorkerStatusOverview, policyEnforcer.do(resourcehelper.WorkerNamespace, resourcehelper.GetOverviewAction))
-	e.GET(p+"worker", workerProvider.GetWorker, policyEnforcer.do(resourcehelper.WorkerNamespace, resourcehelper.GetWorkerAction))
-	e.DELETE(p+"worker/:workerid", workerProvider.DeregisterWorker, policyEnforcer.do(resourcehelper.WorkerNamespace, resourcehelper.DeregisterWorkerAction))
+	e.GET(p+"worker/secret", workerProvider.GetWorkerRegisterSecret, policyEnforcer.do(rbac.WorkerNamespace, rbac.GetRegistrationSecretAction))
+	e.POST(p+"worker/secret", workerProvider.ResetWorkerRegisterSecret, policyEnforcer.do(rbac.WorkerNamespace, rbac.ResetWorkerRegisterSecretAction))
+	e.GET(p+"worker/status", workerProvider.GetWorkerStatusOverview, policyEnforcer.do(rbac.WorkerNamespace, rbac.GetOverviewAction))
+	e.GET(p+"worker", workerProvider.GetWorker, policyEnforcer.do(rbac.WorkerNamespace, rbac.GetWorkerAction))
+	e.DELETE(p+"worker/:workerid", workerProvider.DeregisterWorker, policyEnforcer.do(rbac.WorkerNamespace, rbac.DeregisterWorkerAction))
 
 	// Middleware
 	e.Use(middleware.Recover())

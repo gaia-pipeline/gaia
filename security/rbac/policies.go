@@ -1,4 +1,4 @@
-package resourcehelper
+package rbac
 
 import (
 	"github.com/gaia-pipeline/gaia"
