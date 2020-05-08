@@ -66,7 +66,7 @@ func TestPolicyEnforcer_Enforce_WithMissingPolicyStatement_IsFalse(t *testing.T)
 
 func Test_PolicyEnforcer_ResolvePolicies_MergedPolicies(t *testing.T) {
 	enforcer := NewPolicyEnforcer(mockSvc{})
-	rp := enforcer.resolvePolicies([]string{"test-policy-a", "test-policy-b"})
+	rp := enforcer.ResolvePolicies([]string{"test-policy-a", "test-policy-b"})
 
 	expectedRp := make(namespaceActionMap)
 	expectedRp["namespace-a"] = map[gaia.RBACPolicyAction]interface{}{
@@ -78,6 +78,6 @@ func Test_PolicyEnforcer_ResolvePolicies_MergedPolicies(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(rp, expectedRp) {
-		t.Errorf("resolvePolicies map: wanted %v, got %v", expectedRp, rp)
+		t.Errorf("ResolvePolicies map: wanted %v, got %v", expectedRp, rp)
 	}
 }

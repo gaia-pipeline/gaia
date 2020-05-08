@@ -9,6 +9,7 @@ import (
 // PolicyEnforcer is for enforcing RBAC policies.
 type PolicyEnforcer interface {
 	Enforce(policyNames []string, namespace gaia.RBACPolicyNamespace, action gaia.RBACPolicyAction) bool
+	ResolvePolicies(policyNames []string) namespaceActionMap
 }
 
 type policyEnforcer struct {
@@ -26,7 +27,7 @@ func NewPolicyEnforcer(svc Service) PolicyEnforcer {
 // users policies using the names provided. We then merged all the policies together into the namespaceActionMap which
 // acts as a quick lookup for the namespace and action that is being enforced.
 func (s *policyEnforcer) Enforce(policyNames []string, namespace gaia.RBACPolicyNamespace, action gaia.RBACPolicyAction) bool {
-	resolved := s.resolvePolicies(policyNames)
+	resolved := s.ResolvePolicies(policyNames)
 
 	if ns, nsOk := resolved[namespace]; nsOk {
 		// first, check for a wildcard.
@@ -42,7 +43,7 @@ func (s *policyEnforcer) Enforce(policyNames []string, namespace gaia.RBACPolicy
 	return false
 }
 
-func (s *policyEnforcer) resolvePolicies(policyNames []string) namespaceActionMap {
+func (s *policyEnforcer) ResolvePolicies(policyNames []string) namespaceActionMap {
 	na := make(namespaceActionMap)
 
 	// iterate through the user policy names provided
