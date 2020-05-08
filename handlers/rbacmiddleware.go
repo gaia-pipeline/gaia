@@ -18,7 +18,7 @@ func newPolicyEnforcerMiddleware(enforcer rbac.PolicyEnforcer) *policyEnforcerMi
 	}
 }
 
-func (pe *policyEnforcerMiddleware) do(namespace gaia.AuthPolicyNamespace, action gaia.AuthPolicyAction) echo.MiddlewareFunc {
+func (pe *policyEnforcerMiddleware) do(namespace gaia.RBACPolicyNamespace, action gaia.RBACPolicyAction) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if ctx, ok := c.(AuthContext); ok {

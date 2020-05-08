@@ -6,47 +6,47 @@ import (
 
 const (
 	// PipelineNamespace (DO NOT CHANGE)
-	PipelineNamespace gaia.AuthPolicyNamespace = "pipelines"
+	PipelineNamespace gaia.RBACPolicyNamespace = "pipelines"
 	// PipelineRunNamespace (DO NOT CHANGE)
-	PipelineRunNamespace gaia.AuthPolicyNamespace = "pipeline-runs"
+	PipelineRunNamespace gaia.RBACPolicyNamespace = "pipeline-runs"
 	// SecretNamespace (DO NOT CHANGE)
-	SecretNamespace gaia.AuthPolicyNamespace = "secrets"
+	SecretNamespace gaia.RBACPolicyNamespace = "secrets"
 	// UserNamespace (DO NOT CHANGE)
-	UserNamespace gaia.AuthPolicyNamespace = "users"
+	UserNamespace gaia.RBACPolicyNamespace = "users"
 	// UserPermissionNamespace (DO NOT CHANGE)
-	UserPermissionNamespace gaia.AuthPolicyNamespace = "user-permissions"
+	UserPermissionNamespace gaia.RBACPolicyNamespace = "user-permissions"
 	// WorkerNamespace (DO NOT CHANGE)
-	WorkerNamespace gaia.AuthPolicyNamespace = "workers"
+	WorkerNamespace gaia.RBACPolicyNamespace = "workers"
 
 	// CreateAction (DO NOT CHANGE)
-	CreateAction gaia.AuthPolicyAction = "create"
+	CreateAction gaia.RBACPolicyAction = "create"
 	// ListAction (DO NOT CHANGE)
-	ListAction gaia.AuthPolicyAction = "list"
+	ListAction gaia.RBACPolicyAction = "list"
 	// GetAction (DO NOT CHANGE)
-	GetAction gaia.AuthPolicyAction = "get"
+	GetAction gaia.RBACPolicyAction = "get"
 	// UpdateAction (DO NOT CHANGE)
-	UpdateAction gaia.AuthPolicyAction = "update"
+	UpdateAction gaia.RBACPolicyAction = "update"
 	// DeleteAction (DO NOT CHANGE)
-	DeleteAction gaia.AuthPolicyAction = "delete"
+	DeleteAction gaia.RBACPolicyAction = "delete"
 
 	// StartAction (DO NOT CHANGE)
-	StartAction gaia.AuthPolicyAction = "start"
+	StartAction gaia.RBACPolicyAction = "start"
 	// StopAction (DO NOT CHANGE)
-	StopAction gaia.AuthPolicyAction = "stop"
+	StopAction gaia.RBACPolicyAction = "stop"
 	// LogsAction (DO NOT CHANGE)
-	LogsAction gaia.AuthPolicyAction = "logs"
+	LogsAction gaia.RBACPolicyAction = "logs"
 
 	// ChangePasswordAction (DO NOT CHANGE)
-	ChangePasswordAction gaia.AuthPolicyAction = "change-password"
+	ChangePasswordAction gaia.RBACPolicyAction = "change-password"
 
 	// GetRegistrationSecretAction (DO NOT CHANGE)
-	GetRegistrationSecretAction gaia.AuthPolicyAction = "get-registration-secret"
+	GetRegistrationSecretAction gaia.RBACPolicyAction = "get-registration-secret"
 	// GetOverviewAction (DO NOT CHANGE)
-	GetOverviewAction gaia.AuthPolicyAction = "get-overview"
+	GetOverviewAction gaia.RBACPolicyAction = "get-overview"
 	// GetWorkerAction (DO NOT CHANGE)
-	GetWorkerAction gaia.AuthPolicyAction = "get-worker"
+	GetWorkerAction gaia.RBACPolicyAction = "get-worker"
 	// DeregisterWorkerAction (DO NOT CHANGE)
-	DeregisterWorkerAction gaia.AuthPolicyAction = "deregister-worker"
+	DeregisterWorkerAction gaia.RBACPolicyAction = "deregister-worker"
 	// ResetWorkerRegisterSecretAction (DO NOT CHANGE)
-	ResetWorkerRegisterSecretAction gaia.AuthPolicyAction = "register-worker-secret"
+	ResetWorkerRegisterSecretAction gaia.RBACPolicyAction = "register-worker-secret"
 )

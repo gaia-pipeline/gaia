@@ -6,29 +6,34 @@ import (
 	"github.com/gaia-pipeline/gaia"
 )
 
+// PolicyEnforcer is for enforcing RBAC policies.
 type PolicyEnforcer interface {
-	Enforce(policyNames []string, namespace gaia.AuthPolicyNamespace, action gaia.AuthPolicyAction) bool
+	Enforce(policyNames []string, namespace gaia.RBACPolicyNamespace, action gaia.RBACPolicyAction) bool
 }
 
 type policyEnforcer struct {
 	svc Service
 }
 
-type namespaceActionMap map[gaia.AuthPolicyNamespace]map[gaia.AuthPolicyAction]interface{}
+type namespaceActionMap map[gaia.RBACPolicyNamespace]map[gaia.RBACPolicyAction]interface{}
 
-func NewPolicyEnforcer(svc Service) *policyEnforcer {
+// NewPolicyEnforcer creates a new policyEnforcer
+func NewPolicyEnforcer(svc Service) PolicyEnforcer {
 	return &policyEnforcer{svc: svc}
 }
 
-func (s *policyEnforcer) Enforce(policyNames []string, namespace gaia.AuthPolicyNamespace, action gaia.AuthPolicyAction) bool {
+// Enforce takes a list of policy names from a Gaia users JWT claims, a required namespace and action. We get all the
+// users policies using the names provided. We then merged all the policies together into the namespaceActionMap which
+// acts as a quick lookup for the namespace and action that is being enforced.
+func (s *policyEnforcer) Enforce(policyNames []string, namespace gaia.RBACPolicyNamespace, action gaia.RBACPolicyAction) bool {
 	resolved := s.resolvePolicies(policyNames)
 
 	if ns, nsOk := resolved[namespace]; nsOk {
-		// First, check for a wildcard.
+		// first, check for a wildcard.
 		if _, acOk := ns["*"]; acOk {
 			return true
 		}
-		// Second, check for a specific action.
+		// second, check for the specific action.
 		if _, acOk := ns[action]; acOk {
 			return true
 		}
@@ -51,16 +56,13 @@ func (s *policyEnforcer) resolvePolicies(policyNames []string) namespaceActionMa
 				// parse the namespace and action from the statement value
 				namespace, action := s.parseNamespaceAction(stmtAction)
 				if nsActions, exists := na[namespace]; exists {
-					if action == "*" {
-						na[namespace] = make(map[gaia.AuthPolicyAction]interface{})
-						na[namespace]["*"] = ""
+					if s.checkWildcard(na, namespace, action) {
 						continue
 					}
 					nsActions[action] = ""
 					continue
 				}
-				na[namespace] = make(map[gaia.AuthPolicyAction]interface{})
-				na[namespace][action] = ""
+				s.newEntry(na, namespace, action)
 			}
 		}
 	}
@@ -68,9 +70,28 @@ func (s *policyEnforcer) resolvePolicies(policyNames []string) namespaceActionMa
 	return na
 }
 
-func (s *policyEnforcer) parseNamespaceAction(a string) (gaia.AuthPolicyNamespace, gaia.AuthPolicyAction) {
+func (s *policyEnforcer) newEntry(na namespaceActionMap, namespace gaia.RBACPolicyNamespace, action gaia.RBACPolicyAction) {
+	na[namespace] = make(map[gaia.RBACPolicyAction]interface{})
+	na[namespace][action] = ""
+}
+
+func (s *policyEnforcer) checkWildcard(na namespaceActionMap, namespace gaia.RBACPolicyNamespace, action gaia.RBACPolicyAction) bool {
+	if _, wildcardExists := na[namespace]["*"]; wildcardExists {
+		// continue if we already have a wildcard
+		return true
+	}
+	if action == "*" {
+		// overwrite map and assign wildcard - takes priority always
+		na[namespace] = make(map[gaia.RBACPolicyAction]interface{})
+		na[namespace]["*"] = ""
+		return true
+	}
+	return false
+}
+
+func (s *policyEnforcer) parseNamespaceAction(a string) (gaia.RBACPolicyNamespace, gaia.RBACPolicyAction) {
 	splitAction := strings.Split(a, "/")
-	namespace := gaia.AuthPolicyNamespace(splitAction[0])
-	action := gaia.AuthPolicyAction(splitAction[1])
+	namespace := gaia.RBACPolicyNamespace(splitAction[0])
+	action := gaia.RBACPolicyAction(splitAction[1])
 	return namespace, action
 }

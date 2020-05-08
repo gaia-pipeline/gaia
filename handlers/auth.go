@@ -36,6 +36,8 @@ var (
 	}
 )
 
+// AuthContext is the wrapped context to pass through the echo handlers and middleware. This allows us to bind the user
+// RBAC policy names into the server request context.
 type AuthContext struct {
 	echo.Context
 	policies []string

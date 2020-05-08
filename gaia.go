@@ -380,6 +380,8 @@ type AuthPolicyAssignment struct {
 	Policies []string
 }
 
-type AuthPolicyNamespace string
+// RBACPolicyNamespace represents a policy namespace.
+type RBACPolicyNamespace string
 
-type AuthPolicyAction string
+// RBACPolicyAction represents a policy action.
+type RBACPolicyAction string

@@ -8,6 +8,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Marshaller is the interface that satisfies the baseCodec for resource marshaling.
 type Marshaller interface {
 	Marshal(in interface{}) ([]byte, error)
 	Unmarshal(bytes []byte, out interface{}) error
@@ -15,7 +16,8 @@ type Marshaller interface {
 
 type marshaller struct{}
 
-func NewMarshaller() *marshaller {
+// NewMarshaller creates a new resource marshaller.
+func NewMarshaller() Marshaller {
 	return &marshaller{}
 }
 

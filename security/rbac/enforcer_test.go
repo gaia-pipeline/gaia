@@ -33,9 +33,9 @@ func (s mockSvc) GetPolicy(name string) (gaia.AuthPolicyResourceV1, error) {
 					ID:     "test-id",
 					Effect: "allow",
 					Action: []string{
-						"namespace-a/*",
 						"namespace-b/action-name-a",
 						"namespace-b/action-name-b",
+						"namespace-a/*",
 					},
 				},
 			},
@@ -69,10 +69,10 @@ func Test_PolicyEnforcer_ResolvePolicies_MergedPolicies(t *testing.T) {
 	rp := enforcer.resolvePolicies([]string{"test-policy-a", "test-policy-b"})
 
 	expectedRp := make(namespaceActionMap)
-	expectedRp["namespace-a"] = map[gaia.AuthPolicyAction]interface{}{
+	expectedRp["namespace-a"] = map[gaia.RBACPolicyAction]interface{}{
 		"*": "",
 	}
-	expectedRp["namespace-b"] = map[gaia.AuthPolicyAction]interface{}{
+	expectedRp["namespace-b"] = map[gaia.RBACPolicyAction]interface{}{
 		"action-name-a": "",
 		"action-name-b": "",
 	}

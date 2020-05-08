@@ -7,6 +7,7 @@ import (
 	"github.com/gaia-pipeline/gaia"
 )
 
+// AuthPolicyAssignmentPut adds a new users policy assignments.
 func (s *BoltStore) AuthPolicyAssignmentPut(assignment gaia.AuthPolicyAssignment) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(authPolicyAssignments)
@@ -20,6 +21,7 @@ func (s *BoltStore) AuthPolicyAssignmentPut(assignment gaia.AuthPolicyAssignment
 	})
 }
 
+// AuthPolicyAssignmentGet gets a users policy assignments.
 func (s *BoltStore) AuthPolicyAssignmentGet(username string) (*gaia.AuthPolicyAssignment, error) {
 	assignment := &gaia.AuthPolicyAssignment{}
 
@@ -75,6 +77,7 @@ func (s *BoltStore) AuthPolicyResourceGet(name string) (gaia.AuthPolicyResourceV
 	return spec, nil
 }
 
+// AuthPolicyResourceGetAll gets all auth policies resources.
 func (s *BoltStore) AuthPolicyResourceGetAll() ([]gaia.AuthPolicyResourceV1, error) {
 	var policies []gaia.AuthPolicyResourceV1
 
