@@ -13,9 +13,6 @@ import (
 // Use this to talk to the store.
 var storeService store.GaiaStore
 
-// certificateService is the singleton holding the certificate manager.
-var certificateService security.CAAPI
-
 // vaultService is an instance of the internal Vault.
 var vaultService security.GaiaVault
 
@@ -48,27 +45,6 @@ func MockStorageService(store store.GaiaStore) {
 	storeService = store
 }
 
-// CertificateService creates a certificate manager service.
-func CertificateService() (security.CAAPI, error) {
-	if certificateService != nil && !reflect.ValueOf(certificateService).IsNil() {
-		return certificateService, nil
-	}
-
-	c, err := security.InitCA()
-	if err != nil {
-		gaia.Cfg.Logger.Error("cannot initialize certificate manager:", "error", err.Error())
-		return nil, err
-	}
-	certificateService = c
-	return certificateService, nil
-}
-
-// MockCertificateService provides a way to create and set a mock
-// for the internal certificate service manager.
-func MockCertificateService(service security.CAAPI) {
-	certificateService = service
-}
-
 // DefaultVaultService provides a vault with a FileStorer backend.
 func DefaultVaultService() (security.GaiaVault, error) {
 	return VaultService(&security.FileVaultStorer{})
@@ -80,7 +56,13 @@ func VaultService(vaultStore security.VaultStorer) (security.GaiaVault, error) {
 		return vaultService, nil
 	}
 
-	v, err := security.NewVault(certificateService, vaultStore)
+	// TODO: For now use this to keep the refactor of certificate out of the refactor of Vault Service.
+	ca, err := security.InitCA()
+	if err != nil {
+		gaia.Cfg.Logger.Error("cannot initialize certificate:", "error", err.Error())
+		return nil, err
+	}
+	v, err := security.NewVault(ca, vaultStore)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize vault manager:", "error", err.Error())
 		return nil, err

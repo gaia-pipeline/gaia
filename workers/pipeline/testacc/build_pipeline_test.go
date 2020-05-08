@@ -6,16 +6,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gaia-pipeline/gaia/plugin"
-
-	"github.com/gaia-pipeline/gaia/services"
-
-	"github.com/gaia-pipeline/gaia/workers/scheduler/gaiascheduler"
+	"github.com/gofrs/uuid"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/plugin"
+	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/server"
+	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
-	"github.com/gofrs/uuid"
+	"github.com/gaia-pipeline/gaia/workers/scheduler/gaiascheduler"
 )
 
 func TestBuildPipelineAcceptanceTestTearUp(t *testing.T) {
@@ -65,7 +64,7 @@ func buildGoPluginTest(t *testing.T) {
 	store, _ := services.StorageService()
 	db, _ := services.DefaultMemDBService()
 	va, _ := services.DefaultVaultService()
-	ca, _ := services.CertificateService()
+	ca, _ := security.InitCA()
 	scheduler, _ := gaiascheduler.NewScheduler(gaiascheduler.Dependencies{
 		Store: store,
 		DB:    db,
@@ -101,7 +100,7 @@ func buildJavaPluginTest(t *testing.T) {
 	store, _ := services.StorageService()
 	db, _ := services.DefaultMemDBService()
 	va, _ := services.DefaultVaultService()
-	ca, _ := services.CertificateService()
+	ca, _ := security.InitCA()
 	scheduler, _ := gaiascheduler.NewScheduler(gaiascheduler.Dependencies{
 		Store: store,
 		DB:    db,
@@ -136,7 +135,7 @@ func buildPythonPluginTest(t *testing.T) {
 	store, _ := services.StorageService()
 	db, _ := services.DefaultMemDBService()
 	va, _ := services.DefaultVaultService()
-	ca, _ := services.CertificateService()
+	ca, _ := security.InitCA()
 	scheduler, _ := gaiascheduler.NewScheduler(gaiascheduler.Dependencies{
 		Store: store,
 		DB:    db,
@@ -171,7 +170,7 @@ func buildCppPluginTest(t *testing.T) {
 	store, _ := services.StorageService()
 	db, _ := services.DefaultMemDBService()
 	va, _ := services.DefaultVaultService()
-	ca, _ := services.CertificateService()
+	ca, _ := security.InitCA()
 	scheduler, _ := gaiascheduler.NewScheduler(gaiascheduler.Dependencies{
 		Store: store,
 		DB:    db,
@@ -206,7 +205,7 @@ func buildRubyPluginTest(t *testing.T) {
 	store, _ := services.StorageService()
 	db, _ := services.DefaultMemDBService()
 	va, _ := services.DefaultVaultService()
-	ca, _ := services.CertificateService()
+	ca, _ := security.InitCA()
 	scheduler, _ := gaiascheduler.NewScheduler(gaiascheduler.Dependencies{
 		Store: store,
 		DB:    db,
@@ -241,7 +240,7 @@ func buildNodeJSPluginTest(t *testing.T) {
 	store, _ := services.StorageService()
 	db, _ := services.DefaultMemDBService()
 	va, _ := services.DefaultVaultService()
-	ca, _ := services.CertificateService()
+	ca, _ := security.InitCA()
 	scheduler, _ := gaiascheduler.NewScheduler(gaiascheduler.Dependencies{
 		Store: store,
 		DB:    db,

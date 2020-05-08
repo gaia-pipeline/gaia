@@ -11,7 +11,6 @@ import (
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/services"
 	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 )
@@ -28,11 +27,6 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 		DataPath:  dataDir,
 		CAPath:    dataDir,
 		VaultPath: dataDir,
-	}
-
-	_, err := services.CertificateService()
-	if err != nil {
-		t.Fatalf("cannot initialize certificate service: %v", err.Error())
 	}
 
 	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{

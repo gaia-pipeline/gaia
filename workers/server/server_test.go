@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/security"
+
 	"github.com/gaia-pipeline/gaia"
 	hclog "github.com/hashicorp/go-hclog"
 )
@@ -30,8 +32,9 @@ func TestStart(t *testing.T) {
 		Name:  "Gaia",
 	})
 
+	ca, _ := security.InitCA()
 	// Init worker server
-	server := InitWorkerServer()
+	server := InitWorkerServer(Dependencies{Certificate: ca})
 
 	// Start server
 	errChan := make(chan error)
