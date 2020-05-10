@@ -3,9 +3,10 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/labstack/echo"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/security/rbac"
-	"github.com/labstack/echo"
 )
 
 type policyEnforcerMiddleware struct {

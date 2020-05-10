@@ -1,19 +1,21 @@
-package cachehelper
+package rbac
 
 import (
 	"sync"
 	"time"
+
+	"github.com/gaia-pipeline/gaia"
 )
 
 // Cache represents the interface for a simple cache.
 type Cache interface {
-	Get(key string) (interface{}, bool)
-	Put(key string, value interface{}) interface{}
+	Get(key string) (gaia.AuthPolicyResourceV1, bool)
+	Put(key string, value gaia.AuthPolicyResourceV1) gaia.AuthPolicyResourceV1
 }
 
 type cacheItem struct {
-	Value      interface{}
-	Expiration int64
+	value      gaia.AuthPolicyResourceV1
+	expiration int64
 }
 
 type cache struct {
@@ -32,13 +34,13 @@ func NewCache(expiration time.Duration) Cache {
 }
 
 // Put creates or updates an item. This uses the default expiration time.
-func (c *cache) Put(key string, value interface{}) interface{} {
+func (c *cache) Put(key string, value gaia.AuthPolicyResourceV1) gaia.AuthPolicyResourceV1 {
 	defer c.mu.Unlock()
 	c.mu.Lock()
 
 	c.items[key] = cacheItem{
-		Value:      value,
-		Expiration: time.Now().Add(c.expiration).UnixNano(),
+		value:      value,
+		expiration: time.Now().Add(c.expiration).UnixNano(),
 	}
 
 	item, _ := c.Get(key)
@@ -46,17 +48,17 @@ func (c *cache) Put(key string, value interface{}) interface{} {
 }
 
 // Get simply gets a item from the cache based on the key.
-func (c *cache) Get(key string) (interface{}, bool) {
+func (c *cache) Get(key string) (gaia.AuthPolicyResourceV1, bool) {
 	item, exists := c.items[key]
 	if !exists {
-		return nil, false
+		return gaia.AuthPolicyResourceV1{}, false
 	}
-	if item.Expiration > 0 {
-		if time.Now().UnixNano() > item.Expiration {
-			return nil, false
+	if item.expiration > 0 {
+		if time.Now().UnixNano() > item.expiration {
+			return gaia.AuthPolicyResourceV1{}, false
 		}
 	}
-	return item.Value, exists
+	return item.value, exists
 }
 
 // EvictExpired evicts any expired items from the cache.
@@ -67,7 +69,7 @@ func (c *cache) EvictExpired() {
 	c.mu.Lock()
 
 	for k, item := range c.items {
-		exp := item.Expiration
+		exp := item.expiration
 		if exp > 0 && now > exp {
 			delete(c.items, k)
 		}

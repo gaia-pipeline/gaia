@@ -4,8 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gaia-pipeline/gaia"
 	"gopkg.in/yaml.v2"
+
+	"github.com/gaia-pipeline/gaia"
 )
 
 // Marshaller is the interface that satisfies the baseCodec for resource marshaling.

@@ -5,12 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/labstack/echo"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/rolehelper"
-	"github.com/labstack/echo"
 )
 
 var (
@@ -101,15 +103,18 @@ type AuthConfig struct {
 	RoleCategories []*gaia.UserRoleCategory
 }
 
-func getPoliciesFromClaims(policyClaims interface{}) []string {
-	policies := []string{}
-	if policyClaims == nil {
-		return policies
+func getPoliciesFromClaims(policyClaims interface{}) (policies []string) {
+	policies = []string{}
+	if policyClaims == nil || reflect.ValueOf(policyClaims).IsNil() {
+		return
 	}
-	for _, p := range policyClaims.([]interface{}) {
-		policies = append(policies, p.(string))
+	if _, ok := policyClaims.([]interface{}); ok {
+		for _, p := range policyClaims.([]interface{}) {
+			if _, ok := p.(string); !ok {
+				policies = append(policies, p.(string))
+			}
+		}
 	}
-	return policies
 }
 
 // Finds the required role for the metho & path specified. If it exists we validate that the provided user roles have

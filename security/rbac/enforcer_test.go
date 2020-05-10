@@ -44,6 +44,10 @@ func (s mockSvc) GetPolicy(name string) (gaia.AuthPolicyResourceV1, error) {
 	return gaia.AuthPolicyResourceV1{}, errors.New("not found")
 }
 
+func (s mockSvc) PutPolicy(policy gaia.AuthPolicyResourceV1) error {
+	return nil
+}
+
 func TestPolicyEnforcer_Enforce_WithWildcardMultipleMergedPolicies_IsTrue(t *testing.T) {
 	enforcer := NewPolicyEnforcer(mockSvc{})
 

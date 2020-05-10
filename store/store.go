@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gaia-pipeline/gaia/helper/resourcehelper"
-
 	bolt "github.com/coreos/bbolt"
+
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/helper/resourcehelper"
 	"github.com/gaia-pipeline/gaia/security"
 )
 

@@ -4,20 +4,22 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	gStore "github.com/gaia-pipeline/gaia/store"
+	"github.com/labstack/echo"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/resourcehelper"
-	"github.com/labstack/echo"
+	"github.com/gaia-pipeline/gaia/security/rbac"
+	gStore "github.com/gaia-pipeline/gaia/store"
 )
 
 type rbacHandler struct {
 	store          gStore.GaiaStore
+	rbacSvc        rbac.Service
 	rbacMarshaller resourcehelper.Marshaller
 }
 
-func newRBACHandler(store gStore.GaiaStore, rbacMarshaller resourcehelper.Marshaller) *rbacHandler {
-	return &rbacHandler{store: store, rbacMarshaller: rbacMarshaller}
+func newRBACHandler(store gStore.GaiaStore, rbacService rbac.Service, rbacMarshaller resourcehelper.Marshaller) *rbacHandler {
+	return &rbacHandler{store: store, rbacSvc: rbacService, rbacMarshaller: rbacMarshaller}
 }
 
 // AuthPolicyResourcePut creates or updates a new authorization.policy resource.
@@ -28,13 +30,13 @@ func (h rbacHandler) AuthPolicyResourcePut(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Error saving new policy.")
 	}
 
-	var spec gaia.AuthPolicyResourceV1
-	if err := h.rbacMarshaller.Unmarshal(bts, &spec); err != nil {
+	var policy gaia.AuthPolicyResourceV1
+	if err := h.rbacMarshaller.Unmarshal(bts, &policy); err != nil {
 		gaia.Cfg.Logger.Error("failed to unmarshal auth policy: " + err.Error())
 		return c.String(http.StatusBadRequest, "Error saving new policy.")
 	}
 
-	if err := h.store.AuthPolicyResourcePut(spec); err != nil {
+	if err := h.rbacSvc.PutPolicy(policy); err != nil {
 		gaia.Cfg.Logger.Error("failed to put auth policy: " + err.Error())
 		return c.String(http.StatusBadRequest, "Error saving new policy.")
 	}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	bolt "github.com/coreos/bbolt"
+
 	"github.com/gaia-pipeline/gaia"
 )
 

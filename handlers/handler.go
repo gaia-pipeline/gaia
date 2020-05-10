@@ -4,21 +4,17 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gaia-pipeline/gaia/security/rbac"
-
-	"github.com/gaia-pipeline/gaia/helper/cachehelper"
-
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
+	"github.com/gaia-pipeline/gaia/handlers/providers/workers"
 	"github.com/gaia-pipeline/gaia/helper/resourcehelper"
+	"github.com/gaia-pipeline/gaia/helper/rolehelper"
+	"github.com/gaia-pipeline/gaia/security/rbac"
 	"github.com/gaia-pipeline/gaia/services"
 
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-
-	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
-	"github.com/gaia-pipeline/gaia/handlers/providers/workers"
-	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 )
 
 var (
@@ -34,9 +30,9 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	// --- Register handlers at echo instance ---
 	storeService, _ := services.StorageService()
 
-	service := rbac.NewService(storeService, cachehelper.NewCache(time.Minute*10))
-	enforcer := rbac.NewPolicyEnforcer(service)
-	policyEnforcer := newPolicyEnforcerMiddleware(enforcer)
+	rbacSvc := rbac.NewService(storeService, rbac.NewCache(time.Minute*10))
+	rbacEnforcer := rbac.NewPolicyEnforcer(rbacSvc)
+	policyEnforcer := newPolicyEnforcerMiddleware(rbacEnforcer)
 
 	// Endpoints for Gaia primary instance
 	if gaia.Cfg.Mode == gaia.ModeServer {
@@ -56,7 +52,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		perms.GET("", PermissionGetAll)
 
 		// RBAC
-		rbacHandler := newRBACHandler(storeService, resourcehelper.NewMarshaller())
+		rbacHandler := newRBACHandler(storeService, rbacSvc, resourcehelper.NewMarshaller())
 		e.GET(p+"rbac/policy/:name", rbacHandler.AuthPolicyResourceGet)
 		e.POST(p+"rbac/policy", rbacHandler.AuthPolicyResourcePut)
 		e.PUT(p+"rbac/policy/:name/assign/:username", rbacHandler.AuthPolicyAssignmentPut)
