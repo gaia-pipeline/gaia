@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"github.com/gaia-pipeline/gaia/security/rbac"
 	"io/ioutil"
 	"net/http"
 
@@ -9,16 +8,17 @@ import (
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/resourcehelper"
-	gStore "github.com/gaia-pipeline/gaia/store"
+	"github.com/gaia-pipeline/gaia/security/rbac"
+	"github.com/gaia-pipeline/gaia/store"
 )
 
 type rbacHandler struct {
-	store          gStore.GaiaStore
+	store          store.RBACStore
 	svc            rbac.Service
 	rbacMarshaller resourcehelper.Marshaller
 }
 
-func newRBACHandler(store gStore.GaiaStore, svc rbac.Service, rbacMarshaller resourcehelper.Marshaller) *rbacHandler {
+func newRBACHandler(store store.RBACStore, svc rbac.Service, rbacMarshaller resourcehelper.Marshaller) *rbacHandler {
 	return &rbacHandler{store: store, svc: svc, rbacMarshaller: rbacMarshaller}
 }
 
@@ -63,11 +63,11 @@ func (h rbacHandler) RBACPolicyResourceGet(c echo.Context) error {
 	return c.String(http.StatusOK, string(bts))
 }
 
-func (h rbacHandler) AuthPolicyAssignmentPut(c echo.Context) error {
+func (h rbacHandler) RBACPolicyBindingPut(c echo.Context) error {
 	name := c.Param("name")
 	username := c.Param("username")
 
-	if err := h.store.RBACPolicyBindingsPut(username, name); err != nil {
+	if err := h.store.RBACPolicyBindingPut(username, name); err != nil {
 		gaia.Cfg.Logger.Error("failed to put auth assignment: " + err.Error())
 		return c.String(http.StatusBadRequest, "Error getting policy.")
 	}

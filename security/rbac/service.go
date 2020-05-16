@@ -2,6 +2,7 @@ package rbac
 
 import (
 	"fmt"
+	
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/store"
 )
@@ -15,12 +16,12 @@ type Service interface {
 }
 
 type service struct {
-	store               store.GaiaStore
+	store               store.RBACStore
 	evaluatedPermsCache Cache
 }
 
 // NewService creates a new RBAC Service.
-func NewService(store store.GaiaStore, cache Cache) Service {
+func NewService(store store.RBACStore, cache Cache) Service {
 	return &service{store: store, evaluatedPermsCache: cache}
 }
 

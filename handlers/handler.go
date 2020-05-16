@@ -4,6 +4,10 @@ import (
 	"net/http"
 	"time"
 
+	rice "github.com/GeertJohan/go.rice"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
 	"github.com/gaia-pipeline/gaia/handlers/providers/workers"
@@ -11,10 +15,6 @@ import (
 	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 	"github.com/gaia-pipeline/gaia/security/rbac"
 	"github.com/gaia-pipeline/gaia/services"
-
-	rice "github.com/GeertJohan/go.rice"
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 )
 
 var (
@@ -55,7 +55,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		rbacHandler := newRBACHandler(storeService, rbacSvc, resourcehelper.NewMarshaller())
 		e.GET(p+"rbac/policy/:name", rbacHandler.RBACPolicyResourceGet)
 		e.POST(p+"rbac/policy", rbacHandler.RBACPolicyResourcePut)
-		e.PUT(p+"rbac/policy/:name/assign/:username", rbacHandler.AuthPolicyAssignmentPut)
+		e.PUT(p+"rbac/policy/:name/bind/:username", rbacHandler.RBACPolicyBindingPut)
 
 		// Pipelines
 		// Create pipeline provider

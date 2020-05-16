@@ -15,16 +15,18 @@ var (
 	errResourceDeny      = errors.New("resource implicit deny")
 )
 
-type User struct {
-	Username string
-	Policies map[string]interface{}
-}
-
+// EnforcerConfig represents the config required for RBAC.
 type EnforcerConfig struct {
 	User      User
 	Namespace gaia.RBACPolicyNamespace
 	Action    gaia.RBACPolicyAction
 	Resource  gaia.RBACPolicyResource
+}
+
+// User represents the user to apply the enforcement to.
+type User struct {
+	Username string
+	Policies map[string]interface{}
 }
 
 // PolicyEnforcer is for enforcing RBAC Policies.
@@ -91,7 +93,7 @@ func (s *policyEnforcer) Evaluate(user User) (gaia.RBACEvaluatedPermissions, err
 
 	// Nothing in the cache, so start getting the policies for this user
 	var stmts []gaia.RBACPolicyStatementV1
-	for policyName, _ := range user.Policies {
+	for policyName := range user.Policies {
 		policyResource, _ := s.svc.GetPolicy(policyName)
 		stmts = append(stmts, policyResource.Statement...)
 	}

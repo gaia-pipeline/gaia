@@ -89,7 +89,6 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 
 					policiesFromClaims, err := getPoliciesFromClaims(policies)
 					if err != nil {
-						gaia.Cfg.Logger.Error(err.Error())
 						return c.String(http.StatusForbidden, fmt.Sprintf("Permission denied for user %s. %s", username, err.Error()))
 					}
 

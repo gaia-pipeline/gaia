@@ -97,10 +97,7 @@ type GaiaStore interface {
 	WorkerGet(id string) (*gaia.Worker, error)
 	UpsertSHAPair(pair gaia.SHAPair) error
 	GetSHAPair(pipelineID int) (bool, gaia.SHAPair, error)
-	RBACPolicyResourcePut(spec gaia.RBACPolicyResourceV1) error
-	RBACPolicyResourceGet(name string) (gaia.RBACPolicyResourceV1, error)
-	RBACPolicyBindingsPut(username string, policy string) error
-	RBACPolicyBindingsGet(username string) (map[string]interface{}, error)
+	RBACStore
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore

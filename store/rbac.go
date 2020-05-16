@@ -9,9 +9,17 @@ import (
 	"github.com/gaia-pipeline/gaia"
 )
 
-// RBACPolicyBindingsPut adds a new users policy assignments.
-func (s *BoltStore) RBACPolicyBindingsPut(username string, policy string) error {
-	existing, err := s.RBACPolicyBindingsGet(username)
+// RBACStore represents the interface for all RBAC store actions.
+type RBACStore interface {
+	RBACPolicyResourcePut(spec gaia.RBACPolicyResourceV1) error
+	RBACPolicyResourceGet(name string) (gaia.RBACPolicyResourceV1, error)
+	RBACPolicyBindingPut(username string, policy string) error
+	RBACPolicyBindingGetAll(username string) (map[string]interface{}, error)
+}
+
+// RBACPolicyBindingPut adds a new users policy assignments.
+func (s *BoltStore) RBACPolicyBindingPut(username string, policy string) error {
+	existing, err := s.RBACPolicyBindingGetAll(username)
 	if err != nil {
 		return fmt.Errorf("failed to get bindings: %v", err.Error())
 	}
@@ -29,8 +37,8 @@ func (s *BoltStore) RBACPolicyBindingsPut(username string, policy string) error 
 	})
 }
 
-// RBACPolicyBindingsGet gets a users policy assignments.
-func (s *BoltStore) RBACPolicyBindingsGet(username string) (map[string]interface{}, error) {
+// RBACPolicyBindingGetAll gets a users policy assignments.
+func (s *BoltStore) RBACPolicyBindingGetAll(username string) (map[string]interface{}, error) {
 	assignment := make(map[string]interface{})
 
 	err := s.db.View(func(tx *bolt.Tx) error {

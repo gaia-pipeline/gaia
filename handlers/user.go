@@ -46,7 +46,7 @@ func UserLogin(c echo.Context) error {
 		return err
 	}
 
-	userPolicies, err := storeService.RBACPolicyBindingsGet(u.Username)
+	userPolicies, err := storeService.RBACPolicyBindingGetAll(u.Username)
 	if err != nil {
 		gaia.Cfg.Logger.Error("error getting policy bindings", "username", u.Username)
 		return c.String(http.StatusInternalServerError, "an error has occurred.")
