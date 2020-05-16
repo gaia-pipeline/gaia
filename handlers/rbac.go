@@ -9,16 +9,16 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/resourcehelper"
 	"github.com/gaia-pipeline/gaia/security/rbac"
-	"github.com/gaia-pipeline/gaia/store"
+	gStore "github.com/gaia-pipeline/gaia/store"
 )
 
 type rbacHandler struct {
-	store          store.RBACStore
+	store          gStore.RBACStore
 	svc            rbac.Service
 	rbacMarshaller resourcehelper.Marshaller
 }
 
-func newRBACHandler(store store.RBACStore, svc rbac.Service, rbacMarshaller resourcehelper.Marshaller) *rbacHandler {
+func newRBACHandler(store gStore.RBACStore, svc rbac.Service, rbacMarshaller resourcehelper.Marshaller) *rbacHandler {
 	return &rbacHandler{store: store, svc: svc, rbacMarshaller: rbacMarshaller}
 }
 
