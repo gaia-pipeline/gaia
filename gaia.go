@@ -360,24 +360,19 @@ type ResourceMetadataV1 struct {
 	Description string `yaml:"description"`
 }
 
-// AuthPolicyResourceV1 is used to define an authorization policy resource.
-type AuthPolicyResourceV1 struct {
+// RBACPolicyResourceV1 is used to define an authorization policy resource.
+type RBACPolicyResourceV1 struct {
 	ResourceType       `yaml:",inline"`
 	ResourceMetadataV1 `yaml:"metadata"`
-	Statement          []AuthPolicyStatementV1 `yaml:"statement"`
+	Statement          []RBACPolicyStatementV1 `yaml:"statement"`
 }
 
-// AuthPolicyStatementV1 is used to define an individual policy statement.
-type AuthPolicyStatementV1 struct {
-	ID     string   `yaml:"id"`
-	Effect string   `yaml:"effect"`
-	Action []string `yaml:"action"`
-}
-
-// AuthPolicyAssignment contains a mapping of username to policies.
-type AuthPolicyAssignment struct {
-	Username string
-	Policies []string
+// RBACPolicyStatementV1 is used to define an individual policy statement.
+type RBACPolicyStatementV1 struct {
+	ID       string   `yaml:"id"`
+	Effect   string   `yaml:"effect"`
+	Action   []string `yaml:"action"`
+	Resource string   `yaml:"resource"`
 }
 
 // RBACPolicyNamespace represents a policy namespace.
@@ -385,3 +380,9 @@ type RBACPolicyNamespace string
 
 // RBACPolicyAction represents a policy action.
 type RBACPolicyAction string
+
+// RBACPolicyResource represents a policy statement resource.
+type RBACPolicyResource string
+
+// RBACEvaluatedPermissions multiple policies combined and evaluated.
+type RBACEvaluatedPermissions map[RBACPolicyNamespace]map[RBACPolicyAction]map[RBACPolicyResource]string

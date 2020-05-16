@@ -1,96 +1,150 @@
 package rbac
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/gaia-pipeline/gaia"
 )
 
-// PolicyEnforcer is for enforcing RBAC policies.
+var (
+	errNamespaceNotFound = errors.New("namespace not found")
+	errActionNotFound    = errors.New("action not found")
+	errResourceNotFound  = errors.New("resource not found")
+	errResourceDeny      = errors.New("resource implicit deny")
+)
+
+type User struct {
+	Username string
+	Policies map[string]interface{}
+}
+
+type EnforcerConfig struct {
+	User      User
+	Namespace gaia.RBACPolicyNamespace
+	Action    gaia.RBACPolicyAction
+	Resource  gaia.RBACPolicyResource
+}
+
+// PolicyEnforcer is for enforcing RBAC Policies.
 type PolicyEnforcer interface {
-	Enforce(policyNames []string, namespace gaia.RBACPolicyNamespace, action gaia.RBACPolicyAction) bool
-	ResolvePolicies(policyNames []string) namespaceActionMap
+	Enforce(cfg EnforcerConfig) error
+	Evaluate(user User) (gaia.RBACEvaluatedPermissions, error)
 }
 
 type policyEnforcer struct {
 	svc Service
 }
 
-type namespaceActionMap map[gaia.RBACPolicyNamespace]map[gaia.RBACPolicyAction]interface{}
-
 // NewPolicyEnforcer creates a new policyEnforcer
 func NewPolicyEnforcer(svc Service) PolicyEnforcer {
 	return &policyEnforcer{svc: svc}
 }
 
-// Enforce takes a list of policy names from a Gaia users JWT claims, a required namespace and action. We get all the
-// users policies using the names provided. We then merged all the policies together into the namespaceActionMap which
-// acts as a quick lookup for the namespace and action that is being enforced.
-func (s *policyEnforcer) Enforce(policyNames []string, namespace gaia.RBACPolicyNamespace, action gaia.RBACPolicyAction) bool {
-	resolved := s.ResolvePolicies(policyNames)
-
-	if ns, nsOk := resolved[namespace]; nsOk {
-		// first, check for a wildcard.
-		if _, acOk := ns["*"]; acOk {
-			return true
-		}
-		// second, check for the specific action.
-		if _, acOk := ns[action]; acOk {
-			return true
-		}
+// Enforce takes an EnforcerConfig containing User information (name, policies) and the required namespace, action and
+// resource to enforce. Evaluate all the users permissions into a more efficient single map based structure
+// gaia.RBACEvaluatedPermissions. Using the gaia.RBACEvaluatedPermissions we check if a user has the required
+// permissions.
+func (s *policyEnforcer) Enforce(cfg EnforcerConfig) error {
+	resolved, err := s.Evaluate(cfg.User)
+	if err != nil {
+		return fmt.Errorf("error evaluating policies: %v", err.Error())
 	}
 
-	return false
+	ns, nsExists := resolved[cfg.Namespace]
+	if !nsExists {
+		return errNamespaceNotFound
+	}
+
+	act, actionExists := ns[cfg.Action]
+	if !actionExists {
+		return errActionNotFound
+	}
+
+	if cfg.Resource == "" {
+		cfg.Resource = "*"
+	}
+	effect, resExists := act[cfg.Resource]
+	if !resExists {
+		if _, wcExists := act["*"]; wcExists {
+			return nil
+		}
+		return errResourceNotFound
+	}
+
+	if effect == "deny" {
+		return errResourceDeny
+	}
+
+	return nil
 }
 
-func (s *policyEnforcer) ResolvePolicies(policyNames []string) namespaceActionMap {
-	na := make(namespaceActionMap)
+// Evaluate evaluates all the policies a user is part of into a single gaia.RBACEvaluatedPermissions map structure.
+// We first see if the gaia.RBACEvaluatedPermissions is within the global evaluatedPerms cache. If its not we have
+// to get each policy the user is bound to and build it.
+func (s *policyEnforcer) Evaluate(user User) (gaia.RBACEvaluatedPermissions, error) {
+	// Use the service to look into the cache for any existing evaluated policies
+	if policies, ok := s.svc.GetUserEvaluatedPolicies(user.Username); ok {
+		return policies, nil
+	}
 
-	// iterate through the user policy names provided
-	for _, policy := range policyNames {
-		// get the policy from the service/cache
-		policyResource, _ := s.svc.GetPolicy(policy)
-		// iterate through the policy statement contained in the retrieved policy
-		for _, stmt := range policyResource.Statement {
-			// iterate through the actions in the statement
-			for _, stmtAction := range stmt.Action {
-				// parse the namespace and action from the statement value
-				namespace, action := s.parseNamespaceAction(stmtAction)
-				if nsActions, exists := na[namespace]; exists {
-					if s.checkWildcard(na, namespace, action) {
-						continue
-					}
-					nsActions[action] = ""
-					continue
+	// Nothing in the cache, so start getting the policies for this user
+	var stmts []gaia.RBACPolicyStatementV1
+	for policyName, _ := range user.Policies {
+		policyResource, _ := s.svc.GetPolicy(policyName)
+		stmts = append(stmts, policyResource.Statement...)
+	}
+
+	eval := make(gaia.RBACEvaluatedPermissions)
+
+	// Evaluate all the policies, creating a single map and point of reference fro the user.
+	// This is not particularly efficient O(n2), but we have to parse all namespaces and actions.
+	for _, stmt := range stmts {
+
+		for _, stmtAction := range stmt.Action {
+
+			namespace, action := s.parseStatementAction(stmtAction)
+			stmtResource := gaia.RBACPolicyResource(stmt.Resource)
+
+			// check if the namespace already exists in the evaluated perms.
+			ns, nsExists := eval[namespace]
+			if !nsExists {
+				eval[namespace] = map[gaia.RBACPolicyAction]map[gaia.RBACPolicyResource]string{
+					action: {
+						stmtResource: stmt.Effect,
+					},
 				}
-				s.newEntry(na, namespace, action)
+				continue
+			}
+
+			// check if the action already exists for the namespace.
+			act, actExists := ns[action]
+			if !actExists {
+				ns[action] = map[gaia.RBACPolicyResource]string{
+					stmtResource: stmt.Effect,
+				}
+				continue
+			}
+
+			// check if the resource exists or if we need to register an implicit deny.
+			_, resExists := act[stmtResource]
+			if !resExists || stmt.Effect == "deny" {
+				act[stmtResource] = stmt.Effect
+				continue
 			}
 		}
+
 	}
 
-	return na
-}
-
-func (s *policyEnforcer) newEntry(na namespaceActionMap, namespace gaia.RBACPolicyNamespace, action gaia.RBACPolicyAction) {
-	na[namespace] = make(map[gaia.RBACPolicyAction]interface{})
-	na[namespace][action] = ""
-}
-
-func (s *policyEnforcer) checkWildcard(na namespaceActionMap, namespace gaia.RBACPolicyNamespace, action gaia.RBACPolicyAction) bool {
-	if _, wildcardExists := na[namespace]["*"]; wildcardExists {
-		// continue if we already have a wildcard
-		return true
+	if err := s.svc.PutUserEvaluatedPolicies(user.Username, eval); err != nil {
+		return nil, fmt.Errorf("failed to put evalued policies: %v", err.Error())
 	}
-	if action == "*" {
-		// overwrite map and assign wildcard - takes priority always
-		na[namespace] = make(map[gaia.RBACPolicyAction]interface{})
-		na[namespace]["*"] = ""
-		return true
-	}
-	return false
+
+	return eval, nil
 }
 
-func (s *policyEnforcer) parseNamespaceAction(a string) (gaia.RBACPolicyNamespace, gaia.RBACPolicyAction) {
+func (s *policyEnforcer) parseStatementAction(a string) (gaia.RBACPolicyNamespace, gaia.RBACPolicyAction) {
 	splitAction := strings.Split(a, "/")
 	namespace := gaia.RBACPolicyNamespace(splitAction[0])
 	action := gaia.RBACPolicyAction(splitAction[1])

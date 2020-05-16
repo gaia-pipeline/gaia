@@ -30,7 +30,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	// --- Register handlers at echo instance ---
 	storeService, _ := services.StorageService()
 
-	rbacSvc := rbac.NewService(storeService, rbac.NewCache(time.Minute*10))
+	rbacSvc := rbac.NewService(storeService, rbac.NewCache(time.Minute*30))
 	rbacEnforcer := rbac.NewPolicyEnforcer(rbacSvc)
 	policyEnforcer := newPolicyEnforcerMiddleware(rbacEnforcer)
 
@@ -53,8 +53,8 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 		// RBAC
 		rbacHandler := newRBACHandler(storeService, rbacSvc, resourcehelper.NewMarshaller())
-		e.GET(p+"rbac/policy/:name", rbacHandler.AuthPolicyResourceGet)
-		e.POST(p+"rbac/policy", rbacHandler.AuthPolicyResourcePut)
+		e.GET(p+"rbac/policy/:name", rbacHandler.RBACPolicyResourceGet)
+		e.POST(p+"rbac/policy", rbacHandler.RBACPolicyResourcePut)
 		e.PUT(p+"rbac/policy/:name/assign/:username", rbacHandler.AuthPolicyAssignmentPut)
 
 		// Pipelines

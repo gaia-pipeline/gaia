@@ -9,12 +9,14 @@ import (
 
 // Cache represents the interface for a simple cache.
 type Cache interface {
-	Get(key string) (gaia.AuthPolicyResourceV1, bool)
-	Put(key string, value gaia.AuthPolicyResourceV1) gaia.AuthPolicyResourceV1
+	Get(key string) (gaia.RBACEvaluatedPermissions, bool)
+	Put(key string, value gaia.RBACEvaluatedPermissions) gaia.RBACEvaluatedPermissions
+	EvictExpired()
+	Clear()
 }
 
 type cacheItem struct {
-	value      gaia.AuthPolicyResourceV1
+	value      gaia.RBACEvaluatedPermissions
 	expiration int64
 }
 
@@ -34,7 +36,7 @@ func NewCache(expiration time.Duration) Cache {
 }
 
 // Put creates or updates an item. This uses the default expiration time.
-func (c *cache) Put(key string, value gaia.AuthPolicyResourceV1) gaia.AuthPolicyResourceV1 {
+func (c *cache) Put(key string, value gaia.RBACEvaluatedPermissions) gaia.RBACEvaluatedPermissions {
 	defer c.mu.Unlock()
 	c.mu.Lock()
 
@@ -48,14 +50,14 @@ func (c *cache) Put(key string, value gaia.AuthPolicyResourceV1) gaia.AuthPolicy
 }
 
 // Get simply gets a item from the cache based on the key.
-func (c *cache) Get(key string) (gaia.AuthPolicyResourceV1, bool) {
+func (c *cache) Get(key string) (gaia.RBACEvaluatedPermissions, bool) {
 	item, exists := c.items[key]
 	if !exists {
-		return gaia.AuthPolicyResourceV1{}, false
+		return gaia.RBACEvaluatedPermissions{}, false
 	}
 	if item.expiration > 0 {
 		if time.Now().UnixNano() > item.expiration {
-			return gaia.AuthPolicyResourceV1{}, false
+			return gaia.RBACEvaluatedPermissions{}, false
 		}
 	}
 	return item.value, exists
@@ -74,4 +76,12 @@ func (c *cache) EvictExpired() {
 			delete(c.items, k)
 		}
 	}
+}
+
+// Clear and invalidate the whole cache
+func (c *cache) Clear() {
+	defer c.mu.Unlock()
+	c.mu.Lock()
+
+	c.items = make(map[string]cacheItem)
 }

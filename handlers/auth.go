@@ -42,7 +42,8 @@ var (
 // RBAC policy names into the server request context.
 type AuthContext struct {
 	echo.Context
-	policies []string
+	username string
+	policies map[string]interface{}
 }
 
 // AuthMiddleware is middleware used for each request. Includes functionality that validates the JWT tokens and user
@@ -85,12 +86,20 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 					if err != nil {
 						return c.String(http.StatusForbidden, fmt.Sprintf("Permission denied for user %s. %s", username, err.Error()))
 					}
+
+					policiesFromClaims, err := getPoliciesFromClaims(policies)
+					if err != nil {
+						gaia.Cfg.Logger.Error(err.Error())
+						return c.String(http.StatusForbidden, fmt.Sprintf("Permission denied for user %s. %s", username, err.Error()))
+					}
+
+					ctx := AuthContext{
+						Context:  c,
+						username: username.(string),
+						policies: policiesFromClaims,
+					}
+					return next(ctx)
 				}
-				ctx := AuthContext{
-					Context:  c,
-					policies: getPoliciesFromClaims(policies),
-				}
-				return next(ctx)
 			}
 			return c.String(http.StatusUnauthorized, errNotAuthorized.Error())
 		}
@@ -103,18 +112,14 @@ type AuthConfig struct {
 	RoleCategories []*gaia.UserRoleCategory
 }
 
-func getPoliciesFromClaims(policyClaims interface{}) (policies []string) {
-	policies = []string{}
+func getPoliciesFromClaims(policyClaims interface{}) (map[string]interface{}, error) {
 	if policyClaims == nil || reflect.ValueOf(policyClaims).IsNil() {
-		return
+		return nil, errors.New("nil policyClaims")
 	}
-	if _, ok := policyClaims.([]interface{}); ok {
-		for _, p := range policyClaims.([]interface{}) {
-			if _, ok := p.(string); !ok {
-				policies = append(policies, p.(string))
-			}
-		}
+	if _, ok := policyClaims.(map[string]interface{}); !ok {
+		return nil, errors.New("policyClaims is not correct type")
 	}
+	return policyClaims.(map[string]interface{}), nil
 }
 
 // Finds the required role for the metho & path specified. If it exists we validate that the provided user roles have

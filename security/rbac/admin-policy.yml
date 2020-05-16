@@ -1,0 +1,35 @@
+version: v1
+type: authorization.policy
+metadata:
+  name: administrator
+  description: standard administrator policy resource.
+statement:
+  - id: grant-all
+    effect: allow
+    action:
+      - users/get
+      - users/change-password
+      - users/delete
+      - users/create
+      - user-permissions/get
+      - user-permissions/update
+      - pipelines/create
+      - pipelines/list
+      - pipelines/get
+      - pipelines/update
+      - pipelines/delete
+      - pipelines/start
+      - pipeline-runs/stop
+      - pipeline-runs/get
+      - pipeline-runs/list
+      - pipeline-runs/logs
+      - secrets/list
+      - secrets/delete
+      - secrets/create
+      - secrets/update
+      - workers/get-registration-secret
+      - workers/register-worker-secret
+      - workers/get-overview
+      - workers/get-worker
+      - workers/deregister-worker
+    resource: "*"

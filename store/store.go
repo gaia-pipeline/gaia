@@ -39,8 +39,8 @@ var (
 	// SHA pair bucket.
 	shaPairBucket = []byte("SHAPair")
 
-	authPolicyResources   = []byte("authorization.policy.resources")
-	authPolicyAssignments = []byte("authorization.policy.assignments")
+	authPolicyResources = []byte("authorization.rbac.resources")
+	authPolicyBindings  = []byte("authorization.rbac.bindings")
 )
 
 const (
@@ -97,18 +97,17 @@ type GaiaStore interface {
 	WorkerGet(id string) (*gaia.Worker, error)
 	UpsertSHAPair(pair gaia.SHAPair) error
 	GetSHAPair(pipelineID int) (bool, gaia.SHAPair, error)
-	AuthPolicyAssignmentPut(assignment gaia.AuthPolicyAssignment) error
-	AuthPolicyAssignmentGet(username string) (*gaia.AuthPolicyAssignment, error)
-	AuthPolicyResourcePut(spec gaia.AuthPolicyResourceV1) error
-	AuthPolicyResourceGet(name string) (gaia.AuthPolicyResourceV1, error)
-	AuthPolicyResourceGetAll() ([]gaia.AuthPolicyResourceV1, error)
+	RBACPolicyResourcePut(spec gaia.RBACPolicyResourceV1) error
+	RBACPolicyResourceGet(name string) (gaia.RBACPolicyResourceV1, error)
+	RBACPolicyBindingsPut(username string, policy string) error
+	RBACPolicyBindingsGet(username string) (map[string]interface{}, error)
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore
 // wouldn't implement GaiaStore this line wouldn't compile.
 var _ GaiaStore = (*BoltStore)(nil)
 
-// NewBoltStore creates a new instance of Store.
+// NewBoltStore creates a new instance of store.
 func NewBoltStore() *BoltStore {
 	s := &BoltStore{
 		rbacMarshaller: resourcehelper.NewMarshaller(),
@@ -181,7 +180,7 @@ func (s *BoltStore) setupDatabase() error {
 	setP.update(workerBucket)
 	setP.update(shaPairBucket)
 	setP.update(authPolicyResources)
-	setP.update(authPolicyAssignments)
+	setP.update(authPolicyBindings)
 
 	if setP.err != nil {
 		return setP.err

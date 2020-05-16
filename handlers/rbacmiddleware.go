@@ -23,7 +23,17 @@ func (pe *policyEnforcerMiddleware) do(namespace gaia.RBACPolicyNamespace, actio
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if ctx, ok := c.(AuthContext); ok {
-				if !pe.enforcer.Enforce(ctx.policies, namespace, action) {
+				enfCfg := rbac.EnforcerConfig{
+					User: rbac.User{
+						Username: ctx.username,
+						Policies: ctx.policies,
+					},
+					Namespace: namespace,
+					Action:    action,
+					Resource:  "", // TODO: implement resource checks
+				}
+				if err := pe.enforcer.Enforce(enfCfg); err != nil {
+					gaia.Cfg.Logger.Warn("enforcement of policy failed", "username", ctx.username, "namespace", namespace, "action", action)
 					return c.String(http.StatusForbidden, "You do not have the required permissions.")
 				}
 				return next(c)

@@ -2,55 +2,58 @@ package rbac
 
 import (
 	"fmt"
-
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/store"
 )
 
-// Service is the contract for the RBAC service.
+// Service defines the interface for the RBAC service.
 type Service interface {
-	GetPolicy(name string) (gaia.AuthPolicyResourceV1, error)
-	PutPolicy(policy gaia.AuthPolicyResourceV1) error
+	GetPolicy(policy string) (gaia.RBACPolicyResourceV1, error)
+	PutPolicy(policy gaia.RBACPolicyResourceV1) error
+	GetUserEvaluatedPolicies(username string) (gaia.RBACEvaluatedPermissions, bool)
+	PutUserEvaluatedPolicies(username string, perms gaia.RBACEvaluatedPermissions) error
 }
 
 type service struct {
-	Store store.GaiaStore
-	Cache Cache
+	store               store.GaiaStore
+	evaluatedPermsCache Cache
 }
 
 // NewService creates a new RBAC Service.
 func NewService(store store.GaiaStore, cache Cache) Service {
-	return &service{Store: store, Cache: cache}
+	return &service{store: store, evaluatedPermsCache: cache}
 }
 
-// GetPolicy gets a policy from the cache which, if not present, will goto the DB to retrieve the policy before
-// adding it into the cache.
-func (s *service) GetPolicy(name string) (gaia.AuthPolicyResourceV1, error) {
-	if policy, exists := s.Cache.Get(name); exists {
-		return policy, nil
-	}
-
-	policy, err := s.Store.AuthPolicyResourceGet(name)
+// GetPolicy gets a policy resource from the store.
+func (s *service) GetPolicy(policy string) (gaia.RBACPolicyResourceV1, error) {
+	p, err := s.store.RBACPolicyResourceGet(policy)
 	if err != nil {
-		return gaia.AuthPolicyResourceV1{}, fmt.Errorf("failed to get policy resource from store: %w", err)
+		return gaia.RBACPolicyResourceV1{}, fmt.Errorf("failed to get policy: %v", err.Error())
 	}
-
-	return policy, nil
+	return p, nil
 }
 
-// PutPolicy will put a policy into the db. If successful, it will look into the cache to see if an items exists that
-// should be refreshed.
-func (s *service) PutPolicy(policy gaia.AuthPolicyResourceV1) error {
-	err := s.Store.AuthPolicyResourcePut(policy)
-	if err != nil {
-		return fmt.Errorf("failed to put policy resource: %v", err.Error())
+// PutPolicy creates or updates a policy resource in the store. If successful, we invalidate/clear the evaluated perms
+// for all users since there may have been a change in one of their policies. Could be made more efficient in the
+// future.
+func (s *service) PutPolicy(policy gaia.RBACPolicyResourceV1) error {
+	if err := s.store.RBACPolicyResourcePut(policy); err != nil {
+		return fmt.Errorf("failed to put policy: %v", err.Error())
 	}
+	s.evaluatedPermsCache.Clear()
+	return nil
+}
 
-	// Refresh the cache item.
-	_, exists := s.Cache.Get(policy.Name)
-	if exists {
-		s.Cache.Put(policy.Name, policy)
+// GetUserEvaluatedPolicies gets a users evaluated permissions from the cache.
+func (s *service) GetUserEvaluatedPolicies(username string) (gaia.RBACEvaluatedPermissions, bool) {
+	if policy, exists := s.evaluatedPermsCache.Get(username); exists {
+		return policy, true
 	}
+	return nil, false
+}
 
+// PutUserEvaluatedPolicies creates or updates the users evaluated permissions within the cache.
+func (s *service) PutUserEvaluatedPolicies(username string, perms gaia.RBACEvaluatedPermissions) error {
+	s.evaluatedPermsCache.Put(username, perms)
 	return nil
 }

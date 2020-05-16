@@ -18,9 +18,9 @@ import (
 const jwtExpiry = 12 * 60 * 60
 
 type jwtCustomClaims struct {
-	Username string   `json:"username"`
-	Roles    []string `json:"roles"`
-	Policies []string `json:"policies"`
+	Username string                 `json:"username"`
+	Roles    []string               `json:"roles"`
+	Policies map[string]interface{} `json:"policies"`
 	jwt.StandardClaims
 }
 
@@ -46,9 +46,9 @@ func UserLogin(c echo.Context) error {
 		return err
 	}
 
-	userPolicies, err := storeService.AuthPolicyAssignmentGet(u.Username)
+	userPolicies, err := storeService.RBACPolicyBindingsGet(u.Username)
 	if err != nil {
-		gaia.Cfg.Logger.Error("error getting policy", "username", u.Username)
+		gaia.Cfg.Logger.Error("error getting policy bindings", "username", u.Username)
 		return c.String(http.StatusInternalServerError, "an error has occurred.")
 	}
 
@@ -61,7 +61,7 @@ func UserLogin(c echo.Context) error {
 			IssuedAt:  time.Now().Unix(),
 			Subject:   "Gaia Session Token",
 		},
-		Policies: userPolicies.Policies,
+		Policies: userPolicies,
 	}
 
 	var token *jwt.Token
