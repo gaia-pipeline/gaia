@@ -9,17 +9,15 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/resourcehelper"
 	"github.com/gaia-pipeline/gaia/security/rbac"
-	gStore "github.com/gaia-pipeline/gaia/store"
 )
 
 type rbacHandler struct {
-	store          gStore.RBACStore
 	svc            rbac.Service
 	rbacMarshaller resourcehelper.Marshaller
 }
 
-func newRBACHandler(store gStore.RBACStore, svc rbac.Service, rbacMarshaller resourcehelper.Marshaller) *rbacHandler {
-	return &rbacHandler{store: store, svc: svc, rbacMarshaller: rbacMarshaller}
+func newRBACHandler(svc rbac.Service, rbacMarshaller resourcehelper.Marshaller) *rbacHandler {
+	return &rbacHandler{svc: svc, rbacMarshaller: rbacMarshaller}
 }
 
 // RBACPolicyResourcePut creates or updates a new authorization.policy resource.
@@ -67,9 +65,9 @@ func (h rbacHandler) RBACPolicyBindingPut(c echo.Context) error {
 	name := c.Param("name")
 	username := c.Param("username")
 
-	if err := h.store.RBACPolicyBindingPut(username, name); err != nil {
-		gaia.Cfg.Logger.Error("failed to put auth assignment: " + err.Error())
-		return c.String(http.StatusBadRequest, "Error getting policy.")
+	if err := h.svc.PutUserBinding(username, name); err != nil {
+		gaia.Cfg.Logger.Error("failed to put policy binding: " + err.Error())
+		return c.String(http.StatusBadRequest, "Error saving policy binding.")
 	}
 
 	return c.String(http.StatusOK, "Successfully assignment role")

@@ -117,6 +117,7 @@ func TestAuthBarrierHMACTokenWithHMACKey(t *testing.T) {
 			IssuedAt:  time.Now().Unix(),
 			Subject:   "Gaia Session Token",
 		},
+		Policies: map[string]interface{}{},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -153,6 +154,7 @@ func TestAuthBarrierRSATokenWithRSAKey(t *testing.T) {
 			IssuedAt:  time.Now().Unix(),
 			Subject:   "Gaia Session Token",
 		},
+		Policies: map[string]interface{}{},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS512, claims)
@@ -322,6 +324,7 @@ func TestAuthBarrierAllPerms(t *testing.T) {
 			IssuedAt:  time.Now().Unix(),
 			Subject:   "Gaia Session Token",
 		},
+		Policies: map[string]interface{}{},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

@@ -27,12 +27,24 @@ type cache struct {
 }
 
 // NewCache creates a new cache. This cache works using expiration based eviction.
-func NewCache(expiration time.Duration) Cache {
-	return &cache{
+func NewCache(expiration time.Duration, interval time.Duration) Cache {
+	c := &cache{
 		items:      make(map[string]cacheItem),
 		expiration: expiration,
 		mu:         sync.Mutex{},
 	}
+
+	ticker := time.NewTicker(interval)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				c.EvictExpired()
+			}
+		}
+	}()
+
+	return c
 }
 
 // Put creates or updates an item. This uses the default expiration time.
@@ -78,7 +90,7 @@ func (c *cache) EvictExpired() {
 	}
 }
 
-// Clear and invalidate the whole cache
+// Clear and invalidate the whole cache.
 func (c *cache) Clear() {
 	defer c.mu.Unlock()
 	c.mu.Lock()

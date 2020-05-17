@@ -2,7 +2,7 @@ package rbac
 
 import (
 	"fmt"
-	
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/store"
 )
@@ -13,6 +13,7 @@ type Service interface {
 	PutPolicy(policy gaia.RBACPolicyResourceV1) error
 	GetUserEvaluatedPolicies(username string) (gaia.RBACEvaluatedPermissions, bool)
 	PutUserEvaluatedPolicies(username string, perms gaia.RBACEvaluatedPermissions) error
+	PutUserBinding(username string, policy string) error
 }
 
 type service struct {
@@ -57,4 +58,9 @@ func (s *service) GetUserEvaluatedPolicies(username string) (gaia.RBACEvaluatedP
 func (s *service) PutUserEvaluatedPolicies(username string, perms gaia.RBACEvaluatedPermissions) error {
 	s.evaluatedPermsCache.Put(username, perms)
 	return nil
+}
+
+// PutUserBinding saves a user policy binding into the store.
+func (s *service) PutUserBinding(username string, policy string) error {
+	return s.store.RBACPolicyBindingPut(username, policy)
 }

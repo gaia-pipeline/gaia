@@ -1,8 +1,8 @@
 package resourcehelper
 
 import (
-	"errors"
-	"reflect"
+	"gotest.tools/assert"
+	"gotest.tools/assert/cmp"
 	"testing"
 
 	"github.com/gaia-pipeline/gaia"
@@ -14,17 +14,19 @@ var specV1 = gaia.RBACPolicyResourceV1{
 		Type:    "authorization.policy",
 	},
 	ResourceMetadataV1: gaia.ResourceMetadataV1{
-		Name:        "test-name",
-		Description: "test description",
+		Name:        "test",
+		Description: "test policy.",
 	},
 	Statement: []gaia.RBACPolicyStatementV1{
 		{
-			ID:     "test-id",
+			ID:     "grant",
 			Effect: "allow",
 			Action: []string{
-				"namespace/action-name-a",
-				"namespace/action-name-b",
+				"users/delete",
+				"pipeline-runs/logs",
+				"workers/deregister-worker",
 			},
+			Resource: "*",
 		},
 	},
 }
@@ -32,41 +34,40 @@ var specV1 = gaia.RBACPolicyResourceV1{
 var yamlSpecV1 = `version: v1
 type: authorization.policy
 metadata:
-  name: test-name
-  description: test description
+  name: test
+  description: test policy.
 statement:
-- id: test-id
+- id: grant
   effect: allow
   action:
-  - namespace/action-name-a
-  - namespace/action-name-b
+  - users/delete
+  - pipeline-runs/logs
+  - workers/deregister-worker
+  resource: '*'
 `
 
 var yamlSpecV2 = `version: v2
 type: authorization.policy
 metadata:
-  name: test-name
-  description: test description
+  name: test
+  description: test policy.
 statement:
-- id: test-id
+- id: grant-all
   effect: allow
   action:
-  - namespace/action-name-a
-  - namespace/action-name-b
+  - users/delete
+  - pipeline-runs/logs
+  - workers/deregister-worker
+resource: '*'
 `
 
 func Test_SpecMarshaller_MarshalV1(t *testing.T) {
 	sm := NewMarshaller()
 
 	got, err := sm.Marshal(specV1)
-	if err != nil {
-		t.Errorf("Marshal() error = %v, wantErr no error", err)
-		return
-	}
-	gotStr := string(got)
-	if !reflect.DeepEqual(gotStr, yamlSpecV1) {
-		t.Errorf("Marshal() got = %v, expected = %v", gotStr, yamlSpecV1)
-	}
+
+	assert.Check(t, cmp.Nil(err))
+	assert.Check(t, cmp.Equal(string(got), yamlSpecV1))
 }
 
 func Test_SpecMarshaller_Unmarshal(t *testing.T) {
@@ -77,39 +78,24 @@ func Test_SpecMarshaller_Unmarshal(t *testing.T) {
 		t.Errorf("Unmarshal() error = %v, wantErr no error", err)
 		return
 	}
-	if !reflect.DeepEqual(unmarshalledSpec, specV1) {
-		t.Errorf("Unmarshal() got = %v, expected = %v", unmarshalledSpec, specV1)
-	}
+
+	assert.Check(t, cmp.DeepEqual(unmarshalledSpec, specV1))
 }
 
 func Test_SpecMarshaller_Unmarshal_VersionMismatch_Errors(t *testing.T) {
 	sm := NewMarshaller()
 
-	expected := errors.New("version does not match struct RBACPolicyResourceV1")
-
 	var unmarshalledSpec gaia.RBACPolicyResourceV1
 	err := sm.Unmarshal([]byte(yamlSpecV2), &unmarshalledSpec)
-	if err == nil {
-		t.Errorf("Unmarshal error = %v, wantErr = %v", err, expected)
-		return
-	}
-	if err.Error() != expected.Error() {
-		t.Errorf("Unmarshal error = %v, wantErr = %v", err, expected)
-	}
+
+	assert.Check(t, cmp.Error(err, "version does not match struct RBACPolicyResourceV1"))
 }
 
 func Test_SpecMarshaller_Unmarshal_InvalidPolicyStruct_Errors(t *testing.T) {
 	sm := NewMarshaller()
 
-	expected := errors.New("policy specification struct not found")
-
 	var unmarshalledSpec struct{}
 	err := sm.Unmarshal([]byte(yamlSpecV1), &unmarshalledSpec)
-	if err == nil {
-		t.Errorf("Unmarshal error = %v, wantErr = %v", err, expected)
-		return
-	}
-	if err.Error() != expected.Error() {
-		t.Errorf("Unmarshal error = %v, wantErr = %v", err, expected)
-	}
+
+	assert.Check(t, cmp.Error(err, "policy specification struct not found"))
 }

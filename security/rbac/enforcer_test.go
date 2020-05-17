@@ -69,12 +69,16 @@ func (s mockSvc) PutPolicy(policy gaia.RBACPolicyResourceV1) error {
 	panic("implement me")
 }
 
-func (s mockSvc) GetUserEvaluatedPolicies(username string) (gaia.RBACEvaluatedPermissions, bool) {
+func (s mockSvc) PutUserBinding(username string, policy string) error {
 	panic("implement me")
 }
 
+func (s mockSvc) GetUserEvaluatedPolicies(username string) (gaia.RBACEvaluatedPermissions, bool) {
+	return make(gaia.RBACEvaluatedPermissions), false
+}
+
 func (s mockSvc) PutUserEvaluatedPolicies(username string, perms gaia.RBACEvaluatedPermissions) error {
-	panic("implement me")
+	return nil
 }
 
 func TestPolicyEnforcer_Enforce_WithMissingPolicyStatement_ReturnsError(t *testing.T) {
