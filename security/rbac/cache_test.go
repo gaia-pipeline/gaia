@@ -10,9 +10,9 @@ import (
 )
 
 var testItem = gaia.RBACEvaluatedPermissions{
-	PipelineNamespace: {
-		GetAction: map[gaia.RBACPolicyResource]string{
-			"*": "allow",
+	"pipelines": {
+		"get": map[gaia.RBACPolicyResource]interface{}{
+			"*": "",
 		},
 	},
 }

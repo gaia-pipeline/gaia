@@ -21,7 +21,7 @@ func newRBACHandler(svc rbac.Service, rbacMarshaller resourcehelper.Marshaller) 
 }
 
 // RBACPolicyResourcePut creates or updates a new authorization.policy resource.
-func (h rbacHandler) RBACPolicyResourcePut(c echo.Context) error {
+func (h *rbacHandler) RBACPolicyResourcePut(c echo.Context) error {
 	bts, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to read request body: " + err.Error())
@@ -43,7 +43,7 @@ func (h rbacHandler) RBACPolicyResourcePut(c echo.Context) error {
 }
 
 // RBACPolicyResourcePut gets an authorization.policy resource.
-func (h rbacHandler) RBACPolicyResourceGet(c echo.Context) error {
+func (h *rbacHandler) RBACPolicyResourceGet(c echo.Context) error {
 	name := c.Param("name")
 
 	policy, err := h.svc.GetPolicy(name)
@@ -61,7 +61,7 @@ func (h rbacHandler) RBACPolicyResourceGet(c echo.Context) error {
 	return c.String(http.StatusOK, string(bts))
 }
 
-func (h rbacHandler) RBACPolicyBindingPut(c echo.Context) error {
+func (h *rbacHandler) RBACPolicyBindingPut(c echo.Context) error {
 	name := c.Param("name")
 	username := c.Param("username")
 

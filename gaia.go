@@ -348,6 +348,17 @@ func (p PipelineType) String() string {
 	return string(p)
 }
 
+// RBACAPIGroup represents API group mappings.
+type RBACAPIGroup struct {
+	Endpoints map[string]RBACAPIGroupEndpoint `yaml:"endpoints"`
+}
+
+// RBACAPIGroupEndpoint represents an endpoint within an API group.
+type RBACAPIGroupEndpoint struct {
+	Param   string            `yaml:"param"`
+	Methods map[string]string `yaml:"methods"`
+}
+
 // ResourceType is the base version and type for a defined resource.
 type ResourceType struct {
 	Version string `yaml:"version"`
@@ -370,9 +381,8 @@ type RBACPolicyResourceV1 struct {
 // RBACPolicyStatementV1 is used to define an individual policy statement.
 type RBACPolicyStatementV1 struct {
 	ID       string   `yaml:"id"`
-	Effect   string   `yaml:"effect"`
 	Action   []string `yaml:"action"`
-	Resource string   `yaml:"resource"`
+	Resource []string `yaml:"resource"`
 }
 
 // RBACPolicyNamespace represents a policy namespace.
@@ -385,4 +395,4 @@ type RBACPolicyAction string
 type RBACPolicyResource string
 
 // RBACEvaluatedPermissions multiple policies combined and evaluated.
-type RBACEvaluatedPermissions map[RBACPolicyNamespace]map[RBACPolicyAction]map[RBACPolicyResource]string
+type RBACEvaluatedPermissions map[RBACPolicyNamespace]map[RBACPolicyAction]map[RBACPolicyResource]interface{}

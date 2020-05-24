@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"context"
+	"log"
 	"net/http"
 	"time"
 
@@ -30,23 +32,26 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	// --- Register handlers at echo instance ---
 	storeService, _ := services.StorageService()
 
-	rbacSvc := rbac.NewService(storeService, rbac.NewCache(time.Minute*30, time.Minute*5))
-	rbacEnforcer := rbac.NewPolicyEnforcer(rbacSvc)
-	policyEnforcer := newPolicyEnforcerMiddleware(rbacEnforcer)
+	rbacCache := rbac.NewCache(time.Minute * 30)
+	// TODO: find context
+	go rbacCache.Init(context.Background(), time.Minute*15)
+	rbacSvc := rbac.NewService(storeService, rbacCache)
+	rbacEnforcer, err := rbac.NewPolicyEnforcer(rbacSvc)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Endpoints for Gaia primary instance
 	if gaia.Cfg.Mode == gaia.ModeServer {
 		// Users
 		e.POST(p+"login", UserLogin)
+		e.GET(p+"users", UserGetAll)
+		e.POST(p+"user/password", UserChangePassword)
+		e.DELETE(p+"user/:username", UserDelete)
+		e.GET(p+"user/:username/permissions", UserGetPermissions)
+		e.PUT(p+"user/:username/permissions", UserPutPermissions)
+		e.POST(p+"user", UserAdd)
 		e.PUT(p+"user/:username/reset-trigger-token", UserResetTriggerToken)
-
-		e.GET(p+"users", UserGetAll, policyEnforcer.do(rbac.UserNamespace, rbac.GetAction))
-		e.POST(p+"user/password", UserChangePassword, policyEnforcer.do(rbac.UserNamespace, rbac.ChangePasswordAction))
-		e.DELETE(p+"user/:username", UserDelete, policyEnforcer.do(rbac.UserNamespace, rbac.DeleteAction))
-		e.POST(p+"user", UserAdd, policyEnforcer.do(rbac.UserNamespace, rbac.CreateAction))
-
-		e.GET(p+"user/:username/permissions", UserGetPermissions, policyEnforcer.do(rbac.UserPermissionNamespace, rbac.GetAction))
-		e.PUT(p+"user/:username/permissions", UserPutPermissions, policyEnforcer.do(rbac.UserPermissionNamespace, rbac.UpdateAction))
 
 		perms := e.Group(p + "permission")
 		perms.GET("", PermissionGetAll)
@@ -63,19 +68,17 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 			Scheduler:       s.deps.Scheduler,
 			PipelineService: s.deps.PipelineService,
 		})
-
-		e.POST(p+"pipeline", pipelineProvider.CreatePipeline, policyEnforcer.do(rbac.PipelineNamespace, rbac.CreateAction))
-		e.POST(p+"pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote, policyEnforcer.do(rbac.PipelineNamespace, rbac.CreateAction))
-		e.GET(p+"pipeline/name", pipelineProvider.PipelineNameAvailable, policyEnforcer.do(rbac.PipelineNamespace, rbac.CreateAction))
-		e.POST(p+"pipeline/githook", GitWebHook, policyEnforcer.do(rbac.PipelineNamespace, rbac.CreateAction))
-		e.GET(p+"pipeline/created", pipelineProvider.CreatePipelineGetAll, policyEnforcer.do(rbac.PipelineNamespace, rbac.ListAction))
-		e.GET(p+"pipeline", pipelineProvider.PipelineGetAll, policyEnforcer.do(rbac.PipelineNamespace, rbac.ListAction))
-		e.GET(p+"pipeline/latest", pipelineProvider.PipelineGetAllWithLatestRun, policyEnforcer.do(rbac.PipelineNamespace, rbac.ListAction))
-		e.GET(p+"pipeline/:pipelineid", pipelineProvider.PipelineGet, policyEnforcer.do(rbac.PipelineNamespace, rbac.GetAction))
-		e.PUT(p+"pipeline/:pipelineid", pipelineProvider.PipelineUpdate, policyEnforcer.do(rbac.PipelineNamespace, rbac.UpdateAction))
-		e.DELETE(p+"pipeline/:pipelineid", pipelineProvider.PipelineDelete, policyEnforcer.do(rbac.PipelineNamespace, rbac.DeleteAction))
-		e.POST(p+"pipeline/:pipelineid/start", pipelineProvider.PipelineStart, policyEnforcer.do(rbac.PipelineNamespace, rbac.StartAction))
-
+		e.POST(p+"pipeline", pipelineProvider.CreatePipeline)
+		e.POST(p+"pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote)
+		e.GET(p+"pipeline/name", pipelineProvider.PipelineNameAvailable)
+		e.POST(p+"pipeline/githook", GitWebHook)
+		e.GET(p+"pipeline/created", pipelineProvider.CreatePipelineGetAll)
+		e.GET(p+"pipeline", pipelineProvider.PipelineGetAll)
+		e.GET(p+"pipeline/latest", pipelineProvider.PipelineGetAllWithLatestRun)
+		e.GET(p+"pipeline/:pipelineid", pipelineProvider.PipelineGet)
+		e.PUT(p+"pipeline/:pipelineid", pipelineProvider.PipelineUpdate)
+		e.DELETE(p+"pipeline/:pipelineid", pipelineProvider.PipelineDelete)
+		e.POST(p+"pipeline/:pipelineid/start", pipelineProvider.PipelineStart)
 		e.POST(p+"pipeline/:pipelineid/:pipelinetoken/trigger", pipelineProvider.PipelineTrigger)
 		e.PUT(p+"pipeline/:pipelineid/reset-trigger-token", pipelineProvider.PipelineResetToken)
 		e.POST(p+"pipeline/periodicschedules", pipelineProvider.PipelineCheckPeriodicSchedules)
@@ -86,17 +89,17 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		e.GET(p+"settings/poll", SettingsPollGet)
 
 		// PipelineRun
-		e.POST(p+"pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop, policyEnforcer.do(rbac.PipelineRunNamespace, rbac.StopAction))
-		e.GET(p+"pipelinerun/:pipelineid/:runid", pipelineProvider.PipelineRunGet, policyEnforcer.do(rbac.PipelineRunNamespace, rbac.GetAction))
-		e.GET(p+"pipelinerun/:pipelineid/latest", pipelineProvider.PipelineGetLatestRun, policyEnforcer.do(rbac.PipelineRunNamespace, rbac.GetAction))
-		e.GET(p+"pipelinerun/:pipelineid", pipelineProvider.PipelineGetAllRuns, policyEnforcer.do(rbac.PipelineRunNamespace, rbac.ListAction))
-		e.GET(p+"pipelinerun/:pipelineid/:runid/log", pipelineProvider.GetJobLogs, policyEnforcer.do(rbac.PipelineRunNamespace, rbac.LogsAction))
+		e.POST(p+"pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop)
+		e.GET(p+"pipelinerun/:pipelineid/:runid", pipelineProvider.PipelineRunGet)
+		e.GET(p+"pipelinerun/:pipelineid", pipelineProvider.PipelineGetAllRuns)
+		e.GET(p+"pipelinerun/:pipelineid/latest", pipelineProvider.PipelineGetLatestRun)
+		e.GET(p+"pipelinerun/:pipelineid/:runid/log", pipelineProvider.GetJobLogs)
 
 		// Secrets
-		e.GET(p+"secrets", ListSecrets, policyEnforcer.do(rbac.SecretNamespace, rbac.ListAction))
-		e.DELETE(p+"secret/:key", RemoveSecret, policyEnforcer.do(rbac.SecretNamespace, rbac.DeleteAction))
-		e.POST(p+"secret", SetSecret, policyEnforcer.do(rbac.SecretNamespace, rbac.CreateAction))
-		e.PUT(p+"secret/update", SetSecret, policyEnforcer.do(rbac.SecretNamespace, rbac.UpdateAction))
+		e.GET(p+"secrets", ListSecrets)
+		e.DELETE(p+"secret/:key", RemoveSecret)
+		e.POST(p+"secret", SetSecret)
+		e.PUT(p+"secret/update", SetSecret)
 	}
 
 	// Worker
@@ -105,21 +108,23 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		Scheduler:   s.deps.Scheduler,
 		Certificate: s.deps.Certificate,
 	})
-
+	e.GET(p+"worker/secret", workerProvider.GetWorkerRegisterSecret)
 	e.POST(p+"worker/register", workerProvider.RegisterWorker)
-	e.GET(p+"worker/secret", workerProvider.GetWorkerRegisterSecret, policyEnforcer.do(rbac.WorkerNamespace, rbac.GetRegistrationSecretAction))
-	e.POST(p+"worker/secret", workerProvider.ResetWorkerRegisterSecret, policyEnforcer.do(rbac.WorkerNamespace, rbac.ResetWorkerRegisterSecretAction))
-	e.GET(p+"worker/status", workerProvider.GetWorkerStatusOverview, policyEnforcer.do(rbac.WorkerNamespace, rbac.GetOverviewAction))
-	e.GET(p+"worker", workerProvider.GetWorker, policyEnforcer.do(rbac.WorkerNamespace, rbac.GetWorkerAction))
-	e.DELETE(p+"worker/:workerid", workerProvider.DeregisterWorker, policyEnforcer.do(rbac.WorkerNamespace, rbac.DeregisterWorkerAction))
+	e.GET(p+"worker/status", workerProvider.GetWorkerStatusOverview)
+	e.GET(p+"worker", workerProvider.GetWorker)
+	e.DELETE(p+"worker/:workerid", workerProvider.DeregisterWorker)
+	e.POST(p+"worker/secret", workerProvider.ResetWorkerRegisterSecret)
 
 	// Middleware
 	e.Use(middleware.Recover())
 	// e.Use(middleware.Logger())
 	e.Use(middleware.BodyLimit("32M"))
-	e.Use(AuthMiddleware(&AuthConfig{
+
+	authMiddleware := &AuthMiddleware{
 		RoleCategories: rolehelper.DefaultUserRoles,
-	}))
+		rbacEnforcer: rbacEnforcer,
+	}
+	e.Use(authMiddleware.Do())
 
 	// Extra options
 	e.HideBanner = true

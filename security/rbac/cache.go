@@ -1,6 +1,7 @@
 package rbac
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 
 // Cache represents the interface for a simple cache.
 type Cache interface {
+	Init(ctx context.Context, evictionInterval time.Duration)
 	Get(key string) (gaia.RBACEvaluatedPermissions, bool)
 	Put(key string, value gaia.RBACEvaluatedPermissions) gaia.RBACEvaluatedPermissions
 	EvictExpired()
@@ -26,31 +28,31 @@ type cache struct {
 	items      map[string]cacheItem
 }
 
+// Init starts the ticker for evicting all expired items from the cache.
+func (c *cache) Init(ctx context.Context, evictionInterval time.Duration) {
+	for {
+		select {
+		case <-time.After(evictionInterval):
+			c.EvictExpired()
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
 // NewCache creates a new cache. This cache works using expiration based eviction.
-func NewCache(expiration time.Duration, interval time.Duration) Cache {
-	c := &cache{
+func NewCache(expiration time.Duration) Cache {
+	return &cache{
 		items:      make(map[string]cacheItem),
 		expiration: expiration,
 		mu:         sync.Mutex{},
 	}
-
-	ticker := time.NewTicker(interval)
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				c.EvictExpired()
-			}
-		}
-	}()
-
-	return c
 }
 
 // Put creates or updates an item. This uses the default expiration time.
 func (c *cache) Put(key string, value gaia.RBACEvaluatedPermissions) gaia.RBACEvaluatedPermissions {
-	defer c.mu.Unlock()
 	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	c.items[key] = cacheItem{
 		value:      value,
@@ -79,8 +81,8 @@ func (c *cache) Get(key string) (gaia.RBACEvaluatedPermissions, bool) {
 func (c *cache) EvictExpired() {
 	now := time.Now().UnixNano()
 
-	defer c.mu.Unlock()
 	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	for k, item := range c.items {
 		exp := item.expiration
@@ -92,8 +94,8 @@ func (c *cache) EvictExpired() {
 
 // Clear and invalidate the whole cache.
 func (c *cache) Clear() {
-	defer c.mu.Unlock()
 	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	c.items = make(map[string]cacheItem)
 }

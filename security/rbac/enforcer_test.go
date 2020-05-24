@@ -22,22 +22,13 @@ func (s mockSvc) GetPolicy(policy string) (gaia.RBACPolicyResourceV1, error) {
 						"pipelines/create",
 						"secrets/delete",
 					},
-					Resource: "*",
-					Effect:   "allow",
-				},
-				{
-					Action: []string{
-						"workers/get",
-					},
-					Resource: "worker:2",
-					Effect:   "deny",
+					Resource: []string{"*"},
 				},
 				{
 					Action: []string{
 						"secrets/get",
 					},
-					Resource: "secret:1",
-					Effect:   "allow",
+					Resource: []string{"secrets/key/my-secret"},
 				},
 			},
 		}, nil
@@ -49,15 +40,7 @@ func (s mockSvc) GetPolicy(policy string) (gaia.RBACPolicyResourceV1, error) {
 						"secrets/get",
 						"secrets/create",
 					},
-					Resource: "*",
-					Effect:   "deny",
-				},
-				{
-					Action: []string{
-						"workers/get",
-					},
-					Resource: "worker:1",
-					Effect:   "allow",
+					Resource: []string{"*"},
 				},
 			},
 		}, nil
@@ -82,7 +65,9 @@ func (s mockSvc) PutUserEvaluatedPolicies(username string, perms gaia.RBACEvalua
 }
 
 func TestPolicyEnforcer_Enforce_WithMissingPolicyStatement_ReturnsError(t *testing.T) {
-	enforcer := NewPolicyEnforcer(mockSvc{})
+	enforcer := policyEnforcer{
+		svc: mockSvc{},
+	}
 
 	err := enforcer.Enforce(EnforcerConfig{
 		User: User{
@@ -101,8 +86,11 @@ func TestPolicyEnforcer_Enforce_WithMissingPolicyStatement_ReturnsError(t *testi
 	}
 }
 
-func Test_PolicyEnforcer_ResolvePolicies_MergedPolicies(t *testing.T) {
-	enforcer := NewPolicyEnforcer(mockSvc{})
+func Test_PolicyEnforcer_Evaluate_MergedPolicies(t *testing.T) {
+	enforcer := policyEnforcer{
+		svc: mockSvc{},
+	}
+
 	rp, _ := enforcer.Evaluate(User{
 		Username: "test",
 		Policies: map[string]interface{}{
@@ -114,28 +102,22 @@ func Test_PolicyEnforcer_ResolvePolicies_MergedPolicies(t *testing.T) {
 	expected := gaia.RBACEvaluatedPermissions{
 		"pipelines": {
 			"create": {
-				"*": "allow",
+				"*": "",
 			},
 			"get": {
-				"*": "allow",
+				"*": "",
 			},
 		},
 		"secrets": {
 			"create": {
-				"*": "deny",
+				"*": "",
 			},
 			"get": {
-				"*":        "deny",
-				"secret:1": "allow",
+				"*":                     "",
+				"secrets/key/my-secret": "",
 			},
 			"delete": {
-				"*": "allow",
-			},
-		},
-		"workers": {
-			"get": {
-				"worker:1": "allow",
-				"worker:2": "deny",
+				"*": "",
 			},
 		},
 	}

@@ -3,6 +3,8 @@ package rbac
 import (
 	"errors"
 	"fmt"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"strings"
 
 	"github.com/gaia-pipeline/gaia"
@@ -12,7 +14,6 @@ var (
 	errNamespaceNotFound = errors.New("namespace not found")
 	errActionNotFound    = errors.New("action not found")
 	errResourceNotFound  = errors.New("resource not found")
-	errResourceDeny      = errors.New("resource implicit deny")
 )
 
 // EnforcerConfig represents the config required for RBAC.
@@ -33,15 +34,34 @@ type User struct {
 type PolicyEnforcer interface {
 	Enforce(cfg EnforcerConfig) error
 	Evaluate(user User) (gaia.RBACEvaluatedPermissions, error)
+	GetDefaultAPIGroup() gaia.RBACAPIGroup
 }
 
 type policyEnforcer struct {
-	svc Service
+	svc             Service
+	defaultAPIGroup gaia.RBACAPIGroup
+}
+
+func (s *policyEnforcer) GetDefaultAPIGroup() gaia.RBACAPIGroup {
+	return s.defaultAPIGroup
 }
 
 // NewPolicyEnforcer creates a new policyEnforcer
-func NewPolicyEnforcer(svc Service) PolicyEnforcer {
-	return &policyEnforcer{svc: svc}
+func NewPolicyEnforcer(svc Service) (PolicyEnforcer, error) {
+	file, err := ioutil.ReadFile("apigroup-core.yml")
+	if err != nil {
+		return nil, err
+	}
+
+	var apiGroup gaia.RBACAPIGroup
+	if err := yaml.Unmarshal(file, &apiGroup); err != nil {
+		return nil, err
+	}
+
+	return &policyEnforcer{
+		svc:             svc,
+		defaultAPIGroup: apiGroup,
+	}, nil
 }
 
 // Enforce takes an EnforcerConfig containing User information (name, policies) and the required namespace, action and
@@ -64,19 +84,17 @@ func (s *policyEnforcer) Enforce(cfg EnforcerConfig) error {
 		return errActionNotFound
 	}
 
+	// Empty cfg.Resource means there is no resource requirement for this enforcement
 	if cfg.Resource == "" {
-		cfg.Resource = "*"
-	}
-	effect, resExists := act[cfg.Resource]
-	if !resExists {
-		if _, wcExists := act["*"]; wcExists {
-			return nil
-		}
-		return errResourceNotFound
+		return nil
 	}
 
-	if effect == "deny" {
-		return errResourceDeny
+	if _, wcExists := act["*"]; wcExists {
+		return nil
+	}
+
+	if _, resExists := act[cfg.Resource]; !resExists {
+		return errResourceNotFound
 	}
 
 	return nil
@@ -100,22 +118,19 @@ func (s *policyEnforcer) Evaluate(user User) (gaia.RBACEvaluatedPermissions, err
 
 	eval := make(gaia.RBACEvaluatedPermissions)
 
-	// Evaluate all the policies, creating a single map and point of reference fro the user.
-	// This is not particularly efficient O(n2), but we have to parse all namespaces and actions.
+	// Evaluate all the policies, creating a single map and point of reference for the user.
+	// This is not particularly efficient O(n^2), but we have to parse all namespaces and actions.
 	for _, stmt := range stmts {
 
 		for _, stmtAction := range stmt.Action {
 
-			namespace, action := s.parseStatementAction(stmtAction)
-			stmtResource := gaia.RBACPolicyResource(stmt.Resource)
+			namespace, action := ParseStatementAction(stmtAction)
 
 			// check if the namespace already exists in the evaluated perms.
 			ns, nsExists := eval[namespace]
 			if !nsExists {
-				eval[namespace] = map[gaia.RBACPolicyAction]map[gaia.RBACPolicyResource]string{
-					action: {
-						stmtResource: stmt.Effect,
-					},
+				eval[namespace] = map[gaia.RBACPolicyAction]map[gaia.RBACPolicyResource]interface{}{
+					action: stmtToMap(stmt.Resource),
 				}
 				continue
 			}
@@ -123,17 +138,18 @@ func (s *policyEnforcer) Evaluate(user User) (gaia.RBACEvaluatedPermissions, err
 			// check if the action already exists for the namespace.
 			act, actExists := ns[action]
 			if !actExists {
-				ns[action] = map[gaia.RBACPolicyResource]string{
-					stmtResource: stmt.Effect,
-				}
+				ns[action] = stmtToMap(stmt.Resource)
 				continue
 			}
 
-			// check if the resource exists or if we need to register an implicit deny.
-			_, resExists := act[stmtResource]
-			if !resExists || stmt.Effect == "deny" {
-				act[stmtResource] = stmt.Effect
-				continue
+			// merge all resources into the action.
+			for _, rs := range stmt.Resource {
+				r := gaia.RBACPolicyResource(rs)
+				_, resExists := act[r]
+				if !resExists {
+					act[r] = ""
+					continue
+				}
 			}
 		}
 
@@ -146,7 +162,17 @@ func (s *policyEnforcer) Evaluate(user User) (gaia.RBACEvaluatedPermissions, err
 	return eval, nil
 }
 
-func (s *policyEnforcer) parseStatementAction(a string) (gaia.RBACPolicyNamespace, gaia.RBACPolicyAction) {
+func stmtToMap(resources []string) map[gaia.RBACPolicyResource]interface{} {
+	m := map[gaia.RBACPolicyResource]interface{}{}
+	for _, r := range resources {
+		m[gaia.RBACPolicyResource(r)] = ""
+	}
+	return m
+}
+
+// ParseStatementAction takes a standard string and attempts to parse it into a gaia.RBACPolicyNamespace and
+// gaia.RBACPolicyAction
+func ParseStatementAction(a string) (gaia.RBACPolicyNamespace, gaia.RBACPolicyAction) {
 	splitAction := strings.Split(a, "/")
 	namespace := gaia.RBACPolicyNamespace(splitAction[0])
 	action := gaia.RBACPolicyAction(splitAction[1])
