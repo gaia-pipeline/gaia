@@ -8,6 +8,7 @@ require (
 	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
 	github.com/boltdb/bolt v1.3.1 // indirect
+	github.com/casbin/casbin/v2 v2.6.4
 	github.com/containerd/containerd v1.2.8 // indirect
 	github.com/coreos/bbolt v1.3.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -18,7 +19,6 @@ require (
 	github.com/emirpasic/gods v1.9.0 // indirect
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
 	github.com/gaia-pipeline/flag v1.7.4-pre
-	github.com/gaia-pipeline/gosdk v0.0.0-20180909192508-cc9f89055777
 	github.com/gaia-pipeline/protobuf v0.0.0-20180812091451-7be8a901b55a
 	github.com/gliderlabs/ssh v0.1.1 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible
@@ -40,6 +40,7 @@ require (
 	github.com/mattn/go-isatty v0.0.3 // indirect
 	github.com/mitchellh/go-homedir v0.0.0-20180801233206-58046073cbff // indirect
 	github.com/mitchellh/go-testing-interface v0.0.0-20171004221916-a61a99592b77 // indirect
+	github.com/mmcloughlin/meow v0.0.0-20200201185800-3501c7c05d21
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/oklog/run v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect

@@ -1,0 +1,94 @@
+name: api-core
+endpoints:
+  # pipelines
+  "/api/v1/pipeline":
+    methods:
+      POST: pipelines/create
+      GET: pipelines/list
+  "/api/v1/pipeline/gitlsremote":
+    methods:
+      POST: pipelines/create
+  "/api/v1/pipeline/name":
+    methods:
+      GET: pipelines/get
+  "/api/v1/pipeline/githook":
+    methods:
+      POST: pipelines/create
+  "/api/v1/pipeline/created":
+    methods:
+      GET: pipelines/list
+  "/api/v1/pipeline/latest":
+    methods:
+      GET: pipelines/list
+  "/api/v1/pipeline/:pipelineid":
+    param: pipelineid
+    methods:
+      GET: pipelines/get
+      PUT: pipelines/update
+      DELETE: pipelines/delete
+  "/api/v1/pipeline/:pipelineid/start":
+    param: pipelineid
+    methods:
+      POST: pipelines/start
+
+  # pipeline-runs
+  "/api/v1/pipelinerun/:pipelineid/:runid/stop":
+    param: pipelineid
+    methods:
+      POST: pipeline-runs/stop
+  "/api/v1/pipelinerun/:pipelineid/:runid":
+    param: pipelineid
+    methods:
+      GET: pipeline-runs/get
+  "/api/v1/pipelinerun/:pipelineid/latest":
+    param: pipelineid
+    methods:
+      GET: pipeline-runs/get
+  "/api/v1/pipelinerun/:pipelineid":
+    param: pipelineid
+    methods:
+      GET: pipeline-runs/list
+  "/api/v1/pipelinerun/:pipelineid/:runid/latest":
+    param: pipelineid
+    methods:
+      GET: pipeline-runs/get
+
+  # secrets
+  "/api/v1/secret":
+    methods:
+      POST: secrets/create
+  "/api/v1/secrets":
+    methods:
+      GET: secrets/list
+  "/api/v1/secret/:key":
+    param: key
+    methods:
+      DELETE: secrets/delete
+  "/api/v1/secret/update":
+    methods:
+      PUT: secrets/update
+
+  # users
+  "/api/v1/user":
+    POST: users/create
+  "/api/v1/users":
+    GET: users/list
+  "/api/v1/user/password":
+    POST: users/update
+  "/api/v1/user/:username":
+    param: username
+    methods:
+      DELETE: users/delete
+
+  # workers
+  "/api/v1/worker/secret":
+    GET: workers/get
+    POST: workers/create
+  "/api/v1/worker/status":
+    GET: workers/get
+  "/api/v1/worker":
+    GET: workers/get
+  "/api/v1/worker/:workerid":
+    param: workerid
+    methods:
+      DELETE: workers/delete

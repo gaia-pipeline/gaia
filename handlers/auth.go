@@ -4,6 +4,9 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
+	"github.com/casbin/casbin/v2"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -18,7 +21,7 @@ var (
 	errNotAuthorized = errors.New("no or invalid jwt token provided. You are not authorized")
 
 	// Non-protected URL paths which are prefix checked
-	nonProtectedPathsPrefix = []string {
+	nonProtectedPathsPrefix = []string{
 		"/login",
 		"/pipeline/githook",
 		"/trigger",
@@ -30,7 +33,7 @@ var (
 	}
 
 	// Non-protected URL paths which are explicitly checked
-	nonProtectedPaths = []string {
+	nonProtectedPaths = []string{
 		"/",
 		"/favicon.ico",
 	}
@@ -75,6 +78,16 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 					if err != nil {
 						return c.String(http.StatusForbidden, fmt.Sprintf("Permission denied for user %s. %s", username, err.Error()))
 					}
+
+					sub := username.(string)
+					valid, err := roleAuth.enforceRBAC(c, sub)
+					if err != nil {
+						return c.String(http.StatusInternalServerError, fmt.Sprintf("Unknown error has occured."))
+					}
+					if !valid {
+						return c.String(http.StatusForbidden, fmt.Sprintf("Permission denied for user."))
+					}
+
 				}
 				return next(c)
 			}
@@ -87,6 +100,8 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 // the permission roles required for each echo endpoint.
 type AuthConfig struct {
 	RoleCategories []*gaia.UserRoleCategory
+	enforcer       casbin.IEnforcer
+	apiGroup       gaia.RBACAPIGroup
 }
 
 // Finds the required role for the metho & path specified. If it exists we validate that the provided user roles have
@@ -152,4 +167,55 @@ func getToken(c echo.Context) (*jwt.Token, error) {
 	}
 
 	return token, nil
+}
+
+func (ra *AuthConfig) enforceRBAC(c echo.Context, username string) (bool, error) {
+	group := ra.apiGroup
+
+	endpoint, ok := group.Endpoints[c.Path()]
+	if !ok {
+		gaia.Cfg.Logger.Warn("path not mapped to api group", "path", c.Path())
+		return true, nil
+	}
+
+	perm, ok := endpoint.Methods[c.Request().Method]
+	if !ok {
+		gaia.Cfg.Logger.Warn("method not mapped to api group path", "path", c.Path(), "method", c.Request().Method)
+		return true, nil
+	}
+
+	splitAction := strings.Split(perm, "/")
+	namespace := splitAction[0]
+	action := splitAction[1]
+
+	fullResource := "*"
+	if endpoint.Param != "" {
+		param := c.Param(endpoint.Param)
+		if param == "" {
+			return false, fmt.Errorf("param %s missing", endpoint.Param)
+		}
+		fullResource = fmt.Sprintf("%s/%s/%s", namespace, endpoint.Param, param)
+	}
+
+	valid, err := ra.enforcer.Enforce(username, namespace, fullResource, action)
+	if err != nil {
+		return false, err
+	}
+
+	gaia.Cfg.Logger.Warn("permission denied for user", "username", username, "namespace", namespace, "resource", fullResource, "action", action)
+	return valid, nil
+}
+
+func loadAPIGroup() (gaia.RBACAPIGroup, error) {
+	file, err := ioutil.ReadFile("apigroup-core.yml")
+	if err != nil {
+		return gaia.RBACAPIGroup{}, err
+	}
+
+	var apiGroup gaia.RBACAPIGroup
+	if err := yaml.Unmarshal(file, &apiGroup); err != nil {
+		return gaia.RBACAPIGroup{}, err
+	}
+
+	return apiGroup, nil
 }

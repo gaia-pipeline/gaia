@@ -5,6 +5,8 @@ github.com/GeertJohan/go.incremental v1.0.0 h1:7AH+pY1XUgQE4Y1HcXYaMqAI0m9yrFqo/
 github.com/GeertJohan/go.incremental v1.0.0/go.mod h1:6fAjUhbVuX1KcMD3c8TEgVUqmo4seqhv0i0kdATSkM0=
 github.com/GeertJohan/go.rice v1.0.0 h1:KkI6O9uMaQU3VEKaj01ulavtF7o1fWT7+pk/4voiMLQ=
 github.com/GeertJohan/go.rice v1.0.0/go.mod h1:eH6gbSOAUv07dQuZVnBmoDP8mgsM1rtixis4Tib9if0=
+github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible h1:1G1pk05UrOh0NlF1oeaaix1x8XzrfjIDK47TY0Zehcw=
+github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
 github.com/Microsoft/go-winio v0.4.14 h1:+hMXMk01us9KgxGb7ftKQt2Xpf5hH/yky+TDA+qxleU=
 github.com/Microsoft/go-winio v0.4.14/go.mod h1:qXqCSQ3Xa7+6tgxaGTIe4Kpcdsi+P8jBhyzoq1bpyYA=
 github.com/Pallinder/go-randomdata v1.1.0 h1:gUubB1IEUliFmzjqjhf+bgkg1o6uoFIkRsP3VrhEcx8=
@@ -17,6 +19,8 @@ github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 h1:kFOfPq6dUM1hTo
 github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239/go.mod h1:2FmKhYUyUczH0OGQWaF5ceTx0UBShxjsH6f8oGKYe2c=
 github.com/boltdb/bolt v1.3.1 h1:JQmyP4ZBrce+ZQu0dY660FMfatumYDLun9hBCUVIkF4=
 github.com/boltdb/bolt v1.3.1/go.mod h1:clJnj/oiGkjum5o1McbSZDSLxVThjynRyGBgiAx27Ps=
+github.com/casbin/casbin/v2 v2.6.4 h1:8wqX2uur0a0MpK87U01xs0Ct4JDRLkbSmnuUDS6w9iU=
+github.com/casbin/casbin/v2 v2.6.4/go.mod h1:XXtYGrs/0zlOsJMeRteEdVi/FsB0ph7KgNfjoCoJUD8=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/containerd/containerd v1.2.8 h1:oM84oDW6+A0FQ4aWW5wnnexazvrQA5Hw6iXAi4rczWw=
 github.com/containerd/containerd v1.2.8/go.mod h1:bC6axHOhabU15QhwfG7w5PipXdVtMXFTttgp+kVtyUA=
@@ -44,8 +48,6 @@ github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 h1:BHsljHzVlRcyQhjr
 github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568/go.mod h1:xEzjJPgXI435gkrCt3MPfRiAkVrwSbHsst4LCFVfpJc=
 github.com/gaia-pipeline/flag v1.7.4-pre h1:/TAmHVYVQGE4Mw9xl0Qs0D5UruVDMF95thexyEFbTAY=
 github.com/gaia-pipeline/flag v1.7.4-pre/go.mod h1:rLpsWzqOEPa2K0Yl4aC34nmblLpIYjGqjP/srZbYvEk=
-github.com/gaia-pipeline/gosdk v0.0.0-20180909192508-cc9f89055777 h1:Gn3nmETr4IE44pIFLeTDNNBBRhNXXh53PqFV23CsVok=
-github.com/gaia-pipeline/gosdk v0.0.0-20180909192508-cc9f89055777/go.mod h1:e3TkvPdcdSdHZTgwiS89fs8lJrveYHsGLlz/Q0oXlN8=
 github.com/gaia-pipeline/protobuf v0.0.0-20180812091451-7be8a901b55a h1:/5XAmdAyGl4yL9BugdPdBLaXquif1zw6Hih6go8E7Xs=
 github.com/gaia-pipeline/protobuf v0.0.0-20180812091451-7be8a901b55a/go.mod h1:H0w7MofSuW53Nz7kesnBdVkvr437flf5B7D9Lcsb+lQ=
 github.com/gliderlabs/ssh v0.1.1 h1:j3L6gSLQalDETeEg/Jg0mGY0/y/N6zI2xX1978P0Uqw=
@@ -110,6 +112,8 @@ github.com/mitchellh/go-homedir v0.0.0-20180801233206-58046073cbff h1:jM4Eo4qMmm
 github.com/mitchellh/go-homedir v0.0.0-20180801233206-58046073cbff/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrkLzIz1N1q0pr0=
 github.com/mitchellh/go-testing-interface v0.0.0-20171004221916-a61a99592b77 h1:7GoSOOW2jpsfkntVKaS2rAr1TJqfcxotyaUcuxoZSzg=
 github.com/mitchellh/go-testing-interface v0.0.0-20171004221916-a61a99592b77/go.mod h1:kRemZodwjscx+RGhAo8eIhFbs2+BFgRtFPeD/KE+zxI=
+github.com/mmcloughlin/meow v0.0.0-20200201185800-3501c7c05d21 h1:2BIiU0QuELctVxpl6FKAsf68ZZvI89I9c8Kt8Guxba8=
+github.com/mmcloughlin/meow v0.0.0-20200201185800-3501c7c05d21/go.mod h1:uxCZJI8Z1PD2WRnSJtVJGHCyxC5qWhz5lOsx3Bx1NXo=
 github.com/morikuni/aec v1.0.0 h1:nP9CBfwrvYnBRgY6qfDQkygYDmYwOilePFkwzv4dU8A=
 github.com/morikuni/aec v1.0.0/go.mod h1:BbKIizmSmc5MMPqRYbxO4ZU0S0+P200+tUnFx7PXmsc=
 github.com/nkovacs/streamquote v0.0.0-20170412213628-49af9bddb229 h1:E2B8qYyeSgv5MXpmzZXRNp8IAQ4vjxIjhpAf5hv/tAg=

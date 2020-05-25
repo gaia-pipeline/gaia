@@ -1,6 +1,10 @@
 package handlers
 
 import (
+	"fmt"
+	"github.com/casbin/casbin/v2"
+	"github.com/gaia-pipeline/gaia/services"
+	"log"
 	"net/http"
 
 	rice "github.com/GeertJohan/go.rice"
@@ -24,6 +28,19 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	p := "/api/" + gaia.APIVersion + "/"
 
 	// --- Register handlers at echo instance ---
+
+	store, _ := services.StorageService()
+
+	enforcer, err := casbin.NewEnforcer("rbac-model.conf", store)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(enforcer.GetRolesForUser("admin"))
+	enforcer.AddPolicy("role:admin", "pipelines", "*", "list")
+	enforcer.AddRoleForUser("admin", "role:admin")
+	// enforcer.DeleteRoleForUser("admin", "role:admin")
+	fmt.Println(enforcer.GetRolesForUser("admin"))
 
 	// Endpoints for Gaia primary instance
 	if gaia.Cfg.Mode == gaia.ModeServer {
@@ -95,10 +112,17 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 	// Middleware
 	e.Use(middleware.Recover())
-	//e.Use(middleware.Logger())
+	// e.Use(middleware.Logger())
 	e.Use(middleware.BodyLimit("32M"))
+
+	apiGroup, err := loadAPIGroup()
+	if err != nil {
+		log.Fatal(err)
+	}
 	e.Use(AuthMiddleware(&AuthConfig{
 		RoleCategories: rolehelper.DefaultUserRoles,
+		enforcer:       enforcer,
+		apiGroup:       apiGroup,
 	}))
 
 	// Extra options

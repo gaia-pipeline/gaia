@@ -36,6 +36,8 @@ var (
 
 	// SHA pair bucket.
 	shaPairBucket = []byte("SHAPair")
+
+	casbinPoliciesBucket = []byte("CasbinPolicies")
 )
 
 const (
@@ -167,6 +169,7 @@ func (s *BoltStore) setupDatabase() error {
 	setP.update(settingsBucket)
 	setP.update(workerBucket)
 	setP.update(shaPairBucket)
+	setP.update(casbinPoliciesBucket)
 
 	if setP.err != nil {
 		return setP.err
