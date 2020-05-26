@@ -310,7 +310,11 @@ func getAuthInfo(repo *gaia.GitRepo, callBack gossh.HostKeyCallback) (transport.
 		}
 	} else if repo.PrivateKey.Key != "" {
 		var err error
-		auth, err = ssh.NewPublicKeys(repo.PrivateKey.Username, []byte(repo.PrivateKey.Key), repo.PrivateKey.Password)
+		username := repo.PrivateKey.Username
+		if username == "" {
+			username = "git"
+		}
+		auth, err = ssh.NewPublicKeys(username, []byte(repo.PrivateKey.Key), repo.PrivateKey.Password)
 		if err != nil {
 			return nil, err
 		}
