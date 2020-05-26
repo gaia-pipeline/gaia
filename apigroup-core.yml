@@ -70,11 +70,14 @@ endpoints:
 
   # users
   "/api/v1/user":
-    POST: users/create
+    methods:
+      POST: users/create
   "/api/v1/users":
-    GET: users/list
+    methods:
+      GET: users/list
   "/api/v1/user/password":
-    POST: users/update
+    methods:
+      POST: users/update
   "/api/v1/user/:username":
     param: username
     methods:
@@ -82,12 +85,15 @@ endpoints:
 
   # workers
   "/api/v1/worker/secret":
-    GET: workers/get
-    POST: workers/create
+    methods:
+      GET: workers/get
+      POST: workers/create
   "/api/v1/worker/status":
-    GET: workers/get
+    methods:
+      GET: workers/get
   "/api/v1/worker":
-    GET: workers/get
+    methods:
+      GET: workers/get
   "/api/v1/worker/:workerid":
     param: workerid
     methods:
