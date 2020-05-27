@@ -16,24 +16,6 @@ import (
 var (
 	// errNotAuthorized is thrown when user wants to access resource which is protected
 	errNotAuthorized = errors.New("no or invalid jwt token provided. You are not authorized")
-
-	// Non-protected URL paths which are prefix checked
-	nonProtectedPathsPrefix = []string {
-		"/login",
-		"/pipeline/githook",
-		"/trigger",
-		"/worker/register",
-		"/js/",
-		"/img/",
-		"/fonts/",
-		"/css/",
-	}
-
-	// Non-protected URL paths which are explicitly checked
-	nonProtectedPaths = []string {
-		"/",
-		"/favicon.ico",
-	}
 )
 
 // AuthMiddleware is middleware used for each request. Includes functionality that validates the JWT tokens and user
@@ -41,24 +23,6 @@ var (
 func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			// Check if it matches an explicit paths
-			for _, paths := range nonProtectedPaths {
-				if paths == c.Path() {
-					return next(c)
-				}
-			}
-
-			// Check if it matches an prefix-based paths
-			p := "/api/" + gaia.APIVersion
-			for _, prefix := range nonProtectedPathsPrefix {
-				switch {
-				case strings.HasPrefix(c.Path(), p+prefix):
-					return next(c)
-				case strings.HasPrefix(c.Path(), prefix):
-					return next(c)
-				}
-			}
-
 			token, err := getToken(c)
 			if err != nil {
 				return c.String(http.StatusUnauthorized, err.Error())
