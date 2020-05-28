@@ -34,6 +34,9 @@ const (
 	// argTypeVault is the argument type vault.
 	argTypeVault = "vault"
 
+	// argTypeOutput is the argument type for output arguments from previous jobs.
+	argTypeOutput = "output"
+
 	// logFlushInterval defines the interval where logs will be flushed to disk.
 	logFlushInterval = 1
 )
@@ -424,6 +427,15 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, startedReason string, arg
 						return nil, err
 					}
 					jobs[jobID].Args[argID].Value = string(s)
+				} else if arg.Type == argTypeOutput {
+					// Give ALL of its output to the job.
+					for _, j := range job.DependsOn {
+						for _, o := range j.Outs {
+							if o.Key == arg.Key {
+								jobs[jobID].Args[argID].Value = o.Value
+							}
+						}
+					}
 				} else {
 					// Find related argument in given arguments
 					for _, givenArg := range args {
@@ -458,12 +470,47 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, startedReason string, arg
 	return &run, s.storeService.PipelinePutRun(&run)
 }
 
+func getDependency(s string, r *gaia.PipelineRun) *gaia.Job {
+	for _, p := range r.Jobs {
+		if p.Title == s {
+			return p
+		}
+	}
+
+	return nil
+}
+
 // executeJob executes a job and informs via triggerSave that the job can be saved to the store.
 // This method is blocking.
-func executeJob(j gaia.Job, pS plugin.Plugin, triggerSave chan gaia.Job) {
+func executeJob(j gaia.Job, pS plugin.Plugin, triggerSave chan gaia.Job, run *gaia.PipelineRun) {
 	// Set Job to running and trigger save
 	j.Status = gaia.JobRunning
 	triggerSave <- j
+
+	// Load in the jobs previous dependencies and look for possible output.
+	// For some reason the job's dependencies are not up to date here.
+	// Need to get the run information from the PipelineRun.
+	//log.Println("depends On: ", j.DependsOn)
+	for _, dependingJob := range j.DependsOn {
+		dep := getDependency(dependingJob.Title, run)
+		if dep == nil {
+			continue
+		}
+
+		// look for output
+		if dep.Outs == nil {
+			continue
+		}
+
+		// Set up any arguments which might match which are a dependency to this job.
+		for _, out := range dep.Outs {
+			for _, arg := range j.Args {
+				if arg.Key == out.Key {
+					arg.Value = out.Value
+				}
+			}
+		}
+	}
 
 	// Execute job
 	if err := pS.Execute(&j); err != nil {
@@ -664,12 +711,15 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS plugin.Plugin) {
 				if job.ID == j.ID {
 					r.Jobs[id].Status = j.Status
 					r.Jobs[id].FailPipeline = j.FailPipeline
+					r.Jobs[id].Outs = j.Outs
 					break
 				}
 			}
 
 			// Store status update
-			_ = s.storeService.PipelinePutRun(r)
+			if err := s.storeService.PipelinePutRun(r); err != nil {
+				gaia.Cfg.Logger.Error("Error while storing pipeline run.", "error", err)
+			}
 
 			// Send signal to resolver that this job is finished.
 			if j.Status == gaia.JobSuccess || j.Status == gaia.JobFailed {
@@ -758,7 +808,7 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS plugin.Plugin) {
 				mw.Replace(*wl)
 
 				// Start execution
-				go executeJob(*j, pS, triggerSave)
+				go executeJob(*j, pS, triggerSave, r)
 			}
 		}
 	}

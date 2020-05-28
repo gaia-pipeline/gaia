@@ -81,7 +81,9 @@ export default {
                 for (let argID = 0, argTotal = args.length; argID < argTotal; argID++) {
                   // we skip vault arguments cause they are autofilled in the backend.
                   if (args[argID].type !== 'vault') {
-                    this.args.push(args[argID])
+                    if (args[argID].type !== 'output') {
+                      this.args.push(args[argID])
+                    }
                   }
                 }
               }

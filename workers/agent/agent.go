@@ -355,6 +355,15 @@ func (a *Agent) scheduleWork() {
 				}
 				j.Args = append(j.Args, a)
 			}
+			// Outputs
+			j.Outs = make([]*gaia.Output, 0, len(job.GetOuts()))
+			for _, out := range job.GetOuts() {
+				o := &gaia.Output{
+					Key:   out.GetKey(),
+					Value: out.GetValue(),
+				}
+				j.Outs = append(j.Outs, o)
+			}
 		}
 
 		// Convert dependencies

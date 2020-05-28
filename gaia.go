@@ -228,6 +228,7 @@ type Job struct {
 	Status       JobStatus   `json:"status,omitempty"`
 	Args         []*Argument `json:"args,omitempty"`
 	FailPipeline bool        `json:"failpipeline,omitempty"`
+	Outs         []*Output   `json:"outs,omitempty"`
 }
 
 // Argument represents a single argument of a job
@@ -236,6 +237,12 @@ type Argument struct {
 	Type        string `json:"type,omitempty"`
 	Key         string `json:"key,omitempty"`
 	Value       string `json:"value,omitempty"`
+}
+
+// Output represents a single output of a job
+type Output struct {
+	Key   string `json:"key,omitempty"`
+	Value string `json:"value,omitempty"`
 }
 
 // CreatePipeline represents a pipeline which is not yet
