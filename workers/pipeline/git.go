@@ -311,6 +311,8 @@ func getAuthInfo(repo *gaia.GitRepo, callBack gossh.HostKeyCallback) (transport.
 	} else if repo.PrivateKey.Key != "" {
 		var err error
 		username := repo.PrivateKey.Username
+		// If the user does not specify git user here this will not work with github which requires it.
+		// If it's set though, in case of a custom install or any other medium then github, we don't overwrite it.
 		if username == "" {
 			username = "git"
 		}
