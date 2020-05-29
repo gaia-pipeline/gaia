@@ -46,7 +46,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		apiAuthGrp.POST("user", UserAdd)
 		apiAuthGrp.PUT("user/:username/reset-trigger-token", UserResetTriggerToken)
 
-		apiAuthGrp.GET("/permission", PermissionGetAll)
+		apiAuthGrp.GET("permission", PermissionGetAll)
 
 		// Pipelines
 		// Create pipeline provider
