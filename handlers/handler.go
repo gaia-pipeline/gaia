@@ -1,15 +1,16 @@
 package handlers
 
 import (
+	"net/http"
+
 	rice "github.com/GeertJohan/go.rice"
-	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-	"net/http"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
 	"github.com/gaia-pipeline/gaia/handlers/providers/workers"
+	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 )
 
 var (
@@ -24,24 +25,28 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 	// --- Register handlers at echo instance ---
 
-	authGrp := e.Group("", AuthMiddleware(&AuthConfig{
+	// API router group.
+	apiGrp := e.Group(p)
+
+	// API router group with auth middleware.
+	apiAuthGrp := e.Group(p, AuthMiddleware(&AuthConfig{
 		RoleCategories: rolehelper.DefaultUserRoles,
 	}))
 
 	// Endpoints for Gaia primary instance
 	if gaia.Cfg.Mode == gaia.ModeServer {
 		// Users
-		e.POST(p+"login", UserLogin)
-		authGrp.GET(p+"users", UserGetAll)
-		authGrp.POST(p+"user/password", UserChangePassword)
-		authGrp.DELETE(p+"user/:username", UserDelete)
-		authGrp.GET(p+"user/:username/permissions", UserGetPermissions)
-		authGrp.PUT(p+"user/:username/permissions", UserPutPermissions)
-		authGrp.POST(p+"user", UserAdd)
-		authGrp.PUT(p+"user/:username/reset-trigger-token", UserResetTriggerToken)
+		apiGrp.POST("login", UserLogin)
 
-		perms := e.Group(p + "permission")
-		perms.GET("", PermissionGetAll)
+		apiAuthGrp.GET("users", UserGetAll)
+		apiAuthGrp.POST("user/password", UserChangePassword)
+		apiAuthGrp.DELETE("user/:username", UserDelete)
+		apiAuthGrp.GET("user/:username/permissions", UserGetPermissions)
+		apiAuthGrp.PUT("user/:username/permissions", UserPutPermissions)
+		apiAuthGrp.POST("user", UserAdd)
+		apiAuthGrp.PUT("user/:username/reset-trigger-token", UserResetTriggerToken)
+
+		apiAuthGrp.GET("/permission", PermissionGetAll)
 
 		// Pipelines
 		// Create pipeline provider
@@ -49,38 +54,38 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 			Scheduler:       s.deps.Scheduler,
 			PipelineService: s.deps.PipelineService,
 		})
-		authGrp.POST(p+"pipeline", pipelineProvider.CreatePipeline)
-		authGrp.POST(p+"pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote)
-		authGrp.GET(p+"pipeline/name", pipelineProvider.PipelineNameAvailable)
-		e.POST(p+"pipeline/githook", GitWebHook)
-		authGrp.GET(p+"pipeline/created", pipelineProvider.CreatePipelineGetAll)
-		authGrp.GET(p+"pipeline", pipelineProvider.PipelineGetAll)
-		authGrp.GET(p+"pipeline/:pipelineid", pipelineProvider.PipelineGet)
-		authGrp.PUT(p+"pipeline/:pipelineid", pipelineProvider.PipelineUpdate)
-		authGrp.DELETE(p+"pipeline/:pipelineid", pipelineProvider.PipelineDelete)
-		authGrp.POST(p+"pipeline/:pipelineid/start", pipelineProvider.PipelineStart)
-		authGrp.POST(p+"pipeline/:pipelineid/:pipelinetoken/trigger", pipelineProvider.PipelineTrigger)
-		authGrp.PUT(p+"pipeline/:pipelineid/reset-trigger-token", pipelineProvider.PipelineResetToken)
-		authGrp.GET(p+"pipeline/latest", pipelineProvider.PipelineGetAllWithLatestRun)
-		authGrp.POST(p+"pipeline/periodicschedules", pipelineProvider.PipelineCheckPeriodicSchedules)
+		apiAuthGrp.POST("pipeline", pipelineProvider.CreatePipeline)
+		apiAuthGrp.POST("pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote)
+		apiAuthGrp.GET("pipeline/name", pipelineProvider.PipelineNameAvailable)
+		apiAuthGrp.GET("pipeline/created", pipelineProvider.CreatePipelineGetAll)
+		apiAuthGrp.GET("pipeline", pipelineProvider.PipelineGetAll)
+		apiAuthGrp.GET("pipeline/:pipelineid", pipelineProvider.PipelineGet)
+		apiAuthGrp.PUT("pipeline/:pipelineid", pipelineProvider.PipelineUpdate)
+		apiAuthGrp.DELETE("pipeline/:pipelineid", pipelineProvider.PipelineDelete)
+		apiAuthGrp.POST("pipeline/:pipelineid/start", pipelineProvider.PipelineStart)
+		apiAuthGrp.PUT("pipeline/:pipelineid/reset-trigger-token", pipelineProvider.PipelineResetToken)
+		apiAuthGrp.GET("pipeline/latest", pipelineProvider.PipelineGetAllWithLatestRun)
+		apiAuthGrp.POST("pipeline/periodicschedules", pipelineProvider.PipelineCheckPeriodicSchedules)
+		apiGrp.POST("pipeline/githook", GitWebHook)
+		apiGrp.POST("pipeline/:pipelineid/:pipelinetoken/trigger", pipelineProvider.PipelineTrigger)
 
 		// Settings
-		authGrp.POST(p+"settings/poll/on", SettingsPollOn)
-		authGrp.POST(p+"settings/poll/off", SettingsPollOff)
-		authGrp.GET(p+"settings/poll", SettingsPollGet)
+		apiAuthGrp.POST("settings/poll/on", SettingsPollOn)
+		apiAuthGrp.POST("settings/poll/off", SettingsPollOff)
+		apiAuthGrp.GET("settings/poll", SettingsPollGet)
 
 		// PipelineRun
-		authGrp.POST(p+"pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop)
-		authGrp.GET(p+"pipelinerun/:pipelineid/:runid", pipelineProvider.PipelineRunGet)
-		authGrp.GET(p+"pipelinerun/:pipelineid", pipelineProvider.PipelineGetAllRuns)
-		authGrp.GET(p+"pipelinerun/:pipelineid/latest", pipelineProvider.PipelineGetLatestRun)
-		authGrp.GET(p+"pipelinerun/:pipelineid/:runid/log", pipelineProvider.GetJobLogs)
+		apiAuthGrp.POST("pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop)
+		apiAuthGrp.GET("pipelinerun/:pipelineid/:runid", pipelineProvider.PipelineRunGet)
+		apiAuthGrp.GET("pipelinerun/:pipelineid", pipelineProvider.PipelineGetAllRuns)
+		apiAuthGrp.GET("pipelinerun/:pipelineid/latest", pipelineProvider.PipelineGetLatestRun)
+		apiAuthGrp.GET("pipelinerun/:pipelineid/:runid/log", pipelineProvider.GetJobLogs)
 
 		// Secrets
-		authGrp.GET(p+"secrets", ListSecrets)
-		authGrp.DELETE(p+"secret/:key", RemoveSecret)
-		authGrp.POST(p+"secret", SetSecret)
-		authGrp.PUT(p+"secret/update", SetSecret)
+		apiAuthGrp.GET("secrets", ListSecrets)
+		apiAuthGrp.DELETE("secret/:key", RemoveSecret)
+		apiAuthGrp.POST("secret", SetSecret)
+		apiAuthGrp.PUT("secret/update", SetSecret)
 	}
 
 	// Worker
@@ -89,12 +94,12 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		Scheduler:   s.deps.Scheduler,
 		Certificate: s.deps.Certificate,
 	})
-	authGrp.GET(p+"worker/secret", workerProvider.GetWorkerRegisterSecret)
-	e.POST(p+"worker/register", workerProvider.RegisterWorker)
-	authGrp.GET(p+"worker/status", workerProvider.GetWorkerStatusOverview)
-	authGrp.GET(p+"worker", workerProvider.GetWorker)
-	authGrp.DELETE(p+"worker/:workerid", workerProvider.DeregisterWorker)
-	authGrp.POST(p+"worker/secret", workerProvider.ResetWorkerRegisterSecret)
+	apiAuthGrp.GET("worker/secret", workerProvider.GetWorkerRegisterSecret)
+	apiAuthGrp.GET("worker/status", workerProvider.GetWorkerStatusOverview)
+	apiAuthGrp.GET("worker", workerProvider.GetWorker)
+	apiAuthGrp.DELETE("worker/:workerid", workerProvider.DeregisterWorker)
+	apiAuthGrp.POST("worker/secret", workerProvider.ResetWorkerRegisterSecret)
+	apiGrp.POST("worker/register", workerProvider.RegisterWorker)
 
 	// Middleware
 	e.Use(middleware.Recover())
