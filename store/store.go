@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/casbin/casbin/v2/persist"
+	"github.com/speza/casbin-bolt-adapter"
+
 	bolt "github.com/coreos/bbolt"
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/security"
@@ -53,7 +56,8 @@ const (
 
 // BoltStore represents the access type for store
 type BoltStore struct {
-	db *bolt.DB
+	db            *bolt.DB
+	casbinAdapter persist.Adapter
 }
 
 // GaiaStore is the interface that defines methods needed to store
@@ -93,6 +97,7 @@ type GaiaStore interface {
 	WorkerGet(id string) (*gaia.Worker, error)
 	UpsertSHAPair(pair gaia.SHAPair) error
 	GetSHAPair(pipelineID int) (bool, gaia.SHAPair, error)
+	CasbinStore() persist.Adapter
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore
@@ -120,6 +125,12 @@ func (s *BoltStore) Init(dataPath string) error {
 		return err
 	}
 	s.db = db
+
+	casbinAdapter, err := boltadapter.NewAdapter(db, "casbin-policies")
+	if err != nil {
+		return err
+	}
+	s.casbinAdapter = casbinAdapter
 
 	// Setup database
 	return s.setupDatabase()
@@ -229,4 +240,8 @@ func itob(v int) []byte {
 	b := make([]byte, 8)
 	binary.BigEndian.PutUint64(b, uint64(v))
 	return b
+}
+
+func (s *BoltStore) CasbinStore() persist.Adapter {
+	return s.casbinAdapter
 }

@@ -31,7 +31,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 	store, _ := services.StorageService()
 
-	enforcer, err := casbin.NewEnforcer("rbac-model.conf", store)
+	enforcer, err := casbin.NewEnforcer("rbac-model.conf", store.CasbinStore())
 	if err != nil {
 		log.Fatal(err)
 	}
