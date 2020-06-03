@@ -25,20 +25,28 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 	// --- Register handlers at echo instance ---
 
+	// API router group.
+	apiGrp := e.Group(p)
+
+	// API router group with auth middleware.
+	apiAuthGrp := e.Group(p, AuthMiddleware(&AuthConfig{
+		RoleCategories: rolehelper.DefaultUserRoles,
+	}))
+
 	// Endpoints for Gaia primary instance
 	if gaia.Cfg.Mode == gaia.ModeServer {
 		// Users
-		e.POST(p+"login", UserLogin)
-		e.GET(p+"users", UserGetAll)
-		e.POST(p+"user/password", UserChangePassword)
-		e.DELETE(p+"user/:username", UserDelete)
-		e.GET(p+"user/:username/permissions", UserGetPermissions)
-		e.PUT(p+"user/:username/permissions", UserPutPermissions)
-		e.POST(p+"user", UserAdd)
-		e.PUT(p+"user/:username/reset-trigger-token", UserResetTriggerToken)
+		apiGrp.POST("login", UserLogin)
 
-		perms := e.Group(p + "permission")
-		perms.GET("", PermissionGetAll)
+		apiAuthGrp.GET("users", UserGetAll)
+		apiAuthGrp.POST("user/password", UserChangePassword)
+		apiAuthGrp.DELETE("user/:username", UserDelete)
+		apiAuthGrp.GET("user/:username/permissions", UserGetPermissions)
+		apiAuthGrp.PUT("user/:username/permissions", UserPutPermissions)
+		apiAuthGrp.POST("user", UserAdd)
+		apiAuthGrp.PUT("user/:username/reset-trigger-token", UserResetTriggerToken)
+
+		apiAuthGrp.GET("permission", PermissionGetAll)
 
 		// Pipelines
 		// Create pipeline provider
@@ -46,38 +54,38 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 			Scheduler:       s.deps.Scheduler,
 			PipelineService: s.deps.PipelineService,
 		})
-		e.POST(p+"pipeline", pipelineProvider.CreatePipeline)
-		e.POST(p+"pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote)
-		e.GET(p+"pipeline/name", pipelineProvider.PipelineNameAvailable)
-		e.POST(p+"pipeline/githook", GitWebHook)
-		e.GET(p+"pipeline/created", pipelineProvider.CreatePipelineGetAll)
-		e.GET(p+"pipeline", pipelineProvider.PipelineGetAll)
-		e.GET(p+"pipeline/:pipelineid", pipelineProvider.PipelineGet)
-		e.PUT(p+"pipeline/:pipelineid", pipelineProvider.PipelineUpdate)
-		e.DELETE(p+"pipeline/:pipelineid", pipelineProvider.PipelineDelete)
-		e.POST(p+"pipeline/:pipelineid/start", pipelineProvider.PipelineStart)
-		e.POST(p+"pipeline/:pipelineid/:pipelinetoken/trigger", pipelineProvider.PipelineTrigger)
-		e.PUT(p+"pipeline/:pipelineid/reset-trigger-token", pipelineProvider.PipelineResetToken)
-		e.GET(p+"pipeline/latest", pipelineProvider.PipelineGetAllWithLatestRun)
-		e.POST(p+"pipeline/periodicschedules", pipelineProvider.PipelineCheckPeriodicSchedules)
+		apiAuthGrp.POST("pipeline", pipelineProvider.CreatePipeline)
+		apiAuthGrp.POST("pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote)
+		apiAuthGrp.GET("pipeline/name", pipelineProvider.PipelineNameAvailable)
+		apiAuthGrp.GET("pipeline/created", pipelineProvider.CreatePipelineGetAll)
+		apiAuthGrp.GET("pipeline", pipelineProvider.PipelineGetAll)
+		apiAuthGrp.GET("pipeline/:pipelineid", pipelineProvider.PipelineGet)
+		apiAuthGrp.PUT("pipeline/:pipelineid", pipelineProvider.PipelineUpdate)
+		apiAuthGrp.DELETE("pipeline/:pipelineid", pipelineProvider.PipelineDelete)
+		apiAuthGrp.POST("pipeline/:pipelineid/start", pipelineProvider.PipelineStart)
+		apiAuthGrp.PUT("pipeline/:pipelineid/reset-trigger-token", pipelineProvider.PipelineResetToken)
+		apiAuthGrp.GET("pipeline/latest", pipelineProvider.PipelineGetAllWithLatestRun)
+		apiAuthGrp.POST("pipeline/periodicschedules", pipelineProvider.PipelineCheckPeriodicSchedules)
+		apiGrp.POST("pipeline/githook", GitWebHook)
+		apiGrp.POST("pipeline/:pipelineid/:pipelinetoken/trigger", pipelineProvider.PipelineTrigger)
 
 		// Settings
-		e.POST(p+"settings/poll/on", SettingsPollOn)
-		e.POST(p+"settings/poll/off", SettingsPollOff)
-		e.GET(p+"settings/poll", SettingsPollGet)
+		apiAuthGrp.POST("settings/poll/on", SettingsPollOn)
+		apiAuthGrp.POST("settings/poll/off", SettingsPollOff)
+		apiAuthGrp.GET("settings/poll", SettingsPollGet)
 
 		// PipelineRun
-		e.POST(p+"pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop)
-		e.GET(p+"pipelinerun/:pipelineid/:runid", pipelineProvider.PipelineRunGet)
-		e.GET(p+"pipelinerun/:pipelineid", pipelineProvider.PipelineGetAllRuns)
-		e.GET(p+"pipelinerun/:pipelineid/latest", pipelineProvider.PipelineGetLatestRun)
-		e.GET(p+"pipelinerun/:pipelineid/:runid/log", pipelineProvider.GetJobLogs)
+		apiAuthGrp.POST("pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop)
+		apiAuthGrp.GET("pipelinerun/:pipelineid/:runid", pipelineProvider.PipelineRunGet)
+		apiAuthGrp.GET("pipelinerun/:pipelineid", pipelineProvider.PipelineGetAllRuns)
+		apiAuthGrp.GET("pipelinerun/:pipelineid/latest", pipelineProvider.PipelineGetLatestRun)
+		apiAuthGrp.GET("pipelinerun/:pipelineid/:runid/log", pipelineProvider.GetJobLogs)
 
 		// Secrets
-		e.GET(p+"secrets", ListSecrets)
-		e.DELETE(p+"secret/:key", RemoveSecret)
-		e.POST(p+"secret", SetSecret)
-		e.PUT(p+"secret/update", SetSecret)
+		apiAuthGrp.GET("secrets", ListSecrets)
+		apiAuthGrp.DELETE("secret/:key", RemoveSecret)
+		apiAuthGrp.POST("secret", SetSecret)
+		apiAuthGrp.PUT("secret/update", SetSecret)
 	}
 
 	// Worker
@@ -86,20 +94,17 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		Scheduler:   s.deps.Scheduler,
 		Certificate: s.deps.Certificate,
 	})
-	e.GET(p+"worker/secret", workerProvider.GetWorkerRegisterSecret)
-	e.POST(p+"worker/register", workerProvider.RegisterWorker)
-	e.GET(p+"worker/status", workerProvider.GetWorkerStatusOverview)
-	e.GET(p+"worker", workerProvider.GetWorker)
-	e.DELETE(p+"worker/:workerid", workerProvider.DeregisterWorker)
-	e.POST(p+"worker/secret", workerProvider.ResetWorkerRegisterSecret)
+	apiAuthGrp.GET("worker/secret", workerProvider.GetWorkerRegisterSecret)
+	apiAuthGrp.GET("worker/status", workerProvider.GetWorkerStatusOverview)
+	apiAuthGrp.GET("worker", workerProvider.GetWorker)
+	apiAuthGrp.DELETE("worker/:workerid", workerProvider.DeregisterWorker)
+	apiAuthGrp.POST("worker/secret", workerProvider.ResetWorkerRegisterSecret)
+	apiGrp.POST("worker/register", workerProvider.RegisterWorker)
 
 	// Middleware
 	e.Use(middleware.Recover())
-	//e.Use(middleware.Logger())
+	// e.Use(middleware.Logger())
 	e.Use(middleware.BodyLimit("32M"))
-	e.Use(AuthMiddleware(&AuthConfig{
-		RoleCategories: rolehelper.DefaultUserRoles,
-	}))
 
 	// Extra options
 	e.HideBanner = true
