@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Release.Name }}
@@ -7,6 +7,9 @@ metadata:
     app: service
 spec:
   replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: service
   strategy:
     type: RollingUpdate
     rollingUpdate:
