@@ -3,6 +3,7 @@ package store
 import (
 	"encoding/binary"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"time"
 
@@ -57,7 +58,7 @@ const (
 // BoltStore represents the access type for store
 type BoltStore struct {
 	db            *bolt.DB
-	casbinAdapter persist.Adapter
+	casbinAdapter persist.BatchAdapter
 }
 
 // GaiaStore is the interface that defines methods needed to store
@@ -97,7 +98,7 @@ type GaiaStore interface {
 	WorkerGet(id string) (*gaia.Worker, error)
 	UpsertSHAPair(pair gaia.SHAPair) error
 	GetSHAPair(pipelineID int) (bool, gaia.SHAPair, error)
-	CasbinStore() persist.Adapter
+	CasbinStore() persist.BatchAdapter
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore
@@ -126,7 +127,13 @@ func (s *BoltStore) Init(dataPath string) error {
 	}
 	s.db = db
 
-	casbinAdapter, err := boltadapter.NewAdapter(db, "casbin-policies")
+	// TODO: Having Casbin stuff here doesn't sit quite right with me (especially loading a file here).
+	// Unfortunately we need to re-use the open bolt database for the adapter though.
+	bts, err := ioutil.ReadFile("security/rbac/rbac-policy.csv")
+	if err != nil {
+		return err
+	}
+	casbinAdapter, err := boltadapter.NewAdapter(db, "casbin-policies", string(bts))
 	if err != nil {
 		return err
 	}
@@ -242,6 +249,6 @@ func itob(v int) []byte {
 	return b
 }
 
-func (s *BoltStore) CasbinStore() persist.Adapter {
+func (s *BoltStore) CasbinStore() persist.BatchAdapter {
 	return s.casbinAdapter
 }

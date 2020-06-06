@@ -1,0 +1,30 @@
+p, role:admin, pipelines, get, *
+p, role:admin, pipelines, create, *
+p, role:admin, pipelines, update, *
+p, role:admin, pipelines, delete, *
+p, role:admin, pipelines, start, *
+p, role:admin, pipeline-runs, get, *
+p, role:admin, pipeline-runs, stop, *
+p, role:admin, secrets, get, *
+p, role:admin, secrets, create, *
+p, role:admin, secrets, update, *
+p, role:admin, secrets, delete, *
+p, role:admin, secrets, start, *
+p, role:admin, users, get, *
+p, role:admin, users, create, *
+p, role:admin, users, update, *
+p, role:admin, users, delete, *
+p, role:admin, users, start, *
+p, role:admin, workers, get, *
+p, role:admin, workers, create, *
+p, role:admin, workers, update, *
+p, role:admin, workers, delete, *
+p, role:admin, workers, start, *
+
+p, role:readonly, pipelines, get, *
+p, role:readonly, pipeline-runs, get, *
+p, role:readonly, secrets, get, *
+p, role:readonly, users, get, *
+p, role:readonly, workers, get, *
+
+g, admin, role:admin

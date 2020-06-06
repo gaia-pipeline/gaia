@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"github.com/casbin/casbin/v2"
 	"github.com/gaia-pipeline/gaia/services"
 	"log"
@@ -31,16 +30,11 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 	store, _ := services.StorageService()
 
-	enforcer, err := casbin.NewEnforcer("rbac-model.conf", store.CasbinStore())
+	enforcer, err := casbin.NewEnforcer("security/rbac/rbac-model.conf", store.CasbinStore())
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println(enforcer.GetRolesForUser("admin"))
-	enforcer.AddPolicy("role:admin", "pipelines", "*", "list")
-	enforcer.AddRoleForUser("admin", "role:admin")
-	// enforcer.DeleteRoleForUser("admin", "role:admin")
-	fmt.Println(enforcer.GetRolesForUser("admin"))
+	enforcer.EnableLog(true)
 
 	// API router group.
 	apiGrp := e.Group(p)
@@ -49,15 +43,12 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	e.Use(AuthMiddleware(&AuthConfig{
-		RoleCategories: rolehelper.DefaultUserRoles,
-		enforcer:       enforcer,
-		apiGroup:       apiGroup,
-	}))
 
 	// API router group with auth middleware.
 	apiAuthGrp := e.Group(p, AuthMiddleware(&AuthConfig{
 		RoleCategories: rolehelper.DefaultUserRoles,
+		enforcer:       enforcer,
+		apiGroup:       apiGroup,
 	}))
 
 	// Endpoints for Gaia primary instance

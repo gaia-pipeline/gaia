@@ -4,7 +4,7 @@ endpoints:
   "/api/v1/pipeline":
     methods:
       POST: pipelines/create
-      GET: pipelines/list
+      GET: pipelines/get
   "/api/v1/pipeline/gitlsremote":
     methods:
       POST: pipelines/create
@@ -16,10 +16,10 @@ endpoints:
       POST: pipelines/create
   "/api/v1/pipeline/created":
     methods:
-      GET: pipelines/list
+      GET: pipelines/get
   "/api/v1/pipeline/latest":
     methods:
-      GET: pipelines/list
+      GET: pipelines/get
   "/api/v1/pipeline/:pipelineid":
     param: pipelineid
     methods:
@@ -47,7 +47,7 @@ endpoints:
   "/api/v1/pipelinerun/:pipelineid":
     param: pipelineid
     methods:
-      GET: pipeline-runs/list
+      GET: pipeline-runs/get
   "/api/v1/pipelinerun/:pipelineid/:runid/latest":
     param: pipelineid
     methods:
@@ -59,7 +59,7 @@ endpoints:
       POST: secrets/create
   "/api/v1/secrets":
     methods:
-      GET: secrets/list
+      GET: secrets/get
   "/api/v1/secret/:key":
     param: key
     methods:
@@ -74,7 +74,7 @@ endpoints:
       POST: users/create
   "/api/v1/users":
     methods:
-      GET: users/list
+      GET: users/get
   "/api/v1/user/password":
     methods:
       POST: users/update

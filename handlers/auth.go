@@ -161,7 +161,7 @@ func (ra *AuthConfig) enforceRBAC(c echo.Context, username string) (bool, error)
 		fullResource = fmt.Sprintf("%s/%s/%s", namespace, endpoint.Param, param)
 	}
 
-	valid, err := ra.enforcer.Enforce(username, namespace, fullResource, action)
+	valid, err := ra.enforcer.Enforce(username, namespace, action, fullResource)
 	if err != nil {
 		return false, err
 	}
@@ -171,7 +171,7 @@ func (ra *AuthConfig) enforceRBAC(c echo.Context, username string) (bool, error)
 }
 
 func loadAPIGroup() (gaia.RBACAPIGroup, error) {
-	file, err := ioutil.ReadFile("apigroup-core.yml")
+	file, err := ioutil.ReadFile("security/rbac/apigroup-core.yml")
 	if err != nil {
 		return gaia.RBACAPIGroup{}, err
 	}
