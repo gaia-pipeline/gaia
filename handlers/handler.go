@@ -1,12 +1,11 @@
 package handlers
 
 import (
-	"github.com/casbin/casbin/v2"
-	"github.com/gaia-pipeline/gaia/services"
 	"log"
 	"net/http"
 
 	rice "github.com/GeertJohan/go.rice"
+	"github.com/casbin/casbin/v2"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 
@@ -14,6 +13,8 @@ import (
 	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
 	"github.com/gaia-pipeline/gaia/handlers/providers/workers"
 	"github.com/gaia-pipeline/gaia/helper/rolehelper"
+	"github.com/gaia-pipeline/gaia/security/rbac"
+	"github.com/gaia-pipeline/gaia/services"
 )
 
 var (
@@ -28,7 +29,10 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 	// --- Register handlers at echo instance ---
 
-	store, _ := services.StorageService()
+	store, err := services.StorageService()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	enforcer, err := casbin.NewEnforcer("security/rbac/rbac-model.conf", store.CasbinStore())
 	if err != nil {
@@ -36,19 +40,19 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	}
 	enforcer.EnableLog(true)
 
-	// API router group.
-	apiGrp := e.Group(p)
-
-	apiGroup, err := loadAPIGroup()
+	rbacapiMappings, err := rbac.LoadAPIMappings()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// API router group with auth middleware.
+	// Standard API router group.
+	apiGrp := e.Group(p)
+
+	// Auth API router group.
 	apiAuthGrp := e.Group(p, AuthMiddleware(&AuthConfig{
-		RoleCategories: rolehelper.DefaultUserRoles,
-		enforcer:       enforcer,
-		apiGroup:       apiGroup,
+		RoleCategories:  rolehelper.DefaultUserRoles,
+		enforcer:        enforcer,
+		rbacapiMappings: rbacapiMappings,
 	}))
 
 	// Endpoints for Gaia primary instance

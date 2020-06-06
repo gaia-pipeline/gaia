@@ -1,3 +1,8 @@
+# Built-in policy which defines two roles - role:admin and role:readonly.
+# role:admin is automatically added to the admin user.
+# Policy format:
+# p, <user/group>, <namespace>, <action>, <resource>
+
 p, role:admin, pipelines, get, *
 p, role:admin, pipelines, create, *
 p, role:admin, pipelines, update, *

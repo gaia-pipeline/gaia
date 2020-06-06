@@ -4,16 +4,15 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
-	"github.com/casbin/casbin/v2"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
+	"github.com/casbin/casbin/v2"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/labstack/echo"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/rolehelper"
-	"github.com/labstack/echo"
 )
 
 var (
@@ -46,6 +45,7 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 					sub := username.(string)
 					valid, err := roleAuth.enforceRBAC(c, sub)
 					if err != nil {
+						gaia.Cfg.Logger.Error("enforcer error", "error", err.Error())
 						return c.String(http.StatusInternalServerError, fmt.Sprintf("Unknown error has occured."))
 					}
 					if !valid {
@@ -63,9 +63,9 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 // AuthConfig is a simple config struct to be passed into AuthMiddleware. Currently allows the ability to specify
 // the permission roles required for each echo endpoint.
 type AuthConfig struct {
-	RoleCategories []*gaia.UserRoleCategory
-	enforcer       casbin.IEnforcer
-	apiGroup       gaia.RBACAPIGroup
+	RoleCategories  []*gaia.UserRoleCategory
+	enforcer        casbin.IEnforcer
+	rbacapiMappings gaia.RBACAPIMappings
 }
 
 // Finds the required role for the metho & path specified. If it exists we validate that the provided user roles have
@@ -134,7 +134,7 @@ func getToken(c echo.Context) (*jwt.Token, error) {
 }
 
 func (ra *AuthConfig) enforceRBAC(c echo.Context, username string) (bool, error) {
-	group := ra.apiGroup
+	group := ra.rbacapiMappings
 
 	endpoint, ok := group.Endpoints[c.Path()]
 	if !ok {
@@ -158,7 +158,7 @@ func (ra *AuthConfig) enforceRBAC(c echo.Context, username string) (bool, error)
 		if param == "" {
 			return false, fmt.Errorf("param %s missing", endpoint.Param)
 		}
-		fullResource = fmt.Sprintf("%s/%s/%s", namespace, endpoint.Param, param)
+		fullResource = param
 	}
 
 	valid, err := ra.enforcer.Enforce(username, namespace, action, fullResource)
@@ -168,18 +168,4 @@ func (ra *AuthConfig) enforceRBAC(c echo.Context, username string) (bool, error)
 
 	gaia.Cfg.Logger.Warn("permission denied for user", "username", username, "namespace", namespace, "resource", fullResource, "action", action)
 	return valid, nil
-}
-
-func loadAPIGroup() (gaia.RBACAPIGroup, error) {
-	file, err := ioutil.ReadFile("security/rbac/apigroup-core.yml")
-	if err != nil {
-		return gaia.RBACAPIGroup{}, err
-	}
-
-	var apiGroup gaia.RBACAPIGroup
-	if err := yaml.Unmarshal(file, &apiGroup); err != nil {
-		return gaia.RBACAPIGroup{}, err
-	}
-
-	return apiGroup, nil
 }
