@@ -24,12 +24,16 @@ var (
 	nonProtectedPathsPrefix = []string{
 		"/login",
 		"/pipeline/githook",
-		"/trigger",
 		"/worker/register",
 		"/js/",
 		"/img/",
 		"/fonts/",
 		"/css/",
+	}
+
+	// Non-protected URL paths which are suffix checked
+	nonProtectedPathsSuffix = []string{
+		"/trigger",
 	}
 
 	// Non-protected URL paths which are explicitly checked
@@ -58,6 +62,14 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 				case strings.HasPrefix(c.Path(), p+prefix):
 					return next(c)
 				case strings.HasPrefix(c.Path(), prefix):
+					return next(c)
+				}
+			}
+
+			// Check if it matches a suffix-based paths
+			for _, suffix := range nonProtectedPathsSuffix {
+				switch {
+				case strings.HasSuffix(c.Path(), suffix):
 					return next(c)
 				}
 			}
