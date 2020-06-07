@@ -75,7 +75,7 @@ RUN { \
 	&& chmod +x /usr/local/bin/docker-java-home
 
 # do some fancy footwork to create a JAVA_HOME that's cross-architecture-safe
-RUN ln -svT "/usr/lib/jvm/java-11-openjdk-$(dpkg --print-architecture)" /docker-java-home
+RUN ln -svT "/usr/lib/jvm/java-15-openjdk-$(dpkg --print-architecture)" /docker-java-home
 ENV JAVA_HOME /docker-java-home
 
 RUN set -ex; \
@@ -87,7 +87,7 @@ RUN set -ex; \
 	\
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-		openjdk-11-jdk \
+		openjdk-15-jdk \
 		ca-certificates-java \
 	; \
 	rm -rf /var/lib/apt/lists/*; \
