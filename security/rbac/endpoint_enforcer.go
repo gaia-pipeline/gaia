@@ -46,6 +46,5 @@ func (e *enforcerService) Enforce(username, method, path string, params map[stri
 		return false, err
 	}
 
-	gaia.Cfg.Logger.Warn("permission denied for user", "username", username, "namespace", namespace, "resource", fullResource, "action", action)
 	return valid, nil
 }

@@ -48,7 +48,7 @@ require (
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.4.2 // indirect
-	github.com/speza/casbin-bolt-adapter v0.0.0-20200606170847-bd587a849d09
+	github.com/speza/casbin-bolt-adapter v0.0.0-20200607190553-9ea048cf76dc
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/xanzy/ssh-agent v0.2.0 // indirect

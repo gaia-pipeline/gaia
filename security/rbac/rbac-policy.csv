@@ -1,36 +1,36 @@
 # Built-in policy which defines two roles - role:admin and role:readonly.
 # role:admin is automatically added to the admin user.
 # Policy format:
-# p, <user/group>, <namespace>, <action>, <resource>
+# p, <role>, <namespace>, <action>, <resource>, <effect = allow/deny>
 
-p, role:admin, pipelines, get, *
-p, role:admin, pipelines, create, *
-p, role:admin, pipelines, update, *
-p, role:admin, pipelines, delete, *
-p, role:admin, pipelines, start, *
-p, role:admin, pipeline-runs, get, *
-p, role:admin, pipeline-runs, stop, *
-p, role:admin, secrets, get, *
-p, role:admin, secrets, create, *
-p, role:admin, secrets, update, *
-p, role:admin, secrets, delete, *
-p, role:admin, secrets, start, *
-p, role:admin, users, get, *
-p, role:admin, users, create, *
-p, role:admin, users, update, *
-p, role:admin, users, delete, *
-p, role:admin, users, start, *
-p, role:admin, workers, get, *
-p, role:admin, workers, create, *
-p, role:admin, workers, update, *
-p, role:admin, workers, delete, *
-p, role:admin, workers, start, *
+p, role:admin, pipelines, get, *, allow
+p, role:admin, pipelines, create, *, allow
+p, role:admin, pipelines, update, *, allow
+p, role:admin, pipelines, delete, *, allow
+p, role:admin, pipelines, start, *, allow
+p, role:admin, pipeline-runs, get, *, allow
+p, role:admin, pipeline-runs, stop, *, allow
+p, role:admin, secrets, get, *, allow
+p, role:admin, secrets, create, *, allow
+p, role:admin, secrets, update, *, allow
+p, role:admin, secrets, delete, *, allow
+p, role:admin, secrets, start, *, allow
+p, role:admin, users, get, *, allow
+p, role:admin, users, create, *, allow
+p, role:admin, users, update, *, allow
+p, role:admin, users, delete, *, allow
+p, role:admin, users, start, *, allow
+p, role:admin, workers, get, *, allow
+p, role:admin, workers, create, *, allow
+p, role:admin, workers, update, *, allow
+p, role:admin, workers, delete, *, allow
+p, role:admin, workers, start, *, allow
 
-p, role:readonly, pipelines, get, *
-p, role:readonly, pipeline-runs, get, *
-p, role:readonly, secrets, get, *
-p, role:readonly, users, get, *
-p, role:readonly, workers, get, *
+p, role:readonly, pipelines, get, *, allow
+p, role:readonly, pipeline-runs, get, *, allow
+p, role:readonly, secrets, get, *, allow
+p, role:readonly, users, get, *, allow
+p, role:readonly, workers, get, *, allow
 
 g, admin, role:admin
 g, readonly, role:readonly

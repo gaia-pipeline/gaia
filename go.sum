@@ -139,6 +139,8 @@ github.com/sirupsen/logrus v1.4.2 h1:SPIRibHv4MatM3XXNO2BJeFLZwZ2LvZgfQ5+UNI2im4
 github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6MwdIuYE2rE=
 github.com/speza/casbin-bolt-adapter v0.0.0-20200606170847-bd587a849d09 h1:sA7y96e2VZbyJIKaFjOnSWkrUoGdUiX4P7+D58SnsFU=
 github.com/speza/casbin-bolt-adapter v0.0.0-20200606170847-bd587a849d09/go.mod h1:dV2ojVc56jjqBlTpU+tGncP5scYN8ZxfTPGBHhIxQxI=
+github.com/speza/casbin-bolt-adapter v0.0.0-20200607190553-9ea048cf76dc h1:jmzlhGJNQ5GmkoY7TO0zjyAAvb/gMvcvinBDgP3Zt4E=
+github.com/speza/casbin-bolt-adapter v0.0.0-20200607190553-9ea048cf76dc/go.mod h1:dV2ojVc56jjqBlTpU+tGncP5scYN8ZxfTPGBHhIxQxI=
 github.com/src-d/gcfg v1.3.0 h1:2BEDr8r0I0b8h/fOqwtxCEiq2HJu8n2JGZJQFGXWLjg=
 github.com/src-d/gcfg v1.3.0/go.mod h1:p/UMsR43ujA89BJY9duynAwIpvqEujIH/jFlfL7jWoI=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
