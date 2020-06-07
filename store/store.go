@@ -246,6 +246,7 @@ func itob(v int) []byte {
 	return b
 }
 
+// CasbinStore is as a getter for the Casbin store adapter.
 func (s *BoltStore) CasbinStore() persist.BatchAdapter {
 	return s.casbinAdapter
 }

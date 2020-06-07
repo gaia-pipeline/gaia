@@ -66,7 +66,7 @@ var mockRoleAuth = &AuthConfig{
 
 func makeAuthBarrierRouter() *echo.Echo {
 	e := echo.New()
-	e.Use(AuthMiddleware(mockRoleAuth))
+	e.Use(authMiddleware(mockRoleAuth))
 
 	success := func(c echo.Context) error {
 		return c.NoContent(200)

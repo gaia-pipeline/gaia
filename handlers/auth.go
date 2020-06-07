@@ -20,7 +20,7 @@ var (
 	errNotAuthorized = errors.New("no or invalid jwt token provided. You are not authorized")
 )
 
-func AuthMiddleware(authCfg *AuthConfig) echo.MiddlewareFunc {
+func authMiddleware(authCfg *AuthConfig) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			token, err := getToken(c)

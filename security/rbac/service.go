@@ -9,6 +9,7 @@ import (
 )
 
 type (
+	// RoleRule represents a Casbins role rule line in the format we expect.
 	RoleRule struct {
 		Namespace string
 		Action    string
@@ -16,37 +17,38 @@ type (
 		Effect    string
 	}
 
-	EnforcerService interface {
+	// Service wraps the Casbin enforcer and performs all actions we require to manage and use RBAC functions.
+	Service interface {
 		AddRole(role string, roleRules []RoleRule) error
 		DeleteRole(role string) error
-
-		GetAllRoles() ([]string)
+		GetAllRoles() []string
 		GetUserAttachedRoles(username string) ([]string, error)
 		GetRoleAttachedUsers(role string) ([]string, error)
 		AttachRole(username string, role string) error
 		DetachRole(username string, role string) error
 	}
 
-	enforcerService struct {
+	EnforcerService struct {
 		enforcer        casbin.IEnforcer
 		rbacapiMappings gaia.RBACAPIMappings
 	}
 )
 
-// NewEnforcerSvc creates a new enforcerService.
-func NewEnforcerSvc(enforcer casbin.IEnforcer, apiMappingsFile string) (*enforcerService, error) {
+// NewEnforcerSvc creates a new EnforcerService.
+func NewEnforcerSvc(enforcer casbin.IEnforcer, apiMappingsFile string) (*EnforcerService, error) {
 	rbacapiMappings, err := loadAPIMappings(apiMappingsFile)
 	if err != nil {
 		return nil, err
 	}
 
-	return &enforcerService{
+	return &EnforcerService{
 		enforcer:        enforcer,
 		rbacapiMappings: rbacapiMappings,
 	}, nil
 }
 
-func (e *enforcerService) DeleteRole(role string) error {
+// DeleteRole deletes a role.
+func (e *EnforcerService) DeleteRole(role string) error {
 	exists, err := e.enforcer.DeleteRole(role)
 	if !exists {
 		return errors.New("role does not exist")
@@ -54,7 +56,8 @@ func (e *enforcerService) DeleteRole(role string) error {
 	return err
 }
 
-func (e *enforcerService) AddRole(role string, roleRules []RoleRule) error {
+// AddRole adds a role.
+func (e *EnforcerService) AddRole(role string, roleRules []RoleRule) error {
 	rules := [][]string{}
 	for _, p := range roleRules {
 		r := []string{role, p.Namespace, p.Action, p.Resource, p.Effect}
@@ -72,26 +75,31 @@ func (e *enforcerService) AddRole(role string, roleRules []RoleRule) error {
 	return nil
 }
 
-func (e *enforcerService) GetAllRoles() ([]string) {
+// GetAllRoles gets all roles.
+func (e *EnforcerService) GetAllRoles() []string {
 	return e.enforcer.GetAllRoles()
 }
 
-func (e *enforcerService) GetUserAttachedRoles(username string) ([]string, error) {
+// GetUserAttachedRoles gets all roles attached to a specific user.
+func (e *EnforcerService) GetUserAttachedRoles(username string) ([]string, error) {
 	return e.enforcer.GetRolesForUser(username)
 }
 
-func (e *enforcerService) GetRoleAttachedUsers(username string) ([]string, error) {
-	return e.enforcer.GetUsersForRole(username)
+// GetRoleAttachedUsers get all users attached to a specific role.
+func (e *EnforcerService) GetRoleAttachedUsers(role string) ([]string, error) {
+	return e.enforcer.GetUsersForRole(role)
 }
 
-func (e *enforcerService) AttachRole(username string, role string) error {
+// AttachRole attaches a role to a user.
+func (e *EnforcerService) AttachRole(username string, role string) error {
 	if _, err := e.enforcer.AddRoleForUser(username, role); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (e *enforcerService) DetachRole(username string, role string) error {
+// DetachRole detaches a role from a user.
+func (e *EnforcerService) DetachRole(username string, role string) error {
 	exists, err := e.enforcer.DeleteRoleForUser(username, role)
 	if err != nil {
 		return err

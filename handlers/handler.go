@@ -39,8 +39,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		log.Fatal(err)
 	}
 	enforcer.EnableLog(true)
-
-	svc, err := rbac.NewEnforcerSvc(enforcer, "security/rbac/rbac-api-mappings.yml")
+	enforcerSvc, err := rbac.NewEnforcerSvc(enforcer, "security/rbac/rbac-api-mappings.yml")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -49,9 +48,9 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	apiGrp := e.Group(p)
 
 	// Auth API router group.
-	apiAuthGrp := e.Group(p, AuthMiddleware(&AuthConfig{
+	apiAuthGrp := e.Group(p, authMiddleware(&AuthConfig{
 		RoleCategories: rolehelper.DefaultUserRoles,
-		rbacEnforcer:   svc,
+		rbacEnforcer:   enforcerSvc,
 	}))
 
 	// Endpoints for Gaia primary instance
@@ -109,18 +108,18 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		apiAuthGrp.PUT("secret/update", SetSecret)
 
 		// RBAC
-		rbacHandler := RBACHandler{
-			svc: svc,
+		rbacHandler := rbacHandler{
+			svc: enforcerSvc,
 		}
 		// RBAC - Management
-		apiAuthGrp.GET("rbac/roles", rbacHandler.GetAllRoles)
-		apiAuthGrp.PUT("rbac/roles/:role", rbacHandler.AddRole)
-		apiAuthGrp.DELETE("rbac/roles/:role", rbacHandler.DeleteRole)
-		apiAuthGrp.PUT("rbac/roles/:role/attach/:username", rbacHandler.AttachRole)
-		apiAuthGrp.DELETE("rbac/roles/:role/attach/:username", rbacHandler.DetatchRole)
-		apiAuthGrp.GET("rbac/roles/:role/attached", rbacHandler.GetRolesAttachedUsers)
+		apiAuthGrp.GET("rbac/roles", rbacHandler.getAllRoles)
+		apiAuthGrp.PUT("rbac/roles/:role", rbacHandler.addRole)
+		apiAuthGrp.DELETE("rbac/roles/:role", rbacHandler.deleteRole)
+		apiAuthGrp.PUT("rbac/roles/:role/attach/:username", rbacHandler.addRole)
+		apiAuthGrp.DELETE("rbac/roles/:role/attach/:username", rbacHandler.detatchRole)
+		apiAuthGrp.GET("rbac/roles/:role/attached", rbacHandler.getRolesAttachedUsers)
 		// RBAC - Users
-		apiAuthGrp.GET("users/:username/rbac/roles", rbacHandler.GetUserAttachedRoles)
+		apiAuthGrp.GET("users/:username/rbac/roles", rbacHandler.getUserAttachedRoles)
 	}
 
 	// Worker

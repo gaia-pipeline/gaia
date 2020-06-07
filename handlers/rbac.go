@@ -6,11 +6,11 @@ import (
 	"net/http"
 )
 
-type RBACHandler struct {
-	svc rbac.EnforcerService
+type rbacHandler struct {
+	svc rbac.Service
 }
 
-func (h *RBACHandler) AddRole(c echo.Context) error {
+func (h *rbacHandler) addRole(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
 		return c.String(http.StatusBadRequest, "Must provide role.")
@@ -28,7 +28,7 @@ func (h *RBACHandler) AddRole(c echo.Context) error {
 	return c.String(http.StatusOK, "Role created successfully.")
 }
 
-func (h *RBACHandler) DeleteRole(c echo.Context) error {
+func (h *rbacHandler) deleteRole(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
 		return c.String(http.StatusBadRequest, "Must provide role.")
@@ -41,11 +41,11 @@ func (h *RBACHandler) DeleteRole(c echo.Context) error {
 	return c.String(http.StatusOK, "Role deleted successfully.")
 }
 
-func (h *RBACHandler) GetAllRoles(c echo.Context) error {
+func (h *rbacHandler) getAllRoles(c echo.Context) error {
 	return c.JSON(http.StatusOK, h.svc.GetAllRoles())
 }
 
-func (h *RBACHandler) GetUserAttachedRoles(c echo.Context) error {
+func (h *rbacHandler) getUserAttachedRoles(c echo.Context) error {
 	username := c.Param("username")
 	if username == "" {
 		return c.String(http.StatusBadRequest, "Must provide username.")
@@ -59,7 +59,7 @@ func (h *RBACHandler) GetUserAttachedRoles(c echo.Context) error {
 	return c.JSON(http.StatusOK, roles)
 }
 
-func (h *RBACHandler) GetRolesAttachedUsers(c echo.Context) error {
+func (h *rbacHandler) getRolesAttachedUsers(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
 		return c.String(http.StatusBadRequest, "Must provide Role.")
@@ -73,7 +73,7 @@ func (h *RBACHandler) GetRolesAttachedUsers(c echo.Context) error {
 	return c.JSON(http.StatusOK, roles)
 }
 
-func (h *RBACHandler) AttachRole(c echo.Context) error {
+func (h *rbacHandler) attachRole(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
 		return c.String(http.StatusBadRequest, "Must provide role.")
@@ -91,7 +91,7 @@ func (h *RBACHandler) AttachRole(c echo.Context) error {
 	return c.String(http.StatusOK, "Role attached successfully.")
 }
 
-func (h *RBACHandler) DetatchRole(c echo.Context) error {
+func (h *rbacHandler) detatchRole(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
 		return c.String(http.StatusBadRequest, "Must provide role.")
