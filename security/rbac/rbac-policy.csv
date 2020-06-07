@@ -33,3 +33,4 @@ p, role:readonly, users, get, *
 p, role:readonly, workers, get, *
 
 g, admin, role:admin
+g, readonly, role:readonly

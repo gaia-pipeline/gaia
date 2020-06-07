@@ -40,7 +40,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	}
 	enforcer.EnableLog(true)
 
-	rbacapiMappings, err := rbac.LoadAPIMappings()
+	svc, err := rbac.NewEnforcerSvc(enforcer, "security/rbac/rbac-api-mappings.yml")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,9 +50,8 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 	// Auth API router group.
 	apiAuthGrp := e.Group(p, AuthMiddleware(&AuthConfig{
-		RoleCategories:  rolehelper.DefaultUserRoles,
-		enforcer:        enforcer,
-		rbacapiMappings: rbacapiMappings,
+		RoleCategories: rolehelper.DefaultUserRoles,
+		rbacEnforcer:   svc,
 	}))
 
 	// Endpoints for Gaia primary instance

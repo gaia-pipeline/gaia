@@ -8,9 +8,8 @@ import (
 	"github.com/gaia-pipeline/gaia"
 )
 
-// LoadAPIMappings gets the RBAC API mappings from the defined YAML file.
-func LoadAPIMappings() (gaia.RBACAPIMappings, error) {
-	file, err := ioutil.ReadFile("security/rbac/rbac-api-mappings.yml")
+func loadAPIMappings(apiMappingsFile string) (gaia.RBACAPIMappings, error) {
+	file, err := ioutil.ReadFile(apiMappingsFile)
 	if err != nil {
 		return gaia.RBACAPIMappings{}, err
 	}

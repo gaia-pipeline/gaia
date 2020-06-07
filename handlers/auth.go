@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/casbin/casbin/v2"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/rolehelper"
+	"github.com/gaia-pipeline/gaia/security/rbac"
 )
 
 var (
@@ -20,9 +20,7 @@ var (
 	errNotAuthorized = errors.New("no or invalid jwt token provided. You are not authorized")
 )
 
-// AuthMiddleware is middleware used for each request. Includes functionality that validates the JWT tokens and user
-// permissions.
-func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
+func AuthMiddleware(authCfg *AuthConfig) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			token, err := getToken(c)
@@ -31,22 +29,33 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 			}
 
 			// Validate token
-			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			if claims, okClaims := token.Claims.(jwt.MapClaims); okClaims && token.Valid {
 				// All ok, continue
-				username, okUsername := claims["username"]
-				roles, okPerms := claims["roles"]
-				if okUsername && okPerms && roles != nil {
+				username, hasUsername := claims["username"]
+				roles, hasRoles := claims["roles"]
+				if hasUsername && hasRoles && roles != nil {
 					// Look through the perms until we find that the user has this permission
-					err := roleAuth.checkRole(roles, c.Request().Method, c.Path())
-					if err != nil {
-						return c.String(http.StatusForbidden, fmt.Sprintf("Permission denied for user %s. %s", username, err.Error()))
+					if err := authCfg.checkRole(roles, c.Request().Method, c.Path()); err != nil {
+						return c.String(http.StatusForbidden, fmt.Sprintf("Permission denied for user."))
 					}
 
-					sub := username.(string)
-					valid, err := roleAuth.enforceRBAC(c, sub)
-					if err != nil {
-						gaia.Cfg.Logger.Error("enforcer error", "error", err.Error())
+					username, okUsername := username.(string)
+					if !okUsername {
+						gaia.Cfg.Logger.Error("username is not type string")
 						return c.String(http.StatusInternalServerError, fmt.Sprintf("Unknown error has occured."))
+					}
+
+					// Currently this lives inside the existing auth middleware. Ideally we would have independent
+					// middleware for enforcing RBAC. For now I will leave this here so we avoid parsing the token
+					// and claims multiple times.
+					params := map[string]string{}
+					for i, n := range c.ParamNames() {
+						params[n] = c.ParamValues()[i]
+					}
+					valid, err := authCfg.rbacEnforcer.Enforce(username, c.Request().Method, c.Path(), params)
+					if err != nil {
+						gaia.Cfg.Logger.Error("rbacEnforcer error", "error", err.Error())
+						return c.String(http.StatusInternalServerError, fmt.Sprintf("Unknown error has occured while validating permissions."))
 					}
 					if !valid {
 						return c.String(http.StatusForbidden, fmt.Sprintf("Permission denied for user."))
@@ -63,9 +72,8 @@ func AuthMiddleware(roleAuth *AuthConfig) echo.MiddlewareFunc {
 // AuthConfig is a simple config struct to be passed into AuthMiddleware. Currently allows the ability to specify
 // the permission roles required for each echo endpoint.
 type AuthConfig struct {
-	RoleCategories  []*gaia.UserRoleCategory
-	enforcer        casbin.IEnforcer
-	rbacapiMappings gaia.RBACAPIMappings
+	RoleCategories []*gaia.UserRoleCategory
+	rbacEnforcer   rbac.EndpointEnforcer
 }
 
 // Finds the required role for the metho & path specified. If it exists we validate that the provided user roles have
@@ -131,41 +139,4 @@ func getToken(c echo.Context) (*jwt.Token, error) {
 	}
 
 	return token, nil
-}
-
-func (ra *AuthConfig) enforceRBAC(c echo.Context, username string) (bool, error) {
-	group := ra.rbacapiMappings
-
-	endpoint, ok := group.Endpoints[c.Path()]
-	if !ok {
-		gaia.Cfg.Logger.Warn("path not mapped to api group", "path", c.Path())
-		return true, nil
-	}
-
-	perm, ok := endpoint.Methods[c.Request().Method]
-	if !ok {
-		gaia.Cfg.Logger.Warn("method not mapped to api group path", "path", c.Path(), "method", c.Request().Method)
-		return true, nil
-	}
-
-	splitAction := strings.Split(perm, "/")
-	namespace := splitAction[0]
-	action := splitAction[1]
-
-	fullResource := "*"
-	if endpoint.Param != "" {
-		param := c.Param(endpoint.Param)
-		if param == "" {
-			return false, fmt.Errorf("param %s missing", endpoint.Param)
-		}
-		fullResource = param
-	}
-
-	valid, err := ra.enforcer.Enforce(username, namespace, action, fullResource)
-	if err != nil {
-		return false, err
-	}
-
-	gaia.Cfg.Logger.Warn("permission denied for user", "username", username, "namespace", namespace, "resource", fullResource, "action", action)
-	return valid, nil
 }

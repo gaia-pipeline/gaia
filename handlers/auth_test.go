@@ -11,10 +11,17 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/labstack/echo"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/rolehelper"
-	"github.com/labstack/echo"
 )
+
+type mockEchoEnforcer struct{}
+
+func (m *mockEchoEnforcer) Enforce(username, method, path string, params map[string]string) (bool, error) {
+	return true, nil
+}
 
 var mockRoleAuth = &AuthConfig{
 	RoleCategories: []*gaia.UserRoleCategory{
@@ -54,6 +61,7 @@ var mockRoleAuth = &AuthConfig{
 			},
 		},
 	},
+	rbacEnforcer: &mockEchoEnforcer{},
 }
 
 func makeAuthBarrierRouter() *echo.Echo {
