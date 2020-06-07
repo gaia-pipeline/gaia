@@ -1,4 +1,4 @@
-FROM python:alpine3.12
+FROM python:3.8-buster
 
 # Set env variables
 ENV GAIA_PORT=8080 \
@@ -75,7 +75,7 @@ RUN { \
 	&& chmod +x /usr/local/bin/docker-java-home
 
 # do some fancy footwork to create a JAVA_HOME that's cross-architecture-safe
-RUN ln -svT "/usr/lib/jvm/java-8-openjdk-$(dpkg --print-architecture)" /docker-java-home
+RUN ln -svT "/usr/lib/jvm/java-11-openjdk-$(dpkg --print-architecture)" /docker-java-home
 ENV JAVA_HOME /docker-java-home
 
 RUN set -ex; \
@@ -87,7 +87,7 @@ RUN set -ex; \
 	\
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-		openjdk-8-jdk \
+		openjdk-11-jdk \
 		ca-certificates-java \
 	; \
 	rm -rf /var/lib/apt/lists/*; \
@@ -130,7 +130,7 @@ RUN apt-get update && apt-get install -y \
             && apt-get clean
 
 # install protobuf first, then grpc
-ENV GRPC_RELEASE_TAG v1.28.x
+ENV GRPC_RELEASE_TAG v1.29.x
 RUN git clone -b ${GRPC_RELEASE_TAG} https://github.com/grpc/grpc /var/local/git/grpc && \
                   cd /var/local/git/grpc && \
     git submodule update --init && \
@@ -151,10 +151,10 @@ RUN mkdir -p /usr/local/etc \
 		echo 'update: --no-document'; \
 	} >> /usr/local/etc/gemrc
 
-ENV RUBY_MAJOR 2.5
-ENV RUBY_VERSION 2.5.3
-ENV RUBY_DOWNLOAD_SHA256 1cc9d0359a8ea35fc6111ec830d12e60168f3b9b305a3c2578357d360fcf306f
-ENV RUBYGEMS_VERSION 3.0.1
+ENV RUBY_MAJOR 2.7
+ENV RUBY_VERSION "2.7.0-rc1"
+ENV RUBY_DOWNLOAD_SHA256 7528db87df7a8cbfdcbd053073839f5a00b2a38f807771e3e45000e72fc86732
+ENV RUBYGEMS_VERSION 3.1.4
 
 # some of ruby's build scripts are written in ruby
 #   we purge system ruby later to make sure our final image uses what we just built
@@ -170,7 +170,7 @@ RUN set -ex \
 	&& apt-get install -y --no-install-recommends $buildDeps \
 	&& rm -rf /var/lib/apt/lists/* \
 	\
-	&& wget -O ruby.tar.xz "https://cache.ruby-lang.org/pub/ruby/${RUBY_MAJOR%-rc}/ruby-$RUBY_VERSION.tar.xz" \
+	&& wget -O ruby.tar.xz "https://cache.ruby-lang.org/pub/ruby/${RUBY_MAJOR}/ruby-$RUBY_VERSION.tar.xz" \
 	&& echo "$RUBY_DOWNLOAD_SHA256 *ruby.tar.xz" | sha256sum -c - \
 	\
 	&& mkdir -p /usr/src/ruby \
@@ -220,7 +220,7 @@ RUN mkdir -p "$GEM_HOME" && chmod 777 "$GEM_HOME"
 # --------------- End Ruby Part ---------------
 
 # --------------- Start NodeJS Part --------------
-ENV NODE_VERSION 11.15.0
+ENV NODE_VERSION 12.17.0
 
 RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
   && case "${dpkgArch##*-}" in \
@@ -235,15 +235,12 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
   # gpg keys listed at https://github.com/nodejs/node#release-keys
   && set -ex \
   && for key in \
-    94AE36675C464D64BAFA68DD7434390BDBE9B9C5 \
-    FD3A5288F042B6850C66B31F09FE44734EB7990E \
-    71DCFD284A79C3B38668286BC97EC7A07EDE3FC1 \
-    DD8F2338BAE7501E3DD5AC78C273792F7D83545D \
-    C4F0DFFF4E8C1A8236409D08E73BC641CC11F4C8 \
-    B9AE9905FFD7803F25714661B63B535A4C206CA9 \
-    77984A986EBC2AA786BC0F66B01FBB92821C587A \
-    8FCCA13FEF1D0C2E91008E09770F7A9A5AE15600 \
     4ED778F539E3634C779C87C6D7062848A1AB005C \
+    94AE36675C464D64BAFA68DD7434390BDBE9B9C5 \
+    71DCFD284A79C3B38668286BC97EC7A07EDE3FC1 \
+    8FCCA13FEF1D0C2E91008E09770F7A9A5AE15600 \
+    C4F0DFFF4E8C1A8236409D08E73BC641CC11F4C8 \
+    DD8F2338BAE7501E3DD5AC78C273792F7D83545D \
     A48C2BEE680E841632CD4E44F07496B3EB3C1762 \
     B9E2F5981AA6E0CD28160D9FF13993A75599653C \
   ; do \
@@ -259,7 +256,7 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
   && rm "node-v$NODE_VERSION-linux-$ARCH.tar.xz" SHASUMS256.txt.asc SHASUMS256.txt \
   && ln -s /usr/local/bin/node /usr/local/bin/nodejs
 
-ENV YARN_VERSION 1.15.2
+ENV YARN_VERSION 1.22.4
 
 RUN set -ex \
   && for key in \
