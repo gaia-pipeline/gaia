@@ -1,4 +1,4 @@
-FROM maven:3.6.3-openjdk-15
+FROM maven:3.6.3-openjdk-11
 
 # Version and other variables which can be changed.
 ENV GAIA_PORT=8080 \
