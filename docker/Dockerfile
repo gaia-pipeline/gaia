@@ -126,11 +126,11 @@ COPY docker/settings-docker.xml /usr/share/maven/ref/
 # --------------- Start C++ Part ---------------
 RUN apt-get update && apt-get install -y \
             build-essential autoconf git pkg-config \
-            automake libtool curl make g++ unzip \
+            automake libtool curl make unzip \
             && apt-get clean
 
 # install protobuf first, then grpc
-ENV GRPC_RELEASE_TAG v1.28.x
+ENV GRPC_RELEASE_TAG v1.29.x
 RUN git clone -b ${GRPC_RELEASE_TAG} https://github.com/grpc/grpc /var/local/git/grpc && \
                   cd /var/local/git/grpc && \
     git submodule update --init && \
