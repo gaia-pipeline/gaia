@@ -2,8 +2,14 @@ package rbac
 
 import (
 	"errors"
+	"io/ioutil"
+	"log"
 
 	"github.com/casbin/casbin/v2"
+	"github.com/casbin/casbin/v2/model"
+	"github.com/casbin/casbin/v2/persist"
+	"github.com/markbates/pkger"
+	"gopkg.in/yaml.v2"
 
 	"github.com/gaia-pipeline/gaia"
 )
@@ -28,6 +34,7 @@ type (
 		DetachRole(username string, role string) error
 	}
 
+	// EnforcerService implements the Service interface.
 	EnforcerService struct {
 		enforcer        casbin.IEnforcer
 		rbacapiMappings gaia.RBACAPIMappings
@@ -35,8 +42,19 @@ type (
 )
 
 // NewEnforcerSvc creates a new EnforcerService.
-func NewEnforcerSvc(enforcer casbin.IEnforcer, apiMappingsFile string) (*EnforcerService, error) {
-	rbacapiMappings, err := loadAPIMappings(apiMappingsFile)
+func NewEnforcerSvc(adapter persist.BatchAdapter) (*EnforcerService, error) {
+	model, err := loadModel()
+	if err != nil {
+		return nil, err
+	}
+
+	enforcer, err := casbin.NewEnforcer(model, adapter)
+	if err != nil {
+		log.Fatal(err)
+	}
+	enforcer.EnableLog(true)
+
+	rbacapiMappings, err := loadAPIMappings()
 	if err != nil {
 		return nil, err
 	}
@@ -45,6 +63,44 @@ func NewEnforcerSvc(enforcer casbin.IEnforcer, apiMappingsFile string) (*Enforce
 		enforcer:        enforcer,
 		rbacapiMappings: rbacapiMappings,
 	}, nil
+}
+
+func loadModel() (model.Model, error) {
+	modelFile, err := pkger.Open("/security/rbac/rbac-model.conf")
+	if err != nil {
+		return nil, err
+	}
+
+	modelBts, err := ioutil.ReadAll(modelFile)
+	if err != nil {
+		return nil, err
+	}
+
+	model, err := model.NewModelFromString(string(modelBts))
+	if err != nil {
+		return nil, err
+	}
+
+	return model, nil
+}
+
+func loadAPIMappings() (gaia.RBACAPIMappings, error) {
+	file, err := pkger.Open("/security/rbac/rbac-api-mappings.yml")
+	if err != nil {
+		return gaia.RBACAPIMappings{}, err
+	}
+
+	bts, err := ioutil.ReadAll(file)
+	if err != nil {
+		return gaia.RBACAPIMappings{}, err
+	}
+
+	var rbacapiMappings gaia.RBACAPIMappings
+	if err := yaml.Unmarshal(bts, &rbacapiMappings); err != nil {
+		return gaia.RBACAPIMappings{}, err
+	}
+
+	return rbacapiMappings, nil
 }
 
 // DeleteRole deletes a role.

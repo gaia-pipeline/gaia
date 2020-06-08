@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	rice "github.com/GeertJohan/go.rice"
-	"github.com/casbin/casbin/v2"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 
@@ -34,12 +33,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		log.Fatal(err)
 	}
 
-	enforcer, err := casbin.NewEnforcer("security/rbac/rbac-model.conf", store.CasbinStore())
-	if err != nil {
-		log.Fatal(err)
-	}
-	enforcer.EnableLog(true)
-	enforcerSvc, err := rbac.NewEnforcerSvc(enforcer, "security/rbac/rbac-api-mappings.yml")
+	enforcerSvc, err := rbac.NewEnforcerSvc(store.CasbinStore())
 	if err != nil {
 		log.Fatal(err)
 	}
