@@ -16,10 +16,10 @@ import (
 type (
 	// RoleRule represents a Casbin role rule line in the format we expect.
 	RoleRule struct {
-		Namespace string
-		Action    string
-		Resource  string
-		Effect    string
+		Namespace string `json:"namespace"`
+		Action    string `json:"action"`
+		Resource  string `json:"resource"`
+		Effect    string `json:"effect"`
 	}
 
 	// Service wraps the Casbin enforcer and performs all actions we require to manage and use RBAC functions.

@@ -20,11 +20,11 @@ func (h *rbacHandler) addRole(c echo.Context) error {
 
 	var newRoles []rbac.RoleRule
 	if err := c.Bind(&newRoles); err != nil {
-		return c.String(http.StatusInternalServerError, "Failed to parse rules.")
+		return c.String(http.StatusBadRequest, "Invalid body provided.")
 	}
 
 	if err := h.svc.AddRole(role, newRoles); err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
+		return c.String(http.StatusInternalServerError, "An error occurred while adding the role.")
 	}
 
 	return c.String(http.StatusOK, "Role created successfully.")
@@ -37,7 +37,7 @@ func (h *rbacHandler) deleteRole(c echo.Context) error {
 	}
 
 	if err := h.svc.DeleteRole(role); err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
+		return c.String(http.StatusInternalServerError, "An error occurred while deleting the role.")
 	}
 
 	return c.String(http.StatusOK, "Role deleted successfully.")
@@ -55,7 +55,7 @@ func (h *rbacHandler) getUserAttachedRoles(c echo.Context) error {
 
 	roles, err := h.svc.GetUserAttachedRoles(username)
 	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
+		return c.String(http.StatusInternalServerError, "An error occurred while getting the roles.")
 	}
 
 	return c.JSON(http.StatusOK, roles)
@@ -64,12 +64,12 @@ func (h *rbacHandler) getUserAttachedRoles(c echo.Context) error {
 func (h *rbacHandler) getRolesAttachedUsers(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
-		return c.String(http.StatusBadRequest, "Must provide Role.")
+		return c.String(http.StatusBadRequest, "Must provide role.")
 	}
 
 	roles, err := h.svc.GetRoleAttachedUsers(role)
 	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
+		return c.String(http.StatusInternalServerError, "An error occurred while getting the users.")
 	}
 
 	return c.JSON(http.StatusOK, roles)
@@ -87,7 +87,7 @@ func (h *rbacHandler) attachRole(c echo.Context) error {
 	}
 
 	if err := h.svc.AttachRole(username, role); err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
+		return c.String(http.StatusInternalServerError, "An error occurred while attaching the role.")
 	}
 
 	return c.String(http.StatusOK, "Role attached successfully.")
@@ -105,7 +105,7 @@ func (h *rbacHandler) detatchRole(c echo.Context) error {
 	}
 
 	if err := h.svc.DetachRole(username, role); err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
+		return c.String(http.StatusInternalServerError, "An error occurred while detaching the role.")
 	}
 
 	return c.String(http.StatusOK, "Role detached successfully.")
