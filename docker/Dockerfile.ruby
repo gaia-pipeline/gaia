@@ -1,4 +1,4 @@
-FROM ruby:2.5.3-stretch
+FROM ruby:2.7-buster
 
 # Version and other variables which can be changed.
 ENV GAIA_PORT=8080 \
