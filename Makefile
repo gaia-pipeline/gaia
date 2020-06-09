@@ -23,6 +23,9 @@ static_assets:
 	go get github.com/GeertJohan/go.rice/rice && \
 	cd ./handlers && \
 	rm -f rice-box.go && \
+	rice embed-go && \
+	cd ../helper/assethelper && \
+	rm -f rice-box.go && \
 	rice embed-go
 
 compile_backend:

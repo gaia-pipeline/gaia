@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
 
 	rice "github.com/GeertJohan/go.rice"
@@ -12,8 +11,6 @@ import (
 	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
 	"github.com/gaia-pipeline/gaia/handlers/providers/workers"
 	"github.com/gaia-pipeline/gaia/helper/rolehelper"
-	"github.com/gaia-pipeline/gaia/security/rbac"
-	"github.com/gaia-pipeline/gaia/services"
 )
 
 var (
@@ -28,23 +25,13 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 	// --- Register handlers at echo instance ---
 
-	store, err := services.StorageService()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	enforcerSvc, err := rbac.NewEnforcerSvc(store.CasbinStore())
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	// Standard API router group.
 	apiGrp := e.Group(p)
 
 	// Auth API router group.
 	apiAuthGrp := e.Group(p, authMiddleware(&AuthConfig{
 		RoleCategories: rolehelper.DefaultUserRoles,
-		rbacEnforcer:   enforcerSvc,
+		rbacEnforcer:   s.deps.RBACService,
 	}))
 
 	// Endpoints for Gaia primary instance
@@ -103,7 +90,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 		// RBAC
 		rbacHandler := rbacHandler{
-			svc: enforcerSvc,
+			svc: s.deps.RBACService,
 		}
 		// RBAC - Management
 		apiAuthGrp.GET("rbac/roles", rbacHandler.getAllRoles)

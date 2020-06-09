@@ -35,7 +35,6 @@ require (
 	github.com/kevinburke/ssh_config v0.0.0-20180317175531-9fc7bb800b55 // indirect
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.0.0-20180613044413-d6898124de91 // indirect
-	github.com/markbates/pkger v0.17.0
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-isatty v0.0.3 // indirect
 	github.com/mitchellh/go-homedir v0.0.0-20180801233206-58046073cbff // indirect
@@ -51,6 +50,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/speza/casbin-bolt-adapter v0.0.0-20200607190553-9ea048cf76dc
 	github.com/src-d/gcfg v1.3.0 // indirect
+	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/xanzy/ssh-agent v0.2.0 // indirect
 	golang.org/x/crypto v0.0.0-20190211182817-74369b46fc67
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be

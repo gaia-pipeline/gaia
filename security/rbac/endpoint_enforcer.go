@@ -13,7 +13,7 @@ type EndpointEnforcer interface {
 }
 
 // Enforce uses the echo.Context to enforce RBAC. Uses the rbacapiMappings to apply policies to specific endpoints.
-func (e *EnforcerService) Enforce(username, method, path string, params map[string]string) (bool, error) {
+func (e *enforcerService) Enforce(username, method, path string, params map[string]string) (bool, error) {
 	group := e.rbacapiMappings
 
 	endpoint, ok := group.Endpoints[path]

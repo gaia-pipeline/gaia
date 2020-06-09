@@ -19,6 +19,7 @@ import (
 	"github.com/gaia-pipeline/gaia/handlers"
 	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/security"
+	"github.com/gaia-pipeline/gaia/security/rbac"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/agent"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
@@ -249,11 +250,17 @@ func Start() (err error) {
 		Scheduler: schedulerService,
 	})
 
+	enforcerSvc, err := rbac.NewEnforcerSvc(store.CasbinStore())
+	if err != nil {
+		return err
+	}
+
 	// Initialize handlers
 	handlerService := handlers.NewGaiaHandler(handlers.Dependencies{
 		Scheduler:       schedulerService,
 		PipelineService: pipelineService,
 		Certificate:     ca,
+		RBACService:     enforcerSvc,
 	})
 
 	err = handlerService.InitHandlers(echoInstance)

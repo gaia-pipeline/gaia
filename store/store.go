@@ -3,16 +3,15 @@ package store
 import (
 	"encoding/binary"
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
 	"time"
 
 	"github.com/casbin/casbin/v2/persist"
 	bolt "github.com/coreos/bbolt"
-	"github.com/markbates/pkger"
 	"github.com/speza/casbin-bolt-adapter"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/helper/assethelper"
 	"github.com/gaia-pipeline/gaia/security"
 )
 
@@ -128,15 +127,8 @@ func (s *BoltStore) Init(dataPath string) error {
 
 	// TODO: Having Casbin stuff here doesn't sit quite right with me (especially loading a file here).
 	// Unfortunately we need to re-use the open bolt database for the adapter though.
-	rbacPolicyFile, err := pkger.Open("/security/rbac/rbac-policy.csv")
-	if err != nil {
-		return err
-	}
-	rbacPolicyBts, err := ioutil.ReadAll(rbacPolicyFile)
-	if err != nil {
-		return err
-	}
-	casbinAdapter, err := boltadapter.NewAdapter(db, "casbin-policies", string(rbacPolicyBts))
+	builtinPolicy, _ := assethelper.LoadRBACBuiltinPolicy()
+	casbinAdapter, err := boltadapter.NewAdapter(db, "casbin-policies", builtinPolicy)
 	if err != nil {
 		return err
 	}

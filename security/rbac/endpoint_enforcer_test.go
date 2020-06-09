@@ -46,7 +46,7 @@ func Test_EnforcerService_Enforce_ValidEnforcement(t *testing.T) {
 		gaia.Cfg = nil
 	}()
 
-	svc := EnforcerService{
+	svc := enforcerService{
 		enforcer:        &mockEnforcer{},
 		rbacapiMappings: mappings,
 	}
@@ -64,7 +64,7 @@ func Test_EnforcerService_Enforce_FailedEnforcement(t *testing.T) {
 		gaia.Cfg = nil
 	}()
 
-	svc := EnforcerService{
+	svc := enforcerService{
 		enforcer:        &mockEnforcer{},
 		rbacapiMappings: mappings,
 	}
@@ -82,7 +82,7 @@ func Test_EnforcerService_Enforce_ErrorEnforcement(t *testing.T) {
 		gaia.Cfg = nil
 	}()
 
-	svc := EnforcerService{
+	svc := enforcerService{
 		enforcer:        &mockEnforcer{},
 		rbacapiMappings: mappings,
 	}
@@ -100,7 +100,7 @@ func Test_EnforcerService_Enforce_EndpointParamMissing(t *testing.T) {
 		gaia.Cfg = nil
 	}()
 
-	svc := EnforcerService{
+	svc := enforcerService{
 		enforcer:        &mockEnforcer{},
 		rbacapiMappings: mappings,
 	}
