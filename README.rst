@@ -116,15 +116,15 @@ Go
     import (
         "log"
 
-	sdk "github.com/gaia-pipeline/gosdk"
+	    sdk "github.com/gaia-pipeline/gosdk"
     )
 
     // This is one job. Add more if you want.
     func DoSomethingAwesome(args sdk.Arguments) error {
         log.Println("This output will be streamed back to gaia and will be displayed in the pipeline logs.")
 
-	// An error occurred? Return it back so gaia knows that this job failed.
-	return nil
+	    // An error occurred? Return it back so gaia knows that this job failed.
+	    return nil
     }
 
     func main() {
@@ -140,7 +140,7 @@ Go
 	if err := sdk.Serve(jobs); err != nil {
 	    panic(err)
 	}
-    }
+}
 
 Python
 ~~~~~~~
