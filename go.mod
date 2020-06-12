@@ -7,9 +7,8 @@ require (
 	github.com/Pallinder/go-randomdata v1.1.0
 	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
-	github.com/casbin/casbin/v2 v2.6.5
+	github.com/casbin/casbin/v2 v2.6.12
 	github.com/containerd/containerd v1.2.8 // indirect
-	github.com/coreos/bbolt v1.3.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v0.7.3-0.20190731001754-589f1dad8dad
@@ -48,12 +47,13 @@ require (
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.4.2 // indirect
-	github.com/speza/casbin-bolt-adapter v0.0.0-20200607190553-9ea048cf76dc
+	github.com/speza/casbin-bolt-adapter v0.0.0-20200612141053-0da5f0ce6fc7
 	github.com/src-d/gcfg v1.3.0 // indirect
-	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/xanzy/ssh-agent v0.2.0 // indirect
+	go.etcd.io/bbolt v1.3.4
 	golang.org/x/crypto v0.0.0-20190211182817-74369b46fc67
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
+	golang.org/x/sys v0.0.0-20200610111108-226ff32320da // indirect
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
 	google.golang.org/grpc v1.18.0
 	gopkg.in/src-d/go-billy.v4 v4.3.0 // indirect

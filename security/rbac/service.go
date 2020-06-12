@@ -2,7 +2,7 @@ package rbac
 
 import (
 	"errors"
-	"log"
+	"fmt"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
@@ -45,18 +45,18 @@ type (
 func NewEnforcerSvc(adapter persist.BatchAdapter) (Service, error) {
 	model, err := loadModel()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error loading model: %w", err)
 	}
 
 	enforcer, err := casbin.NewEnforcer(model, adapter)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("error instantiating casbin enforcer: %w", err)
 	}
 	enforcer.EnableLog(true)
 
 	rbacapiMappings, err := loadAPIMappings()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error loading rbac api mappings: %w", err)
 	}
 
 	return &enforcerService{
@@ -68,26 +68,27 @@ func NewEnforcerSvc(adapter persist.BatchAdapter) (Service, error) {
 func loadModel() (model.Model, error) {
 	modelStr, err := assethelper.LoadRBACModel()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error loading rbac model from assethelper: %w", err)
 	}
 
 	model, err := model.NewModelFromString(modelStr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating model from string: %w", err)
 	}
 
 	return model, nil
 }
 
 func loadAPIMappings() (gaia.RBACAPIMappings, error) {
+	var rbacapiMappings gaia.RBACAPIMappings
+
 	mappings, err := assethelper.LoadRBACAPIMappings()
 	if err != nil {
-		return gaia.RBACAPIMappings{}, err
+		return rbacapiMappings, fmt.Errorf("error loading loading api mapping from assethelper: %w", err)
 	}
 
-	var rbacapiMappings gaia.RBACAPIMappings
-	if err := yaml.Unmarshal([]byte(mappings), &rbacapiMappings); err != nil {
-		return gaia.RBACAPIMappings{}, err
+	if err := yaml.UnmarshalStrict([]byte(mappings), &rbacapiMappings); err != nil {
+		return rbacapiMappings, fmt.Errorf("error unmarshalling api mappings yaml: %w", err)
 	}
 
 	return rbacapiMappings, nil
@@ -95,11 +96,14 @@ func loadAPIMappings() (gaia.RBACAPIMappings, error) {
 
 // DeleteRole deletes a role.
 func (e *enforcerService) DeleteRole(role string) error {
-	exists, err := e.enforcer.DeleteRole(role)
-	if !exists {
+	exist, err := e.enforcer.DeleteRole(role)
+	if !exist {
 		return errors.New("role does not exist")
 	}
-	return err
+	if err != nil {
+		return fmt.Errorf("error deleting role: %w", err)
+	}
+	return nil
 }
 
 // AddRole adds a role.
@@ -112,7 +116,7 @@ func (e *enforcerService) AddRole(role string, roleRules []RoleRule) error {
 
 	ok, err := e.enforcer.AddPolicies(rules)
 	if err != nil {
-		return err
+		return fmt.Errorf("error adding policies: %w", err)
 	}
 	if !ok {
 		return errors.New("rule already exists for role")
@@ -128,18 +132,26 @@ func (e *enforcerService) GetAllRoles() []string {
 
 // GetUserAttachedRoles gets all roles attached to a specific user.
 func (e *enforcerService) GetUserAttachedRoles(username string) ([]string, error) {
-	return e.enforcer.GetRolesForUser(username)
+	roles, err := e.enforcer.GetRolesForUser(username)
+	if err != nil {
+		return nil, fmt.Errorf("error getting roles for user: %w", err)
+	}
+	return roles, nil
 }
 
 // GetRoleAttachedUsers get all users attached to a specific role.
 func (e *enforcerService) GetRoleAttachedUsers(role string) ([]string, error) {
-	return e.enforcer.GetUsersForRole(role)
+	users, err := e.enforcer.GetUsersForRole(role)
+	if err != nil {
+		return nil, fmt.Errorf("error getting users for role: %w", err)
+	}
+	return users, nil
 }
 
 // AttachRole attaches a role to a user.
 func (e *enforcerService) AttachRole(username string, role string) error {
 	if _, err := e.enforcer.AddRoleForUser(username, role); err != nil {
-		return err
+		return fmt.Errorf("error attatching role to user: %w", err)
 	}
 	return nil
 }
@@ -148,7 +160,7 @@ func (e *enforcerService) AttachRole(username string, role string) error {
 func (e *enforcerService) DetachRole(username string, role string) error {
 	exists, err := e.enforcer.DeleteRoleForUser(username, role)
 	if err != nil {
-		return err
+		return fmt.Errorf("error detatching role from user: %w", err)
 	}
 	if !exists {
 		return errors.New("role does not exists for user")

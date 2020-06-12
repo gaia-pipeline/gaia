@@ -1,4 +1,3 @@
-name: api-core
 endpoints:
   # pipelines
   "/api/v1/pipeline":

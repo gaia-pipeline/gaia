@@ -2,9 +2,9 @@ package rbac
 
 import (
 	"errors"
-	"github.com/casbin/casbin/v2"
 	"testing"
 
+	"github.com/casbin/casbin/v2"
 	"github.com/hashicorp/go-hclog"
 	"gotest.tools/assert"
 	"gotest.tools/assert/cmp"

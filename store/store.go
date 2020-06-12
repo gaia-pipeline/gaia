@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/casbin/casbin/v2/persist"
-	bolt "github.com/coreos/bbolt"
 	"github.com/speza/casbin-bolt-adapter"
+	bolt "go.etcd.io/bbolt"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/assethelper"

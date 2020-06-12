@@ -36,14 +36,14 @@ func (e *enforcerService) Enforce(username, method, path string, params map[stri
 	if endpoint.Param != "" {
 		param := params[endpoint.Param]
 		if param == "" {
-			return false, fmt.Errorf("param %s missing", endpoint.Param)
+			return false, fmt.Errorf("error param %s missing", endpoint.Param)
 		}
 		fullResource = param
 	}
 
 	valid, err := e.enforcer.Enforce(username, namespace, action, fullResource)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("error enforcing rbac: %w", err)
 	}
 
 	return valid, nil

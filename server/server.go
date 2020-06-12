@@ -252,6 +252,7 @@ func Start() (err error) {
 
 	enforcerSvc, err := rbac.NewEnforcerSvc(store.CasbinStore())
 	if err != nil {
+		gaia.Cfg.Logger.Error("failed to create new enforcer", "error", err.Error())
 		return err
 	}
 

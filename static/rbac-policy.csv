@@ -3,34 +3,9 @@
 # Policy format:
 # p, <role>, <namespace>, <action>, <resource>, <effect = allow/deny>
 
-p, role:admin, pipelines, get, *, allow
-p, role:admin, pipelines, create, *, allow
-p, role:admin, pipelines, update, *, allow
-p, role:admin, pipelines, delete, *, allow
-p, role:admin, pipelines, start, *, allow
-p, role:admin, pipeline-runs, get, *, allow
-p, role:admin, pipeline-runs, stop, *, allow
-p, role:admin, secrets, get, *, allow
-p, role:admin, secrets, create, *, allow
-p, role:admin, secrets, update, *, allow
-p, role:admin, secrets, delete, *, allow
-p, role:admin, secrets, start, *, allow
-p, role:admin, users, get, *, allow
-p, role:admin, users, create, *, allow
-p, role:admin, users, update, *, allow
-p, role:admin, users, delete, *, allow
-p, role:admin, users, start, *, allow
-p, role:admin, workers, get, *, allow
-p, role:admin, workers, create, *, allow
-p, role:admin, workers, update, *, allow
-p, role:admin, workers, delete, *, allow
-p, role:admin, workers, start, *, allow
+p, role:admin, *, *, *, allow
 
-p, role:readonly, pipelines, get, *, allow
-p, role:readonly, pipeline-runs, get, *, allow
-p, role:readonly, secrets, get, *, allow
-p, role:readonly, users, get, *, allow
-p, role:readonly, workers, get, *, allow
+p, role:readonly, *, get, *, allow
 
 g, admin, role:admin
 g, readonly, role:readonly

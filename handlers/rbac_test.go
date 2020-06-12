@@ -3,13 +3,17 @@ package handlers
 import (
 	"bytes"
 	"errors"
-	"github.com/gaia-pipeline/gaia/security/rbac"
-	"github.com/labstack/echo"
-	"gotest.tools/assert"
-	"gotest.tools/assert/cmp"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/hashicorp/go-hclog"
+	"github.com/labstack/echo"
+	"gotest.tools/assert"
+	"gotest.tools/assert/cmp"
+
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/security/rbac"
 )
 
 type mockRBACSvc struct {
@@ -68,6 +72,12 @@ func Test_rbacHandler_addRole(t *testing.T) {
 	handler := rbacHandler{
 		svc: &mockRBACSvc{},
 	}
+
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.Logger = hclog.NewNullLogger()
+	defer func() {
+		gaia.Cfg = nil
+	}()
 
 	e := echo.New()
 	_ = handlerService.InitHandlers(e)
@@ -154,6 +164,12 @@ func Test_rbacHandler_deleteRole(t *testing.T) {
 		svc: &mockRBACSvc{},
 	}
 
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.Logger = hclog.NewNullLogger()
+	defer func() {
+		gaia.Cfg = nil
+	}()
+
 	e := echo.New()
 	_ = handlerService.InitHandlers(e)
 
@@ -205,6 +221,12 @@ func Test_rbacHandler_getAllRoles(t *testing.T) {
 		svc: &mockRBACSvc{},
 	}
 
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.Logger = hclog.NewNullLogger()
+	defer func() {
+		gaia.Cfg = nil
+	}()
+
 	e := echo.New()
 	_ = handlerService.InitHandlers(e)
 
@@ -225,6 +247,12 @@ func Test_rbacHandler_getUserAttachedRoles(t *testing.T) {
 	handler := rbacHandler{
 		svc: &mockRBACSvc{},
 	}
+
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.Logger = hclog.NewNullLogger()
+	defer func() {
+		gaia.Cfg = nil
+	}()
 
 	e := echo.New()
 	_ = handlerService.InitHandlers(e)
@@ -277,6 +305,12 @@ func Test_rbacHandler_getRolesAttachedUsers(t *testing.T) {
 		svc: &mockRBACSvc{},
 	}
 
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.Logger = hclog.NewNullLogger()
+	defer func() {
+		gaia.Cfg = nil
+	}()
+
 	e := echo.New()
 	_ = handlerService.InitHandlers(e)
 
@@ -327,6 +361,12 @@ func Test_rbacHandler_attachRole(t *testing.T) {
 	handler := rbacHandler{
 		svc: &mockRBACSvc{},
 	}
+
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.Logger = hclog.NewNullLogger()
+	defer func() {
+		gaia.Cfg = nil
+	}()
 
 	e := echo.New()
 	_ = handlerService.InitHandlers(e)
@@ -393,6 +433,12 @@ func Test_rbacHandler_detachRole(t *testing.T) {
 		svc: &mockRBACSvc{},
 	}
 
+	gaia.Cfg = &gaia.Config{}
+	gaia.Cfg.Logger = hclog.NewNullLogger()
+	defer func() {
+		gaia.Cfg = nil
+	}()
+
 	e := echo.New()
 	_ = handlerService.InitHandlers(e)
 
@@ -404,7 +450,7 @@ func Test_rbacHandler_detachRole(t *testing.T) {
 		c.SetParamNames("role", "username")
 		c.SetParamValues("test-role", "test-user")
 
-		err := handler.detatchRole(c)
+		err := handler.detachRole(c)
 		assert.NilError(t, err)
 		assert.Check(t, cmp.Equal(rec.Code, http.StatusOK))
 		assert.Check(t, cmp.Equal(rec.Body.String(), "Role detached successfully."))
@@ -416,7 +462,7 @@ func Test_rbacHandler_detachRole(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/v1/rbac/roles/:role/attach/:username")
 
-		err := handler.detatchRole(c)
+		err := handler.detachRole(c)
 		assert.NilError(t, err)
 		assert.Check(t, cmp.Equal(rec.Code, http.StatusBadRequest))
 		assert.Check(t, cmp.Equal(rec.Body.String(), "Must provide role."))
@@ -430,7 +476,7 @@ func Test_rbacHandler_detachRole(t *testing.T) {
 		c.SetParamNames("role")
 		c.SetParamValues("test-role")
 
-		err := handler.detatchRole(c)
+		err := handler.detachRole(c)
 		assert.NilError(t, err)
 		assert.Check(t, cmp.Equal(rec.Code, http.StatusBadRequest))
 		assert.Check(t, cmp.Equal(rec.Body.String(), "Must provide username."))
@@ -444,7 +490,7 @@ func Test_rbacHandler_detachRole(t *testing.T) {
 		c.SetParamNames("role", "username")
 		c.SetParamValues("error", "error")
 
-		err := handler.detatchRole(c)
+		err := handler.detachRole(c)
 		assert.NilError(t, err)
 		assert.Check(t, cmp.Equal(rec.Code, http.StatusInternalServerError))
 		assert.Check(t, cmp.Equal(rec.Body.String(), "An error occurred while detaching the role."))

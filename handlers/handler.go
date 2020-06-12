@@ -97,7 +97,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		apiAuthGrp.PUT("rbac/roles/:role", rbacHandler.addRole)
 		apiAuthGrp.DELETE("rbac/roles/:role", rbacHandler.deleteRole)
 		apiAuthGrp.PUT("rbac/roles/:role/attach/:username", rbacHandler.attachRole)
-		apiAuthGrp.DELETE("rbac/roles/:role/attach/:username", rbacHandler.detatchRole)
+		apiAuthGrp.DELETE("rbac/roles/:role/attach/:username", rbacHandler.detachRole)
 		apiAuthGrp.GET("rbac/roles/:role/attached", rbacHandler.getRolesAttachedUsers)
 		// RBAC - Users
 		apiAuthGrp.GET("users/:username/rbac/roles", rbacHandler.getUserAttachedRoles)
