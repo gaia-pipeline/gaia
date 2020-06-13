@@ -16,14 +16,12 @@ type mockEnforcer struct {
 	casbin.IEnforcer
 }
 
-var mappings = gaia.RBACAPIMappings{
-	Endpoints: map[string]gaia.RBACAPIMappingEndpoint{
-		"/api/v1/pipeline/:pipelineid": {
-			Methods: map[string]string{
-				"GET": "pipelines/get",
-			},
-			Param: "pipelineid",
+var mappings = apiLookup{
+	"/api/v1/pipeline/:pipelineid": {
+		Methods: map[string]string{
+			"GET": "pipelines/get",
 		},
+		Param: "pipelineid",
 	},
 }
 
@@ -47,11 +45,11 @@ func Test_EnforcerService_Enforce_ValidEnforcement(t *testing.T) {
 	}()
 
 	svc := enforcerService{
-		enforcer:        &mockEnforcer{},
-		rbacapiMappings: mappings,
+		enforcer:      &mockEnforcer{},
+		rbacapiLookup: mappings,
 	}
 
-	getSuccess, err := svc.Enforce("admin", "GET", "/api/v1/pipeline/:pipelineid", map[string]string{"pipelineid": "test"})
+	getSuccess, err := svc.Enforce("admin", "GET", "/api/v1/pipelines/:pipelineid", map[string]string{"pipelineid": "test"})
 	assert.NilError(t, err)
 	assert.Check(t, cmp.Equal(getSuccess, true))
 }
@@ -65,8 +63,8 @@ func Test_EnforcerService_Enforce_FailedEnforcement(t *testing.T) {
 	}()
 
 	svc := enforcerService{
-		enforcer:        &mockEnforcer{},
-		rbacapiMappings: mappings,
+		enforcer:      &mockEnforcer{},
+		rbacapiLookup: mappings,
 	}
 
 	getSuccess, err := svc.Enforce("failed", "GET", "/api/v1/pipeline/:pipelineid", map[string]string{"pipelineid": "test"})
@@ -83,12 +81,12 @@ func Test_EnforcerService_Enforce_ErrorEnforcement(t *testing.T) {
 	}()
 
 	svc := enforcerService{
-		enforcer:        &mockEnforcer{},
-		rbacapiMappings: mappings,
+		enforcer:      &mockEnforcer{},
+		rbacapiLookup: mappings,
 	}
 
 	getSuccess, err := svc.Enforce("error", "GET", "/api/v1/pipeline/:pipelineid", map[string]string{"pipelineid": "test"})
-	assert.Check(t, cmp.Error(err, "error test"))
+	assert.Check(t, cmp.Error(err, "error enforcing rbac: error test"))
 	assert.Check(t, cmp.Equal(getSuccess, false))
 }
 
@@ -101,11 +99,11 @@ func Test_EnforcerService_Enforce_EndpointParamMissing(t *testing.T) {
 	}()
 
 	svc := enforcerService{
-		enforcer:        &mockEnforcer{},
-		rbacapiMappings: mappings,
+		enforcer:      &mockEnforcer{},
+		rbacapiLookup: mappings,
 	}
 
 	getSuccess, err := svc.Enforce("readonly", "GET", "/api/v1/pipeline/:pipelineid", map[string]string{})
-	assert.Check(t, cmp.Error(err, "param pipelineid missing"))
+	assert.Check(t, cmp.Error(err, "error param pipelineid missing"))
 	assert.Check(t, cmp.Equal(getSuccess, false))
 }

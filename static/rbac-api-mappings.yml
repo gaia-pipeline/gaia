@@ -1,99 +1,198 @@
-endpoints:
-  # pipelines
-  "/api/v1/pipeline":
-    methods:
-      POST: pipelines/create
-      GET: pipelines/get
-  "/api/v1/pipeline/gitlsremote":
-    methods:
-      POST: pipelines/create
-  "/api/v1/pipeline/name":
-    methods:
-      GET: pipelines/get
-  "/api/v1/pipeline/githook":
-    methods:
-      POST: pipelines/create
-  "/api/v1/pipeline/created":
-    methods:
-      GET: pipelines/get
-  "/api/v1/pipeline/latest":
-    methods:
-      GET: pipelines/get
-  "/api/v1/pipeline/:pipelineid":
-    param: pipelineid
-    methods:
-      GET: pipelines/get
-      PUT: pipelines/update
-      DELETE: pipelines/delete
-  "/api/v1/pipeline/:pipelineid/start":
-    param: pipelineid
-    methods:
-      POST: pipelines/start
+# This file maps the Gaia API endpoints to the <namespace/action> defined within the Casbin RBAC policy.
 
-  # pipeline-runs
-  "/api/v1/pipelinerun/:pipelineid/:runid/stop":
-    param: pipelineid
-    methods:
-      POST: pipeline-runs/stop
-  "/api/v1/pipelinerun/:pipelineid/:runid":
-    param: pipelineid
-    methods:
-      GET: pipeline-runs/get
-  "/api/v1/pipelinerun/:pipelineid/latest":
-    param: pipelineid
-    methods:
-      GET: pipeline-runs/get
-  "/api/v1/pipelinerun/:pipelineid":
-    param: pipelineid
-    methods:
-      GET: pipeline-runs/get
-  "/api/v1/pipelinerun/:pipelineid/:runid/latest":
-    param: pipelineid
-    methods:
-      GET: pipeline-runs/get
+# Root key = "namespace/action"
+# Metadata can be added (e.g. description).
+# Endpoints list can be added. This is flexible since we may have multiple API endpoints directly linked to an action
+# such as the below 'pipeline/create'.
+#
+# This file is loaded on server startup once and stored in-memory within a structure that has O(1) lookup so that we
+# can find an API endpoint and enforce the correct <namespace/action> through Casbin.
 
-  # secrets
-  "/api/v1/secret":
-    methods:
-      POST: secrets/create
-  "/api/v1/secrets":
-    methods:
-      GET: secrets/get
-  "/api/v1/secret/:key":
-    param: key
-    methods:
-      DELETE: secrets/delete
-  "/api/v1/secret/update":
-    methods:
-      PUT: secrets/update
+# pipelines
 
-  # users
-  "/api/v1/user":
-    methods:
-      POST: users/create
-  "/api/v1/users":
-    methods:
-      GET: users/get
-  "/api/v1/user/password":
-    methods:
-      POST: users/update
-  "/api/v1/user/:username":
-    param: username
-    methods:
-      DELETE: users/delete
+"pipelines/create":
+  description: Create a pipeline.
+  endpoints:
+    - method: POST
+      path: "/api/v1/pipeline"
+    - method: POST
+      path: "/api/v1/pipeline/gitlsremote"
+    - method: GET
+      path: "/api/v1/pipeline/name"
+    - method: POST
+      path: "/api/v1/pipeline/periodicschedules"
 
-  # workers
-  "/api/v1/worker/secret":
-    methods:
-      GET: workers/get
-      POST: workers/create
-  "/api/v1/worker/status":
-    methods:
-      GET: workers/get
-  "/api/v1/worker":
-    methods:
-      GET: workers/get
-  "/api/v1/worker/:workerid":
-    param: workerid
-    methods:
-      DELETE: workers/delete
+"pipelines/list-created":
+  description: List all created pipelines.
+  endpoints:
+    - method: GET
+      path: "/api/v1/pipeline/created"
+
+"pipelines/list":
+  description: List all pipelines.
+  endpoints:
+    - method: GET
+      path: "/api/v1/pipeline"
+
+"pipelines/list-latest":
+  description: List all latest pipelines.
+  endpoints:
+    - method: GET
+      path: "/api/v1/pipeline/latest"
+
+"pipelines/get":
+  description: Get a pipeline.
+  endpoints:
+    - method: GET
+      path: "/api/v1/pipeline/:pipelineid"
+      resource: pipelineid
+
+"pipelines/update":
+  description: Update a pipeline.
+  endpoints:
+    - method: PUT
+      path: "/api/v1/pipeline/:pipelineid"
+      resource: pipelineid
+
+"pipelines/delete":
+  description: Delete a pipeline.
+  endpoints:
+    - method: DELETE
+      path: "/api/v1/pipeline/:pipelineid"
+      resource: pipelineid
+
+"pipelines/start":
+  description: Start a pipeline.
+  endpoints:
+    - method: POST
+      path: "/api/v1/pipeline/:pipelineid/start"
+      resource: pipelineid
+
+# pipelines:runs
+
+"pipelines:runs/stop":
+  description: todo
+  endpoints:
+    - method: POST
+      path: "/api/v1/pipelinerun/:pipelineid/:runid/stop"
+      resource: pipelineid
+
+"pipelines:runs/get-latest-run":
+  description: todo
+  endpoints:
+    - method: GET
+      path: "/api/v1/pipelinerun/:pipelineid/:runid/latest"
+      resource: pipelineid
+
+"pipelines:runs/get-run":
+  description: todo
+  endpoints:
+    - method: GET
+      path: "/api/v1/pipelinerun/:pipelineid/:runid"
+      resource: pipelineid
+
+"pipelines:runs/get-latest":
+  description: todo
+  endpoints:
+    - method: GET
+      path: "/api/v1/pipelinerun/:pipelineid/latest"
+
+"pipelines:runs/get":
+  description: todo
+  endpoints:
+    - method: GET
+      path: "/api/v1/pipelinerun/:pipelineid/:runid"
+      resource: pipelineid
+
+# secrets
+
+"secrets/create":
+  description: todo
+  endpoints:
+    - method: POST
+      path: "/api/v1/secret"
+
+"secrets/list":
+  description: todo
+  endpoints:
+    - method: GET
+      path: "/api/v1/secrets"
+
+"secrets/update":
+  description: todo
+  endpoints:
+    - method: PUT
+      path: "/api/v1/secret"
+
+"secrets/delete":
+  description: todo
+  endpoints:
+    - method: DELETE
+      path: "/api/v1/secret/:key"
+      resource: key
+
+# users
+
+"users/create":
+  description: todo
+  endpoints:
+    - method: POST
+      path: "/api/v1/user"
+
+"users/list":
+  description: todo
+  endpoints:
+    - method: GET
+      path: "/api/v1/users"
+
+"users/change-password":
+  description: todo
+  endpoints:
+    - method: POST
+      path: "/api/v1/user/password"
+
+"users/delete":
+  description: todo
+  endpoints:
+    - method: DELETE
+      path: "/api/v1/user/:username"
+      resource: username
+
+# workers
+
+"workers/create-secret":
+  description: todo
+  endpoints:
+    - method: POST
+      path: "/api/v1/worker/secret"
+
+"workers/status-list":
+  description: todo
+  endpoints:
+    - method: GET
+      path: "/api/v1/worker/status"
+
+"workers/list":
+  description: todo
+  endpoints:
+    - method: GET
+      path: "/api/v1/worker"
+
+"workers/get-secret":
+  description: todo
+  endpoints:
+    - method: GET
+      path: "/api/v1/worker/secret"
+
+"workers/deregister":
+  description: todo
+  endpoints:
+    - method: DELETE
+      path: "/api/v1/worker/:workerid"
+      resource: workerid
+
+"workers/get-status":
+  description: todo
+  endpoints:
+    - method: GET
+      path: "/api/v1/secret"

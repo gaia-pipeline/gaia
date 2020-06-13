@@ -12,13 +12,13 @@ type EndpointEnforcer interface {
 	Enforce(username, method, path string, params map[string]string) (bool, error)
 }
 
-// Enforce uses the echo.Context to enforce RBAC. Uses the rbacapiMappings to apply policies to specific endpoints.
+// Enforce uses the echo.Context to enforce RBAC. Uses the apiLookup to apply policies to specific endpoints.
 func (e *enforcerService) Enforce(username, method, path string, params map[string]string) (bool, error) {
-	group := e.rbacapiMappings
+	group := e.rbacapiLookup
 
-	endpoint, ok := group.Endpoints[path]
+	endpoint, ok := group[path]
 	if !ok {
-		gaia.Cfg.Logger.Warn("path not mapped to api group", "path", path)
+		gaia.Cfg.Logger.Warn("path not mapped to api group", "method", method, "path", path)
 		return true, nil
 	}
 

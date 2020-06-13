@@ -9,11 +9,26 @@ import (
 	"github.com/casbin/casbin/v2/persist"
 	"gopkg.in/yaml.v2"
 
-	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/assethelper"
 )
 
 type (
+	apiMapping struct {
+		Description string        `json:"description"`
+		Endpoints   []apiEndpoint `json:"endpoints"`
+	}
+	apiEndpoint struct {
+		Method   string `json:"method"`
+		Path     string `json:"path"`
+		Resource string `json:"resource"`
+	}
+
+	apiLookup         map[string]apiLookupEndpoint
+	apiLookupEndpoint struct {
+		Param   string            `yaml:"param"`
+		Methods map[string]string `yaml:"methods"`
+	}
+
 	// RoleRule represents a Casbin role rule line in the format we expect.
 	RoleRule struct {
 		Namespace string `json:"namespace"`
@@ -35,9 +50,9 @@ type (
 	}
 
 	enforcerService struct {
-		adapter         persist.BatchAdapter
-		enforcer        casbin.IEnforcer
-		rbacapiMappings gaia.RBACAPIMappings
+		adapter       persist.BatchAdapter
+		enforcer      casbin.IEnforcer
+		rbacapiLookup apiLookup
 	}
 )
 
@@ -60,8 +75,8 @@ func NewEnforcerSvc(adapter persist.BatchAdapter) (Service, error) {
 	}
 
 	return &enforcerService{
-		enforcer:        enforcer,
-		rbacapiMappings: rbacapiMappings,
+		enforcer:      enforcer,
+		rbacapiLookup: rbacapiMappings,
 	}, nil
 }
 
@@ -79,19 +94,33 @@ func loadModel() (model.Model, error) {
 	return model, nil
 }
 
-func loadAPIMappings() (gaia.RBACAPIMappings, error) {
-	var rbacapiMappings gaia.RBACAPIMappings
-
+func loadAPIMappings() (apiLookup, error) {
 	mappings, err := assethelper.LoadRBACAPIMappings()
 	if err != nil {
-		return rbacapiMappings, fmt.Errorf("error loading loading api mapping from assethelper: %w", err)
+		return nil, fmt.Errorf("error loading loading api mapping from assethelper: %w", err)
 	}
 
-	if err := yaml.UnmarshalStrict([]byte(mappings), &rbacapiMappings); err != nil {
-		return rbacapiMappings, fmt.Errorf("error unmarshalling api mappings yaml: %w", err)
+	var apiMappings map[string]apiMapping
+	if err := yaml.UnmarshalStrict([]byte(mappings), &apiMappings); err != nil {
+		return nil, fmt.Errorf("error unmarshalling api mappings yaml: %w", err)
 	}
 
-	return rbacapiMappings, nil
+	endpoints := apiLookup{}
+	for mappingPath, mapping := range apiMappings {
+		for _, e := range mapping.Endpoints {
+			path, hasPath := endpoints[e.Path]
+			if !hasPath {
+				endpoints[e.Path] = apiLookupEndpoint{
+					Methods: map[string]string{e.Method: mappingPath},
+					Param:   e.Resource,
+				}
+				continue
+			}
+			path.Methods[e.Method] = mappingPath
+		}
+	}
+
+	return endpoints, nil
 }
 
 // DeleteRole deletes a role.

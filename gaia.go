@@ -347,14 +347,3 @@ type StoreConfig struct {
 func (p PipelineType) String() string {
 	return string(p)
 }
-
-// RBACAPIMappings represents API group mappings.
-type RBACAPIMappings struct {
-	Endpoints map[string]RBACAPIMappingEndpoint `yaml:"endpoints"`
-}
-
-// RBACAPIMappingEndpoint represents an endpoint within an API group.
-type RBACAPIMappingEndpoint struct {
-	Param   string            `yaml:"param"`
-	Methods map[string]string `yaml:"methods"`
-}
