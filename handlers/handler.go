@@ -71,9 +71,12 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		apiGrp.POST("pipeline/:pipelineid/:pipelinetoken/trigger", pipelineProvider.PipelineTrigger)
 
 		// Settings
-		apiAuthGrp.POST("settings/poll/on", SettingsPollOn)
-		apiAuthGrp.POST("settings/poll/off", SettingsPollOff)
-		apiAuthGrp.GET("settings/poll", SettingsPollGet)
+		settingsHandler := newSettingsHandler(s.deps.Store)
+		apiAuthGrp.POST("settings/poll/on", settingsHandler.pollOn)
+		apiAuthGrp.POST("settings/poll/off", settingsHandler.pollOff)
+		apiAuthGrp.GET("settings/poll", settingsHandler.pollGet)
+		apiAuthGrp.GET("settings/rbac", settingsHandler.rbacGet)
+		apiAuthGrp.PUT("settings/rbac", settingsHandler.rbacPut)
 
 		// PipelineRun
 		apiAuthGrp.POST("pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop)

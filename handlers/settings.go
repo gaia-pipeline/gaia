@@ -1,22 +1,26 @@
 package handlers
 
 import (
+	"github.com/gaia-pipeline/gaia/store"
 	"net/http"
 
-	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/labstack/echo"
 )
 
+type settingsHandler struct {
+	store store.SettingsStore
+}
+
+func newSettingsHandler(store store.SettingsStore) *settingsHandler {
+	return &settingsHandler{store: store}
+}
+
 // SettingsPollOn turn on polling functionality.
-func SettingsPollOn(c echo.Context) error {
-	storeService, err := services.StorageService()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "Something went wrong while getting storage service.")
-	}
-	configStore, err := storeService.SettingsGet()
+func (h *settingsHandler) pollOn(c echo.Context) error {
+	configStore, err := h.store.SettingsGet()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Something went wrong while retrieving settings information.")
 	}
@@ -31,7 +35,7 @@ func SettingsPollOn(c echo.Context) error {
 	}
 
 	configStore.Poll = true
-	err = storeService.SettingsPut(configStore)
+	err = h.store.SettingsPut(configStore)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
@@ -39,12 +43,8 @@ func SettingsPollOn(c echo.Context) error {
 }
 
 // SettingsPollOff turn off polling functionality.
-func SettingsPollOff(c echo.Context) error {
-	storeService, err := services.StorageService()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "Something went wrong while getting storage service.")
-	}
-	configStore, err := storeService.SettingsGet()
+func (h *settingsHandler) pollOff(c echo.Context) error {
+	configStore, err := h.store.SettingsGet()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Something went wrong while retrieving settings information.")
 	}
@@ -57,7 +57,7 @@ func SettingsPollOff(c echo.Context) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	configStore.Poll = true
-	err = storeService.SettingsPut(configStore)
+	err = h.store.SettingsPut(configStore)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
@@ -69,12 +69,8 @@ type pollStatus struct {
 }
 
 // SettingsPollGet get status of polling functionality.
-func SettingsPollGet(c echo.Context) error {
-	storeService, err := services.StorageService()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "Something went wrong while getting storage service.")
-	}
-	configStore, err := storeService.SettingsGet()
+func (h *settingsHandler) pollGet(c echo.Context) error {
+	configStore, err := h.store.SettingsGet()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Something went wrong while retrieving settings information.")
 	}
@@ -85,4 +81,26 @@ func SettingsPollGet(c echo.Context) error {
 		ps.Status = configStore.Poll
 	}
 	return c.JSON(http.StatusOK, ps)
+}
+
+func (h *settingsHandler) rbacPut(c echo.Context) error {
+	var cfg gaia.RBACConfig
+	if err := c.Bind(&cfg); err != nil {
+		return c.String(http.StatusInternalServerError, "Unable to parse request body.")
+	}
+
+	if err := h.store.SettingsRBACPut(cfg); err != nil {
+		return c.String(http.StatusInternalServerError, "An error occurred while saving the settings.")
+	}
+
+	return c.String(http.StatusOK, "Settings have been updated.")
+}
+
+func (h *settingsHandler) rbacGet(c echo.Context) error {
+	config, err := h.store.SettingsRBACGet()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "An error has occurred when retrieving settings.")
+	}
+
+	return c.JSON(http.StatusOK, config)
 }

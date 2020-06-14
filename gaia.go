@@ -324,6 +324,7 @@ type Config struct {
 	DockerRunImage          string
 	DockerWorkerHostURL     string
 	DockerWorkerGRPCHostURL string
+	RBACEnabled             bool
 
 	// Worker
 	WorkerName        string
@@ -341,6 +342,11 @@ type Config struct {
 type StoreConfig struct {
 	ID   int
 	Poll bool
+}
+
+// RBACConfig defines RBAC settings to be stored in DB.
+type RBACConfig struct {
+	Enabled bool `json:"enabled"`
 }
 
 // String returns a pipeline type string back
