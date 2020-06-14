@@ -21,19 +21,19 @@ type MockVaultStorer struct {
 	Error error
 }
 
-var store []byte
+var storeBts []byte
 
 func (mvs *MockVaultStorer) Init() error {
-	store = make([]byte, 0)
+	storeBts = make([]byte, 0)
 	return mvs.Error
 }
 
 func (mvs *MockVaultStorer) Read() ([]byte, error) {
-	return store, mvs.Error
+	return storeBts, mvs.Error
 }
 
 func (mvs *MockVaultStorer) Write(data []byte) error {
-	store = data
+	storeBts = data
 	return mvs.Error
 }
 

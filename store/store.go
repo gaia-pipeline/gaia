@@ -59,9 +59,18 @@ type BoltStore struct {
 	casbinAdapter persist.BatchAdapter
 }
 
+// SettingsStore is the interface that defines methods needed to save settings config into the store.
+type SettingsStore interface {
+	SettingsPut(config *gaia.StoreConfig) error
+	SettingsGet() (*gaia.StoreConfig, error)
+	SettingsRBACPut(config gaia.RBACConfig) error
+	SettingsRBACGet() (gaia.RBACConfig, error)
+}
+
 // GaiaStore is the interface that defines methods needed to store
 // pipeline and user related information.
 type GaiaStore interface {
+	SettingsStore
 	Init(dataPath string) error
 	Close() error
 	CreatePipelinePut(createPipeline *gaia.CreatePipeline) error
@@ -87,8 +96,6 @@ type GaiaStore interface {
 	UserPermissionsPut(perms *gaia.UserPermission) error
 	UserPermissionsGet(username string) (*gaia.UserPermission, error)
 	UserPermissionsDelete(username string) error
-	SettingsPut(config *gaia.StoreConfig) error
-	SettingsGet() (*gaia.StoreConfig, error)
 	WorkerPut(w *gaia.Worker) error
 	WorkerGetAll() ([]*gaia.Worker, error)
 	WorkerDelete(id string) error
