@@ -1,13 +1,13 @@
 package handlers
 
 import (
-	"github.com/gaia-pipeline/gaia/store"
 	"net/http"
 
-	"github.com/gaia-pipeline/gaia/workers/pipeline"
+	"github.com/labstack/echo"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/labstack/echo"
+	"github.com/gaia-pipeline/gaia/store"
+	"github.com/gaia-pipeline/gaia/workers/pipeline"
 )
 
 type settingsHandler struct {
