@@ -476,6 +476,12 @@ func TestRebuildWorkerBinaryUnknownPipeline(t *testing.T) {
 }
 
 func TestRebuildWorkerBinary(t *testing.T) {
+	// Create temp folder for acceptance test.
+	tmp, _ := ioutil.TempDir("", "TestRebuildWorkerBinary")
+	gaia.Cfg.HomePath = tmp
+	defer func() {
+		os.RemoveAll(tmp)
+	}()
 	ctx := context.Background()
 	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithDialer(bufDialer), grpc.WithInsecure())
 	if err != nil {
