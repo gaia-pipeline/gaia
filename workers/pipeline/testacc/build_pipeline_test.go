@@ -22,6 +22,13 @@ func TestBuildPipelineAcceptanceTestTearUp(t *testing.T) {
 	//	t.Skip("skipping acceptance tests because GAIA_RUN_ACC is not 'true'")
 	//}
 
+	// Create temp folder for acceptance test.
+	tmp, _ := ioutil.TempDir("", "TestBuildPipelineAcceptanceTestTearUp")
+	gaia.Cfg.HomePath = tmp
+	defer func() {
+		os.RemoveAll(tmp)
+	}()
+
 	// Start the server as background process.
 	go func() {
 		err := server.Start()
@@ -43,12 +50,6 @@ func TestBuildPipelineAcceptanceTestTearUp(t *testing.T) {
 }
 
 func buildGoPluginTest(t *testing.T) {
-	// Create temp folder for acceptance test.
-	tmp, _ := ioutil.TempDir("", "TestBuildPipelineAcceptanceTestTearUp_buildGoPluginTest")
-	gaia.Cfg.HomePath = tmp
-	defer func() {
-		os.RemoveAll(tmp)
-	}()
 	// Create test pipeline.
 	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
@@ -85,12 +86,6 @@ func buildGoPluginTest(t *testing.T) {
 }
 
 func buildJavaPluginTest(t *testing.T) {
-	// Create temp folder for acceptance test.
-	tmp, _ := ioutil.TempDir("", "TestBuildPipelineAcceptanceTestTearUp_buildJavaPluginTest")
-	gaia.Cfg.HomePath = tmp
-	defer func() {
-		os.RemoveAll(tmp)
-	}()
 	// Create test pipeline.
 	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
@@ -127,12 +122,6 @@ func buildJavaPluginTest(t *testing.T) {
 }
 
 func buildPythonPluginTest(t *testing.T) {
-	// Create temp folder for acceptance test.
-	tmp, _ := ioutil.TempDir("", "TestBuildPipelineAcceptanceTestTearUp_buildPythonPluginTest")
-	gaia.Cfg.HomePath = tmp
-	defer func() {
-		os.RemoveAll(tmp)
-	}()
 	// Create test pipeline.
 	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
@@ -168,12 +157,6 @@ func buildPythonPluginTest(t *testing.T) {
 }
 
 func buildCppPluginTest(t *testing.T) {
-	// Create temp folder for acceptance test.
-	tmp, _ := ioutil.TempDir("", "TestBuildPipelineAcceptanceTestTearUp_buildCppPluginTest")
-	gaia.Cfg.HomePath = tmp
-	defer func() {
-		os.RemoveAll(tmp)
-	}()
 	// Create test pipeline.
 	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
@@ -209,12 +192,6 @@ func buildCppPluginTest(t *testing.T) {
 }
 
 func buildRubyPluginTest(t *testing.T) {
-	// Create temp folder for acceptance test.
-	tmp, _ := ioutil.TempDir("", "TestBuildPipelineAcceptanceTestTearUp_buildRubyPluginTest")
-	gaia.Cfg.HomePath = tmp
-	defer func() {
-		os.RemoveAll(tmp)
-	}()
 	// Create test pipeline.
 	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
@@ -250,12 +227,6 @@ func buildRubyPluginTest(t *testing.T) {
 }
 
 func buildNodeJSPluginTest(t *testing.T) {
-	// Create temp folder for acceptance test.
-	tmp, _ := ioutil.TempDir("", "TestBuildPipelineAcceptanceTestTearUp_buildNodeJSPluginTest")
-	gaia.Cfg.HomePath = tmp
-	defer func() {
-		os.RemoveAll(tmp)
-	}()
 	// Create test pipeline.
 	v4, _ := uuid.NewV4()
 	testPipeline := &gaia.CreatePipeline{
