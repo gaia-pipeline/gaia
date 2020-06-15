@@ -18,7 +18,7 @@ require (
 	github.com/emirpasic/gods v1.9.0 // indirect
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
 	github.com/gaia-pipeline/flag v1.7.4-pre
-	github.com/gaia-pipeline/gosdk v0.0.0-20180909192508-cc9f89055777
+	github.com/gaia-pipeline/gosdk v0.0.0-20180909192508-cc9f89055777 // indirect
 	github.com/gaia-pipeline/protobuf v0.0.0-20180812091451-7be8a901b55a
 	github.com/gliderlabs/ssh v0.1.1 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible
@@ -52,8 +52,10 @@ require (
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/xanzy/ssh-agent v0.2.0 // indirect
+	go.etcd.io/bbolt v1.3.4 // indirect
 	golang.org/x/crypto v0.0.0-20190211182817-74369b46fc67
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
+	golang.org/x/sys v0.0.0-20200610111108-226ff32320da // indirect
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
 	google.golang.org/grpc v1.18.0
 	gopkg.in/src-d/go-billy.v4 v4.3.0 // indirect
