@@ -54,6 +54,9 @@ func authMiddleware(authCfg *AuthConfig) echo.MiddlewareFunc {
 					}
 					valid, err := authCfg.rbacEnforcer.Enforce(username, c.Request().Method, c.Path(), params)
 					if err != nil {
+						if _, permDenied := err.(*rbac.ErrPermissionDenied); permDenied {
+							return c.String(http.StatusForbidden, err.Error())
+						}
 						gaia.Cfg.Logger.Error("rbacEnforcer error", "error", err.Error())
 						return c.String(http.StatusInternalServerError, fmt.Sprintf("Unknown error has occured while validating permissions."))
 					}

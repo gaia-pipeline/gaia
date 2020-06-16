@@ -46,5 +46,24 @@ func (e *enforcerService) Enforce(username, method, path string, params map[stri
 		return false, fmt.Errorf("error enforcing rbac: %w", err)
 	}
 
-	return valid, nil
+	return valid, newErrPermissionDenied(namespace, action, fullResource)
+}
+
+// ErrPermissionDenied is for when the RBAC enforcement check fails.
+type ErrPermissionDenied struct {
+	namespace string
+	action    string
+	resource  string
+}
+
+func newErrPermissionDenied(namespace string, action string, resource string) *ErrPermissionDenied {
+	return &ErrPermissionDenied{namespace: namespace, action: action, resource: resource}
+}
+
+func (e *ErrPermissionDenied) Error() string {
+	msg := fmt.Sprintf("Permission denied. Must have %s/%s", e.namespace, e.action)
+	if e.resource != "*" {
+		msg = fmt.Sprintf("%s %s", msg, e.resource)
+	}
+	return msg
 }

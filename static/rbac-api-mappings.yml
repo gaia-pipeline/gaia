@@ -11,7 +11,6 @@
 # pipelines
 
 "pipelines/create":
-  description: Create a pipeline.
   endpoints:
     - method: POST
       path: "/api/v1/pipeline"
@@ -23,46 +22,45 @@
       path: "/api/v1/pipeline/periodicschedules"
 
 "pipelines/list-created":
-  description: List all created pipelines.
   endpoints:
     - method: GET
       path: "/api/v1/pipeline/created"
 
 "pipelines/list":
-  description: List all pipelines.
   endpoints:
     - method: GET
       path: "/api/v1/pipeline"
 
 "pipelines/list-latest":
-  description: List all latest pipelines.
   endpoints:
     - method: GET
       path: "/api/v1/pipeline/latest"
 
 "pipelines/get":
-  description: Get a pipeline.
   endpoints:
     - method: GET
       path: "/api/v1/pipeline/:pipelineid"
       resource: pipelineid
 
 "pipelines/update":
-  description: Update a pipeline.
   endpoints:
     - method: PUT
       path: "/api/v1/pipeline/:pipelineid"
       resource: pipelineid
 
 "pipelines/delete":
-  description: Delete a pipeline.
   endpoints:
     - method: DELETE
       path: "/api/v1/pipeline/:pipelineid"
       resource: pipelineid
 
+"pipelines/reset-trigger-token":
+  endpoints:
+    - method: PUT
+      path: "/api/v1/pipeline/:pipelineid/reset-trigger-token"
+      resource: pipelineid
+
 "pipelines/start":
-  description: Start a pipeline.
   endpoints:
     - method: POST
       path: "/api/v1/pipeline/:pipelineid/start"
@@ -71,61 +69,55 @@
 # pipelines:runs
 
 "pipelines:runs/stop":
-  description: todo
   endpoints:
     - method: POST
       path: "/api/v1/pipelinerun/:pipelineid/:runid/stop"
       resource: pipelineid
 
 "pipelines:runs/get-latest-run":
-  description: todo
   endpoints:
     - method: GET
       path: "/api/v1/pipelinerun/:pipelineid/:runid/latest"
       resource: pipelineid
 
 "pipelines:runs/get-run":
-  description: todo
   endpoints:
     - method: GET
       path: "/api/v1/pipelinerun/:pipelineid/:runid"
       resource: pipelineid
+    - method: GET
+      path: "/api/v1/pipelinerun/:pipelineid/:runid/log"
+      resource: pipelineid
 
 "pipelines:runs/get-latest":
-  description: todo
   endpoints:
     - method: GET
       path: "/api/v1/pipelinerun/:pipelineid/latest"
 
 "pipelines:runs/get":
-  description: todo
   endpoints:
     - method: GET
-      path: "/api/v1/pipelinerun/:pipelineid/:runid"
+      path: "/api/v1/pipelinerun/:pipelineid"
       resource: pipelineid
 
 # secrets
 
 "secrets/create":
-  description: todo
   endpoints:
     - method: POST
       path: "/api/v1/secret"
 
 "secrets/list":
-  description: todo
   endpoints:
     - method: GET
       path: "/api/v1/secrets"
 
 "secrets/update":
-  description: todo
   endpoints:
     - method: PUT
-      path: "/api/v1/secret"
+      path: "/api/v1/secret/update"
 
 "secrets/delete":
-  description: todo
   endpoints:
     - method: DELETE
       path: "/api/v1/secret/:key"
@@ -134,65 +126,122 @@
 # users
 
 "users/create":
-  description: todo
   endpoints:
     - method: POST
       path: "/api/v1/user"
 
 "users/list":
-  description: todo
   endpoints:
     - method: GET
       path: "/api/v1/users"
 
 "users/change-password":
-  description: todo
   endpoints:
     - method: POST
       path: "/api/v1/user/password"
 
 "users/delete":
-  description: todo
   endpoints:
     - method: DELETE
       path: "/api/v1/user/:username"
       resource: username
 
+"users/reset-trigger-token":
+  endpoints:
+    - method: PUT
+      path: "/api/v1/user/:username/reset-trigger-token"
+      resource: username
+
 # workers
 
 "workers/create-secret":
-  description: todo
   endpoints:
     - method: POST
       path: "/api/v1/worker/secret"
 
 "workers/status-list":
-  description: todo
   endpoints:
     - method: GET
       path: "/api/v1/worker/status"
 
 "workers/list":
-  description: todo
   endpoints:
     - method: GET
       path: "/api/v1/worker"
 
 "workers/get-secret":
-  description: todo
   endpoints:
     - method: GET
       path: "/api/v1/worker/secret"
 
 "workers/deregister":
-  description: todo
   endpoints:
     - method: DELETE
       path: "/api/v1/worker/:workerid"
       resource: workerid
 
 "workers/get-status":
-  description: todo
   endpoints:
     - method: GET
-      path: "/api/v1/secret"
+      path: "/api/v1/worker/status"
+
+# settings
+
+"settings/get":
+  endpoints:
+    - method: GET
+      path: "/api/v1/settings/poll"
+    - method: GET
+      path: "/api/v1/settings/rbac"
+
+"settings/update":
+  endpoints:
+    - method: POST
+      path: "/api/v1/settings/poll/on"
+    - method: POST
+      path: "/api/v1/settings/poll/off"
+    - method: PUT
+      path: "/api/v1/settings/rbac"
+
+# RBAC
+
+"rbac:roles/list":
+  endpoints:
+    - method: GET
+      path: "/api/v1/rbac/roles"
+
+"rbac:roles/create":
+  endpoints:
+    - method: PUT
+      path: "/api/v1/rbac/roles/:role"
+      resource: role
+
+"rbac:roles/delete":
+  endpoints:
+    - method: DELETE
+      path: "/api/v1/rbac/roles/:role"
+      resource: role
+
+"rbac:roles/attach":
+  endpoints:
+    - method: PUT
+      path: "/api/v1/rbac/roles/:role/attach/:username"
+      resource: role
+
+"rbac:roles/detatch":
+  endpoints:
+    - method: DELETE
+      path: "/api/v1/rbac/roles/:role/attach/:username"
+      resource: role
+
+"rbac:roles/get-attached":
+  endpoints:
+    - method: GET
+      path: "/api/v1/rbac/roles/:role/attached"
+      resource: role
+
+"users/get-roles":
+  endpoints:
+    - method: GET
+      path: "/api/v1/users/:username/rbac/roles"
+      resource: role

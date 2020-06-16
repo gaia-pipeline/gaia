@@ -68,7 +68,7 @@ func Test_EnforcerService_Enforce_FailedEnforcement(t *testing.T) {
 	}
 
 	getSuccess, err := svc.Enforce("failed", "GET", "/api/v1/pipeline/:pipelineid", map[string]string{"pipelineid": "test"})
-	assert.NilError(t, err)
+	assert.Error(t, err, "Permission denied. Must have pipelines/get test")
 	assert.Check(t, cmp.Equal(getSuccess, false))
 }
 
