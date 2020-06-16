@@ -17,6 +17,7 @@ require (
 	github.com/emirpasic/gods v1.9.0 // indirect
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
 	github.com/gaia-pipeline/flag v1.7.4-pre
+	github.com/gaia-pipeline/gosdk v0.0.0-20180909192508-cc9f89055777 // indirect
 	github.com/gaia-pipeline/protobuf v0.0.0-20180812091451-7be8a901b55a
 	github.com/gliderlabs/ssh v0.1.1 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible

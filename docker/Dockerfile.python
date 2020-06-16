@@ -1,4 +1,4 @@
-FROM python:2.7-alpine3.8
+FROM python:3.8-alpine3.12
 
 # Version and other variables which can be changed.
 ENV GAIA_PORT=8080 \

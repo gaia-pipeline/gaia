@@ -115,7 +115,7 @@ Go
 
     import (
         "log"
-
+	    
 	sdk "github.com/gaia-pipeline/gosdk"
     )
 
@@ -140,7 +140,7 @@ Go
 	if err := sdk.Serve(jobs); err != nil {
 	    panic(err)
 	}
-    }
+}
 
 Python
 ~~~~~~~

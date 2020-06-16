@@ -1,4 +1,4 @@
-FROM debian:stretch
+FROM debian:buster
 
 RUN apt-get update && apt-get install -y \
     build-essential autoconf git pkg-config \
@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean
 
 # install protobuf first, then grpc
-ENV GRPC_RELEASE_TAG v1.16.x
+ENV GRPC_RELEASE_TAG v1.29.x
 RUN git clone -b ${GRPC_RELEASE_TAG} https://github.com/grpc/grpc /var/local/git/grpc && \
 	            cd /var/local/git/grpc && \
     git submodule update --init && \
