@@ -5,14 +5,13 @@ import (
 )
 
 const (
-	directory         = "../../static"
 	rbacBuiltinPolicy = "rbac-policy.csv"
 	rbacModel         = "rbac-model.conf"
 	rbacAPIMappings   = "rbac-api-mappings.yml"
 )
 
 func loadStaticFile(filename string) (string, error) {
-	box, err := rice.FindBox(directory)
+	box, err := rice.FindBox("../../static")
 	if err != nil {
 		return "", err
 	}
