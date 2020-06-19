@@ -32,7 +32,7 @@ var (
 
 const (
 	// Version is the current version of gaia.
-	Version = "0.2.3"
+	Version = "0.2.4"
 
 	dataFolder      = "data"
 	pipelinesFolder = "pipelines"
