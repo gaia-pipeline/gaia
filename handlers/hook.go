@@ -71,6 +71,9 @@ func parse(secret []byte, req *http.Request) (Hook, error) {
 	}
 
 	if h.Event != "push" {
+		if h.Event == "ping" {
+			return Hook{Event: "ping"}, nil
+		}
 		return Hook{}, errors.New("invalid event")
 	}
 
@@ -111,13 +114,15 @@ func GitWebHook(c echo.Context) error {
 
 	h, err := parse(secret, c.Request())
 	c.Request().Header.Set("Content-type", "application/json")
-
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
+	if h.Event == "ping" {
+		return c.NoContent(http.StatusOK)
+	}
 
-	p := new(Payload)
-	if err := json.Unmarshal(h.Payload, p); err != nil {
+	p := Payload{}
+	if err := json.Unmarshal(h.Payload, &p); err != nil {
 		return c.String(http.StatusBadRequest, "error in unmarshalling json payload")
 	}
 
@@ -127,6 +132,9 @@ func GitWebHook(c echo.Context) error {
 			foundPipe = &pipe
 			break
 		}
+	}
+	if foundPipe == nil {
+		return c.String(http.StatusInternalServerError, "pipeline not found")
 	}
 	err = pipeline.UpdateRepository(foundPipe)
 	if err != nil {
