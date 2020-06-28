@@ -52,7 +52,7 @@ func authMiddleware(authCfg *AuthConfig) echo.MiddlewareFunc {
 					for i, n := range c.ParamNames() {
 						params[n] = c.ParamValues()[i]
 					}
-					valid, err := authCfg.rbacEnforcer.Enforce(username, c.Request().Method, c.Path(), params)
+					err := authCfg.rbacEnforcer.Enforce(username, c.Request().Method, c.Path(), params)
 					if err != nil {
 						if _, permDenied := err.(*rbac.ErrPermissionDenied); permDenied {
 							return c.String(http.StatusForbidden, err.Error())
@@ -60,10 +60,6 @@ func authMiddleware(authCfg *AuthConfig) echo.MiddlewareFunc {
 						gaia.Cfg.Logger.Error("rbacEnforcer error", "error", err.Error())
 						return c.String(http.StatusInternalServerError, fmt.Sprintf("Unknown error has occurred while validating permissions."))
 					}
-					if !valid {
-						return c.String(http.StatusForbidden, fmt.Sprintf("Permission denied for user."))
-					}
-
 				}
 				return next(c)
 			}

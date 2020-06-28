@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/gaia-pipeline/gaia"
 )
@@ -26,15 +26,15 @@ func TestBoltStore_SettingsRBACGet(t *testing.T) {
 	defer store.Close()
 
 	config, err := store.SettingsRBACGet()
-	assert.DeepEqual(t, config, gaia.RBACConfig{Enabled: false})
-	assert.NilError(t, err)
+	assert.NoError(t, err)
+	assert.EqualValues(t, config, gaia.RBACConfig{Enabled: false})
 
 	err = store.SettingsRBACPut(gaia.RBACConfig{
 		Enabled: true,
 	})
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	config, err = store.SettingsRBACGet()
-	assert.DeepEqual(t, config, gaia.RBACConfig{Enabled: true})
-	assert.NilError(t, err)
+	assert.NoError(t, err)
+	assert.EqualValues(t, config, gaia.RBACConfig{Enabled: true})
 }

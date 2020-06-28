@@ -12,9 +12,9 @@ func NewNoOpService() Service {
 }
 
 // Enforce no-op enforcement. Allows everything.
-func (n noOpService) Enforce(username, method, path string, params map[string]string) (bool, error) {
+func (n noOpService) Enforce(username, method, path string, params map[string]string) error {
 	// Allow all
-	return true, nil
+	return nil
 }
 
 // AddRole that errors since rbac is not enabled.

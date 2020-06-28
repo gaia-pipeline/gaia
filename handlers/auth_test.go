@@ -14,7 +14,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/rolehelper"
@@ -23,14 +23,14 @@ import (
 
 type mockEchoEnforcer struct{}
 
-func (m *mockEchoEnforcer) Enforce(username, method, path string, params map[string]string) (bool, error) {
+func (m *mockEchoEnforcer) Enforce(username, method, path string, params map[string]string) error {
 	if username == "enforcer-perms-err" {
-		return false, rbac.NewErrPermissionDenied("namespace", "action", "thing")
+		return rbac.NewErrPermissionDenied("namespace", "action", "thing")
 	}
 	if username == "enforcer-err" {
-		return false, errors.New("error")
+		return errors.New("error")
 	}
-	return true, nil
+	return nil
 }
 
 var mockRoleAuth = &AuthConfig{

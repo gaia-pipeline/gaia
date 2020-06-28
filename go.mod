@@ -49,6 +49,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/speza/casbin-bolt-adapter v0.0.0-20200612141053-0da5f0ce6fc7
 	github.com/src-d/gcfg v1.3.0 // indirect
+	github.com/stretchr/testify v1.6.1
 	github.com/xanzy/ssh-agent v0.2.0 // indirect
 	go.etcd.io/bbolt v1.3.4
 	golang.org/x/crypto v0.0.0-20190211182817-74369b46fc67
@@ -61,7 +62,7 @@ require (
 	gopkg.in/src-d/go-git.v4 v4.5.0
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.2.7
-	gotest.tools v2.2.0+incompatible
+	gotest.tools v2.2.0+incompatible // indirect
 )
 
 go 1.13

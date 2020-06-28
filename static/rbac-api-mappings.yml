@@ -244,4 +244,4 @@
   endpoints:
     - method: GET
       path: "/api/v1/users/:username/rbac/roles"
-      resource: role
+      resource: username

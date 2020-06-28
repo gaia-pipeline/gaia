@@ -11,7 +11,7 @@ import (
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/gaia-pipeline/gaia"
 )

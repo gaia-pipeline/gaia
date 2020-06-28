@@ -9,23 +9,23 @@ import (
 
 // EndpointEnforcer represents the interface for enforcing RBAC using the echo.Context.
 type EndpointEnforcer interface {
-	Enforce(username, method, path string, params map[string]string) (bool, error)
+	Enforce(username, method, path string, params map[string]string) error
 }
 
 // Enforce uses the echo.Context to enforce RBAC. Uses the apiLookup to apply policies to specific endpoints.
-func (e *enforcerService) Enforce(username, method, path string, params map[string]string) (bool, error) {
+func (e *enforcerService) Enforce(username, method, path string, params map[string]string) error {
 	group := e.rbacapiLookup
 
 	endpoint, ok := group[path]
 	if !ok {
 		gaia.Cfg.Logger.Warn("path not mapped to api group", "method", method, "path", path)
-		return true, nil
+		return nil
 	}
 
 	perm, ok := endpoint.Methods[method]
 	if !ok {
 		gaia.Cfg.Logger.Warn("method not mapped to api group path", "path", path, "method", method)
-		return true, nil
+		return nil
 	}
 
 	splitAction := strings.Split(perm, "/")
@@ -36,17 +36,20 @@ func (e *enforcerService) Enforce(username, method, path string, params map[stri
 	if endpoint.Param != "" {
 		param := params[endpoint.Param]
 		if param == "" {
-			return false, fmt.Errorf("error param %s missing", endpoint.Param)
+			return fmt.Errorf("error param %s missing", endpoint.Param)
 		}
 		fullResource = param
 	}
 
-	valid, err := e.enforcer.Enforce(username, namespace, action, fullResource)
+	allow, err := e.enforcer.Enforce(username, namespace, action, fullResource)
 	if err != nil {
-		return false, fmt.Errorf("error enforcing rbac: %w", err)
+		return fmt.Errorf("error enforcing rbac: %w", err)
+	}
+	if !allow {
+		return NewErrPermissionDenied(namespace, action, fullResource)
 	}
 
-	return valid, NewErrPermissionDenied(namespace, action, fullResource)
+	return nil
 }
 
 // ErrPermissionDenied is for when the RBAC enforcement check fails.
