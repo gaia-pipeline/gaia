@@ -36,15 +36,19 @@ export default {
   },
 
   PullPipeline (context, pipeline) {
-    // Send start request
+    // Send pull request
     context.$http
       .post('/api/v1/pipeline/' + pipeline.id + '/pull', { docker: pipeline.docker })
       .then(response => {
-        console.log("Success")
+        context.$notify({
+          title: 'Successfully pulled new code',
+          message: `Pipeline "${pipeline.name}" has been updated successfully.`,
+          type: 'success'
+        })
       })
       .catch((error) => {
         context.$store.commit('clearIntervals')
         context.$onError(error)
       })
-  }  
+  }
 }

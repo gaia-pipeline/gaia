@@ -13,7 +13,7 @@
             <i class="fa fa-play-circle"></i>
           </span>
           <span>Pull Pipeline</span>
-        </a>        
+        </a>
         <a class="button is-green-button" @click="jobLog" v-if="runID">
           <span class="icon">
             <i class="fa fa-terminal"></i>
@@ -534,7 +534,7 @@ export default {
 
     forcePullPipeline () {
       helper.PullPipeline(this, this.pipeline)
-    },    
+    },
 
     convertTime (time) {
       return moment(time).fromNow()
