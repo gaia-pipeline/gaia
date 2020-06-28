@@ -116,7 +116,7 @@ const (
 	// APIVersion represents the current API version
 	APIVersion = "v1"
 
-	// Source folder name where the sources are stored
+	// SrcFolder folder name where the sources are stored
 	SrcFolder = "src"
 
 	// TmpFolder is the temp folder for temporary files
