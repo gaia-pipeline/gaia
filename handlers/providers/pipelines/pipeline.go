@@ -6,13 +6,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
-
 	"github.com/gofrs/uuid"
 	"github.com/labstack/echo"
 	"github.com/robfig/cron"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 	"github.com/gaia-pipeline/gaia/helper/stringhelper"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/services"
