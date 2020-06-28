@@ -78,6 +78,7 @@ func init() {
 	fs.StringVar(&gaia.Cfg.DockerWorkerHostURL, "docker-worker-host-url", "http://127.0.0.1:8080", "The host url of the primary/worker API endpoint used for docker worker communication")
 	fs.StringVar(&gaia.Cfg.DockerWorkerGRPCHostURL, "docker-worker-grpc-host-url", "127.0.0.1:8989", "The host url of the primary/worker gRPC endpoint used for docker worker communication")
 	fs.BoolVar(&gaia.Cfg.RBACEnabled, "rbac-enabled", false, "Force RBAC to be enabled. Takes priority over value saved within the database")
+	fs.BoolVar(&gaia.Cfg.RBACDebug, "rbac-debug", false, "Enable RBAC debug logging.")
 
 	// Default values
 	gaia.Cfg.Bolt.Mode = 0600
@@ -358,7 +359,7 @@ func initRBACService(store store.GaiaStore) (rbac.Service, error) {
 	}
 
 	if enabled {
-		svc, err := rbac.NewEnforcerSvc(store.CasbinStore())
+		svc, err := rbac.NewEnforcerSvc(gaia.Cfg.RBACDebug, store.CasbinStore())
 		if err != nil {
 			gaia.Cfg.Logger.Error("failed to create new enforcer", "error", err.Error())
 			return nil, err

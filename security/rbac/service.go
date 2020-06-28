@@ -57,7 +57,7 @@ type (
 )
 
 // NewEnforcerSvc creates a new EnforcerService.
-func NewEnforcerSvc(adapter persist.BatchAdapter) (Service, error) {
+func NewEnforcerSvc(debug bool, adapter persist.BatchAdapter) (Service, error) {
 	model, err := loadModel()
 	if err != nil {
 		return nil, fmt.Errorf("error loading model: %w", err)
@@ -67,7 +67,10 @@ func NewEnforcerSvc(adapter persist.BatchAdapter) (Service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error instantiating casbin enforcer: %w", err)
 	}
-	enforcer.EnableLog(true)
+
+	if debug {
+		enforcer.EnableLog(true)
+	}
 
 	rbacapiMappings, err := loadAPIMappings()
 	if err != nil {

@@ -325,6 +325,7 @@ type Config struct {
 	DockerWorkerHostURL     string
 	DockerWorkerGRPCHostURL string
 	RBACEnabled             bool
+	RBACDebug               bool
 
 	// Worker
 	WorkerName        string
