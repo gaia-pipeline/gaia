@@ -130,6 +130,9 @@ func UpdateRepository(pipe *gaia.Pipeline) error {
 			if err != nil {
 				return err
 			}
+		} else if strings.Contains(err.Error(), "worktree contains unstaged changes") {
+			// ignore this error, the pull overwrote everything anyways.
+			err = nil
 		} else {
 			// It's also an error if the repo is already up to date so we just move on.
 			gaia.Cfg.Logger.Error("error while doing a pull request: ", "error", err.Error())

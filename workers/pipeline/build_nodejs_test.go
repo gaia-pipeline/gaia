@@ -68,7 +68,7 @@ func TestExecuteBuildNodeJS(t *testing.T) {
 		t.Fatal(err)
 	}
 	pipelineID := uuid.Must(v4, nil)
-	buildDir := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpNodeJSFolder, srcFolder, pipelineID.String())
+	buildDir := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpNodeJSFolder, gaia.SrcFolder, pipelineID.String())
 	if err := os.MkdirAll(buildDir, 0700); err != nil {
 		t.Fatal(err)
 	}

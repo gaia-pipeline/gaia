@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+
 	"github.com/gofrs/uuid"
 	"github.com/labstack/echo"
 	"github.com/robfig/cron"
@@ -527,6 +529,12 @@ func (pp *pipelineProvider) PipelinePull(c echo.Context) error {
 	foundPipeline.Docker = docker
 
 	if foundPipeline.Name != "" {
+		uniqueFolder, err := pipelinehelper.GetLocalDestinationForPipeline(foundPipeline)
+		if err != nil {
+			gaia.Cfg.Logger.Error("Pipeline type invalid", "type", foundPipeline.Type)
+			return err
+		}
+		foundPipeline.Repo.LocalDest = uniqueFolder
 		if err := pipeline.UpdateRepository(&foundPipeline); err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		}

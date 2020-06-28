@@ -53,19 +53,16 @@ const (
 )
 
 var (
-	// GlobalActivePipelines holds globally all current active pipleines.
+	// GlobalActivePipelines holds globally all current active pipelines.
 	GlobalActivePipelines *ActivePipelines
 
 	// errMissingType is the error thrown when a pipeline is missing the type
 	// in the file name.
-	errMissingType = errors.New("couldnt find pipeline type definition")
+	errMissingType = errors.New("couldn't find pipeline type definition")
 )
 
 // execution command context used for build
 var execCommandContext = exec.CommandContext
-
-// Source folder name where the sources are stored
-const srcFolder = "src"
 
 // newBuildPipeline creates a new build pipeline for the given
 // pipeline type.
