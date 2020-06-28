@@ -6,7 +6,7 @@ ENV GAIA_PORT=8080 \
 
 # install additional deps
 RUN set -ex; \
-	apk add --no-cache build-base python-dev \
+	apk add --no-cache build-base python3-dev linux-headers \
     && pip install virtualenv grpcio
 
 # Directory for the binary
