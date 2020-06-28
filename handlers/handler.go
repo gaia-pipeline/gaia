@@ -64,6 +64,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		apiAuthGrp.DELETE("pipeline/:pipelineid", pipelineProvider.PipelineDelete)
 		apiAuthGrp.POST("pipeline/:pipelineid/start", pipelineProvider.PipelineStart)
 		apiAuthGrp.PUT("pipeline/:pipelineid/reset-trigger-token", pipelineProvider.PipelineResetToken)
+		apiAuthGrp.POST("pipeline/:pipelineid/pull", pipelineProvider.PipelinePull)
 		apiAuthGrp.GET("pipeline/latest", pipelineProvider.PipelineGetAllWithLatestRun)
 		apiAuthGrp.POST("pipeline/periodicschedules", pipelineProvider.PipelineCheckPeriodicSchedules)
 		apiGrp.POST("pipeline/githook", GitWebHook)

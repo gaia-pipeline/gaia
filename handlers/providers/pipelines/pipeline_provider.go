@@ -26,6 +26,7 @@ type PipelineProvider interface {
 	PipelineGet(c echo.Context) error
 	PipelineGetAll(c echo.Context) error
 	PipelineUpdate(c echo.Context) error
+	PipelinePull(c echo.Context) error
 	PipelineDelete(c echo.Context) error
 	PipelineTrigger(c echo.Context) error
 	PipelineResetToken(c echo.Context) error

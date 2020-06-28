@@ -33,5 +33,18 @@ export default {
         context.$store.commit('clearIntervals')
         context.$onError(error)
       })
-  }
+  },
+
+  PullPipeline (context, pipeline) {
+    // Send start request
+    context.$http
+      .post('/api/v1/pipeline/' + pipeline.id + '/pull', { docker: pipeline.docker })
+      .then(response => {
+        console.log("Success")
+      })
+      .catch((error) => {
+        context.$store.commit('clearIntervals')
+        context.$onError(error)
+      })
+  }  
 }
