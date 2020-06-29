@@ -26,7 +26,7 @@ var pollerDone = make(chan struct{}, 1)
 var isPollerRunning bool
 
 // StopPoller sends a done signal to the polling timer if it's running.
-func StopPoller() error {
+func (s *gaiaPipelineService) StopPoller() error {
 	if isPollerRunning {
 		isPollerRunning = false
 		select {
@@ -39,7 +39,7 @@ func StopPoller() error {
 }
 
 // StartPoller starts the poller if it's not already running.
-func StartPoller() error {
+func (s *gaiaPipelineService) StartPoller() error {
 	if isPollerRunning {
 		return errors.New("poller is already running")
 	}
@@ -55,7 +55,7 @@ func StartPoller() error {
 			for {
 				select {
 				case <-pollTicker.C:
-					updateAllCurrentPipelines()
+					s.UpdateAllCurrentPipelines()
 				case <-pollerDone:
 					pollTicker.Stop()
 					return
@@ -89,7 +89,7 @@ func (s *gaiaPipelineService) InitTicker() {
 		}
 	}()
 
-	_ = StartPoller()
+	_ = s.StartPoller()
 }
 
 // checkActivePipelines looks up all files in the pipeline folder.

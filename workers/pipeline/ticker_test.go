@@ -98,9 +98,11 @@ func TestTurningThePollerOn(t *testing.T) {
 		PipelinePath: dataDir,
 		Poll:         true,
 	}
-
-	defer StopPoller()
-	err := StartPoller()
+	pipelineService := NewGaiaPipelineService(Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+	defer pipelineService.StopPoller()
+	err := pipelineService.StartPoller()
 	if err != nil {
 		t.Fatal("error was not expected. got: ", err)
 	}
@@ -117,8 +119,10 @@ func TestTurningThePollerOnWhilePollingIsDisabled(t *testing.T) {
 		PipelinePath: dataDir,
 		Poll:         false,
 	}
-
-	err := StartPoller()
+	pipelineService := NewGaiaPipelineService(Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+	err := pipelineService.StartPoller()
 	if err != nil {
 		t.Fatal("error was not expected. got: ", err)
 	}
@@ -138,8 +142,11 @@ func TestTurningThePollerOnWhilePollingIsEnabled(t *testing.T) {
 		PipelinePath: dataDir,
 		Poll:         true,
 	}
-	defer StopPoller()
-	err := StartPoller()
+	pipelineService := NewGaiaPipelineService(Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+	defer pipelineService.StopPoller()
+	err := pipelineService.StartPoller()
 	if err != nil {
 		t.Fatal("error was not expected. got: ", err)
 	}
@@ -159,8 +166,10 @@ func TestTurningThePollerOff(t *testing.T) {
 		PipelinePath: dataDir,
 		Poll:         true,
 	}
-
-	err := StartPoller()
+	pipelineService := NewGaiaPipelineService(Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+	err := pipelineService.StartPoller()
 	if err != nil {
 		t.Fatal("error was not expected. got: ", err)
 	}
@@ -168,7 +177,7 @@ func TestTurningThePollerOff(t *testing.T) {
 		t.Fatal("expected isPollerRunning to be true. was: ", isPollerRunning)
 	}
 
-	err = StopPoller()
+	err = pipelineService.StopPoller()
 	if err != nil {
 		t.Fatal("error was not expected. got: ", err)
 	}
@@ -188,20 +197,22 @@ func TestTogglePoller(t *testing.T) {
 		PipelinePath: dataDir,
 		Poll:         true,
 	}
-
-	err := StartPoller()
+	pipelineService := NewGaiaPipelineService(Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+	err := pipelineService.StartPoller()
 	if err != nil {
 		t.Fatal("error was not expected. got: ", err)
 	}
-	err = StartPoller()
+	err = pipelineService.StartPoller()
 	if err == nil {
 		t.Fatal("starting the poller again should have failed")
 	}
-	err = StopPoller()
+	err = pipelineService.StopPoller()
 	if err != nil {
 		t.Fatal("stopping the poller while it's running should not have failed. got: ", err)
 	}
-	err = StopPoller()
+	err = pipelineService.StopPoller()
 	if err == nil {
 		t.Fatal("stopping the poller again while it's stopped should have failed.")
 	}

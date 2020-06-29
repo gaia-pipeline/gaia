@@ -39,6 +39,10 @@ type PipelineProvider interface {
 	PipelineGetAllRuns(c echo.Context) error
 	PipelineGetLatestRun(c echo.Context) error
 	GetJobLogs(c echo.Context) error
+	GitWebHook(c echo.Context) error
+	SettingsPollOn(c echo.Context) error
+	SettingsPollOff(c echo.Context) error
+	SettingsPollGet(c echo.Context) error
 }
 
 // NewPipelineProvider creates a new provider with the needed dependencies.

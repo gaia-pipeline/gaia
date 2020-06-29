@@ -534,7 +534,7 @@ func (pp *pipelineProvider) PipelinePull(c echo.Context) error {
 			return err
 		}
 		foundPipeline.Repo.LocalDest = uniqueFolder
-		if err := pipeline.UpdateRepository(&foundPipeline); err != nil {
+		if err := pp.deps.PipelineService.UpdateRepository(&foundPipeline); err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		}
 		return c.NoContent(http.StatusOK)

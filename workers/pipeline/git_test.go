@@ -45,7 +45,10 @@ func TestUpdateAllPipelinesRepositoryNotFound(t *testing.T) {
 	p.Repo = &gaia.GitRepo{LocalDest: tmp}
 	GlobalActivePipelines = NewActivePipelines()
 	GlobalActivePipelines.Append(*p)
-	updateAllCurrentPipelines()
+	pipelineService := NewGaiaPipelineService(Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+	pipelineService.UpdateAllCurrentPipelines()
 	if !strings.Contains(b.String(), "repository does not exist") {
 		t.Fatal("error message not found in logs: ", b.String())
 	}
@@ -81,7 +84,10 @@ func TestUpdateAllPipelinesAlreadyUpToDate(t *testing.T) {
 	p.Repo.LocalDest = "tmp"
 	GlobalActivePipelines = NewActivePipelines()
 	GlobalActivePipelines.Append(*p)
-	updateAllCurrentPipelines()
+	pipelineService := NewGaiaPipelineService(Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+	pipelineService.UpdateAllCurrentPipelines()
 	if !strings.Contains(b.String(), "already up-to-date") {
 		t.Fatal("log output did not contain error message that the repo is up-to-date.: ", b.String())
 	}
@@ -184,7 +190,10 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 	if err != nil {
 		t.Fatal(err)
 	}
-	updateAllCurrentPipelines()
+	pipelineService := NewGaiaPipelineService(Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+	pipelineService.UpdateAllCurrentPipelines()
 	want := "knownhosts: key is unknown"
 	if !strings.Contains(b.String(), want) {
 		t.Fatalf("wanted buf to contain: '%s', got: '%s'", want, b.String())
@@ -228,7 +237,10 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 	defer func() { GlobalActivePipelines = nil }()
 	GlobalActivePipelines.Append(*p1)
 	GlobalActivePipelines.Append(*p2)
-	updateAllCurrentPipelines()
+	pipelineService := NewGaiaPipelineService(Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+	pipelineService.UpdateAllCurrentPipelines()
 	if !strings.Contains(b.String(), "already up-to-date") {
 		t.Fatal("log output did not contain error message that the repo is up-to-date.: ", b.String())
 	}

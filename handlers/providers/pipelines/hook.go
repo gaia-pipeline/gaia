@@ -1,4 +1,4 @@
-package handlers
+package pipelines
 
 import (
 	"crypto/hmac"
@@ -98,7 +98,7 @@ func parse(secret []byte, req *http.Request) (Hook, error) {
 }
 
 // GitWebHook handles callbacks from GitHub's webhook system.
-func GitWebHook(c echo.Context) error {
+func (pp *pipelineProvider) GitWebHook(c echo.Context) error {
 	vault, err := services.DefaultVaultService()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "unable to initialize vault: "+err.Error())
@@ -144,7 +144,7 @@ func GitWebHook(c echo.Context) error {
 		return err
 	}
 	foundPipeline.Repo.LocalDest = uniqueFolder
-	err = pipeline.UpdateRepository(foundPipeline)
+	err = pp.deps.PipelineService.UpdateRepository(foundPipeline)
 	if err != nil {
 		message := fmt.Sprintln("failed to build pipeline: ", err.Error())
 		return c.String(http.StatusInternalServerError, message)

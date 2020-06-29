@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
+
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 
 	"github.com/gaia-pipeline/gaia"
@@ -54,7 +56,10 @@ func TestSetPollerToggle(t *testing.T) {
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
 	})
-
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
 	// // Initialize echo
 	e := echo.New()
 	_ = handlerService.InitHandlers(e)
@@ -77,7 +82,7 @@ func TestSetPollerToggle(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/on")
 
-		_ = SettingsPollOn(c)
+		_ = pp.SettingsPollOn(c)
 		retStatus := http.StatusOK
 		if rec.Code != retStatus {
 			t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -89,7 +94,7 @@ func TestSetPollerToggle(t *testing.T) {
 		c2 := e.NewContext(req2, rec2)
 		c2.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/on")
 
-		_ = SettingsPollOn(c2)
+		_ = pp.SettingsPollOn(c2)
 		secondRetStatus := http.StatusBadRequest
 		if rec2.Code != secondRetStatus {
 			t.Fatalf("expected response code %v got %v", secondRetStatus, rec2.Code)
@@ -109,7 +114,7 @@ func TestSetPollerToggle(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/on")
 
-		_ = SettingsPollOn(c)
+		_ = pp.SettingsPollOn(c)
 		retStatus := http.StatusBadRequest
 		if rec.Code != retStatus {
 			t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -129,7 +134,7 @@ func TestSetPollerToggle(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/off")
 
-		_ = SettingsPollOff(c)
+		_ = pp.SettingsPollOff(c)
 		retStatus := http.StatusOK
 		if rec.Code != retStatus {
 			t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -152,7 +157,7 @@ func TestSetPollerToggle(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/off")
 
-		_ = SettingsPollOff(c)
+		_ = pp.SettingsPollOff(c)
 		retStatus := http.StatusBadRequest
 		if rec.Code != retStatus {
 			t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -172,7 +177,7 @@ func TestSetPollerToggle(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll")
 
-		_ = SettingsPollGet(c)
+		_ = pp.SettingsPollGet(c)
 		retStatus := http.StatusOK
 		if rec.Code != retStatus {
 			t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -205,6 +210,10 @@ func TestGettingSettingFromDBTakesPrecedence(t *testing.T) {
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
 	})
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
 	// // Initialize echo
 	e := echo.New()
 	_ = handlerService.InitHandlers(e)
@@ -225,7 +234,7 @@ func TestGettingSettingFromDBTakesPrecedence(t *testing.T) {
 	c := e.NewContext(req, rec)
 	c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/")
 
-	_ = SettingsPollGet(c)
+	_ = pp.SettingsPollGet(c)
 	retStatus := http.StatusOK
 	if rec.Code != retStatus {
 		t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -257,7 +266,10 @@ func TestSettingPollerOnAlsoSavesSettingsInDB(t *testing.T) {
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
 	})
-
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
 	// // Initialize echo
 	e := echo.New()
 	_ = handlerService.InitHandlers(e)
@@ -280,7 +292,7 @@ func TestSettingPollerOnAlsoSavesSettingsInDB(t *testing.T) {
 	c := e.NewContext(req, rec)
 	c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/on")
 
-	_ = SettingsPollOn(c)
+	_ = pp.SettingsPollOn(c)
 	retStatus := http.StatusOK
 	if rec.Code != retStatus {
 		t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -290,7 +302,7 @@ func TestSettingPollerOnAlsoSavesSettingsInDB(t *testing.T) {
 		t.Fatal("SettingPut should have been called. Was not.")
 	}
 	putCalled = false
-	_ = SettingsPollOff(c)
+	_ = pp.SettingsPollOff(c)
 	if putCalled != true {
 		t.Fatal("SettingPut should have been called. Was not.")
 	}

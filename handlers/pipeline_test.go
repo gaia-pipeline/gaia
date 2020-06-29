@@ -564,6 +564,243 @@ func TestPipelineStart(t *testing.T) {
 	})
 }
 
+func TestPipelinePull(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestPipelinePull")
+	gaia.Cfg = &gaia.Config{
+		Logger:       hclog.NewNullLogger(),
+		HomePath:     tmp,
+		DataPath:     tmp,
+		PipelinePath: tmp,
+	}
+
+	// Initialize global active pipelines
+	ap := pipeline.NewActivePipelines()
+	pipeline.GlobalActivePipelines = ap
+
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+
+	// Initialize echo
+	e := echo.New()
+	_ = handlerService.InitHandlers(e)
+
+	p := gaia.Pipeline{
+		ID:      1,
+		Name:    "Pipeline A",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+	}
+
+	// Add to active pipelines
+	ap.Append(p)
+
+	t.Run("can pull a pipeline", func(t *testing.T) {
+		bodyBytes, _ := json.Marshal(map[string]interface{}{
+			"docker": false,
+		})
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/pull", bytes.NewBuffer(bodyBytes))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("pipelineid")
+		c.SetParamValues("1")
+
+		pRun := new(gaia.PipelineRun)
+		pRun.ID = 999
+		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+			Scheduler:       &mockScheduleService{pipelineRun: pRun},
+			PipelineService: pipelineService,
+		})
+		_ = pp.PipelinePull(c)
+
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("expected response code %v got %v", http.StatusNoContent, rec.Code)
+		}
+	})
+
+	t.Run("fails when scheduler throws error", func(t *testing.T) {
+		bodyBytes, _ := json.Marshal(map[string]interface{}{
+			"docker": false,
+		})
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", bytes.NewBuffer(bodyBytes))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("pipelineid")
+		c.SetParamValues("1")
+
+		pRun := new(gaia.PipelineRun)
+		pRun.ID = 999
+		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+			Scheduler:       &mockScheduleService{pipelineRun: pRun, err: errors.New("failed to run pipeline")},
+			PipelineService: pipelineService,
+		})
+		_ = pp.PipelineStart(c)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
+		}
+	})
+
+	t.Run("fails when scheduler doesn't find the pipeline but does not return error", func(t *testing.T) {
+		bodyBytes, _ := json.Marshal(map[string]interface{}{
+			"docker": false,
+		})
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", bytes.NewBuffer(bodyBytes))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("pipelineid")
+		c.SetParamValues("1")
+
+		_ = pp.PipelineStart(c)
+
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("expected response code %v got %v", http.StatusNotFound, rec.Code)
+		}
+	})
+}
+
+type MockVaultStorer struct {
+	Error error
+}
+
+var store []byte
+
+func (mvs *MockVaultStorer) Init() error {
+	store = make([]byte, 0)
+	return mvs.Error
+}
+
+func (mvs *MockVaultStorer) Read() ([]byte, error) {
+	return store, mvs.Error
+}
+
+func (mvs *MockVaultStorer) Write(data []byte) error {
+	store = data
+	return mvs.Error
+}
+
+func TestHookReceive(t *testing.T) {
+	dataDir, err := ioutil.TempDir("", "TestHookReceive")
+	if err != nil {
+		t.Fatalf("error creating data dir %v", err.Error())
+	}
+	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
+		Scheduler: &mockScheduleService{},
+	})
+
+	handlerService := NewGaiaHandler(Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+	defer func() {
+		gaia.Cfg = nil
+		_ = os.RemoveAll(dataDir)
+	}()
+	gaia.Cfg = &gaia.Config{
+		Logger:    hclog.NewNullLogger(),
+		DataPath:  dataDir,
+		CAPath:    dataDir,
+		VaultPath: dataDir,
+		HomePath:  dataDir,
+	}
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+	m := new(MockVaultStorer)
+	v, _ := services.VaultService(m)
+	v.Add("GITHUB_WEBHOOK_SECRET", []byte("superawesomesecretgithubpassword"))
+	defer func() {
+		services.MockVaultService(nil)
+	}()
+	e := echo.New()
+
+	// Initialize global active pipelines
+	ap := pipeline.NewActivePipelines()
+	pipeline.GlobalActivePipelines = ap
+
+	p := gaia.Pipeline{
+		ID:      1,
+		Name:    "Pipeline A",
+		Type:    gaia.PTypeGolang,
+		Created: time.Now(),
+		Repo: &gaia.GitRepo{
+			URL: "https://github.com/Codertocat/Hello-World",
+		},
+	}
+
+	ap.Append(p)
+
+	_ = handlerService.InitHandlers(e)
+
+	t.Run("successfully extracting path information from payload", func(t *testing.T) {
+		payload, _ := ioutil.ReadFile(filepath.Join("fixtures", "hook_basic_push_payload.json"))
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/githook", bytes.NewBuffer(payload))
+		req.Header.Set("Content-Type", "application/json")
+		// Use https://www.freeformatter.com/hmac-generator.html#ad-output for example
+		// to calculate a new sha if the fixture would change.
+		req.Header.Set("x-hub-signature", "sha1=940e53f44518a6cf9ba002c29c8ace7799af2b13")
+		req.Header.Set("x-github-event", "push")
+		req.Header.Set("X-github-delivery", "1234asdf")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		_ = pp.GitWebHook(c)
+
+		// Expected failure because repository does not exist
+		if rec.Code != http.StatusInternalServerError {
+			t.Fatalf("want response code %v got %v", http.StatusInternalServerError, rec.Code)
+		}
+
+		// Checking body to make sure it's the failure we want
+		body, _ := ioutil.ReadAll(rec.Body)
+		want := "failed to build pipeline:  repository does not exist\n"
+		if string(body) != want {
+			t.Fatalf("want body: %s, got: %s", want, string(body))
+		}
+	})
+
+	t.Run("only push events are accepted", func(t *testing.T) {
+		payload, _ := ioutil.ReadFile(filepath.Join("fixtures", "hook_basic_push_payload.json"))
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/githook", bytes.NewBuffer(payload))
+		req.Header.Set("Content-Type", "application/json")
+		// Use https://www.freeformatter.com/hmac-generator.html#ad-output for example
+		// to calculate a new sha if the fixture would change.
+		req.Header.Set("x-hub-signature", "sha1=940e53f44518a6cf9ba002c29c8ace7799af2b13")
+		req.Header.Set("x-github-event", "pull")
+		req.Header.Set("X-github-delivery", "1234asdf")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		_ = pp.GitWebHook(c)
+
+		// Expected failure because repository does not exist
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("want response code %v got %v", http.StatusBadRequest, rec.Code)
+		}
+
+		// Checking body to make sure it's the failure we want
+		body, _ := ioutil.ReadAll(rec.Body)
+		want := "invalid event"
+		if string(body) != want {
+			t.Fatalf("want body: %s, got: %s", want, string(body))
+		}
+	})
+}
+
 type mockUserStoreService struct {
 	gStore.GaiaStore
 	user *gaia.User

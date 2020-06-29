@@ -19,6 +19,10 @@ type Service interface {
 	CreatePipeline(p *gaia.CreatePipeline)
 	InitTicker()
 	CheckActivePipelines()
+	UpdateRepository(p *gaia.Pipeline) error
+	UpdateAllCurrentPipelines()
+	StartPoller() error
+	StopPoller() error
 }
 
 // NewGaiaPipelineService creates a pipeline service with its required dependencies already wired up
