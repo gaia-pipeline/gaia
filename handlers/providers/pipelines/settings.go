@@ -1,17 +1,16 @@
-package handlers
+package pipelines
 
 import (
 	"net/http"
 
-	"github.com/gaia-pipeline/gaia/services"
-	"github.com/gaia-pipeline/gaia/workers/pipeline"
+	"github.com/labstack/echo"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/labstack/echo"
+	"github.com/gaia-pipeline/gaia/services"
 )
 
-// SettingsPollOn turn on polling functionality.
-func SettingsPollOn(c echo.Context) error {
+// SettingsPollOn turn on polling functionality
+func (pp *pipelineProvider) SettingsPollOn(c echo.Context) error {
 	storeService, err := services.StorageService()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Something went wrong while getting storage service.")
@@ -25,7 +24,7 @@ func SettingsPollOn(c echo.Context) error {
 	}
 
 	gaia.Cfg.Poll = true
-	err = pipeline.StartPoller()
+	err = pp.deps.PipelineService.StartPoller()
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
@@ -39,7 +38,7 @@ func SettingsPollOn(c echo.Context) error {
 }
 
 // SettingsPollOff turn off polling functionality.
-func SettingsPollOff(c echo.Context) error {
+func (pp *pipelineProvider) SettingsPollOff(c echo.Context) error {
 	storeService, err := services.StorageService()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Something went wrong while getting storage service.")
@@ -52,7 +51,7 @@ func SettingsPollOff(c echo.Context) error {
 		configStore = &gaia.StoreConfig{}
 	}
 	gaia.Cfg.Poll = false
-	err = pipeline.StopPoller()
+	err = pp.deps.PipelineService.StopPoller()
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
@@ -69,7 +68,7 @@ type pollStatus struct {
 }
 
 // SettingsPollGet get status of polling functionality.
-func SettingsPollGet(c echo.Context) error {
+func (pp *pipelineProvider) SettingsPollGet(c echo.Context) error {
 	storeService, err := services.StorageService()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Something went wrong while getting storage service.")

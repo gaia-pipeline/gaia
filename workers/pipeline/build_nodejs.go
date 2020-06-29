@@ -33,7 +33,7 @@ func (b *BuildPipelineNodeJS) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	uniqueName := uuid.Must(v4, nil)
 
 	// Create local temp folder for clone
-	cloneFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpNodeJSFolder, srcFolder, uniqueName.String(), nodeJSInternalCloneFolder)
+	cloneFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpNodeJSFolder, gaia.SrcFolder, uniqueName.String(), nodeJSInternalCloneFolder)
 	err = os.MkdirAll(cloneFolder, 0700)
 	if err != nil {
 		return err
@@ -75,7 +75,7 @@ func (b *BuildPipelineNodeJS) ExecuteBuild(p *gaia.CreatePipeline) error {
 	}
 
 	// Execute and wait until finish or timeout
-	uniqueFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpNodeJSFolder, srcFolder, p.Pipeline.UUID)
+	uniqueFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpNodeJSFolder, gaia.SrcFolder, p.Pipeline.UUID)
 	output, err := executeCmd(path, args, os.Environ(), uniqueFolder)
 	p.Output = string(output[:])
 	if err != nil {

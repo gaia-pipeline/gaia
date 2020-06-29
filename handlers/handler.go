@@ -64,15 +64,16 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		apiAuthGrp.DELETE("pipeline/:pipelineid", pipelineProvider.PipelineDelete)
 		apiAuthGrp.POST("pipeline/:pipelineid/start", pipelineProvider.PipelineStart)
 		apiAuthGrp.PUT("pipeline/:pipelineid/reset-trigger-token", pipelineProvider.PipelineResetToken)
+		apiAuthGrp.POST("pipeline/:pipelineid/pull", pipelineProvider.PipelinePull)
 		apiAuthGrp.GET("pipeline/latest", pipelineProvider.PipelineGetAllWithLatestRun)
 		apiAuthGrp.POST("pipeline/periodicschedules", pipelineProvider.PipelineCheckPeriodicSchedules)
-		apiGrp.POST("pipeline/githook", GitWebHook)
+		apiGrp.POST("pipeline/githook", pipelineProvider.GitWebHook)
 		apiGrp.POST("pipeline/:pipelineid/:pipelinetoken/trigger", pipelineProvider.PipelineTrigger)
 
 		// Settings
-		apiAuthGrp.POST("settings/poll/on", SettingsPollOn)
-		apiAuthGrp.POST("settings/poll/off", SettingsPollOff)
-		apiAuthGrp.GET("settings/poll", SettingsPollGet)
+		apiAuthGrp.POST("settings/poll/on", pipelineProvider.SettingsPollOn)
+		apiAuthGrp.POST("settings/poll/off", pipelineProvider.SettingsPollOff)
+		apiAuthGrp.GET("settings/poll", pipelineProvider.SettingsPollGet)
 
 		// PipelineRun
 		apiAuthGrp.POST("pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop)

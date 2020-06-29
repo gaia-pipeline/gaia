@@ -1,4 +1,4 @@
-package handlers
+package pipelines
 
 import (
 	"crypto/hmac"
@@ -11,10 +11,12 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/labstack/echo"
+
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
-	"github.com/labstack/echo"
 )
 
 // Hook represent a github based webhook context.
@@ -96,7 +98,7 @@ func parse(secret []byte, req *http.Request) (Hook, error) {
 }
 
 // GitWebHook handles callbacks from GitHub's webhook system.
-func GitWebHook(c echo.Context) error {
+func (pp *pipelineProvider) GitWebHook(c echo.Context) error {
 	vault, err := services.DefaultVaultService()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "unable to initialize vault: "+err.Error())
@@ -126,17 +128,23 @@ func GitWebHook(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "error in unmarshalling json payload")
 	}
 
-	var foundPipe *gaia.Pipeline
+	var foundPipeline *gaia.Pipeline
 	for _, pipe := range pipeline.GlobalActivePipelines.GetAll() {
 		if pipe.Repo.URL == p.Repo.GitURL || pipe.Repo.URL == p.Repo.HTMLURL || pipe.Repo.URL == p.Repo.SSHURL {
-			foundPipe = &pipe
+			foundPipeline = &pipe
 			break
 		}
 	}
-	if foundPipe == nil {
+	if foundPipeline == nil {
 		return c.String(http.StatusInternalServerError, "pipeline not found")
 	}
-	err = pipeline.UpdateRepository(foundPipe)
+	uniqueFolder, err := pipelinehelper.GetLocalDestinationForPipeline(*foundPipeline)
+	if err != nil {
+		gaia.Cfg.Logger.Error("Pipeline type invalid", "type", foundPipeline.Type)
+		return err
+	}
+	foundPipeline.Repo.LocalDest = uniqueFolder
+	err = pp.deps.PipelineService.UpdateRepository(foundPipeline)
 	if err != nil {
 		message := fmt.Sprintln("failed to build pipeline: ", err.Error())
 		return c.String(http.StatusInternalServerError, message)
