@@ -533,6 +533,10 @@ func (pp *pipelineProvider) PipelinePull(c echo.Context) error {
 			gaia.Cfg.Logger.Error("Pipeline type invalid", "type", foundPipeline.Type)
 			return err
 		}
+		if foundPipeline.Repo == nil {
+			gaia.Cfg.Logger.Error("Git repo is missing")
+			return errors.New("no git repository for pipeline")
+		}
 		foundPipeline.Repo.LocalDest = uniqueFolder
 		if err := pp.deps.PipelineService.UpdateRepository(&foundPipeline); err != nil {
 			return c.String(http.StatusBadRequest, err.Error())

@@ -564,6 +564,15 @@ func TestPipelineStart(t *testing.T) {
 	})
 }
 
+type mockPipelineService struct {
+	pipeline.Service
+	err error
+}
+
+func (m *mockPipelineService) UpdateRepository(p *gaia.Pipeline) error {
+	return m.err
+}
+
 func TestPipelinePull(t *testing.T) {
 	tmp, _ := ioutil.TempDir("", "TestPipelinePull")
 	gaia.Cfg = &gaia.Config{
@@ -586,11 +595,6 @@ func TestPipelinePull(t *testing.T) {
 		PipelineService: pipelineService,
 	})
 
-	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
 	// Initialize echo
 	e := echo.New()
 	_ = handlerService.InitHandlers(e)
@@ -600,6 +604,9 @@ func TestPipelinePull(t *testing.T) {
 		Name:    "Pipeline A",
 		Type:    gaia.PTypeGolang,
 		Created: time.Now(),
+		Repo: &gaia.GitRepo{
+			URL: "https://github.com/Skarlso/go-example",
+		},
 	}
 
 	// Add to active pipelines
@@ -615,59 +622,17 @@ func TestPipelinePull(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetParamNames("pipelineid")
 		c.SetParamValues("1")
-
-		pRun := new(gaia.PipelineRun)
-		pRun.ID = 999
 		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
-			Scheduler:       &mockScheduleService{pipelineRun: pRun},
-			PipelineService: pipelineService,
+			Scheduler:       &mockScheduleService{},
+			PipelineService: &mockPipelineService{},
 		})
-		_ = pp.PipelinePull(c)
-
-		if rec.Code != http.StatusNoContent {
-			t.Fatalf("expected response code %v got %v", http.StatusNoContent, rec.Code)
+		err := pp.PipelinePull(c)
+		if err != nil {
+			t.Fatal(err)
 		}
-	})
 
-	t.Run("fails when scheduler throws error", func(t *testing.T) {
-		bodyBytes, _ := json.Marshal(map[string]interface{}{
-			"docker": false,
-		})
-		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", bytes.NewBuffer(bodyBytes))
-		req.Header.Set("Content-Type", "application/json")
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
-		c.SetParamNames("pipelineid")
-		c.SetParamValues("1")
-
-		pRun := new(gaia.PipelineRun)
-		pRun.ID = 999
-		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
-			Scheduler:       &mockScheduleService{pipelineRun: pRun, err: errors.New("failed to run pipeline")},
-			PipelineService: pipelineService,
-		})
-		_ = pp.PipelineStart(c)
-
-		if rec.Code != http.StatusBadRequest {
-			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
-		}
-	})
-
-	t.Run("fails when scheduler doesn't find the pipeline but does not return error", func(t *testing.T) {
-		bodyBytes, _ := json.Marshal(map[string]interface{}{
-			"docker": false,
-		})
-		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/:pipelineid/start", bytes.NewBuffer(bodyBytes))
-		req.Header.Set("Content-Type", "application/json")
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
-		c.SetParamNames("pipelineid")
-		c.SetParamValues("1")
-
-		_ = pp.PipelineStart(c)
-
-		if rec.Code != http.StatusNotFound {
-			t.Fatalf("expected response code %v got %v", http.StatusNotFound, rec.Code)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
 		}
 	})
 }
