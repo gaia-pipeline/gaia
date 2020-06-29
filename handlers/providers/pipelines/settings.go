@@ -3,12 +3,13 @@ package pipelines
 import (
 	"net/http"
 
+	"github.com/labstack/echo"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
-	"github.com/labstack/echo"
 )
 
-// SettingsPollOn turn on polling functionality.
+// SettingsPollOn turn on polling functionality
 func (pp *pipelineProvider) SettingsPollOn(c echo.Context) error {
 	storeService, err := services.StorageService()
 	if err != nil {
