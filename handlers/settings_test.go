@@ -7,15 +7,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
-
-	"github.com/gaia-pipeline/gaia/workers/pipeline"
-
-	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/services"
-	gStore "github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
+
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
+	"github.com/gaia-pipeline/gaia/services"
+	gStore "github.com/gaia-pipeline/gaia/store"
+	"github.com/gaia-pipeline/gaia/workers/pipeline"
 )
 
 type status struct {
