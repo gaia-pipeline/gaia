@@ -116,6 +116,9 @@ const (
 	// APIVersion represents the current API version
 	APIVersion = "v1"
 
+	// SrcFolder folder name where the sources are stored
+	SrcFolder = "src"
+
 	// TmpFolder is the temp folder for temporary files
 	TmpFolder = "tmp"
 
@@ -133,6 +136,9 @@ const (
 
 	// TmpNodeJSFolder is the name of the nodejs temporary folder
 	TmpNodeJSFolder = "nodejs"
+
+	// TmpJavaFolder is the name of the java temporary folder
+	TmpJavaFolder = "java"
 
 	// WorkerRegisterKey is the used key for worker registration secret
 	WorkerRegisterKey = "WORKER_REGISTER_KEY"

@@ -43,7 +43,7 @@ func (b *BuildPipelineRuby) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	uniqueName := uuid.Must(v4, nil)
 
 	// Create local temp folder for clone
-	cloneFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpRubyFolder, srcFolder, uniqueName.String())
+	cloneFolder := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpRubyFolder, gaia.SrcFolder, uniqueName.String())
 	err = os.MkdirAll(cloneFolder, 0700)
 	if err != nil {
 		return err

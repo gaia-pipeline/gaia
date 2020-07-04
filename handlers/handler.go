@@ -25,10 +25,10 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 	// --- Register handlers at echo instance ---
 
-	// Standard API router group.
+	// API router group.
 	apiGrp := e.Group(p)
 
-	// Auth API router group.
+	// API router group with auth middleware.
 	apiAuthGrp := e.Group(p, authMiddleware(&AuthConfig{
 		RoleCategories: rolehelper.DefaultUserRoles,
 		rbacEnforcer:   s.deps.RBACService,
@@ -54,6 +54,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		pipelineProvider := pipelines.NewPipelineProvider(pipelines.Dependencies{
 			Scheduler:       s.deps.Scheduler,
 			PipelineService: s.deps.PipelineService,
+			SettingsStore:   s.deps.Store,
 		})
 		apiAuthGrp.POST("pipeline", pipelineProvider.CreatePipeline)
 		apiAuthGrp.POST("pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote)
@@ -65,16 +66,17 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		apiAuthGrp.DELETE("pipeline/:pipelineid", pipelineProvider.PipelineDelete)
 		apiAuthGrp.POST("pipeline/:pipelineid/start", pipelineProvider.PipelineStart)
 		apiAuthGrp.PUT("pipeline/:pipelineid/reset-trigger-token", pipelineProvider.PipelineResetToken)
+		apiAuthGrp.POST("pipeline/:pipelineid/pull", pipelineProvider.PipelinePull)
 		apiAuthGrp.GET("pipeline/latest", pipelineProvider.PipelineGetAllWithLatestRun)
 		apiAuthGrp.POST("pipeline/periodicschedules", pipelineProvider.PipelineCheckPeriodicSchedules)
-		apiGrp.POST("pipeline/githook", GitWebHook)
+		apiGrp.POST("pipeline/githook", pipelineProvider.GitWebHook)
 		apiGrp.POST("pipeline/:pipelineid/:pipelinetoken/trigger", pipelineProvider.PipelineTrigger)
 
 		// Settings
 		settingsHandler := newSettingsHandler(s.deps.Store)
-		apiAuthGrp.POST("settings/poll/on", settingsHandler.pollOn)
-		apiAuthGrp.POST("settings/poll/off", settingsHandler.pollOff)
-		apiAuthGrp.GET("settings/poll", settingsHandler.pollGet)
+		apiAuthGrp.POST("settings/poll/on", pipelineProvider.SettingsPollOn)
+		apiAuthGrp.POST("settings/poll/off", pipelineProvider.SettingsPollOff)
+		apiAuthGrp.GET("settings/poll", pipelineProvider.SettingsPollGet)
 		apiAuthGrp.GET("settings/rbac", settingsHandler.rbacGet)
 		apiAuthGrp.PUT("settings/rbac", settingsHandler.rbacToggle)
 

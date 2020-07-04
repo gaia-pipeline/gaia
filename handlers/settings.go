@@ -7,7 +7,6 @@ import (
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/store"
-	"github.com/gaia-pipeline/gaia/workers/pipeline"
 )
 
 const msgSomethingWentWrong = "Something went wrong while retrieving settings information."
@@ -18,69 +17,6 @@ type settingsHandler struct {
 
 func newSettingsHandler(store store.SettingsStore) *settingsHandler {
 	return &settingsHandler{store: store}
-}
-
-// SettingsPollOn turn on polling functionality.
-func (h *settingsHandler) pollOn(c echo.Context) error {
-	configStore, err := h.store.SettingsGet()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, msgSomethingWentWrong)
-	}
-
-	gaia.Cfg.Poll = true
-
-	if err := pipeline.StartPoller(); err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-
-	configStore.Poll = true
-	if err := h.store.SettingsPut(configStore); err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-
-	return c.String(http.StatusOK, "Polling is turned on.")
-}
-
-// SettingsPollOff turn off polling functionality.
-func (h *settingsHandler) pollOff(c echo.Context) error {
-	configStore, err := h.store.SettingsGet()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, msgSomethingWentWrong)
-	}
-
-	gaia.Cfg.Poll = false
-
-	if err := pipeline.StopPoller(); err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-
-	configStore.Poll = true
-	if err = h.store.SettingsPut(configStore); err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-
-	return c.String(http.StatusOK, "Polling is turned off.")
-}
-
-type pollStatus struct {
-	Status bool
-}
-
-// SettingsPollGet get status of polling functionality.
-func (h *settingsHandler) pollGet(c echo.Context) error {
-	configStore, err := h.store.SettingsGet()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, msgSomethingWentWrong)
-	}
-
-	var ps pollStatus
-	if gaia.Cfg.Poll {
-		ps.Status = true
-	} else {
-		ps.Status = configStore.Poll
-	}
-
-	return c.JSON(http.StatusOK, ps)
 }
 
 type rbacToggleRequest struct {

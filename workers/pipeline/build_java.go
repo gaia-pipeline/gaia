@@ -20,7 +20,6 @@ var (
 )
 
 const (
-	javaFolder        = "java"
 	javaFinalJarName  = "plugin-jar-with-dependencies.jar"
 	mavenTargetFolder = "target"
 )
@@ -40,8 +39,8 @@ func (b *BuildPipelineJava) PrepareEnvironment(p *gaia.CreatePipeline) error {
 	uniqueName := uuid.Must(v4, nil)
 
 	// Create local temp folder for clone
-	rootPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, javaFolder)
-	cloneFolder := filepath.Join(rootPath, srcFolder, uniqueName.String())
+	rootPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpJavaFolder)
+	cloneFolder := filepath.Join(rootPath, gaia.SrcFolder, uniqueName.String())
 	err = os.MkdirAll(cloneFolder, 0700)
 	if err != nil {
 		return err

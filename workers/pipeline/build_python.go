@@ -38,7 +38,7 @@ func (b *BuildPipelinePython) PrepareEnvironment(p *gaia.CreatePipeline) error {
 
 	// Create local temp folder for clone
 	rootPath := filepath.Join(gaia.Cfg.HomePath, gaia.TmpFolder, gaia.TmpPythonFolder)
-	cloneFolder := filepath.Join(rootPath, srcFolder, uniqueName.String())
+	cloneFolder := filepath.Join(rootPath, gaia.SrcFolder, uniqueName.String())
 	err = os.MkdirAll(cloneFolder, 0700)
 	if err != nil {
 		return err
