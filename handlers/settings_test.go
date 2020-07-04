@@ -8,10 +8,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/gaia-pipeline/gaia/workers/pipeline"
 
 	"github.com/gaia-pipeline/gaia"
 )
@@ -21,18 +22,8 @@ type status struct {
 }
 
 type mockSettingStoreService struct {
-	get     func() (*gaia.StoreConfig, error)
-	put     func(*gaia.StoreConfig) error
-	rbacGet func() (gaia.RBACConfig, error)
-	rbacPut func(gaia.RBACConfig) error
-}
-
-func (m mockSettingStoreService) SettingsRBACPut(config gaia.RBACConfig) error {
-	return m.rbacPut(config)
-}
-
-func (m mockSettingStoreService) SettingsRBACGet() (gaia.RBACConfig, error) {
-	return m.rbacGet()
+	get func() (*gaia.StoreConfig, error)
+	put func(*gaia.StoreConfig) error
 }
 
 func (m mockSettingStoreService) SettingsGet() (*gaia.StoreConfig, error) {
@@ -67,7 +58,7 @@ func TestSetPollerToggle(t *testing.T) {
 	e := echo.New()
 	_ = handlerService.InitHandlers(e)
 	get := func() (*gaia.StoreConfig, error) {
-		return nil, nil
+		return &gaia.StoreConfig{}, nil
 	}
 	put := func(*gaia.StoreConfig) error {
 		return nil
@@ -310,6 +301,10 @@ func Test_SettingsHandler_RBACGet(t *testing.T) {
 	m := &mockSettingStoreService{}
 	settingsHandler := newSettingsHandler(m)
 
+	m.get = func() (*gaia.StoreConfig, error) {
+		return &gaia.StoreConfig{}, nil
+	}
+
 	t.Run("error from store returns 500", func(t *testing.T) {
 		req := httptest.NewRequest(echo.GET, "/", nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -317,20 +312,20 @@ func Test_SettingsHandler_RBACGet(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/rbac")
 
-		m.rbacGet = func() (gaia.RBACConfig, error) {
-			return gaia.RBACConfig{}, errors.New("store error")
+		m.get = func() (*gaia.StoreConfig, error) {
+			return &gaia.StoreConfig{}, errors.New("store error")
 		}
 
 		_ = settingsHandler.rbacGet(c)
 
 		assert.Equal(t, http.StatusInternalServerError, rec.Code)
-		assert.Equal(t, "An error has occurred when retrieving settings.", rec.Body.String())
+		assert.Equal(t, "Something went wrong while retrieving settings information.", rec.Body.String())
 	})
 
 	t.Run("valid settings from store returns correct value", func(t *testing.T) {
-		m.rbacGet = func() (gaia.RBACConfig, error) {
-			return gaia.RBACConfig{
-				Enabled: true,
+		m.get = func() (*gaia.StoreConfig, error) {
+			return &gaia.StoreConfig{
+				RBACEnabled: true,
 			}, nil
 		}
 
@@ -356,6 +351,10 @@ func Test_SettingsHandler_RBACPut(t *testing.T) {
 	m := &mockSettingStoreService{}
 	settingsHandler := newSettingsHandler(m)
 
+	m.get = func() (*gaia.StoreConfig, error) {
+		return &gaia.StoreConfig{}, nil
+	}
+
 	t.Run("store error returns 500", func(t *testing.T) {
 		req := httptest.NewRequest(echo.GET, "/", nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -363,20 +362,20 @@ func Test_SettingsHandler_RBACPut(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/rbac")
 
-		m.rbacPut = func(config gaia.RBACConfig) error {
+		m.put = func(config *gaia.StoreConfig) error {
 			return errors.New("store error")
 		}
 
-		_ = settingsHandler.rbacPut(c)
+		_ = settingsHandler.rbacToggle(c)
 
 		assert.Equal(t, http.StatusInternalServerError, rec.Code)
 		assert.Equal(t, "An error occurred while saving the settings.", rec.Body.String())
 	})
 
 	t.Run("store success returns 200", func(t *testing.T) {
-		m.rbacGet = func() (gaia.RBACConfig, error) {
-			return gaia.RBACConfig{
-				Enabled: true,
+		m.get = func() (*gaia.StoreConfig, error) {
+			return &gaia.StoreConfig{
+				RBACEnabled: true,
 			}, nil
 		}
 
@@ -386,11 +385,11 @@ func Test_SettingsHandler_RBACPut(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/rbac")
 
-		m.rbacPut = func(config gaia.RBACConfig) error {
+		m.put = func(config *gaia.StoreConfig) error {
 			return nil
 		}
 
-		_ = settingsHandler.rbacPut(c)
+		_ = settingsHandler.rbacToggle(c)
 
 		assert.Equal(t, rec.Code, http.StatusOK)
 		assert.Equal(t, rec.Body.String(), "Settings have been updated.")

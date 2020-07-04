@@ -63,8 +63,6 @@ type BoltStore struct {
 type SettingsStore interface {
 	SettingsPut(config *gaia.StoreConfig) error
 	SettingsGet() (*gaia.StoreConfig, error)
-	SettingsRBACPut(config gaia.RBACConfig) error
-	SettingsRBACGet() (gaia.RBACConfig, error)
 }
 
 // GaiaStore is the interface that defines methods needed to store

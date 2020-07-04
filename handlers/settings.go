@@ -10,6 +10,8 @@ import (
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 )
 
+const msgSomethingWentWrong = "Something went wrong while retrieving settings information."
+
 type settingsHandler struct {
 	store store.SettingsStore
 }
@@ -22,23 +24,20 @@ func newSettingsHandler(store store.SettingsStore) *settingsHandler {
 func (h *settingsHandler) pollOn(c echo.Context) error {
 	configStore, err := h.store.SettingsGet()
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Something went wrong while retrieving settings information.")
-	}
-	if configStore == nil {
-		configStore = &gaia.StoreConfig{}
+		return c.String(http.StatusInternalServerError, msgSomethingWentWrong)
 	}
 
 	gaia.Cfg.Poll = true
-	err = pipeline.StartPoller()
-	if err != nil {
+
+	if err := pipeline.StartPoller(); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	configStore.Poll = true
-	err = h.store.SettingsPut(configStore)
-	if err != nil {
+	if err := h.store.SettingsPut(configStore); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
+
 	return c.String(http.StatusOK, "Polling is turned on.")
 }
 
@@ -46,21 +45,20 @@ func (h *settingsHandler) pollOn(c echo.Context) error {
 func (h *settingsHandler) pollOff(c echo.Context) error {
 	configStore, err := h.store.SettingsGet()
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Something went wrong while retrieving settings information.")
+		return c.String(http.StatusInternalServerError, msgSomethingWentWrong)
 	}
-	if configStore == nil {
-		configStore = &gaia.StoreConfig{}
-	}
+
 	gaia.Cfg.Poll = false
-	err = pipeline.StopPoller()
-	if err != nil {
+
+	if err := pipeline.StopPoller(); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
+
 	configStore.Poll = true
-	err = h.store.SettingsPut(configStore)
-	if err != nil {
+	if err = h.store.SettingsPut(configStore); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
+
 	return c.String(http.StatusOK, "Polling is turned off.")
 }
 
@@ -72,35 +70,63 @@ type pollStatus struct {
 func (h *settingsHandler) pollGet(c echo.Context) error {
 	configStore, err := h.store.SettingsGet()
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Something went wrong while retrieving settings information.")
+		return c.String(http.StatusInternalServerError, msgSomethingWentWrong)
 	}
+
 	var ps pollStatus
-	if configStore == nil {
-		ps.Status = gaia.Cfg.Poll
+	if gaia.Cfg.Poll {
+		ps.Status = true
 	} else {
 		ps.Status = configStore.Poll
 	}
+
 	return c.JSON(http.StatusOK, ps)
 }
 
-func (h *settingsHandler) rbacPut(c echo.Context) error {
-	var cfg gaia.RBACConfig
-	if err := c.Bind(&cfg); err != nil {
-		return c.String(http.StatusInternalServerError, "Unable to parse request body.")
+type rbacToggleRequest struct {
+	Enabled bool `json:"enabled"`
+}
+
+func (h *settingsHandler) rbacToggle(c echo.Context) error {
+	var request rbacToggleRequest
+	if err := c.Bind(&request); err != nil {
+		gaia.Cfg.Logger.Error("failed to bind body", "error", err.Error())
+		return c.String(http.StatusBadRequest, "Invalid body provided.")
 	}
 
-	if err := h.store.SettingsRBACPut(cfg); err != nil {
+	settings, err := h.store.SettingsGet()
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to get store settings", "error", err.Error())
+		return c.String(http.StatusInternalServerError, msgSomethingWentWrong)
+	}
+
+	settings.RBACEnabled = request.Enabled
+
+	if err := h.store.SettingsPut(settings); err != nil {
+		gaia.Cfg.Logger.Error("failed to put store settings", "error", err.Error())
 		return c.String(http.StatusInternalServerError, "An error occurred while saving the settings.")
 	}
 
 	return c.String(http.StatusOK, "Settings have been updated.")
 }
 
+type rbacGetResponse struct {
+	Enabled bool `json:"enabled"`
+}
+
 func (h *settingsHandler) rbacGet(c echo.Context) error {
-	config, err := h.store.SettingsRBACGet()
+	settings, err := h.store.SettingsGet()
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "An error has occurred when retrieving settings.")
+		gaia.Cfg.Logger.Error("failed to get store settings", "error", err.Error())
+		return c.String(http.StatusInternalServerError, msgSomethingWentWrong)
 	}
 
-	return c.JSON(http.StatusOK, config)
+	response := rbacGetResponse{}
+	if gaia.Cfg.RBACEnabled {
+		response.Enabled = true
+	} else {
+		response.Enabled = settings.RBACEnabled
+	}
+
+	return c.JSON(http.StatusOK, rbacGetResponse{Enabled: settings.RBACEnabled})
 }

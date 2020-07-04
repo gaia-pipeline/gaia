@@ -76,7 +76,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		apiAuthGrp.POST("settings/poll/off", settingsHandler.pollOff)
 		apiAuthGrp.GET("settings/poll", settingsHandler.pollGet)
 		apiAuthGrp.GET("settings/rbac", settingsHandler.rbacGet)
-		apiAuthGrp.PUT("settings/rbac", settingsHandler.rbacPut)
+		apiAuthGrp.PUT("settings/rbac", settingsHandler.rbacToggle)
 
 		// PipelineRun
 		apiAuthGrp.POST("pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop)

@@ -15,6 +15,7 @@ import (
 	"github.com/labstack/echo"
 
 	"github.com/gaia-pipeline/flag"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
 	"github.com/gaia-pipeline/gaia/plugin"
@@ -347,27 +348,24 @@ func findExecutablePath() (string, error) {
 }
 
 func initRBACService(store store.GaiaStore) (rbac.Service, error) {
-	enabled := gaia.Cfg.RBACEnabled
-
-	if !enabled {
-		settings, err := store.SettingsRBACGet()
+	if !gaia.Cfg.RBACEnabled {
+		settings, err := store.SettingsGet()
 		if err != nil {
-			gaia.Cfg.Logger.Error("failed to get rbac settings", "error", err.Error())
+			gaia.Cfg.Logger.Error("failed to get settings", "error", err.Error())
 			return nil, err
 		}
-		enabled = settings.Enabled
-	}
 
-	if enabled {
-		svc, err := rbac.NewEnforcerSvc(gaia.Cfg.RBACDebug, store.CasbinStore())
-		if err != nil {
-			gaia.Cfg.Logger.Error("failed to create new enforcer", "error", err.Error())
-			return nil, err
+		if !settings.RBACEnabled {
+			gaia.Cfg.Logger.Info("rbac disabled")
+			return rbac.NewNoOpService(), nil
 		}
-		gaia.Cfg.Logger.Info("rbac enabled")
-		return svc, nil
 	}
 
-	gaia.Cfg.Logger.Info("rbac disabled")
-	return rbac.NewNoOpService(), nil
+	svc, err := rbac.NewEnforcerSvc(gaia.Cfg.RBACDebug, store.CasbinStore())
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to create new enforcer", "error", err.Error())
+		return nil, err
+	}
+	gaia.Cfg.Logger.Info("rbac enabled")
+	return svc, nil
 }
