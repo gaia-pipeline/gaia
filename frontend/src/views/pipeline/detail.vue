@@ -8,6 +8,12 @@
           </span>
           <span>Start Pipeline</span>
         </a>
+        <a class="button is-red-button" @click="forcePullPipeline" style="margin-right: 10px;">
+          <span class="icon">
+            <i class="fa fa-play-circle"></i>
+          </span>
+          <span>Pull Pipeline</span>
+        </a>
         <a class="button is-green-button" @click="jobLog" v-if="runID">
           <span class="icon">
             <i class="fa fa-terminal"></i>
@@ -524,6 +530,10 @@ export default {
 
     checkPipelineArgsAndStartPipeline () {
       helper.StartPipelineWithArgsCheck(this, this.pipeline)
+    },
+
+    forcePullPipeline () {
+      helper.PullPipeline(this, this.pipeline)
     },
 
     convertTime (time) {

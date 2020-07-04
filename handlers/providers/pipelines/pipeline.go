@@ -11,6 +11,7 @@ import (
 	"github.com/robfig/cron"
 
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 	"github.com/gaia-pipeline/gaia/helper/stringhelper"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/services"
@@ -482,6 +483,65 @@ func (pp *pipelineProvider) PipelineStart(c echo.Context) error {
 		} else if pipelineRun != nil {
 			return c.JSON(http.StatusCreated, pipelineRun)
 		}
+	}
+
+	// Pipeline not found
+	return c.String(http.StatusNotFound, errPipelineNotFound.Error())
+}
+
+// PipelinePull does a pull on the remote repository
+// which contains the code for this pipeline. This is so the user
+// won't have to wait for polling or a hook.
+func (pp *pipelineProvider) PipelinePull(c echo.Context) error {
+	pipelineIDStr := c.Param("pipelineid")
+
+	// Decode content
+	content := echo.Map{}
+	if err := c.Bind(&content); err != nil {
+		return c.String(http.StatusBadRequest, "invalid content provided in request")
+	}
+
+	// Convert string to int because id is int
+	pipelineID, err := strconv.Atoi(pipelineIDStr)
+	if err != nil {
+		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
+	}
+
+	var docker bool
+	if _, ok := content["docker"]; ok {
+		docker, ok = content["docker"].(bool)
+		if !ok {
+			return c.String(http.StatusBadRequest, errWrongDockerValue.Error())
+		}
+	}
+
+	// Look up pipeline for the given id
+	var foundPipeline gaia.Pipeline
+	for _, p := range pipeline.GlobalActivePipelines.GetAll() {
+		if p.ID == pipelineID {
+			foundPipeline = p
+			break
+		}
+	}
+
+	// Overwrite docker setting
+	foundPipeline.Docker = docker
+
+	if foundPipeline.Name != "" {
+		uniqueFolder, err := pipelinehelper.GetLocalDestinationForPipeline(foundPipeline)
+		if err != nil {
+			gaia.Cfg.Logger.Error("Pipeline type invalid", "type", foundPipeline.Type)
+			return err
+		}
+		if foundPipeline.Repo == nil {
+			gaia.Cfg.Logger.Error("Git repo is missing")
+			return errors.New("no git repository for pipeline")
+		}
+		foundPipeline.Repo.LocalDest = uniqueFolder
+		if err := pp.deps.PipelineService.UpdateRepository(&foundPipeline); err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+		return c.NoContent(http.StatusOK)
 	}
 
 	// Pipeline not found

@@ -8,10 +8,18 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	hclog "github.com/hashicorp/go-hclog"
+	"github.com/labstack/echo"
+
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
+	"github.com/gaia-pipeline/gaia/services"
+	gStore "github.com/gaia-pipeline/gaia/store"
+	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testsettingsHandler := newSettingsHandler(s.deps.Store)ify/assert"
 
 	"github.com/gaia-pipeline/gaia"
 )
@@ -63,7 +71,11 @@ func TestSetPollerToggle(t *testing.T) {
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
 	})
-
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+	// // Initialize echo
 	e := echo.New()
 	_ = handlerService.InitHandlers(e)
 	get := func() (*gaia.StoreConfig, error) {
@@ -83,7 +95,7 @@ func TestSetPollerToggle(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/on")
 
-		_ = settingsHandler.pollOn(c)
+		_ = pp.SettingsPollOn(c)
 		retStatus := http.StatusOK
 		if rec.Code != retStatus {
 			t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -95,7 +107,7 @@ func TestSetPollerToggle(t *testing.T) {
 		c2 := e.NewContext(req2, rec2)
 		c2.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/on")
 
-		_ = settingsHandler.pollOn(c2)
+		_ = pp.SettingsPollOn(c2)
 		secondRetStatus := http.StatusBadRequest
 		if rec2.Code != secondRetStatus {
 			t.Fatalf("expected response code %v got %v", secondRetStatus, rec2.Code)
@@ -115,7 +127,7 @@ func TestSetPollerToggle(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/on")
 
-		_ = settingsHandler.pollOn(c)
+		_ = pp.SettingsPollOn(c)
 		retStatus := http.StatusBadRequest
 		if rec.Code != retStatus {
 			t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -135,7 +147,7 @@ func TestSetPollerToggle(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/off")
 
-		_ = settingsHandler.pollOff(c)
+		_ = pp.SettingsPollOff(c)
 		retStatus := http.StatusOK
 		if rec.Code != retStatus {
 			t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -158,7 +170,7 @@ func TestSetPollerToggle(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/off")
 
-		_ = settingsHandler.pollOff(c)
+		_ = pp.SettingsPollOff(c)
 		retStatus := http.StatusBadRequest
 		if rec.Code != retStatus {
 			t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -178,7 +190,7 @@ func TestSetPollerToggle(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll")
 
-		_ = settingsHandler.pollGet(c)
+		_ = pp.SettingsPollGet(c)
 		retStatus := http.StatusOK
 		if rec.Code != retStatus {
 			t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -211,6 +223,10 @@ func TestGettingSettingFromDBTakesPrecedence(t *testing.T) {
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
 	})
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
 
 	e := echo.New()
 	_ = handlerService.InitHandlers(e)
@@ -230,8 +246,7 @@ func TestGettingSettingFromDBTakesPrecedence(t *testing.T) {
 	c := e.NewContext(req, rec)
 	c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/")
 
-	settingsHandler := newSettingsHandler(m)
-	_ = settingsHandler.pollGet(c)
+	_ = pp.SettingsPollGet(c)
 	retStatus := http.StatusOK
 	if rec.Code != retStatus {
 		t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -263,7 +278,11 @@ func TestSettingPollerOnAlsoSavesSettingsInDB(t *testing.T) {
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
 	})
-
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+	})
+	// // Initialize echo
 	e := echo.New()
 	_ = handlerService.InitHandlers(e)
 	get := func() (*gaia.StoreConfig, error) {
@@ -284,8 +303,7 @@ func TestSettingPollerOnAlsoSavesSettingsInDB(t *testing.T) {
 	c := e.NewContext(req, rec)
 	c.SetPath("/api/" + gaia.APIVersion + "/setttings/poll/on")
 
-	settingsHandler := newSettingsHandler(m)
-	_ = settingsHandler.pollOn(c)
+	_ = pp.SettingsPollOn(c)
 	retStatus := http.StatusOK
 	if rec.Code != retStatus {
 		t.Fatalf("expected response code %v got %v", retStatus, rec.Code)
@@ -295,7 +313,7 @@ func TestSettingPollerOnAlsoSavesSettingsInDB(t *testing.T) {
 		t.Fatal("SettingPut should have been called. Was not.")
 	}
 	putCalled = false
-	_ = settingsHandler.pollOff(c)
+	_ = pp.SettingsPollOff(c)
 	if putCalled != true {
 		t.Fatal("SettingPut should have been called. Was not.")
 	}

@@ -8,10 +8,11 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/labstack/echo"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
-	"github.com/labstack/echo"
 )
 
 var (
