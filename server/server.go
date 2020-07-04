@@ -15,6 +15,7 @@ import (
 	"github.com/labstack/echo"
 
 	"github.com/gaia-pipeline/flag"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
 	"github.com/gaia-pipeline/gaia/plugin"

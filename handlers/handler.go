@@ -29,7 +29,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	apiGrp := e.Group(p)
 
 	// API router group with auth middleware.
-	apiAuthGrp := e.Group(p, AuthMiddleware(&AuthConfig{
+	apiAuthGrp := e.Group(p, authMiddleware(&AuthConfig{
 		RoleCategories: rolehelper.DefaultUserRoles,
 		rbacEnforcer:   s.deps.RBACService,
 	}))
@@ -54,6 +54,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		pipelineProvider := pipelines.NewPipelineProvider(pipelines.Dependencies{
 			Scheduler:       s.deps.Scheduler,
 			PipelineService: s.deps.PipelineService,
+			SettingsStore:   s.deps.Store,
 		})
 		apiAuthGrp.POST("pipeline", pipelineProvider.CreatePipeline)
 		apiAuthGrp.POST("pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote)
