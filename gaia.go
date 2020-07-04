@@ -347,13 +347,9 @@ type Config struct {
 
 // StoreConfig defines config settings to be stored in DB.
 type StoreConfig struct {
-	ID   int
-	Poll bool
-}
-
-// RBACConfig defines RBAC settings to be stored in DB.
-type RBACConfig struct {
-	Enabled bool `json:"enabled"`
+	ID          int
+	Poll        bool
+	RBACEnabled bool
 }
 
 // String returns a pipeline type string back

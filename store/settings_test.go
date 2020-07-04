@@ -10,8 +10,8 @@ import (
 	"github.com/gaia-pipeline/gaia"
 )
 
-func TestBoltStore_SettingsRBACGet(t *testing.T) {
-	tmp, err := ioutil.TempDir("", "TestBoltStore_SettingsRBACGet")
+func TestBoltStore_Settings(t *testing.T) {
+	tmp, err := ioutil.TempDir("", "TestBoltStore_SettingsGet")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,16 +25,26 @@ func TestBoltStore_SettingsRBACGet(t *testing.T) {
 	}
 	defer store.Close()
 
-	config, err := store.SettingsRBACGet()
-	assert.NoError(t, err)
-	assert.EqualValues(t, config, gaia.RBACConfig{Enabled: false})
+	empty := &gaia.StoreConfig{
+		ID:          0,
+		Poll:        false,
+		RBACEnabled: false,
+	}
 
-	err = store.SettingsRBACPut(gaia.RBACConfig{
-		Enabled: true,
-	})
+	config, err := store.SettingsGet()
+	assert.NoError(t, err)
+	assert.EqualValues(t, empty, config)
+
+	cfg := &gaia.StoreConfig{
+		ID:          1,
+		Poll:        true,
+		RBACEnabled: true,
+	}
+
+	err = store.SettingsPut(cfg)
 	assert.NoError(t, err)
 
-	config, err = store.SettingsRBACGet()
+	config, err = store.SettingsGet()
 	assert.NoError(t, err)
-	assert.EqualValues(t, config, gaia.RBACConfig{Enabled: true})
+	assert.EqualValues(t, config, cfg)
 }
