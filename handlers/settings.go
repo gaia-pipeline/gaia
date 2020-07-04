@@ -19,12 +19,12 @@ func newSettingsHandler(store store.SettingsStore) *settingsHandler {
 	return &settingsHandler{store: store}
 }
 
-type rbacToggleRequest struct {
+type rbacPutRequest struct {
 	Enabled bool `json:"enabled"`
 }
 
-func (h *settingsHandler) rbacToggle(c echo.Context) error {
-	var request rbacToggleRequest
+func (h *settingsHandler) rbacPut(c echo.Context) error {
+	var request rbacPutRequest
 	if err := c.Bind(&request); err != nil {
 		gaia.Cfg.Logger.Error("failed to bind body", "error", err.Error())
 		return c.String(http.StatusBadRequest, "Invalid body provided.")
@@ -58,6 +58,7 @@ func (h *settingsHandler) rbacGet(c echo.Context) error {
 	}
 
 	response := rbacGetResponse{}
+	// If RBAC is applied via config it takes priority.
 	if gaia.Cfg.RBACEnabled {
 		response.Enabled = true
 	} else {

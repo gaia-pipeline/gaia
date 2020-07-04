@@ -56,7 +56,7 @@ func TestSetPollerToggle(t *testing.T) {
 	})
 
 	get := func() (*gaia.StoreConfig, error) {
-		return &gaia.StoreConfig{}, nil
+		return nil, nil
 	}
 	put := func(*gaia.StoreConfig) error {
 		return nil
@@ -383,7 +383,7 @@ func Test_SettingsHandler_RBACPut(t *testing.T) {
 			return errors.New("store error")
 		}
 
-		_ = settingsHandler.rbacToggle(c)
+		_ = settingsHandler.rbacPut(c)
 
 		assert.Equal(t, http.StatusInternalServerError, rec.Code)
 		assert.Equal(t, "An error occurred while saving the settings.", rec.Body.String())
@@ -406,7 +406,7 @@ func Test_SettingsHandler_RBACPut(t *testing.T) {
 			return nil
 		}
 
-		_ = settingsHandler.rbacToggle(c)
+		_ = settingsHandler.rbacPut(c)
 
 		assert.Equal(t, rec.Code, http.StatusOK)
 		assert.Equal(t, rec.Body.String(), "Settings have been updated.")
