@@ -15,6 +15,11 @@ type Dependencies struct {
 	Store       store.GaiaStore
 }
 
+// NewDependencies creates a new Dependencies struct.
+func NewDependencies(scheduler service.GaiaScheduler, certificate security.CAAPI, store store.GaiaStore) Dependencies {
+	return Dependencies{Scheduler: scheduler, Certificate: certificate, Store: store}
+}
+
 type workerProvider struct {
 	deps Dependencies
 }

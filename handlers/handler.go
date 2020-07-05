@@ -52,7 +52,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		// Pipelines
 		// Create pipeline provider
 		ppDeps := pipelines.NewDependencies(s.deps.Scheduler, s.deps.PipelineService, s.deps.Store)
-		pipelineProvider := pipelines.NewPipelineProvider(*ppDeps)
+		pipelineProvider := pipelines.NewPipelineProvider(ppDeps)
 		apiAuthGrp.POST("pipeline", pipelineProvider.CreatePipeline)
 		apiAuthGrp.POST("pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote)
 		apiAuthGrp.GET("pipeline/name", pipelineProvider.PipelineNameAvailable)
@@ -90,10 +90,8 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 	// Worker
 	// initialize the worker provider
-	workerProvider := workers.NewWorkerProvider(workers.Dependencies{
-		Scheduler:   s.deps.Scheduler,
-		Certificate: s.deps.Certificate,
-	})
+	workerDeps := workers.NewDependencies(s.deps.Scheduler, s.deps.Certificate, s.deps.Store)
+	workerProvider := workers.NewWorkerProvider(workerDeps)
 	apiAuthGrp.GET("worker/secret", workerProvider.GetWorkerRegisterSecret)
 	apiAuthGrp.GET("worker/status", workerProvider.GetWorkerStatusOverview)
 	apiAuthGrp.GET("worker", workerProvider.GetWorker)

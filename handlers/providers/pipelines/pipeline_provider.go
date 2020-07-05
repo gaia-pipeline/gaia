@@ -16,8 +16,8 @@ type Dependencies struct {
 }
 
 // NewDependencies creates a new Dependencies struct.
-func NewDependencies(scheduler service.GaiaScheduler, pipelineService pipeline.Service, store store.GaiaStore) *Dependencies {
-	return &Dependencies{Scheduler: scheduler, PipelineService: pipelineService, Store: store}
+func NewDependencies(scheduler service.GaiaScheduler, pipelineService pipeline.Service, store store.GaiaStore) Dependencies {
+	return Dependencies{Scheduler: scheduler, PipelineService: pipelineService, Store: store}
 }
 
 type pipelineProvider struct {
