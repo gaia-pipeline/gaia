@@ -66,6 +66,12 @@
       path: "/api/v1/pipeline/:pipelineid/start"
       resource: pipelineid
 
+"pipelines/pull":
+  endpoints:
+    - method: POST
+      path: "/api/v1/pipeline/:pipelineid/pull"
+      resource: pipelineid
+
 # pipelines:runs
 
 "pipelines:runs/stop":
@@ -203,7 +209,7 @@
     - method: PUT
       path: "/api/v1/settings/rbac"
 
-# RBAC
+# rbac
 
 "rbac:roles/list":
   endpoints:

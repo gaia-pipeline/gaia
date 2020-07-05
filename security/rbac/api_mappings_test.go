@@ -66,6 +66,11 @@ func Test_RBACAPIMappings(t *testing.T) {
 			expectedPerm: "pipelines/delete",
 		},
 		{
+			path:         "/api/v1/pipeline/:pipelineid/pull",
+			method:       http.MethodPost,
+			expectedPerm: "pipelines/pull",
+		},
+		{
 			path:         "/api/v1/pipeline/:pipelineid/reset-trigger-token",
 			method:       http.MethodPut,
 			expectedPerm: "pipelines/reset-trigger-token",
