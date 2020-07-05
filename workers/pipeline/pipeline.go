@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+	"github.com/gaia-pipeline/gaia/store"
 
 	"github.com/gaia-pipeline/gaia"
 )
@@ -66,34 +67,40 @@ var execCommandContext = exec.CommandContext
 
 // newBuildPipeline creates a new build pipeline for the given
 // pipeline type.
-func newBuildPipeline(t gaia.PipelineType) BuildPipeline {
+func newBuildPipeline(t gaia.PipelineType, store store.GaiaStore) BuildPipeline {
 	var bP BuildPipeline
 
 	// Create build pipeline for given pipeline type
 	switch t {
 	case gaia.PTypeGolang:
 		bP = &BuildPipelineGolang{
-			Type: t,
+			Type:  t,
+			Store: store,
 		}
 	case gaia.PTypeJava:
 		bP = &BuildPipelineJava{
-			Type: t,
+			Type:  t,
+			Store: store,
 		}
 	case gaia.PTypePython:
 		bP = &BuildPipelinePython{
-			Type: t,
+			Type:  t,
+			Store: store,
 		}
 	case gaia.PTypeCpp:
 		bP = &BuildPipelineCpp{
-			Type: t,
+			Type:  t,
+			Store: store,
 		}
 	case gaia.PTypeRuby:
 		bP = &BuildPipelineRuby{
-			Type: t,
+			Type:  t,
+			Store: store,
 		}
 	case gaia.PTypeNodeJS:
 		bP = &BuildPipelineNodeJS{
-			Type: t,
+			Type:  t,
+			Store: store,
 		}
 	}
 

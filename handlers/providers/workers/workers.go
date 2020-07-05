@@ -108,7 +108,7 @@ func (wp *workerProvider) RegisterWorker(c echo.Context) error {
 	caCertB64 := base64.StdEncoding.EncodeToString([]byte(caCert))
 
 	// Register worker by adding it to the memdb and store
-	db, err := services.DefaultMemDBService()
+	db, err := services.DefaultMemDBService(wp.deps.Store)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot get memdb service via register worker", "error", err.Error())
 		return c.String(http.StatusInternalServerError, "cannot get memdb service")
@@ -133,7 +133,7 @@ func (wp *workerProvider) DeregisterWorker(c echo.Context) error {
 	}
 
 	// Get memdb service
-	db, err := services.DefaultMemDBService()
+	db, err := services.DefaultMemDBService(wp.deps.Store)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot get memdb service from store", "error", err.Error())
 		return c.String(http.StatusInternalServerError, "cannot get memdb service from service store")
@@ -195,7 +195,7 @@ func (wp *workerProvider) GetWorkerStatusOverview(c echo.Context) error {
 	response := workerStatusOverviewRespoonse{}
 
 	// Get memdb service
-	db, err := services.DefaultMemDBService()
+	db, err := services.DefaultMemDBService(wp.deps.Store)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot get memdb service from service store", "error", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
@@ -226,7 +226,7 @@ func (wp *workerProvider) GetWorkerStatusOverview(c echo.Context) error {
 // GetWorker returns all workers.
 func (wp *workerProvider) GetWorker(c echo.Context) error {
 	// Get memdb service
-	db, err := services.DefaultMemDBService()
+	db, err := services.DefaultMemDBService(wp.deps.Store)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot get memdb service from service store", "error", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())

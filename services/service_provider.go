@@ -9,40 +9,20 @@ import (
 	"github.com/gaia-pipeline/gaia/store/memdb"
 )
 
-// storeService is an instance of store.
-// Use this to talk to the store.
-var storeService store.GaiaStore
-
 // vaultService is an instance of the internal Vault.
 var vaultService security.GaiaVault
 
 // memDBService is an instance of the internal memdb.
 var memDBService memdb.GaiaMemDB
 
-// StorageService initializes and keeps track of a storage service.
-// If the internal storage service is a singleton. This function retruns an error
-// but most of the times we don't care about it, because it's only ever
-// initialized once in the main.go. If it wouldn't work, main would
-// os.Exit(1) and the rest of the application would just stop.
-func StorageService() (store.GaiaStore, error) {
-	if storeService != nil && !reflect.ValueOf(storeService).IsNil() {
-		return storeService, nil
-	}
-	storeService = store.NewBoltStore()
-	err := storeService.Init(gaia.Cfg.DataPath)
-	if err != nil {
+// NewStorageService a creates new storage service and initializes it.
+func NewStorageService() (store.GaiaStore, error) {
+	storeService := store.NewBoltStore()
+	if err := storeService.Init(gaia.Cfg.DataPath); err != nil {
 		gaia.Cfg.Logger.Error("cannot initialize store", "error", err.Error())
-		return storeService, err
+		return nil, err
 	}
 	return storeService, nil
-}
-
-// MockStorageService sets the internal store singleton to the give
-// mock implementation. A mock needs to be created in the test. The
-// provider will make sure that everything that would use the store
-// will use the mock instead.
-func MockStorageService(store store.GaiaStore) {
-	storeService = store
 }
 
 // DefaultVaultService provides a vault with a FileStorer backend.
@@ -78,12 +58,8 @@ func MockVaultService(service security.GaiaVault) {
 }
 
 // DefaultMemDBService provides a default memDBService with an underlying storer.
-func DefaultMemDBService() (memdb.GaiaMemDB, error) {
-	s, err := StorageService()
-	if err != nil {
-		return nil, err
-	}
-	return MemDBService(s)
+func DefaultMemDBService(store store.GaiaStore) (memdb.GaiaMemDB, error) {
+	return MemDBService(store)
 }
 
 // MemDBService creates a memdb service instance.

@@ -7,19 +7,20 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gaia-pipeline/gaia/helper/filehelper"
-	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+	"github.com/gofrs/uuid"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/services"
-	"github.com/gofrs/uuid"
+	"github.com/gaia-pipeline/gaia/helper/filehelper"
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+	"github.com/gaia-pipeline/gaia/store"
 )
 
 const nodeJSInternalCloneFolder = "jsclone"
 
 // BuildPipelineNodeJS is the real implementation of BuildPipeline for NodeJS
 type BuildPipelineNodeJS struct {
-	Type gaia.PipelineType
+	Type  gaia.PipelineType
+	Store store.GaiaStore
 }
 
 // PrepareEnvironment prepares the environment before we start the build process.
@@ -118,6 +119,5 @@ func (b *BuildPipelineNodeJS) SavePipeline(p *gaia.Pipeline) error {
 	p.Name = strings.TrimSuffix(filepath.Base(dest), typeDelimiter+gaia.PTypeNodeJS.String())
 	p.Created = time.Now()
 	// Our pipeline is finished constructing. Save it.
-	storeService, _ := services.StorageService()
-	return storeService.PipelinePut(p)
+	return b.Store.PipelinePut(p)
 }

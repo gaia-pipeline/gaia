@@ -1,15 +1,23 @@
 package pipelines
 
 import (
+	"github.com/labstack/echo"
+
+	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"github.com/gaia-pipeline/gaia/workers/scheduler/service"
-	"github.com/labstack/echo"
 )
 
 // Dependencies define providers and services which this service needs.
 type Dependencies struct {
 	Scheduler       service.GaiaScheduler
 	PipelineService pipeline.Service
+	Store           store.GaiaStore
+}
+
+// NewDependencies creates a new Dependencies struct.
+func NewDependencies(scheduler service.GaiaScheduler, pipelineService pipeline.Service, store store.GaiaStore) *Dependencies {
+	return &Dependencies{Scheduler: scheduler, PipelineService: pipelineService, Store: store}
 }
 
 type pipelineProvider struct {

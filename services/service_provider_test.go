@@ -14,27 +14,6 @@ import (
 	"github.com/hashicorp/go-hclog"
 )
 
-func TestStorageService(t *testing.T) {
-	tmp, _ := ioutil.TempDir("", "TestStorageService")
-	gaia.Cfg = new(gaia.Config)
-	gaia.Cfg.HomePath = tmp
-	gaia.Cfg.DataPath = tmp
-	buf := new(bytes.Buffer)
-	gaia.Cfg.Logger = hclog.New(&hclog.LoggerOptions{
-		Level:  hclog.Trace,
-		Output: buf,
-		Name:   "Gaia",
-	})
-	if storeService != nil {
-		t.Fatal("initial service should be nil. was: ", storeService)
-	}
-	_, _ = StorageService()
-	defer func() { storeService = nil }()
-	if storeService == nil {
-		t.Fatal("storage service should not be nil")
-	}
-}
-
 func TestVaultService(t *testing.T) {
 	tmp, _ := ioutil.TempDir("", "TestVaultService")
 	gaia.Cfg = new(gaia.Config)
@@ -77,15 +56,15 @@ func TestMemDBService(t *testing.T) {
 	if memDBService != nil {
 		t.Fatal("initial service should be nil. was: ", memDBService)
 	}
-	if _, err := StorageService(); err != nil {
+	s, err := NewStorageService()
+	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := MemDBService(storeService); err != nil {
+	if _, err := MemDBService(s); err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
 		memDBService = nil
-		storeService = nil
 	}()
 
 	if memDBService == nil {
@@ -119,19 +98,10 @@ func TestCanMockServiceToNil(t *testing.T) {
 		Name:   "Gaia",
 	})
 
-	t.Run("can mock storage to nil", func(t *testing.T) {
-		mcp := new(testMockStorageService)
-		MockStorageService(mcp)
-		s1, _ := StorageService()
-		if _, ok := s1.(*testMockStorageService); !ok {
-			t.Fatalf("want type: '%s' got: '%s'", "testMockStorageService", reflect.TypeOf(s1).String())
-		}
-		MockStorageService(nil)
-		s2, _ := StorageService()
-		if reflect.TypeOf(s2).String() == "*services.testMockStorageService" {
-			t.Fatalf("want type: '%s' got: '%s'", "BoltStorage", reflect.TypeOf(s2).String())
-		}
-	})
+	s, err := NewStorageService()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("can mock vault to nil", func(t *testing.T) {
 		mcp := new(testMockVaultService)
@@ -150,14 +120,12 @@ func TestCanMockServiceToNil(t *testing.T) {
 	t.Run("can mock memdb to nil", func(t *testing.T) {
 		mcp := new(testMockMemDBService)
 		MockMemDBService(mcp)
-		s1, _ := DefaultMemDBService()
+		s1, _ := DefaultMemDBService(s)
 		if _, ok := s1.(*testMockMemDBService); !ok {
 			t.Fatalf("want type: '%s' got: '%s'", "testMockMemDBService", reflect.TypeOf(s1).String())
 		}
 		MockMemDBService(nil)
-		msp := new(testMockStorageService)
-		MockStorageService(msp)
-		s2, _ := MemDBService(storeService)
+		s2, _ := MemDBService(s)
 		if reflect.TypeOf(s2).String() == "*services.testMockMemDBService" {
 			t.Fatalf("got: '%s'", reflect.TypeOf(s2).String())
 		}
@@ -199,8 +167,11 @@ func TestDefaultMemDBService(t *testing.T) {
 		Output: buf,
 		Name:   "Gaia",
 	})
-	_, _ = StorageService()
-	v, err := DefaultMemDBService()
+	s, err := NewStorageService()
+	if err != nil {
+		t.Fatal(err)
+	}
+	v, err := DefaultMemDBService(s)
 	if err != nil {
 		t.Fatal(err)
 	}

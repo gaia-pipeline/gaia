@@ -13,10 +13,10 @@ import (
 
 	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 
-	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/services"
-	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
+
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/store"
 )
 
 func TestPrepareEnvironmentRuby(t *testing.T) {
@@ -214,7 +214,7 @@ func TestSavePipelineRuby(t *testing.T) {
 	p.Type = gaia.PTypeRuby
 	b := new(BuildPipelineRuby)
 	m := new(rubyMockStorer)
-	services.MockStorageService(m)
+	b.Store = m
 	err := b.SavePipeline(p)
 	if err != nil {
 		t.Fatal("something went wrong. wasn't supposed to get error: ", err)
@@ -238,8 +238,8 @@ func TestSavePipelineSaveErrorsRuby(t *testing.T) {
 	p.Type = gaia.PTypeCpp
 	b := new(BuildPipelineRuby)
 	m := new(rubyMockStorer)
+	b.Store = m
 	m.Error = errors.New("database error")
-	services.MockStorageService(m)
 	err := b.SavePipeline(p)
 	if err == nil {
 		t.Fatal("expected error which did not occur")

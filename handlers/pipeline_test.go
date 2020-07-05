@@ -208,6 +208,12 @@ func TestPipelineUpdate(t *testing.T) {
 	}
 	gaia.Cfg.Bolt.Mode = 0600
 
+	// Initialize store
+	dataStore, err := services.NewStorageService()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
 		Scheduler: &mockScheduleService{},
 	})
@@ -220,14 +226,9 @@ func TestPipelineUpdate(t *testing.T) {
 	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
+		Store:           dataStore,
 	})
 
-	// Initialize store
-	dataStore, err := services.StorageService()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { services.MockStorageService(nil) }()
 	// Initialize global active pipelines
 	ap := pipeline.NewActivePipelines()
 	pipeline.GlobalActivePipelines = ap
@@ -365,11 +366,10 @@ func TestPipelineDelete(t *testing.T) {
 	}
 
 	// Initialize store
-	dataStore, err := services.StorageService()
+	dataStore, err := services.NewStorageService()
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { services.MockStorageService(nil) }()
 
 	// Initialize global active pipelines
 	ap := pipeline.NewActivePipelines()
@@ -387,6 +387,7 @@ func TestPipelineDelete(t *testing.T) {
 	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
+		Store:           dataStore,
 	})
 
 	// Initialize echo
@@ -641,19 +642,19 @@ type MockVaultStorer struct {
 	Error error
 }
 
-var store []byte
+var storeBts []byte
 
 func (mvs *MockVaultStorer) Init() error {
-	store = make([]byte, 0)
+	storeBts = make([]byte, 0)
 	return mvs.Error
 }
 
 func (mvs *MockVaultStorer) Read() ([]byte, error) {
-	return store, mvs.Error
+	return storeBts, mvs.Error
 }
 
 func (mvs *MockVaultStorer) Write(data []byte) error {
-	store = data
+	storeBts = data
 	return mvs.Error
 }
 
@@ -817,11 +818,8 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		user := gaia.User{}
 		user.Username = "auto"
 		user.TriggerToken = "triggerToken"
-		m := mockUserStoreService{user: &user, err: nil}
-		services.MockStorageService(&m)
-		defer func() {
-			services.MockStorageService(nil)
-		}()
+
+		ms := &mockUserStoreService{user: &user, err: nil}
 
 		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/1/triggerToken/trigger", nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -835,6 +833,7 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
 			Scheduler:       &mockScheduleService{pipelineRun: pRun},
 			PipelineService: pipelineService,
+			Store:           ms,
 		})
 
 		_ = pp.PipelineTrigger(c)
@@ -847,11 +846,8 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		user := gaia.User{}
 		user.Username = "auto"
 		user.TriggerToken = "triggerToken"
-		m := mockUserStoreService{user: &user, err: nil}
-		services.MockStorageService(&m)
-		defer func() {
-			services.MockStorageService(nil)
-		}()
+
+		ms := &mockUserStoreService{user: &user, err: nil}
 
 		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/1/triggerToken/trigger", nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -865,6 +861,7 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
 			Scheduler:       &mockScheduleService{pipelineRun: pRun},
 			PipelineService: pipelineService,
+			Store:           ms,
 		})
 
 		_ = pp.PipelineTrigger(c)
@@ -877,11 +874,8 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		user := gaia.User{}
 		user.Username = "auto"
 		user.TriggerToken = "triggerToken"
-		m := mockUserStoreService{user: &user, err: nil}
-		services.MockStorageService(&m)
-		defer func() {
-			services.MockStorageService(nil)
-		}()
+
+		ms := &mockUserStoreService{user: &user, err: nil}
 
 		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/1/invalid/trigger", nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -895,6 +889,7 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
 			Scheduler:       &mockScheduleService{pipelineRun: pRun},
 			PipelineService: pipelineService,
+			Store:           ms,
 		})
 
 		_ = pp.PipelineTrigger(c)
@@ -907,11 +902,8 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		user := gaia.User{}
 		user.Username = "auto"
 		user.TriggerToken = "triggerToken"
-		m := mockUserStoreService{user: &user, err: nil}
-		services.MockStorageService(&m)
-		defer func() {
-			services.MockStorageService(nil)
-		}()
+
+		ms := &mockUserStoreService{user: &user, err: nil}
 
 		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/1/invalid/trigger", nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -924,6 +916,7 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
 			Scheduler:       &mockScheduleService{pipelineRun: pRun},
 			PipelineService: pipelineService,
+			Store:           ms,
 		})
 
 		_ = pp.PipelineTrigger(c)
@@ -989,17 +982,13 @@ func TestPipelineResetToken(t *testing.T) {
 	c.SetParamValues("1")
 	pRun := new(gaia.PipelineRun)
 	pRun.ID = 999
+
+	ms := &mockPipelineResetStorageService{}
 	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
 		Scheduler:       &mockScheduleService{pipelineRun: pRun},
 		PipelineService: pipelineService,
+		Store:           ms,
 	})
-
-	m := mockPipelineResetStorageService{}
-	services.MockStorageService(&m)
-
-	defer func() {
-		services.MockStorageService(nil)
-	}()
 
 	_ = pp.PipelineResetToken(c)
 
@@ -1092,11 +1081,10 @@ func TestPipelineNameValidation(t *testing.T) {
 	}
 
 	// Initialize store
-	dataStore, err := services.StorageService()
+	dataStore, err := services.NewStorageService()
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { services.MockStorageService(nil) }()
 
 	// Initialize global active pipelines
 	ap := pipeline.NewActivePipelines()

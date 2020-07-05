@@ -11,7 +11,6 @@ import (
 	"github.com/labstack/echo"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 )
 
@@ -31,7 +30,6 @@ type jobLogs struct {
 // Required parameters are pipelineid and runid.
 func (pp *pipelineProvider) PipelineRunGet(c echo.Context) error {
 	// Convert string to int because id is int
-	storeService, _ := services.StorageService()
 	pipelineID, err := strconv.Atoi(c.Param("pipelineid"))
 	if err != nil {
 		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
@@ -44,7 +42,7 @@ func (pp *pipelineProvider) PipelineRunGet(c echo.Context) error {
 	}
 
 	// Find pipeline run in store
-	pipelineRun, err := storeService.PipelineGetRunByPipelineIDAndID(pipelineID, runID)
+	pipelineRun, err := pp.deps.Store.PipelineGetRunByPipelineIDAndID(pipelineID, runID)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	} else if pipelineRun == nil {
@@ -97,14 +95,13 @@ func (pp *pipelineProvider) PipelineStop(c echo.Context) error {
 // PipelineGetAllRuns returns all runs about the given pipeline.
 func (pp *pipelineProvider) PipelineGetAllRuns(c echo.Context) error {
 	// Convert string to int because id is int
-	storeService, _ := services.StorageService()
 	pipelineID, err := strconv.Atoi(c.Param("pipelineid"))
 	if err != nil {
 		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
 	}
 
 	// Get all runs by the given pipeline id
-	runs, err := storeService.PipelineGetAllRunsByPipelineID(pipelineID)
+	runs, err := pp.deps.Store.PipelineGetAllRunsByPipelineID(pipelineID)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -115,14 +112,13 @@ func (pp *pipelineProvider) PipelineGetAllRuns(c echo.Context) error {
 // PipelineGetLatestRun returns the latest run of a pipeline, given by id.
 func (pp *pipelineProvider) PipelineGetLatestRun(c echo.Context) error {
 	// Convert string to int because id is int
-	storeService, _ := services.StorageService()
 	pipelineID, err := strconv.Atoi(c.Param("pipelineid"))
 	if err != nil {
 		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
 	}
 
 	// Get the latest run by the given pipeline id
-	run, err := storeService.PipelineGetLatestRun(pipelineID)
+	run, err := pp.deps.Store.PipelineGetLatestRun(pipelineID)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -137,7 +133,6 @@ func (pp *pipelineProvider) PipelineGetLatestRun(c echo.Context) error {
 // pipelinerunid - Related pipeline run id
 func (pp *pipelineProvider) GetJobLogs(c echo.Context) error {
 	// Get parameters and validate
-	storeService, _ := services.StorageService()
 	pipelineID := c.Param("pipelineid")
 	pipelineRunID := c.Param("runid")
 
@@ -153,7 +148,7 @@ func (pp *pipelineProvider) GetJobLogs(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "invalid pipeline run id given")
 	}
 
-	run, err := storeService.PipelineGetRunByPipelineIDAndID(p, r)
+	run, err := pp.deps.Store.PipelineGetRunByPipelineIDAndID(p, r)
 	if err != nil {
 		return c.String(http.StatusBadRequest, "cannot find pipeline run with given pipeline id and pipeline run id")
 	}

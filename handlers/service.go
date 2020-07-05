@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/gaia-pipeline/gaia/security"
+	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"github.com/gaia-pipeline/gaia/workers/scheduler/service"
 )
@@ -11,6 +12,7 @@ type Dependencies struct {
 	Scheduler       service.GaiaScheduler
 	PipelineService pipeline.Service
 	Certificate     security.CAAPI
+	Store           store.GaiaStore
 }
 
 // GaiaHandler defines handler functions throughout Gaia.

@@ -4,6 +4,7 @@ import (
 	"github.com/labstack/echo"
 
 	"github.com/gaia-pipeline/gaia/security"
+	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/scheduler/service"
 )
 
@@ -11,6 +12,7 @@ import (
 type Dependencies struct {
 	Scheduler   service.GaiaScheduler
 	Certificate security.CAAPI
+	Store       store.GaiaStore
 }
 
 type workerProvider struct {

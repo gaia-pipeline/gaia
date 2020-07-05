@@ -12,10 +12,10 @@ import (
 
 	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 
-	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/services"
-	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
+
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/store"
 )
 
 func TestPrepareEnvironmentPython(t *testing.T) {
@@ -183,8 +183,7 @@ func TestSavePipelinePython(t *testing.T) {
 	tmp, _ := ioutil.TempDir("", "TestSavePipelinePython")
 	gaia.Cfg = new(gaia.Config)
 	gaia.Cfg.HomePath = tmp
-	m := new(pythonMockStorer)
-	services.MockStorageService(m)
+
 	defer os.Remove(tmp)
 	defer os.Remove("gaia.db")
 	gaia.Cfg.PipelinePath = tmp + "/pipelines/"
@@ -193,6 +192,8 @@ func TestSavePipelinePython(t *testing.T) {
 	p.Name = "main"
 	p.Type = gaia.PTypePython
 	b := new(BuildPipelinePython)
+	m := new(pythonMockStorer)
+	b.Store = m
 	err := b.SavePipeline(p)
 	if err != nil {
 		t.Fatal("something went wrong. wasn't supposed to get error: ", err)

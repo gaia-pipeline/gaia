@@ -35,25 +35,24 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 	// Endpoints for Gaia primary instance
 	if gaia.Cfg.Mode == gaia.ModeServer {
+
+		userHandlers := NewUserHandlers(s.deps.Store)
+
 		// Users
-		apiGrp.POST("login", UserLogin)
-
-		apiAuthGrp.GET("users", UserGetAll)
-		apiAuthGrp.POST("user/password", UserChangePassword)
-		apiAuthGrp.DELETE("user/:username", UserDelete)
-		apiAuthGrp.GET("user/:username/permissions", UserGetPermissions)
-		apiAuthGrp.PUT("user/:username/permissions", UserPutPermissions)
-		apiAuthGrp.POST("user", UserAdd)
-		apiAuthGrp.PUT("user/:username/reset-trigger-token", UserResetTriggerToken)
-
+		apiGrp.POST("login", userHandlers.UserLogin)
+		apiAuthGrp.GET("users", userHandlers.UserGetAll)
+		apiAuthGrp.POST("user/password", userHandlers.UserChangePassword)
+		apiAuthGrp.DELETE("user/:username", userHandlers.UserDelete)
+		apiAuthGrp.GET("user/:username/permissions", userHandlers.UserGetPermissions)
+		apiAuthGrp.PUT("user/:username/permissions", userHandlers.UserPutPermissions)
+		apiAuthGrp.POST("user", userHandlers.UserAdd)
+		apiAuthGrp.PUT("user/:username/reset-trigger-token", userHandlers.UserResetTriggerToken)
 		apiAuthGrp.GET("permission", PermissionGetAll)
 
 		// Pipelines
 		// Create pipeline provider
-		pipelineProvider := pipelines.NewPipelineProvider(pipelines.Dependencies{
-			Scheduler:       s.deps.Scheduler,
-			PipelineService: s.deps.PipelineService,
-		})
+		ppDeps := pipelines.NewDependencies(s.deps.Scheduler, s.deps.PipelineService, s.deps.Store)
+		pipelineProvider := pipelines.NewPipelineProvider(*ppDeps)
 		apiAuthGrp.POST("pipeline", pipelineProvider.CreatePipeline)
 		apiAuthGrp.POST("pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote)
 		apiAuthGrp.GET("pipeline/name", pipelineProvider.PipelineNameAvailable)

@@ -6,10 +6,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/gaia-pipeline/gaia/security"
-
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/services"
+	"github.com/gaia-pipeline/gaia/security"
 )
 
 const (
@@ -46,14 +44,13 @@ var (
 func (s *gaiaPipelineService) CreatePipeline(p *gaia.CreatePipeline) {
 	gitToken := p.GitHubToken
 	p.GitHubToken = ""
-	storeService, _ := services.StorageService()
 	// Define build process for the given type
-	bP := newBuildPipeline(p.Pipeline.Type)
+	bP := newBuildPipeline(p.Pipeline.Type, s.deps.Store)
 	if bP == nil {
 		// Pipeline type is not supported
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("create pipeline failed. Pipeline type is not supported %s is not supported", p.Pipeline.Type)
-		_ = storeService.CreatePipelinePut(p)
+		_ = s.deps.Store.CreatePipelinePut(p)
 		return
 	}
 
@@ -62,7 +59,7 @@ func (s *gaiaPipelineService) CreatePipeline(p *gaia.CreatePipeline) {
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot prepare build: %s", err.Error())
-		_ = storeService.CreatePipelinePut(p)
+		_ = s.deps.Store.CreatePipelinePut(p)
 		return
 	}
 
@@ -71,13 +68,13 @@ func (s *gaiaPipelineService) CreatePipeline(p *gaia.CreatePipeline) {
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot prepare build: %s", err.Error())
-		_ = storeService.CreatePipelinePut(p)
+		_ = s.deps.Store.CreatePipelinePut(p)
 		return
 	}
 
 	// Update status of our pipeline build
 	p.Status = pipelineCloneStatus
-	err = storeService.CreatePipelinePut(p)
+	err = s.deps.Store.CreatePipelinePut(p)
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
@@ -88,13 +85,13 @@ func (s *gaiaPipelineService) CreatePipeline(p *gaia.CreatePipeline) {
 	err = bP.ExecuteBuild(p)
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
-		_ = storeService.CreatePipelinePut(p)
+		_ = s.deps.Store.CreatePipelinePut(p)
 		return
 	}
 
 	// Update status of our pipeline build
 	p.Status = pipelineCompileStatus
-	err = storeService.CreatePipelinePut(p)
+	err = s.deps.Store.CreatePipelinePut(p)
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
@@ -106,7 +103,7 @@ func (s *gaiaPipelineService) CreatePipeline(p *gaia.CreatePipeline) {
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot update pipeline: %s", err.Error())
-		_ = storeService.CreatePipelinePut(p)
+		_ = s.deps.Store.CreatePipelinePut(p)
 		return
 	}
 
@@ -114,13 +111,13 @@ func (s *gaiaPipelineService) CreatePipeline(p *gaia.CreatePipeline) {
 	if err = s.deps.Scheduler.SetPipelineJobs(&p.Pipeline); err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot validate pipeline: %s", err.Error())
-		_ = storeService.CreatePipelinePut(p)
+		_ = s.deps.Store.CreatePipelinePut(p)
 		return
 	}
 
 	// Update status of our pipeline build
 	p.Status = pipelineValidateStatus
-	err = storeService.CreatePipelinePut(p)
+	err = s.deps.Store.CreatePipelinePut(p)
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())
 		return
@@ -133,7 +130,7 @@ func (s *gaiaPipelineService) CreatePipeline(p *gaia.CreatePipeline) {
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("failed to save the created pipeline: %s", err.Error())
-		_ = storeService.CreatePipelinePut(p)
+		_ = s.deps.Store.CreatePipelinePut(p)
 		return
 	}
 
@@ -142,14 +139,14 @@ func (s *gaiaPipelineService) CreatePipeline(p *gaia.CreatePipeline) {
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		p.Output = fmt.Sprintf("cannot copy compiled binary: %s", err.Error())
-		_ = storeService.CreatePipelinePut(p)
+		_ = s.deps.Store.CreatePipelinePut(p)
 		return
 	}
 
 	// Set create pipeline status to complete
 	p.Status = pipelineCompleteStatus
 	p.StatusType = gaia.CreatePipelineSuccess
-	err = storeService.CreatePipelinePut(p)
+	err = s.deps.Store.CreatePipelinePut(p)
 	if err != nil {
 		p.StatusType = gaia.CreatePipelineFailed
 		gaia.Cfg.Logger.Error("cannot put create pipeline into store", "error", err.Error())

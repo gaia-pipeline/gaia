@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/services"
-	"github.com/gaia-pipeline/gaia/store"
 	hclog "github.com/hashicorp/go-hclog"
+
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/store"
 )
 
 type mockCreatePipelineStore struct {
@@ -51,12 +51,11 @@ func TestCreatePipelineUnknownType(t *testing.T) {
 		Name:   "Gaia",
 	})
 	mcp := new(mockCreatePipelineStore)
-	services.MockStorageService(mcp)
-	defer func() { services.MockStorageService(nil) }()
 	cp := new(gaia.CreatePipeline)
 	cp.Pipeline.Type = gaia.PTypeUnknown
 	pipelineService := NewGaiaPipelineService(Dependencies{
 		Scheduler: &mockScheduleService{},
+		Store:     mcp,
 	})
 	pipelineService.CreatePipeline(cp)
 	if cp.Output != "create pipeline failed. Pipeline type is not supported unknown is not supported" {
@@ -78,12 +77,11 @@ func TestCreatePipelineMissingGitURL(t *testing.T) {
 		Name:   "Gaia",
 	})
 	mcp := new(mockCreatePipelineStore)
-	services.MockStorageService(mcp)
-	defer func() { services.MockStorageService(nil) }()
 	cp := new(gaia.CreatePipeline)
 	cp.Pipeline.Type = gaia.PTypeGolang
 	pipelineService := NewGaiaPipelineService(Dependencies{
 		Scheduler: &mockScheduleService{},
+		Store:     mcp,
 	})
 	pipelineService.CreatePipeline(cp)
 	if cp.Output != "cannot prepare build: URL field is required" {
@@ -103,13 +101,12 @@ func TestCreatePipelineFailedToUpdatePipeline(t *testing.T) {
 	})
 	mcp := new(mockCreatePipelineStore)
 	mcp.Error = errors.New("failed")
-	services.MockStorageService(mcp)
-	defer func() { services.MockStorageService(nil) }()
 	cp := new(gaia.CreatePipeline)
 	cp.Pipeline.Type = gaia.PTypeGolang
 	cp.Pipeline.Repo = &gaia.GitRepo{URL: "https://github.com/gaia-pipeline/pipeline-test"}
 	pipelineService := NewGaiaPipelineService(Dependencies{
 		Scheduler: &mockScheduleService{},
+		Store:     mcp,
 	})
 	pipelineService.CreatePipeline(cp)
 	body, _ := ioutil.ReadAll(buf)
@@ -130,14 +127,13 @@ func TestCreatePipeline(t *testing.T) {
 		Name:   "Gaia",
 	})
 	mcp := new(mockCreatePipelineStore)
-	services.MockStorageService(mcp)
-	defer func() { services.MockStorageService(nil) }()
 	cp := new(gaia.CreatePipeline)
 	cp.Pipeline.Name = "test"
 	cp.Pipeline.Type = gaia.PTypeGolang
 	cp.Pipeline.Repo = &gaia.GitRepo{URL: "https://github.com/gaia-pipeline/pipeline-test"}
 	pipelineService := NewGaiaPipelineService(Dependencies{
 		Scheduler: &mockScheduleService{},
+		Store:     mcp,
 	})
 	pipelineService.CreatePipeline(cp)
 	if cp.StatusType != gaia.CreatePipelineSuccess {
@@ -157,8 +153,6 @@ func TestCreatePipelineSetPipelineJobsFail(t *testing.T) {
 		Name:   "Gaia",
 	})
 	mcp := new(mockCreatePipelineStore)
-	services.MockStorageService(mcp)
-	defer func() { services.MockStorageService(nil) }()
 	cp := new(gaia.CreatePipeline)
 	cp.Pipeline.Name = "test"
 	cp.Pipeline.Type = gaia.PTypeGolang
@@ -167,6 +161,7 @@ func TestCreatePipelineSetPipelineJobsFail(t *testing.T) {
 		Scheduler: &mockScheduleService{
 			err: errors.New("error"),
 		},
+		Store: mcp,
 	})
 	pipelineService.CreatePipeline(cp)
 	if !strings.Contains(cp.Output, "cannot validate pipeline") {

@@ -6,16 +6,11 @@ import (
 	"github.com/labstack/echo"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/services"
 )
 
 // SettingsPollOn turn on polling functionality
 func (pp *pipelineProvider) SettingsPollOn(c echo.Context) error {
-	storeService, err := services.StorageService()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "Something went wrong while getting storage service.")
-	}
-	configStore, err := storeService.SettingsGet()
+	configStore, err := pp.deps.Store.SettingsGet()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Something went wrong while retrieving settings information.")
 	}
@@ -30,7 +25,7 @@ func (pp *pipelineProvider) SettingsPollOn(c echo.Context) error {
 	}
 
 	configStore.Poll = true
-	err = storeService.SettingsPut(configStore)
+	err = pp.deps.Store.SettingsPut(configStore)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
@@ -39,11 +34,7 @@ func (pp *pipelineProvider) SettingsPollOn(c echo.Context) error {
 
 // SettingsPollOff turn off polling functionality.
 func (pp *pipelineProvider) SettingsPollOff(c echo.Context) error {
-	storeService, err := services.StorageService()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "Something went wrong while getting storage service.")
-	}
-	configStore, err := storeService.SettingsGet()
+	configStore, err := pp.deps.Store.SettingsGet()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Something went wrong while retrieving settings information.")
 	}
@@ -56,7 +47,7 @@ func (pp *pipelineProvider) SettingsPollOff(c echo.Context) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	configStore.Poll = true
-	err = storeService.SettingsPut(configStore)
+	err = pp.deps.Store.SettingsPut(configStore)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
@@ -69,11 +60,7 @@ type pollStatus struct {
 
 // SettingsPollGet get status of polling functionality.
 func (pp *pipelineProvider) SettingsPollGet(c echo.Context) error {
-	storeService, err := services.StorageService()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "Something went wrong while getting storage service.")
-	}
-	configStore, err := storeService.SettingsGet()
+	configStore, err := pp.deps.Store.SettingsGet()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Something went wrong while retrieving settings information.")
 	}

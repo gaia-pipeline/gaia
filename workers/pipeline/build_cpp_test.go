@@ -11,11 +11,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 	hclog "github.com/hashicorp/go-hclog"
 
+	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
+
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/store"
 )
 
@@ -200,8 +200,7 @@ func TestSavePipelineCpp(t *testing.T) {
 	p.Name = "main"
 	p.Type = gaia.PTypeCpp
 	b := new(BuildPipelineCpp)
-	m := new(cppMockStorer)
-	services.MockStorageService(m)
+	b.Store = new(cppMockStorer)
 	err := b.SavePipeline(p)
 	if err != nil {
 		t.Fatal("something went wrong. wasn't supposed to get error: ", err)
@@ -225,8 +224,8 @@ func TestSavePipelineSaveErrorsCpp(t *testing.T) {
 	p.Type = gaia.PTypeCpp
 	b := new(BuildPipelineCpp)
 	m := new(cppMockStorer)
+	b.Store = m
 	m.Error = errors.New("database error")
-	services.MockStorageService(m)
 	err := b.SavePipeline(p)
 	if err == nil {
 		t.Fatal("expected error which did not occur")

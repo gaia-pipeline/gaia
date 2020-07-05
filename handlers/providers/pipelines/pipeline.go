@@ -14,7 +14,6 @@ import (
 	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 	"github.com/gaia-pipeline/gaia/helper/stringhelper"
 	"github.com/gaia-pipeline/gaia/security"
-	"github.com/gaia-pipeline/gaia/services"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 )
 
@@ -56,7 +55,6 @@ func (pp *pipelineProvider) PipelineGitLSRemote(c echo.Context) error {
 // CreatePipeline accepts all data needed to create a pipeline.
 // It then starts the create pipeline execution process async.
 func (pp *pipelineProvider) CreatePipeline(c echo.Context) error {
-	storeService, _ := services.StorageService()
 	p := &gaia.CreatePipeline{}
 	if err := c.Bind(p); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
@@ -82,7 +80,7 @@ func (pp *pipelineProvider) CreatePipeline(c echo.Context) error {
 	}
 
 	// Save this pipeline to our store
-	err = storeService.CreatePipelinePut(p)
+	err = pp.deps.Store.CreatePipelinePut(p)
 	if err != nil {
 		gaia.Cfg.Logger.Debug("cannot put pipeline into store", "error", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
@@ -99,8 +97,7 @@ func (pp *pipelineProvider) CreatePipeline(c echo.Context) error {
 // all pipelines which have been compiled.
 func (pp *pipelineProvider) CreatePipelineGetAll(c echo.Context) error {
 	// Get all create pipelines
-	storeService, _ := services.StorageService()
-	pipelineList, err := storeService.CreatePipelineGet()
+	pipelineList, err := pp.deps.Store.CreatePipelineGet()
 	if err != nil {
 		gaia.Cfg.Logger.Debug("cannot get create pipelines from store", "error", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
@@ -158,7 +155,6 @@ func (pp *pipelineProvider) PipelineGet(c echo.Context) error {
 
 // PipelineUpdate updates the given pipeline.
 func (pp *pipelineProvider) PipelineUpdate(c echo.Context) error {
-	storeService, _ := services.StorageService()
 	p := gaia.Pipeline{}
 	if err := c.Bind(&p); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
@@ -193,7 +189,7 @@ func (pp *pipelineProvider) PipelineUpdate(c echo.Context) error {
 		foundPipeline.ExecPath = pipeline.GetExecPath(p)
 
 		// Update pipeline in store
-		err = storeService.PipelinePut(&foundPipeline)
+		err = pp.deps.Store.PipelinePut(&foundPipeline)
 		if err != nil {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
@@ -230,7 +226,7 @@ func (pp *pipelineProvider) PipelineUpdate(c echo.Context) error {
 		}
 
 		// Update pipeline in store
-		err := storeService.PipelinePut(&foundPipeline)
+		err := pp.deps.Store.PipelinePut(&foundPipeline)
 		if err != nil {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
@@ -247,7 +243,7 @@ func (pp *pipelineProvider) PipelineUpdate(c echo.Context) error {
 		foundPipeline.Docker = p.Docker
 
 		// Update pipeline in store
-		err := storeService.PipelinePut(&foundPipeline)
+		err := pp.deps.Store.PipelinePut(&foundPipeline)
 		if err != nil {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
@@ -277,7 +273,6 @@ func stringSliceEqual(a, b []string) bool {
 // PipelineDelete accepts a pipeline id and deletes it from the
 // store. It also removes the binary inside the pipeline folder.
 func (pp *pipelineProvider) PipelineDelete(c echo.Context) error {
-	storeService, _ := services.StorageService()
 	pipelineIDStr := c.Param("pipelineid")
 
 	pipelineID, err := strconv.Atoi(pipelineIDStr)
@@ -312,7 +307,7 @@ func (pp *pipelineProvider) PipelineDelete(c echo.Context) error {
 	}
 
 	// Delete pipeline from store
-	err = storeService.PipelineDelete(pipelineID)
+	err = pp.deps.Store.PipelineDelete(pipelineID)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -400,11 +395,7 @@ func (pp *pipelineProvider) PipelineResetToken(c echo.Context) error {
 	}
 
 	foundPipeline.TriggerToken = security.GenerateRandomUUIDV5()
-	s, err := services.StorageService()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "Error getting store service.")
-	}
-	err = s.PipelinePut(&foundPipeline)
+	err = pp.deps.Store.PipelinePut(&foundPipeline)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Error while saving pipeline.")
 	}
@@ -415,11 +406,7 @@ func (pp *pipelineProvider) PipelineResetToken(c echo.Context) error {
 // the user is `auto`.
 func (pp *pipelineProvider) PipelineTriggerAuth(c echo.Context) error {
 	// check headers
-	s, err := services.StorageService()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "Error getting store service.")
-	}
-	auto, err := s.UserGet("auto")
+	auto, err := pp.deps.Store.UserGet("auto")
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Auto user not found.")
 	}
@@ -557,14 +544,13 @@ type getAllWithLatestRun struct {
 // included with the latest run.
 func (pp *pipelineProvider) PipelineGetAllWithLatestRun(c echo.Context) error {
 	// Get all active pipelines
-	storeService, _ := services.StorageService()
 	pipelines := pipeline.GlobalActivePipelines.GetAll()
 
 	// Iterate all pipelines
 	var pipelinesWithLatestRun []getAllWithLatestRun
 	for _, p := range pipelines {
 		// Get the latest run by the given pipeline id
-		run, err := storeService.PipelineGetLatestRun(p.ID)
+		run, err := pp.deps.Store.PipelineGetLatestRun(p.ID)
 		if err != nil {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}

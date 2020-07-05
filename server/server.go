@@ -15,6 +15,7 @@ import (
 	"github.com/labstack/echo"
 
 	"github.com/gaia-pipeline/flag"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
 	"github.com/gaia-pipeline/gaia/plugin"
@@ -160,7 +161,7 @@ func Start() (err error) {
 	}
 
 	// Initialize store
-	store, err := services.StorageService()
+	store, err := services.NewStorageService()
 	if err != nil {
 		return
 	}
@@ -247,6 +248,7 @@ func Start() (err error) {
 	schedulerService.Init()
 	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
 		Scheduler: schedulerService,
+		Store:     store,
 	})
 
 	// Initialize handlers
@@ -254,6 +256,7 @@ func Start() (err error) {
 		Scheduler:       schedulerService,
 		PipelineService: pipelineService,
 		Certificate:     ca,
+		Store:           store,
 	})
 
 	err = handlerService.InitHandlers(echoInstance)

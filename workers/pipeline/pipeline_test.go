@@ -405,27 +405,27 @@ func TestGetExecPath(t *testing.T) {
 }
 
 func TestNewBuildPipeline(t *testing.T) {
-	goBuildPipeline := newBuildPipeline(gaia.PTypeGolang)
+	goBuildPipeline := newBuildPipeline(gaia.PTypeGolang, nil)
 	if goBuildPipeline == nil {
 		t.Fatalf("should be of type %s but is nil\n", gaia.PTypeGolang)
 	}
-	javaBuildPipeline := newBuildPipeline(gaia.PTypeJava)
+	javaBuildPipeline := newBuildPipeline(gaia.PTypeJava, nil)
 	if javaBuildPipeline == nil {
 		t.Fatalf("should be of type %s but is nil\n", gaia.PTypeJava)
 	}
-	pythonBuildPipeline := newBuildPipeline(gaia.PTypePython)
+	pythonBuildPipeline := newBuildPipeline(gaia.PTypePython, nil)
 	if pythonBuildPipeline == nil {
 		t.Fatalf("should be of type %s but is nil\n", gaia.PTypePython)
 	}
-	cppBuildPipeline := newBuildPipeline(gaia.PTypeCpp)
+	cppBuildPipeline := newBuildPipeline(gaia.PTypeCpp, nil)
 	if cppBuildPipeline == nil {
 		t.Fatalf("should be of type %s but is nil\n", gaia.PTypeCpp)
 	}
-	rubyBuildPipeline := newBuildPipeline(gaia.PTypeRuby)
+	rubyBuildPipeline := newBuildPipeline(gaia.PTypeRuby, nil)
 	if rubyBuildPipeline == nil {
 		t.Fatalf("should be of type %s but is nil\n", gaia.PTypeRuby)
 	}
-	nodeJSBuildPipeline := newBuildPipeline(gaia.PTypeNodeJS)
+	nodeJSBuildPipeline := newBuildPipeline(gaia.PTypeNodeJS, nil)
 	if nodeJSBuildPipeline == nil {
 		t.Fatalf("should be of type %s but is nil\n", gaia.PTypeNodeJS)
 	}

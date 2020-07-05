@@ -2,12 +2,14 @@ package pipeline
 
 import (
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/scheduler/service"
 )
 
 // Dependencies defines dependencies which this service needs to operate.
 type Dependencies struct {
 	Scheduler service.GaiaScheduler
+	Store     store.GaiaStore
 }
 
 type gaiaPipelineService struct {

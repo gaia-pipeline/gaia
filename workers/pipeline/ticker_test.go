@@ -10,9 +10,10 @@ import (
 
 	"github.com/gaia-pipeline/gaia/store/memdb"
 
+	"github.com/hashicorp/go-hclog"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
-	"github.com/hashicorp/go-hclog"
 )
 
 type mockScheduleService struct {
@@ -52,11 +53,10 @@ func TestCheckActivePipelines(t *testing.T) {
 	gaia.Cfg.Bolt.Mode = 0600
 
 	// Initialize store
-	dataStore, err := services.StorageService()
+	dataStore, err := services.NewStorageService()
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { services.MockStorageService(nil) }()
 	// Initialize global active pipelines
 	ap := NewActivePipelines()
 	GlobalActivePipelines = ap
@@ -77,6 +77,7 @@ func TestCheckActivePipelines(t *testing.T) {
 	// Manually run check
 	pipelineService := NewGaiaPipelineService(Dependencies{
 		Scheduler: &mockScheduleService{},
+		Store:     dataStore,
 	})
 	pipelineService.CheckActivePipelines()
 
@@ -240,8 +241,12 @@ func TestUpdateWorker(t *testing.T) {
 		LastContact: time.Now().Add(-6 * time.Minute),
 	}
 
+	pp := gaiaPipelineService{deps: Dependencies{
+		Store: nil,
+	}}
+
 	// Run update worker
-	updateWorker()
+	pp.updateWorker()
 
 	// Validate
 	if db.worker == nil {
@@ -259,7 +264,7 @@ func TestUpdateWorker(t *testing.T) {
 	}
 
 	// Run update worker
-	updateWorker()
+	pp.updateWorker()
 
 	// Validate
 	if db.worker == nil {

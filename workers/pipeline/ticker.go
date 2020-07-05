@@ -9,11 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/robfig/cron"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/filehelper"
 	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 	"github.com/gaia-pipeline/gaia/services"
-	"github.com/robfig/cron"
 )
 
 const (
@@ -84,7 +85,7 @@ func (s *gaiaPipelineService) InitTicker() {
 			select {
 			case <-ticker.C:
 				s.CheckActivePipelines()
-				updateWorker()
+				s.updateWorker()
 			}
 		}
 	}()
@@ -96,7 +97,6 @@ func (s *gaiaPipelineService) InitTicker() {
 // Every file will be handled as an active pipeline and therefore
 // saved in the global active pipelines slice.
 func (s *gaiaPipelineService) CheckActivePipelines() {
-	storeService, _ := services.StorageService()
 	var existingPipelineNames []string
 	files, err := ioutil.ReadDir(gaia.Cfg.PipelinePath)
 	if err != nil {
@@ -135,7 +135,7 @@ func (s *gaiaPipelineService) CheckActivePipelines() {
 					if !bytes.Equal(p.SHA256Sum, checksum) {
 						// update pipeline if needed
 						if err = updatePipeline(p); err != nil {
-							_ = storeService.PipelinePut(p)
+							_ = s.deps.Store.PipelinePut(p)
 							gaia.Cfg.Logger.Debug("cannot update pipeline", "error", err.Error(), "pipeline", p)
 							continue
 						}
@@ -158,7 +158,7 @@ func (s *gaiaPipelineService) CheckActivePipelines() {
 			}
 
 			// Get pipeline from store.
-			pipeline, err := storeService.PipelineGetByName(pName)
+			pipeline, err := s.deps.Store.PipelineGetByName(pName)
 			if err != nil {
 				// If we have an error here we are in trouble.
 				gaia.Cfg.Logger.Error("cannot access pipelines bucket. Data corrupted?", "error", err.Error())
@@ -189,11 +189,11 @@ func (s *gaiaPipelineService) CheckActivePipelines() {
 			// update pipeline if needed
 			if !bytes.Equal(pipeline.SHA256Sum, pipelineCheckSum) {
 				if err = updatePipeline(pipeline); err != nil {
-					_ = storeService.PipelinePut(pipeline)
+					_ = s.deps.Store.PipelinePut(pipeline)
 					gaia.Cfg.Logger.Error("cannot update pipeline", "error", err.Error(), "pipeline", pipeline)
 					continue
 				}
-				_ = storeService.PipelinePut(pipeline)
+				_ = s.deps.Store.PipelinePut(pipeline)
 			}
 
 			// Let us try to start the plugin and receive all implemented jobs
@@ -241,7 +241,7 @@ func (s *gaiaPipelineService) CheckActivePipelines() {
 
 			// We encountered a drop-in pipeline previously. Now is the time to save it.
 			if shouldStore {
-				_ = storeService.PipelinePut(pipeline)
+				_ = s.deps.Store.PipelinePut(pipeline)
 			}
 
 			// We do not update the pipeline in store if it already exists there.
@@ -257,9 +257,9 @@ func (s *gaiaPipelineService) CheckActivePipelines() {
 
 // updateWorker checks the latest worker information and determines the status
 // of the worker.
-func updateWorker() {
+func (s *gaiaPipelineService) updateWorker() {
 	// Get memdb service
-	db, err := services.DefaultMemDBService()
+	db, err := services.DefaultMemDBService(s.deps.Store)
 	if err != nil {
 		gaia.Cfg.Logger.Error("failed to get memdb service via updateWorker", "error", err)
 		return

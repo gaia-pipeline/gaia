@@ -65,16 +65,13 @@ func TestRegisterWorker(t *testing.T) {
 
 	// Initialize store
 	m := &mockStorageService{}
-	services.MockStorageService(m)
-	dataStore, _ := services.StorageService()
-	defer func() { services.MockStorageService(nil) }()
 
 	// Initialize certificate store
 	ca, err := security.InitCA()
 	if err != nil {
 		t.Fatalf("cannot initialize certificate service: %v", err)
 	}
-	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil, Certificate: ca})
+	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil, Certificate: ca, Store: m})
 	// Initialize vault
 	v, err := services.DefaultVaultService()
 	if err != nil {
@@ -82,7 +79,7 @@ func TestRegisterWorker(t *testing.T) {
 	}
 
 	// Initialize memdb service
-	db, err := services.MemDBService(dataStore)
+	db, err := services.MemDBService(m)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +172,7 @@ func TestRegisterWorker(t *testing.T) {
 		}
 
 		// Check if store holds the new registered worker
-		worker, err := dataStore.WorkerGet(resp.UniqueID)
+		worker, err := m.WorkerGet(resp.UniqueID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -210,9 +207,6 @@ func TestDeregisterWorker(t *testing.T) {
 
 	// Initialize store
 	m := &mockStorageService{}
-	services.MockStorageService(m)
-	dataStore, _ := services.StorageService()
-	defer func() { services.MockStorageService(nil) }()
 
 	// Initialize vault
 	v, err := services.DefaultVaultService()
@@ -221,7 +215,7 @@ func TestDeregisterWorker(t *testing.T) {
 	}
 
 	// Initialize memdb service
-	db, err := services.MemDBService(dataStore)
+	db, err := services.MemDBService(m)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -410,9 +404,6 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 
 	// Initialize store
 	m := &mockStorageService{}
-	services.MockStorageService(m)
-	dataStore, _ := services.StorageService()
-	defer func() { services.MockStorageService(nil) }()
 
 	// Initialize certificate store
 	ca, err := security.InitCA()
@@ -427,7 +418,7 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 	}
 
 	// Initialize memdb service
-	db, err := services.MemDBService(dataStore)
+	db, err := services.MemDBService(m)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -583,9 +574,6 @@ func TestGetWorker(t *testing.T) {
 
 	// Initialize store
 	m := &mockStorageService{}
-	services.MockStorageService(m)
-	dataStore, _ := services.StorageService()
-	defer func() { services.MockStorageService(nil) }()
 
 	// Initialize vault
 	v, err := services.DefaultVaultService()
@@ -594,7 +582,7 @@ func TestGetWorker(t *testing.T) {
 	}
 
 	// Initialize memdb service
-	_, err = services.MemDBService(dataStore)
+	_, err = services.MemDBService(m)
 	if err != nil {
 		t.Fatal(err)
 	}
