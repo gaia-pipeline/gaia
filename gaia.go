@@ -330,6 +330,8 @@ type Config struct {
 	DockerRunImage          string
 	DockerWorkerHostURL     string
 	DockerWorkerGRPCHostURL string
+	RBACEnabled             bool
+	RBACDebug               bool
 
 	// Worker
 	WorkerName        string
@@ -345,8 +347,9 @@ type Config struct {
 
 // StoreConfig defines config settings to be stored in DB.
 type StoreConfig struct {
-	ID   int
-	Poll bool
+	ID          int
+	Poll        bool
+	RBACEnabled bool
 }
 
 // String returns a pipeline type string back

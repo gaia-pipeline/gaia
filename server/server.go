@@ -15,11 +15,14 @@ import (
 	"github.com/labstack/echo"
 
 	"github.com/gaia-pipeline/flag"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
 	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/security"
+	"github.com/gaia-pipeline/gaia/security/rbac"
 	"github.com/gaia-pipeline/gaia/services"
+	"github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/agent"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 	"github.com/gaia-pipeline/gaia/workers/scheduler/gaiascheduler"
@@ -75,6 +78,8 @@ func init() {
 	fs.StringVar(&gaia.Cfg.DockerRunImage, "docker-run-image", "gaiapipeline/gaia:latest", "Docker image repository name with tag which will be used for running pipelines in a docker container")
 	fs.StringVar(&gaia.Cfg.DockerWorkerHostURL, "docker-worker-host-url", "http://127.0.0.1:8080", "The host url of the primary/worker API endpoint used for docker worker communication")
 	fs.StringVar(&gaia.Cfg.DockerWorkerGRPCHostURL, "docker-worker-grpc-host-url", "127.0.0.1:8989", "The host url of the primary/worker gRPC endpoint used for docker worker communication")
+	fs.BoolVar(&gaia.Cfg.RBACEnabled, "rbac-enabled", false, "Force RBAC to be enabled. Takes priority over value saved within the database")
+	fs.BoolVar(&gaia.Cfg.RBACDebug, "rbac-debug", false, "Enable RBAC debug logging.")
 
 	// Default values
 	gaia.Cfg.Bolt.Mode = 0600
@@ -249,11 +254,19 @@ func Start() (err error) {
 		Scheduler: schedulerService,
 	})
 
+	rbacService, err := initRBACService(store)
+	if err != nil {
+		gaia.Cfg.Logger.Error("error initializing rbac service", "error", err)
+		return err
+	}
+
 	// Initialize handlers
 	handlerService := handlers.NewGaiaHandler(handlers.Dependencies{
 		Scheduler:       schedulerService,
 		PipelineService: pipelineService,
 		Certificate:     ca,
+		RBACService:     rbacService,
+		Store:           store,
 	})
 
 	err = handlerService.InitHandlers(echoInstance)
@@ -332,4 +345,27 @@ func findExecutablePath() (string, error) {
 		return "", err
 	}
 	return filepath.Dir(ex), nil
+}
+
+func initRBACService(store store.GaiaStore) (rbac.Service, error) {
+	if !gaia.Cfg.RBACEnabled {
+		settings, err := store.SettingsGet()
+		if err != nil {
+			gaia.Cfg.Logger.Error("failed to get settings", "error", err.Error())
+			return nil, err
+		}
+
+		if !settings.RBACEnabled {
+			gaia.Cfg.Logger.Info("rbac disabled")
+			return rbac.NewNoOpService(), nil
+		}
+	}
+
+	svc, err := rbac.NewEnforcerSvc(gaia.Cfg.RBACDebug, store.CasbinStore())
+	if err != nil {
+		gaia.Cfg.Logger.Error("failed to create new enforcer", "error", err.Error())
+		return nil, err
+	}
+	gaia.Cfg.Logger.Info("rbac enabled")
+	return svc, nil
 }

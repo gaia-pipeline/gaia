@@ -6,8 +6,12 @@ import (
 	"path/filepath"
 	"time"
 
-	bolt "github.com/coreos/bbolt"
+	"github.com/casbin/casbin/v2/persist"
+	"github.com/speza/casbin-bolt-adapter"
+	bolt "go.etcd.io/bbolt"
+
 	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/helper/assethelper"
 	"github.com/gaia-pipeline/gaia/security"
 )
 
@@ -51,12 +55,20 @@ const (
 
 // BoltStore represents the access type for store
 type BoltStore struct {
-	db *bolt.DB
+	db            *bolt.DB
+	casbinAdapter persist.BatchAdapter
+}
+
+// SettingsStore is the interface that defines methods needed to save settings config into the store.
+type SettingsStore interface {
+	SettingsPut(config *gaia.StoreConfig) error
+	SettingsGet() (*gaia.StoreConfig, error)
 }
 
 // GaiaStore is the interface that defines methods needed to store
 // pipeline and user related information.
 type GaiaStore interface {
+	SettingsStore
 	Init(dataPath string) error
 	Close() error
 	CreatePipelinePut(createPipeline *gaia.CreatePipeline) error
@@ -82,8 +94,6 @@ type GaiaStore interface {
 	UserPermissionsPut(perms *gaia.UserPermission) error
 	UserPermissionsGet(username string) (*gaia.UserPermission, error)
 	UserPermissionsDelete(username string) error
-	SettingsPut(config *gaia.StoreConfig) error
-	SettingsGet() (*gaia.StoreConfig, error)
 	WorkerPut(w *gaia.Worker) error
 	WorkerGetAll() ([]*gaia.Worker, error)
 	WorkerDelete(id string) error
@@ -91,6 +101,7 @@ type GaiaStore interface {
 	WorkerGet(id string) (*gaia.Worker, error)
 	UpsertSHAPair(pair gaia.SHAPair) error
 	GetSHAPair(pipelineID int) (bool, gaia.SHAPair, error)
+	CasbinStore() persist.BatchAdapter
 }
 
 // Compile time interface compliance check for BoltStore. If BoltStore
@@ -118,6 +129,15 @@ func (s *BoltStore) Init(dataPath string) error {
 		return err
 	}
 	s.db = db
+
+	// TODO: Having Casbin stuff here doesn't sit quite right with me (especially loading a file here).
+	// Unfortunately we need to re-use the open bolt database for the adapter though.
+	builtinPolicy, _ := assethelper.LoadRBACBuiltinPolicy()
+	casbinAdapter, err := boltadapter.NewAdapter(db, "casbin-policies", builtinPolicy)
+	if err != nil {
+		return err
+	}
+	s.casbinAdapter = casbinAdapter
 
 	// Setup database
 	return s.setupDatabase()
@@ -226,4 +246,9 @@ func itob(v int) []byte {
 	b := make([]byte, 8)
 	binary.BigEndian.PutUint64(b, uint64(v))
 	return b
+}
+
+// CasbinStore is as a getter for the Casbin store adapter.
+func (s *BoltStore) CasbinStore() persist.BatchAdapter {
+	return s.casbinAdapter
 }

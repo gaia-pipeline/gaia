@@ -3,7 +3,8 @@ package store
 import (
 	"encoding/json"
 
-	bolt "github.com/coreos/bbolt"
+	bolt "go.etcd.io/bbolt"
+
 	"github.com/gaia-pipeline/gaia"
 )
 

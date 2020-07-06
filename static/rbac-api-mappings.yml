@@ -1,0 +1,253 @@
+# This file maps the Gaia API endpoints to the <namespace/action> defined within the Casbin RBAC policy.
+
+# Root key = "namespace/action"
+# Metadata can be added (e.g. description).
+# Endpoints list can be added. This is flexible since we may have multiple API endpoints directly linked to an action
+# such as the below 'pipeline/create'.
+#
+# This file is loaded on server startup once and stored in-memory within a structure that has O(1) lookup so that we
+# can find an API endpoint and enforce the correct <namespace/action> through Casbin.
+
+# pipelines
+
+"pipelines/create":
+  endpoints:
+    - method: POST
+      path: "/api/v1/pipeline"
+    - method: POST
+      path: "/api/v1/pipeline/gitlsremote"
+    - method: GET
+      path: "/api/v1/pipeline/name"
+    - method: POST
+      path: "/api/v1/pipeline/periodicschedules"
+
+"pipelines/list-created":
+  endpoints:
+    - method: GET
+      path: "/api/v1/pipeline/created"
+
+"pipelines/list":
+  endpoints:
+    - method: GET
+      path: "/api/v1/pipeline"
+
+"pipelines/list-latest":
+  endpoints:
+    - method: GET
+      path: "/api/v1/pipeline/latest"
+
+"pipelines/get":
+  endpoints:
+    - method: GET
+      path: "/api/v1/pipeline/:pipelineid"
+      resource: pipelineid
+
+"pipelines/update":
+  endpoints:
+    - method: PUT
+      path: "/api/v1/pipeline/:pipelineid"
+      resource: pipelineid
+
+"pipelines/delete":
+  endpoints:
+    - method: DELETE
+      path: "/api/v1/pipeline/:pipelineid"
+      resource: pipelineid
+
+"pipelines/reset-trigger-token":
+  endpoints:
+    - method: PUT
+      path: "/api/v1/pipeline/:pipelineid/reset-trigger-token"
+      resource: pipelineid
+
+"pipelines/start":
+  endpoints:
+    - method: POST
+      path: "/api/v1/pipeline/:pipelineid/start"
+      resource: pipelineid
+
+"pipelines/pull":
+  endpoints:
+    - method: POST
+      path: "/api/v1/pipeline/:pipelineid/pull"
+      resource: pipelineid
+
+# pipelines:runs
+
+"pipelines:runs/stop":
+  endpoints:
+    - method: POST
+      path: "/api/v1/pipelinerun/:pipelineid/:runid/stop"
+      resource: pipelineid
+
+"pipelines:runs/get-latest-run":
+  endpoints:
+    - method: GET
+      path: "/api/v1/pipelinerun/:pipelineid/:runid/latest"
+      resource: pipelineid
+
+"pipelines:runs/get-run":
+  endpoints:
+    - method: GET
+      path: "/api/v1/pipelinerun/:pipelineid/:runid"
+      resource: pipelineid
+    - method: GET
+      path: "/api/v1/pipelinerun/:pipelineid/:runid/log"
+      resource: pipelineid
+
+"pipelines:runs/get-latest":
+  endpoints:
+    - method: GET
+      path: "/api/v1/pipelinerun/:pipelineid/latest"
+
+"pipelines:runs/get":
+  endpoints:
+    - method: GET
+      path: "/api/v1/pipelinerun/:pipelineid"
+      resource: pipelineid
+
+# secrets
+
+"secrets/create":
+  endpoints:
+    - method: POST
+      path: "/api/v1/secret"
+
+"secrets/list":
+  endpoints:
+    - method: GET
+      path: "/api/v1/secrets"
+
+"secrets/update":
+  endpoints:
+    - method: PUT
+      path: "/api/v1/secret/update"
+
+"secrets/delete":
+  endpoints:
+    - method: DELETE
+      path: "/api/v1/secret/:key"
+      resource: key
+
+# users
+
+"users/create":
+  endpoints:
+    - method: POST
+      path: "/api/v1/user"
+
+"users/list":
+  endpoints:
+    - method: GET
+      path: "/api/v1/users"
+
+"users/change-password":
+  endpoints:
+    - method: POST
+      path: "/api/v1/user/password"
+
+"users/delete":
+  endpoints:
+    - method: DELETE
+      path: "/api/v1/user/:username"
+      resource: username
+
+"users/reset-trigger-token":
+  endpoints:
+    - method: PUT
+      path: "/api/v1/user/:username/reset-trigger-token"
+      resource: username
+
+# workers
+
+"workers/create-secret":
+  endpoints:
+    - method: POST
+      path: "/api/v1/worker/secret"
+
+"workers/status-list":
+  endpoints:
+    - method: GET
+      path: "/api/v1/worker/status"
+
+"workers/list":
+  endpoints:
+    - method: GET
+      path: "/api/v1/worker"
+
+"workers/get-secret":
+  endpoints:
+    - method: GET
+      path: "/api/v1/worker/secret"
+
+"workers/deregister":
+  endpoints:
+    - method: DELETE
+      path: "/api/v1/worker/:workerid"
+      resource: workerid
+
+"workers/get-status":
+  endpoints:
+    - method: GET
+      path: "/api/v1/worker/status"
+
+# settings
+
+"settings/get":
+  endpoints:
+    - method: GET
+      path: "/api/v1/settings/poll"
+    - method: GET
+      path: "/api/v1/settings/rbac"
+
+"settings/update":
+  endpoints:
+    - method: POST
+      path: "/api/v1/settings/poll/on"
+    - method: POST
+      path: "/api/v1/settings/poll/off"
+    - method: PUT
+      path: "/api/v1/settings/rbac"
+
+# rbac
+
+"rbac:roles/list":
+  endpoints:
+    - method: GET
+      path: "/api/v1/rbac/roles"
+
+"rbac:roles/create":
+  endpoints:
+    - method: PUT
+      path: "/api/v1/rbac/roles/:role"
+      resource: role
+
+"rbac:roles/delete":
+  endpoints:
+    - method: DELETE
+      path: "/api/v1/rbac/roles/:role"
+      resource: role
+
+"rbac:roles/attach":
+  endpoints:
+    - method: PUT
+      path: "/api/v1/rbac/roles/:role/attach/:username"
+      resource: role
+
+"rbac:roles/detatch":
+  endpoints:
+    - method: DELETE
+      path: "/api/v1/rbac/roles/:role/attach/:username"
+      resource: role
+
+"rbac:roles/get-attached":
+  endpoints:
+    - method: GET
+      path: "/api/v1/rbac/roles/:role/attached"
+      resource: role
+
+"users/get-roles":
+  endpoints:
+    - method: GET
+      path: "/api/v1/users/:username/rbac/roles"
+      resource: username

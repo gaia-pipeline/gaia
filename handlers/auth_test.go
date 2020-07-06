@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,10 +12,26 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/hashicorp/go-hclog"
+	"github.com/labstack/echo"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/rolehelper"
-	"github.com/labstack/echo"
+	"github.com/gaia-pipeline/gaia/security/rbac"
 )
+
+type mockEchoEnforcer struct{}
+
+func (m *mockEchoEnforcer) Enforce(username, method, path string, params map[string]string) error {
+	if username == "enforcer-perms-err" {
+		return rbac.NewErrPermissionDenied("namespace", "action", "thing")
+	}
+	if username == "enforcer-err" {
+		return errors.New("error")
+	}
+	return nil
+}
 
 var mockRoleAuth = &AuthConfig{
 	RoleCategories: []*gaia.UserRoleCategory{
@@ -54,11 +71,12 @@ var mockRoleAuth = &AuthConfig{
 			},
 		},
 	},
+	rbacEnforcer: &mockEchoEnforcer{},
 }
 
 func makeAuthBarrierRouter() *echo.Echo {
 	e := echo.New()
-	e.Use(AuthMiddleware(mockRoleAuth))
+	e.Use(authMiddleware(mockRoleAuth))
 
 	success := func(c echo.Context) error {
 		return c.NoContent(200)
@@ -68,6 +86,7 @@ func makeAuthBarrierRouter() *echo.Echo {
 	e.GET("/catone/:test", success)
 	e.GET("/catone/latest", success)
 	e.POST("/catone", success)
+	e.POST("/enforcer/test", success)
 
 	return e
 }
@@ -354,4 +373,71 @@ func testPermSuccess(t *testing.T, statusCode int, body string) {
 	if statusCode != http.StatusOK {
 		t.Fatalf("expected response code %v got %v", http.StatusOK, statusCode)
 	}
+}
+
+func Test_AuthMiddleware_Enforcer_PermissionDenied(t *testing.T) {
+	e := makeAuthBarrierRouter()
+
+	defer func() {
+		gaia.Cfg = nil
+	}()
+
+	gaia.Cfg = &gaia.Config{
+		JWTKey: []byte("hmac-jwt-key"),
+	}
+
+	claims := jwtCustomClaims{
+		Username: "enforcer-perms-err",
+		Roles:    []string{},
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Unix() + jwtExpiry,
+			IssuedAt:  time.Now().Unix(),
+			Subject:   "Gaia Session Token",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenstring, _ := token.SignedString(gaia.Cfg.JWTKey)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(echo.POST, "/enforcer/test", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenstring)
+	e.ServeHTTP(rec, req)
+
+	assert.Equal(t, rec.Code, http.StatusForbidden)
+	assert.Equal(t, rec.Body.String(), "Permission denied. Must have namespace/action thing")
+}
+
+func Test_AuthMiddleware_Enforcer_UnknownError(t *testing.T) {
+	e := makeAuthBarrierRouter()
+
+	defer func() {
+		gaia.Cfg = nil
+	}()
+
+	gaia.Cfg = &gaia.Config{
+		JWTKey: []byte("hmac-jwt-key"),
+	}
+	gaia.Cfg.Logger = hclog.NewNullLogger()
+
+	claims := jwtCustomClaims{
+		Username: "enforcer-err",
+		Roles:    []string{},
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Unix() + jwtExpiry,
+			IssuedAt:  time.Now().Unix(),
+			Subject:   "Gaia Session Token",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenstring, _ := token.SignedString(gaia.Cfg.JWTKey)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(echo.POST, "/enforcer/test", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenstring)
+	e.ServeHTTP(rec, req)
+
+	assert.Equal(t, rec.Code, http.StatusInternalServerError)
+	assert.Equal(t, rec.Body.String(), "Unknown error has occurred while validating permissions.")
 }

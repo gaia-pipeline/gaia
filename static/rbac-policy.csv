@@ -1,0 +1,11 @@
+# Built-in policy which defines two roles - role:admin and role:readonly.
+# role:admin is automatically added to the admin user.
+# Policy format:
+# p, <role>, <namespace>, <action>, <resource>, <effect = allow/deny>
+
+p, role:admin, *, *, *, allow
+
+p, role:readonly, *, get, *, allow
+
+g, admin, role:admin
+g, readonly, role:readonly

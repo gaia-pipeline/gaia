@@ -29,8 +29,9 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	apiGrp := e.Group(p)
 
 	// API router group with auth middleware.
-	apiAuthGrp := e.Group(p, AuthMiddleware(&AuthConfig{
+	apiAuthGrp := e.Group(p, authMiddleware(&AuthConfig{
 		RoleCategories: rolehelper.DefaultUserRoles,
+		rbacEnforcer:   s.deps.RBACService,
 	}))
 
 	// Endpoints for Gaia primary instance
@@ -53,6 +54,7 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		pipelineProvider := pipelines.NewPipelineProvider(pipelines.Dependencies{
 			Scheduler:       s.deps.Scheduler,
 			PipelineService: s.deps.PipelineService,
+			SettingsStore:   s.deps.Store,
 		})
 		apiAuthGrp.POST("pipeline", pipelineProvider.CreatePipeline)
 		apiAuthGrp.POST("pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote)
@@ -71,9 +73,12 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		apiGrp.POST("pipeline/:pipelineid/:pipelinetoken/trigger", pipelineProvider.PipelineTrigger)
 
 		// Settings
+		settingsHandler := newSettingsHandler(s.deps.Store)
 		apiAuthGrp.POST("settings/poll/on", pipelineProvider.SettingsPollOn)
 		apiAuthGrp.POST("settings/poll/off", pipelineProvider.SettingsPollOff)
 		apiAuthGrp.GET("settings/poll", pipelineProvider.SettingsPollGet)
+		apiAuthGrp.GET("settings/rbac", settingsHandler.rbacGet)
+		apiAuthGrp.PUT("settings/rbac", settingsHandler.rbacPut)
 
 		// PipelineRun
 		apiAuthGrp.POST("pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop)
@@ -87,6 +92,20 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		apiAuthGrp.DELETE("secret/:key", RemoveSecret)
 		apiAuthGrp.POST("secret", SetSecret)
 		apiAuthGrp.PUT("secret/update", SetSecret)
+
+		// RBAC
+		rbacHandler := rbacHandler{
+			svc: s.deps.RBACService,
+		}
+		// RBAC - Management
+		apiAuthGrp.GET("rbac/roles", rbacHandler.getAllRoles)
+		apiAuthGrp.PUT("rbac/roles/:role", rbacHandler.addRole)
+		apiAuthGrp.DELETE("rbac/roles/:role", rbacHandler.deleteRole)
+		apiAuthGrp.PUT("rbac/roles/:role/attach/:username", rbacHandler.attachRole)
+		apiAuthGrp.DELETE("rbac/roles/:role/attach/:username", rbacHandler.detachRole)
+		apiAuthGrp.GET("rbac/roles/:role/attached", rbacHandler.getRolesAttachedUsers)
+		// RBAC - Users
+		apiAuthGrp.GET("users/:username/rbac/roles", rbacHandler.getUserAttachedRoles)
 	}
 
 	// Worker

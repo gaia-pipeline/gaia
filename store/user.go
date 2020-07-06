@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"time"
 
-	bolt "github.com/coreos/bbolt"
-	"github.com/gaia-pipeline/gaia"
+	bolt "go.etcd.io/bbolt"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/gaia-pipeline/gaia"
 )
 
 // UserPut takes the given user and saves it

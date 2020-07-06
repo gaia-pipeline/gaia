@@ -2,18 +2,18 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
-	"github.com/gaia-pipeline/gaia/services"
-	gStore "github.com/gaia-pipeline/gaia/store"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 )
 
@@ -22,7 +22,6 @@ type status struct {
 }
 
 type mockSettingStoreService struct {
-	gStore.GaiaStore
 	get func() (*gaia.StoreConfig, error)
 	put func(*gaia.StoreConfig) error
 }
@@ -55,13 +54,7 @@ func TestSetPollerToggle(t *testing.T) {
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
 	})
-	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-	// // Initialize echo
-	e := echo.New()
-	_ = handlerService.InitHandlers(e)
+
 	get := func() (*gaia.StoreConfig, error) {
 		return nil, nil
 	}
@@ -69,10 +62,15 @@ func TestSetPollerToggle(t *testing.T) {
 		return nil
 	}
 	m := mockSettingStoreService{get: get, put: put}
-	services.MockStorageService(&m)
-	defer func() {
-		services.MockStorageService(nil)
-	}()
+
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+		SettingsStore:   m,
+	})
+	// // Initialize echo
+	e := echo.New()
+	_ = handlerService.InitHandlers(e)
 
 	t.Run("switching it on twice should fail", func(t2 *testing.T) {
 		req := httptest.NewRequest(echo.POST, "/", nil)
@@ -209,13 +207,7 @@ func TestGettingSettingFromDBTakesPrecedence(t *testing.T) {
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
 	})
-	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-	// // Initialize echo
-	e := echo.New()
-	_ = handlerService.InitHandlers(e)
+
 	get := func() (*gaia.StoreConfig, error) {
 		return &gaia.StoreConfig{
 			Poll: true,
@@ -225,8 +217,16 @@ func TestGettingSettingFromDBTakesPrecedence(t *testing.T) {
 		return nil
 	}
 	m := mockSettingStoreService{get: get, put: put}
-	services.MockStorageService(&m)
-	defer services.MockStorageService(nil)
+
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+		SettingsStore:   m,
+	})
+
+	e := echo.New()
+	_ = handlerService.InitHandlers(e)
+
 	req := httptest.NewRequest(echo.GET, "/", nil)
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
@@ -265,13 +265,7 @@ func TestSettingPollerOnAlsoSavesSettingsInDB(t *testing.T) {
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
 	})
-	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-	// // Initialize echo
-	e := echo.New()
-	_ = handlerService.InitHandlers(e)
+
 	get := func() (*gaia.StoreConfig, error) {
 		return &gaia.StoreConfig{
 			Poll: true,
@@ -283,8 +277,16 @@ func TestSettingPollerOnAlsoSavesSettingsInDB(t *testing.T) {
 		return nil
 	}
 	m := mockSettingStoreService{get: get, put: put}
-	services.MockStorageService(&m)
-	defer services.MockStorageService(nil)
+
+	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		Scheduler:       &mockScheduleService{},
+		PipelineService: pipelineService,
+		SettingsStore:   m,
+	})
+
+	e := echo.New()
+	_ = handlerService.InitHandlers(e)
+
 	req := httptest.NewRequest(echo.POST, "/", nil)
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
@@ -305,4 +307,108 @@ func TestSettingPollerOnAlsoSavesSettingsInDB(t *testing.T) {
 	if putCalled != true {
 		t.Fatal("SettingPut should have been called. Was not.")
 	}
+}
+
+func Test_SettingsHandler_RBACGet(t *testing.T) {
+	gaia.Cfg = &gaia.Config{
+		Logger: hclog.NewNullLogger(),
+	}
+
+	e := echo.New()
+	m := &mockSettingStoreService{}
+	settingsHandler := newSettingsHandler(m)
+
+	m.get = func() (*gaia.StoreConfig, error) {
+		return &gaia.StoreConfig{}, nil
+	}
+
+	t.Run("error from store returns 500", func(t *testing.T) {
+		req := httptest.NewRequest(echo.GET, "/", nil)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/api/" + gaia.APIVersion + "/setttings/rbac")
+
+		m.get = func() (*gaia.StoreConfig, error) {
+			return &gaia.StoreConfig{}, errors.New("store error")
+		}
+
+		_ = settingsHandler.rbacGet(c)
+
+		assert.Equal(t, http.StatusInternalServerError, rec.Code)
+		assert.Equal(t, "Something went wrong while retrieving settings information.", rec.Body.String())
+	})
+
+	t.Run("valid settings from store returns correct value", func(t *testing.T) {
+		m.get = func() (*gaia.StoreConfig, error) {
+			return &gaia.StoreConfig{
+				RBACEnabled: true,
+			}, nil
+		}
+
+		req := httptest.NewRequest(echo.GET, "/", nil)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/api/" + gaia.APIVersion + "/setttings/rbac")
+
+		_ = settingsHandler.rbacGet(c)
+
+		assert.Equal(t, rec.Code, http.StatusOK)
+		assert.Equal(t, rec.Body.String(), "{\"enabled\":true}\n")
+	})
+}
+
+func Test_SettingsHandler_RBACPut(t *testing.T) {
+	gaia.Cfg = &gaia.Config{
+		Logger: hclog.NewNullLogger(),
+	}
+
+	e := echo.New()
+	m := &mockSettingStoreService{}
+	settingsHandler := newSettingsHandler(m)
+
+	m.get = func() (*gaia.StoreConfig, error) {
+		return &gaia.StoreConfig{}, nil
+	}
+
+	t.Run("store error returns 500", func(t *testing.T) {
+		req := httptest.NewRequest(echo.GET, "/", nil)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/api/" + gaia.APIVersion + "/setttings/rbac")
+
+		m.put = func(config *gaia.StoreConfig) error {
+			return errors.New("store error")
+		}
+
+		_ = settingsHandler.rbacPut(c)
+
+		assert.Equal(t, http.StatusInternalServerError, rec.Code)
+		assert.Equal(t, "An error occurred while saving the settings.", rec.Body.String())
+	})
+
+	t.Run("store success returns 200", func(t *testing.T) {
+		m.get = func() (*gaia.StoreConfig, error) {
+			return &gaia.StoreConfig{
+				RBACEnabled: true,
+			}, nil
+		}
+
+		req := httptest.NewRequest(echo.GET, "/", nil)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/api/" + gaia.APIVersion + "/setttings/rbac")
+
+		m.put = func(config *gaia.StoreConfig) error {
+			return nil
+		}
+
+		_ = settingsHandler.rbacPut(c)
+
+		assert.Equal(t, rec.Code, http.StatusOK)
+		assert.Equal(t, rec.Body.String(), "Settings have been updated.")
+	})
 }
