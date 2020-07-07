@@ -47,6 +47,7 @@ type (
 		GetRoleAttachedUsers(role string) ([]string, error)
 		AttachRole(username string, role string) error
 		DetachRole(username string, role string) error
+		DeleteUser(username string) error
 	}
 
 	enforcerService struct {
@@ -196,6 +197,14 @@ func (e *enforcerService) DetachRole(username string, role string) error {
 	}
 	if !exists {
 		return errors.New("role does not exists for user")
+	}
+	return nil
+}
+
+// DeleteUser removes the user from the rbac model.
+func (e *enforcerService) DeleteUser(username string) error {
+	if _, err := e.enforcer.DeleteUser(username); err != nil {
+		return fmt.Errorf("error deleting user: %w", err)
 	}
 	return nil
 }

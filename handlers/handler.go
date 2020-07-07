@@ -37,15 +37,17 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	// Endpoints for Gaia primary instance
 	if gaia.Cfg.Mode == gaia.ModeServer {
 		// Users
-		apiGrp.POST("login", UserLogin)
+		userHandler := NewUserHandler(s.deps.Store, s.deps.RBACService)
 
-		apiAuthGrp.GET("users", UserGetAll)
-		apiAuthGrp.POST("user/password", UserChangePassword)
-		apiAuthGrp.DELETE("user/:username", UserDelete)
-		apiAuthGrp.GET("user/:username/permissions", UserGetPermissions)
-		apiAuthGrp.PUT("user/:username/permissions", UserPutPermissions)
-		apiAuthGrp.POST("user", UserAdd)
-		apiAuthGrp.PUT("user/:username/reset-trigger-token", UserResetTriggerToken)
+		apiGrp.POST("login", userHandler.UserLogin)
+
+		apiAuthGrp.GET("users", userHandler.UserGetAll)
+		apiAuthGrp.POST("user/password", userHandler.UserChangePassword)
+		apiAuthGrp.DELETE("user/:username", userHandler.UserDelete)
+		apiAuthGrp.GET("user/:username/permissions", userHandler.UserGetPermissions)
+		apiAuthGrp.PUT("user/:username/permissions", userHandler.UserPutPermissions)
+		apiAuthGrp.POST("user", userHandler.UserAdd)
+		apiAuthGrp.PUT("user/:username/reset-trigger-token", userHandler.UserResetTriggerToken)
 
 		apiAuthGrp.GET("permission", PermissionGetAll)
 
