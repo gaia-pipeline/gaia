@@ -8,8 +8,6 @@ import (
 	"github.com/labstack/echo/middleware"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
-	"github.com/gaia-pipeline/gaia/handlers/providers/workers"
 	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 )
 
@@ -51,41 +49,36 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 		// Pipelines
 		// Create pipeline provider
-		pipelineProvider := pipelines.NewPipelineProvider(pipelines.Dependencies{
-			Scheduler:       s.deps.Scheduler,
-			PipelineService: s.deps.PipelineService,
-			SettingsStore:   s.deps.Store,
-		})
-		apiAuthGrp.POST("pipeline", pipelineProvider.CreatePipeline)
-		apiAuthGrp.POST("pipeline/gitlsremote", pipelineProvider.PipelineGitLSRemote)
-		apiAuthGrp.GET("pipeline/name", pipelineProvider.PipelineNameAvailable)
-		apiAuthGrp.GET("pipeline/created", pipelineProvider.CreatePipelineGetAll)
-		apiAuthGrp.GET("pipeline", pipelineProvider.PipelineGetAll)
-		apiAuthGrp.GET("pipeline/:pipelineid", pipelineProvider.PipelineGet)
-		apiAuthGrp.PUT("pipeline/:pipelineid", pipelineProvider.PipelineUpdate)
-		apiAuthGrp.DELETE("pipeline/:pipelineid", pipelineProvider.PipelineDelete)
-		apiAuthGrp.POST("pipeline/:pipelineid/start", pipelineProvider.PipelineStart)
-		apiAuthGrp.PUT("pipeline/:pipelineid/reset-trigger-token", pipelineProvider.PipelineResetToken)
-		apiAuthGrp.POST("pipeline/:pipelineid/pull", pipelineProvider.PipelinePull)
-		apiAuthGrp.GET("pipeline/latest", pipelineProvider.PipelineGetAllWithLatestRun)
-		apiAuthGrp.POST("pipeline/periodicschedules", pipelineProvider.PipelineCheckPeriodicSchedules)
-		apiGrp.POST("pipeline/githook", pipelineProvider.GitWebHook)
-		apiGrp.POST("pipeline/:pipelineid/:pipelinetoken/trigger", pipelineProvider.PipelineTrigger)
+		apiAuthGrp.POST("pipeline", s.deps.PipelineProvider.CreatePipeline)
+		apiAuthGrp.POST("pipeline/gitlsremote", s.deps.PipelineProvider.PipelineGitLSRemote)
+		apiAuthGrp.GET("pipeline/name", s.deps.PipelineProvider.PipelineNameAvailable)
+		apiAuthGrp.GET("pipeline/created", s.deps.PipelineProvider.CreatePipelineGetAll)
+		apiAuthGrp.GET("pipeline", s.deps.PipelineProvider.PipelineGetAll)
+		apiAuthGrp.GET("pipeline/:pipelineid", s.deps.PipelineProvider.PipelineGet)
+		apiAuthGrp.PUT("pipeline/:pipelineid", s.deps.PipelineProvider.PipelineUpdate)
+		apiAuthGrp.DELETE("pipeline/:pipelineid", s.deps.PipelineProvider.PipelineDelete)
+		apiAuthGrp.POST("pipeline/:pipelineid/start", s.deps.PipelineProvider.PipelineStart)
+		apiAuthGrp.PUT("pipeline/:pipelineid/reset-trigger-token", s.deps.PipelineProvider.PipelineResetToken)
+		apiAuthGrp.POST("pipeline/:pipelineid/pull", s.deps.PipelineProvider.PipelinePull)
+		apiAuthGrp.GET("pipeline/latest", s.deps.PipelineProvider.PipelineGetAllWithLatestRun)
+		apiAuthGrp.POST("pipeline/periodicschedules", s.deps.PipelineProvider.PipelineCheckPeriodicSchedules)
+		apiGrp.POST("pipeline/githook", s.deps.PipelineProvider.GitWebHook)
+		apiGrp.POST("pipeline/:pipelineid/:pipelinetoken/trigger", s.deps.PipelineProvider.PipelineTrigger)
 
 		// Settings
 		settingsHandler := newSettingsHandler(s.deps.Store)
-		apiAuthGrp.POST("settings/poll/on", pipelineProvider.SettingsPollOn)
-		apiAuthGrp.POST("settings/poll/off", pipelineProvider.SettingsPollOff)
-		apiAuthGrp.GET("settings/poll", pipelineProvider.SettingsPollGet)
+		apiAuthGrp.POST("settings/poll/on", s.deps.PipelineProvider.SettingsPollOn)
+		apiAuthGrp.POST("settings/poll/off", s.deps.PipelineProvider.SettingsPollOff)
+		apiAuthGrp.GET("settings/poll", s.deps.PipelineProvider.SettingsPollGet)
 		apiAuthGrp.GET("settings/rbac", settingsHandler.rbacGet)
 		apiAuthGrp.PUT("settings/rbac", settingsHandler.rbacPut)
 
 		// PipelineRun
-		apiAuthGrp.POST("pipelinerun/:pipelineid/:runid/stop", pipelineProvider.PipelineStop)
-		apiAuthGrp.GET("pipelinerun/:pipelineid/:runid", pipelineProvider.PipelineRunGet)
-		apiAuthGrp.GET("pipelinerun/:pipelineid", pipelineProvider.PipelineGetAllRuns)
-		apiAuthGrp.GET("pipelinerun/:pipelineid/latest", pipelineProvider.PipelineGetLatestRun)
-		apiAuthGrp.GET("pipelinerun/:pipelineid/:runid/log", pipelineProvider.GetJobLogs)
+		apiAuthGrp.POST("pipelinerun/:pipelineid/:runid/stop", s.deps.PipelineProvider.PipelineStop)
+		apiAuthGrp.GET("pipelinerun/:pipelineid/:runid", s.deps.PipelineProvider.PipelineRunGet)
+		apiAuthGrp.GET("pipelinerun/:pipelineid", s.deps.PipelineProvider.PipelineGetAllRuns)
+		apiAuthGrp.GET("pipelinerun/:pipelineid/latest", s.deps.PipelineProvider.PipelineGetLatestRun)
+		apiAuthGrp.GET("pipelinerun/:pipelineid/:runid/log", s.deps.PipelineProvider.GetJobLogs)
 
 		// Secrets
 		apiAuthGrp.GET("secrets", ListSecrets)
@@ -109,17 +102,12 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 	}
 
 	// Worker
-	// initialize the worker provider
-	workerProvider := workers.NewWorkerProvider(workers.Dependencies{
-		Scheduler:   s.deps.Scheduler,
-		Certificate: s.deps.Certificate,
-	})
-	apiAuthGrp.GET("worker/secret", workerProvider.GetWorkerRegisterSecret)
-	apiAuthGrp.GET("worker/status", workerProvider.GetWorkerStatusOverview)
-	apiAuthGrp.GET("worker", workerProvider.GetWorker)
-	apiAuthGrp.DELETE("worker/:workerid", workerProvider.DeregisterWorker)
-	apiAuthGrp.POST("worker/secret", workerProvider.ResetWorkerRegisterSecret)
-	apiGrp.POST("worker/register", workerProvider.RegisterWorker)
+	apiAuthGrp.GET("worker/secret", s.deps.WorkerProvider.GetWorkerRegisterSecret)
+	apiAuthGrp.GET("worker/status", s.deps.WorkerProvider.GetWorkerStatusOverview)
+	apiAuthGrp.GET("worker", s.deps.WorkerProvider.GetWorker)
+	apiAuthGrp.DELETE("worker/:workerid", s.deps.WorkerProvider.DeregisterWorker)
+	apiAuthGrp.POST("worker/secret", s.deps.WorkerProvider.ResetWorkerRegisterSecret)
+	apiGrp.POST("worker/register", s.deps.WorkerProvider.RegisterWorker)
 
 	// Middleware
 	e.Use(middleware.Recover())

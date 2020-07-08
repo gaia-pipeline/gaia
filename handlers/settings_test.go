@@ -13,12 +13,23 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
+	"github.com/gaia-pipeline/gaia/providers/pipelines"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
+	"github.com/gaia-pipeline/gaia/workers/scheduler/service"
 )
 
 type status struct {
 	Status bool
+}
+
+type mockScheduleService struct {
+	service.GaiaScheduler
+	pipelineRun *gaia.PipelineRun
+	err         error
+}
+
+func (ms *mockScheduleService) SchedulePipeline(p *gaia.Pipeline, startReason string, args []*gaia.Argument) (*gaia.PipelineRun, error) {
+	return ms.pipelineRun, ms.err
 }
 
 type mockSettingStoreService struct {

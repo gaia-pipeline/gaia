@@ -103,9 +103,9 @@ func (wp *WorkerProvider) RegisterWorker(c echo.Context) error {
 	}
 
 	// Encode all certificates base64 to prevent character issues during transportation
-	crtB64 := base64.StdEncoding.EncodeToString([]byte(crt))
-	keyB64 := base64.StdEncoding.EncodeToString([]byte(key))
-	caCertB64 := base64.StdEncoding.EncodeToString([]byte(caCert))
+	crtB64 := base64.StdEncoding.EncodeToString(crt)
+	keyB64 := base64.StdEncoding.EncodeToString(key)
+	caCertB64 := base64.StdEncoding.EncodeToString(caCert)
 
 	// Register worker by adding it to the memdb and store
 	db, err := services.DefaultMemDBService()

@@ -36,13 +36,13 @@ func authMiddleware(authCfg *AuthConfig) echo.MiddlewareFunc {
 				if hasUsername && hasRoles && roles != nil {
 					// Look through the perms until we find that the user has this permission
 					if err := authCfg.checkRole(roles, c.Request().Method, c.Path()); err != nil {
-						return c.String(http.StatusForbidden, fmt.Sprintf("Permission denied for user."))
+						return c.String(http.StatusForbidden, "Permission denied for user.")
 					}
 
 					username, okUsername := username.(string)
 					if !okUsername {
 						gaia.Cfg.Logger.Error("username is not type string")
-						return c.String(http.StatusInternalServerError, fmt.Sprintf("Unknown error has occured."))
+						return c.String(http.StatusInternalServerError, "Unknown error has occurred.")
 					}
 
 					// Currently this lives inside the existing auth middleware. Ideally we would have independent
@@ -58,7 +58,7 @@ func authMiddleware(authCfg *AuthConfig) echo.MiddlewareFunc {
 							return c.String(http.StatusForbidden, err.Error())
 						}
 						gaia.Cfg.Logger.Error("rbacEnforcer error", "error", err.Error())
-						return c.String(http.StatusInternalServerError, fmt.Sprintf("Unknown error has occurred while validating permissions."))
+						return c.String(http.StatusInternalServerError, "Unknown error has occurred while validating permissions.")
 					}
 				}
 				return next(c)

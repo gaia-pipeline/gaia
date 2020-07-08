@@ -12,14 +12,16 @@ import (
 
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 
-	"github.com/gaia-pipeline/gaia/services"
-	gStore "github.com/gaia-pipeline/gaia/store"
 	"github.com/pkg/errors"
 
+	"github.com/gaia-pipeline/gaia/services"
+	gStore "github.com/gaia-pipeline/gaia/store"
+
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/gaia-pipeline/gaia"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
+
+	"github.com/gaia-pipeline/gaia"
 )
 
 func TestUserLoginHMACKey(t *testing.T) {

@@ -94,7 +94,7 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 
 // UpdateRepository takes a git type repository and updates
 // it by pulling in new code if it's available.
-func (s *gaiaPipelineService) UpdateRepository(pipe *gaia.Pipeline) error {
+func (s *GaiaPipelineService) UpdateRepository(pipe *gaia.Pipeline) error {
 	r, err := git.PlainOpen(pipe.Repo.LocalDest)
 	if err != nil {
 		// We don't stop gaia working because of an automated update failed.
@@ -193,7 +193,7 @@ func gitCloneRepo(repo *gaia.GitRepo) error {
 }
 
 // UpdateAllCurrentPipelines will update all current pipelines.
-func (s *gaiaPipelineService) UpdateAllCurrentPipelines() {
+func (s *GaiaPipelineService) UpdateAllCurrentPipelines() {
 	gaia.Cfg.Logger.Debug("starting updating of pipelines...")
 	allPipelines := GlobalActivePipelines.GetAll()
 	var wg sync.WaitGroup

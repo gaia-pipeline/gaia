@@ -10,9 +10,10 @@ import (
 
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
 
-	"github.com/gaia-pipeline/gaia"
 	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
+
+	"github.com/gaia-pipeline/gaia"
 )
 
 func TestVaultWorkflowAddListDelete(t *testing.T) {
