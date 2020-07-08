@@ -10,8 +10,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/dgrijalva/jwt-go"
-	"github.com/hashicorp/go-hclog"
+	jwt "github.com/dgrijalva/jwt-go"
+	hclog "github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 	"github.com/pkg/errors"
 
@@ -49,7 +49,11 @@ func TestUserLoginHMACKey(t *testing.T) {
 	req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/login", bytes.NewBuffer(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
+	c := e.NewContext(req, rec)
+
+	if err := UserLogin(c); err != nil {
+		t.Fatal(err)
+	}
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -201,7 +205,11 @@ func TestUserLoginRSAKey(t *testing.T) {
 	req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/login", bytes.NewBuffer(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
+	c := e.NewContext(req, rec)
+
+	if err := UserLogin(c); err != nil {
+		t.Fatal(err)
+	}
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
