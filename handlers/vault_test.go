@@ -8,8 +8,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gaia-pipeline/gaia/workers/pipeline"
-
 	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
 
@@ -30,17 +28,7 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 		VaultPath: dataDir,
 	}
 
-	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
-		Scheduler: &mockScheduleService{},
-	})
-
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 	t.Run("can add secret", func(t *testing.T) {
 		body := map[string]string{
 			"Key":   "Key",

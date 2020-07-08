@@ -10,18 +10,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gaia-pipeline/gaia/workers/pipeline"
-
+	"github.com/dgrijalva/jwt-go"
+	"github.com/hashicorp/go-hclog"
+	"github.com/labstack/echo"
 	"github.com/pkg/errors"
 
+	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/services"
 	gStore "github.com/gaia-pipeline/gaia/store"
-
-	jwt "github.com/dgrijalva/jwt-go"
-	hclog "github.com/hashicorp/go-hclog"
-	"github.com/labstack/echo"
-
-	"github.com/gaia-pipeline/gaia"
 )
 
 func TestUserLoginHMACKey(t *testing.T) {
@@ -43,17 +39,7 @@ func TestUserLoginHMACKey(t *testing.T) {
 		Mode:     gaia.ModeServer,
 	}
 
-	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
-		Scheduler: &mockScheduleService{},
-	})
-
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	body := map[string]string{
 		"username": "admin",
@@ -102,17 +88,7 @@ func TestDeleteUserNotAllowedForAutoUser(t *testing.T) {
 		VaultPath: dataDir,
 	}
 
-	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
-		Scheduler: &mockScheduleService{},
-	})
-
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 	req := httptest.NewRequest(echo.DELETE, "/api/"+gaia.APIVersion+"/user/auto", bytes.NewBuffer([]byte("")))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
@@ -153,15 +129,6 @@ func TestResetAutoUserTriggerToken(t *testing.T) {
 		VaultPath: dataDir,
 	}
 
-	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
-		Scheduler: &mockScheduleService{},
-	})
-
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
 	t.Run("reset auto user token", func(t *testing.T) {
 		user := gaia.User{}
 		user.Username = "auto"
@@ -170,7 +137,6 @@ func TestResetAutoUserTriggerToken(t *testing.T) {
 		services.MockStorageService(&m)
 		defer services.MockStorageService(nil)
 		e := echo.New()
-		_ = handlerService.InitHandlers(e)
 		req := httptest.NewRequest(echo.PUT, "/api/"+gaia.APIVersion+"/user/auto/reset-trigger-token", nil)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
@@ -190,7 +156,6 @@ func TestResetAutoUserTriggerToken(t *testing.T) {
 	})
 	t.Run("only auto user can reset trigger token", func(t *testing.T) {
 		e := echo.New()
-		_ = handlerService.InitHandlers(e)
 		req := httptest.NewRequest(echo.PUT, "/api/"+gaia.APIVersion+"/user/auto2/reset-trigger-token", nil)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
@@ -226,17 +191,7 @@ func TestUserLoginRSAKey(t *testing.T) {
 		Mode:     gaia.ModeServer,
 	}
 
-	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
-		Scheduler: &mockScheduleService{},
-	})
-
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	body := map[string]string{
 		"username": "admin",
