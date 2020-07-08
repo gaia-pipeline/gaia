@@ -9,11 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/robfig/cron"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/filehelper"
 	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
 	"github.com/gaia-pipeline/gaia/services"
-	"github.com/robfig/cron"
 )
 
 const (
@@ -92,7 +93,7 @@ func (s *GaiaPipelineService) InitTicker() {
 	_ = s.StartPoller()
 }
 
-// checkActivePipelines looks up all files in the pipeline folder.
+// CheckActivePipelines looks up all files in the pipeline folder.
 // Every file will be handled as an active pipeline and therefore
 // saved in the global active pipelines slice.
 func (s *GaiaPipelineService) CheckActivePipelines() {
