@@ -17,7 +17,6 @@ import (
 
 	"github.com/gaia-pipeline/gaia"
 	gStore "github.com/gaia-pipeline/gaia/store"
-	"github.com/gaia-pipeline/gaia/workers/pipeline"
 )
 
 func TestUserLoginHMACKey(t *testing.T) {
@@ -39,23 +38,7 @@ func TestUserLoginHMACKey(t *testing.T) {
 		Mode:     gaia.ModeServer,
 	}
 
-	ms := &mockUserStorageService{user: &gaia.User{
-		Username: "username",
-		Password: "password",
-	}, err: nil}
-
-	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
-		Scheduler: &mockScheduleService{},
-	})
-
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-		Store:           ms,
-	})
-
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	body := map[string]string{
 		"username": "admin",
@@ -65,7 +48,12 @@ func TestUserLoginHMACKey(t *testing.T) {
 	req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/login", bytes.NewBuffer(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
+	c := e.NewContext(req, rec)
+
+	handlers := NewUserHandler(nil, nil)
+	if err := handlers.UserLogin(c); err != nil {
+		t.Fatal(err)
+	}
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
@@ -104,17 +92,7 @@ func TestDeleteUserNotAllowedForAutoUser(t *testing.T) {
 		VaultPath: dataDir,
 	}
 
-	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
-		Scheduler: &mockScheduleService{},
-	})
-
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 	req := httptest.NewRequest(echo.DELETE, "/api/"+gaia.APIVersion+"/user/auto", bytes.NewBuffer([]byte("")))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
@@ -164,22 +142,12 @@ func TestResetAutoUserTriggerToken(t *testing.T) {
 		VaultPath: dataDir,
 	}
 
-	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
-		Scheduler: &mockScheduleService{},
-	})
-
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
 	t.Run("reset auto user token", func(t *testing.T) {
 		user := gaia.User{}
 		user.Username = "auto"
 		user.TriggerToken = "triggerToken"
 		ms := &mockUserStorageService{user: &user, err: nil}
 		e := echo.New()
-		_ = handlerService.InitHandlers(e)
 		req := httptest.NewRequest(echo.PUT, "/api/"+gaia.APIVersion+"/user/auto/reset-trigger-token", nil)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
@@ -200,7 +168,6 @@ func TestResetAutoUserTriggerToken(t *testing.T) {
 	})
 	t.Run("only auto user can reset trigger token", func(t *testing.T) {
 		e := echo.New()
-		_ = handlerService.InitHandlers(e)
 		req := httptest.NewRequest(echo.PUT, "/api/"+gaia.APIVersion+"/user/auto2/reset-trigger-token", nil)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
@@ -241,18 +208,7 @@ func TestUserLoginRSAKey(t *testing.T) {
 		Password: "password",
 	}, err: nil}
 
-	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
-		Scheduler: &mockScheduleService{},
-	})
-
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-		Store:           ms,
-	})
-
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	body := map[string]string{
 		"username": "admin",
@@ -262,7 +218,14 @@ func TestUserLoginRSAKey(t *testing.T) {
 	req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/login", bytes.NewBuffer(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
+	c := e.NewContext(req, rec)
+
+	handlers := NewUserHandler(ms, nil)
+	_ = handlers.UserPutPermissions(c)
+
+	if err := handlers.UserLogin(c); err != nil {
+		t.Fatal(err)
+	}
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)

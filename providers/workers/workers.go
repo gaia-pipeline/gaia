@@ -35,7 +35,7 @@ type registerResponse struct {
 
 // RegisterWorker allows new workers to register themself at this Gaia instance.
 // It accepts a secret and returns valid certificates (base64 encoded) for further mTLS connection.
-func (wp *workerProvider) RegisterWorker(c echo.Context) error {
+func (wp *WorkerProvider) RegisterWorker(c echo.Context) error {
 	worker := registerWorker{}
 	if err := c.Bind(&worker); err != nil {
 		return c.String(http.StatusBadRequest, "secret for registration is invalid:"+err.Error())
@@ -103,9 +103,9 @@ func (wp *workerProvider) RegisterWorker(c echo.Context) error {
 	}
 
 	// Encode all certificates base64 to prevent character issues during transportation
-	crtB64 := base64.StdEncoding.EncodeToString([]byte(crt))
-	keyB64 := base64.StdEncoding.EncodeToString([]byte(key))
-	caCertB64 := base64.StdEncoding.EncodeToString([]byte(caCert))
+	crtB64 := base64.StdEncoding.EncodeToString(crt)
+	keyB64 := base64.StdEncoding.EncodeToString(key)
+	caCertB64 := base64.StdEncoding.EncodeToString(caCert)
 
 	// Register worker by adding it to the memdb and store
 	db, err := services.DefaultMemDBService()
@@ -126,7 +126,7 @@ func (wp *workerProvider) RegisterWorker(c echo.Context) error {
 }
 
 // DeregisterWorker deregister a registered worker.
-func (wp *workerProvider) DeregisterWorker(c echo.Context) error {
+func (wp *WorkerProvider) DeregisterWorker(c echo.Context) error {
 	workerID := c.Param("workerid")
 	if workerID == "" {
 		return c.String(http.StatusBadRequest, "worker id is missing")
@@ -155,7 +155,7 @@ func (wp *workerProvider) DeregisterWorker(c echo.Context) error {
 }
 
 // GetWorkerRegisterSecret returns the global secret for registering new worker.
-func (wp *workerProvider) GetWorkerRegisterSecret(c echo.Context) error {
+func (wp *WorkerProvider) GetWorkerRegisterSecret(c echo.Context) error {
 	globalSecret, err := getWorkerSecret()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "cannot get worker secret from vault")
@@ -191,7 +191,7 @@ type workerStatusOverviewRespoonse struct {
 }
 
 // GetWorkerStatusOverview returns general status information about all workers.
-func (wp *workerProvider) GetWorkerStatusOverview(c echo.Context) error {
+func (wp *WorkerProvider) GetWorkerStatusOverview(c echo.Context) error {
 	response := workerStatusOverviewRespoonse{}
 
 	// Get memdb service
@@ -224,7 +224,7 @@ func (wp *workerProvider) GetWorkerStatusOverview(c echo.Context) error {
 }
 
 // GetWorker returns all workers.
-func (wp *workerProvider) GetWorker(c echo.Context) error {
+func (wp *WorkerProvider) GetWorker(c echo.Context) error {
 	// Get memdb service
 	db, err := services.DefaultMemDBService()
 	if err != nil {
@@ -236,7 +236,7 @@ func (wp *workerProvider) GetWorker(c echo.Context) error {
 }
 
 // ResetWorkerRegisterSecret generates a new global worker registration secret
-func (wp *workerProvider) ResetWorkerRegisterSecret(c echo.Context) error {
+func (wp *WorkerProvider) ResetWorkerRegisterSecret(c echo.Context) error {
 	// Get vault service
 	v, err := services.DefaultVaultService()
 	if err != nil {

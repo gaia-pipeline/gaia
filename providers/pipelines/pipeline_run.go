@@ -29,7 +29,7 @@ type jobLogs struct {
 
 // PipelineRunGet returns details about a specific pipeline run.
 // Required parameters are pipelineid and runid.
-func (pp *pipelineProvider) PipelineRunGet(c echo.Context) error {
+func (pp *PipelineProvider) PipelineRunGet(c echo.Context) error {
 	// Convert string to int because id is int
 	storeService, _ := services.StorageService()
 	pipelineID, err := strconv.Atoi(c.Param("pipelineid"))
@@ -56,7 +56,7 @@ func (pp *pipelineProvider) PipelineRunGet(c echo.Context) error {
 }
 
 // PipelineStop stops a running pipeline.
-func (pp *pipelineProvider) PipelineStop(c echo.Context) error {
+func (pp *PipelineProvider) PipelineStop(c echo.Context) error {
 	// Get parameters and validate
 	pipelineID := c.Param("pipelineid")
 	pipelineRunID := c.Param("runid")
@@ -95,7 +95,7 @@ func (pp *pipelineProvider) PipelineStop(c echo.Context) error {
 }
 
 // PipelineGetAllRuns returns all runs about the given pipeline.
-func (pp *pipelineProvider) PipelineGetAllRuns(c echo.Context) error {
+func (pp *PipelineProvider) PipelineGetAllRuns(c echo.Context) error {
 	// Convert string to int because id is int
 	storeService, _ := services.StorageService()
 	pipelineID, err := strconv.Atoi(c.Param("pipelineid"))
@@ -113,7 +113,7 @@ func (pp *pipelineProvider) PipelineGetAllRuns(c echo.Context) error {
 }
 
 // PipelineGetLatestRun returns the latest run of a pipeline, given by id.
-func (pp *pipelineProvider) PipelineGetLatestRun(c echo.Context) error {
+func (pp *PipelineProvider) PipelineGetLatestRun(c echo.Context) error {
 	// Convert string to int because id is int
 	storeService, _ := services.StorageService()
 	pipelineID, err := strconv.Atoi(c.Param("pipelineid"))
@@ -135,7 +135,7 @@ func (pp *pipelineProvider) PipelineGetLatestRun(c echo.Context) error {
 // Required parameters:
 // pipelineid - Related pipeline id
 // pipelinerunid - Related pipeline run id
-func (pp *pipelineProvider) GetJobLogs(c echo.Context) error {
+func (pp *PipelineProvider) GetJobLogs(c echo.Context) error {
 	// Get parameters and validate
 	storeService, _ := services.StorageService()
 	pipelineID := c.Param("pipelineid")

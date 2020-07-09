@@ -13,12 +13,13 @@ type Dependencies struct {
 	Certificate security.CAAPI
 }
 
-type workerProvider struct {
+// WorkerProvider has all the operations for a worker.
+type WorkerProvider struct {
 	deps Dependencies
 }
 
-// WorkerProvider defines functionality which this provider provides.
-type WorkerProvider interface {
+// WorkerProviderer defines functionality which this provider provides.
+type WorkerProviderer interface {
 	RegisterWorker(c echo.Context) error
 	DeregisterWorker(c echo.Context) error
 	GetWorkerRegisterSecret(c echo.Context) error
@@ -28,8 +29,8 @@ type WorkerProvider interface {
 }
 
 // NewWorkerProvider creates a provider which provides worker related functionality.
-func NewWorkerProvider(deps Dependencies) WorkerProvider {
-	return &workerProvider{
+func NewWorkerProvider(deps Dependencies) *WorkerProvider {
+	return &WorkerProvider{
 		deps: deps,
 	}
 }
