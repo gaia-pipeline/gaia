@@ -19,6 +19,8 @@ import (
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/handlers"
 	"github.com/gaia-pipeline/gaia/plugin"
+	"github.com/gaia-pipeline/gaia/providers/pipelines"
+	"github.com/gaia-pipeline/gaia/providers/workers"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/security/rbac"
 	"github.com/gaia-pipeline/gaia/services"
@@ -259,14 +261,25 @@ func Start() (err error) {
 		gaia.Cfg.Logger.Error("error initializing rbac service", "error", err)
 		return err
 	}
-
-	// Initialize handlers
-	handlerService := handlers.NewGaiaHandler(handlers.Dependencies{
+	pipelineProvider := pipelines.NewPipelineProvider(pipelines.Dependencies{
 		Scheduler:       schedulerService,
 		PipelineService: pipelineService,
-		Certificate:     ca,
-		RBACService:     rbacService,
-		Store:           store,
+		SettingsStore:   store,
+	})
+	// initialize the worker provider
+	workerProvider := workers.NewWorkerProvider(workers.Dependencies{
+		Scheduler:   schedulerService,
+		Certificate: ca,
+	})
+	// Initialize handlers
+	handlerService := handlers.NewGaiaHandler(handlers.Dependencies{
+		Scheduler:        schedulerService,
+		PipelineService:  pipelineService,
+		PipelineProvider: pipelineProvider,
+		WorkerProvider:   workerProvider,
+		Certificate:      ca,
+		RBACService:      rbacService,
+		Store:            store,
 	})
 
 	err = handlerService.InitHandlers(echoInstance)

@@ -98,7 +98,7 @@ func parse(secret []byte, req *http.Request) (Hook, error) {
 }
 
 // GitWebHook handles callbacks from GitHub's webhook system.
-func (pp *pipelineProvider) GitWebHook(c echo.Context) error {
+func (pp *PipelineProvider) GitWebHook(c echo.Context) error {
 	vault, err := services.DefaultVaultService()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "unable to initialize vault: "+err.Error())

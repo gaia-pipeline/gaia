@@ -69,8 +69,8 @@ type Agent struct {
 	// Instance of scheduler
 	scheduler service.GaiaScheduler
 
-	// Pipeline Service
-	pipelineService gp.Service
+	// Pipeline Servicer
+	pipelineService gp.Servicer
 
 	// Instance of store
 	store store.GaiaStore
@@ -80,7 +80,7 @@ type Agent struct {
 }
 
 // InitAgent initiates the agent instance
-func InitAgent(exitChan chan os.Signal, scheduler service.GaiaScheduler, pipelineService gp.Service, store store.GaiaStore, certPath string) *Agent {
+func InitAgent(exitChan chan os.Signal, scheduler service.GaiaScheduler, pipelineService gp.Servicer, store store.GaiaStore, certPath string) *Agent {
 	ag := &Agent{
 		exitChan:        exitChan,
 		scheduler:       scheduler,

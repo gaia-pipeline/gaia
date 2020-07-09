@@ -9,7 +9,7 @@ import (
 )
 
 // SettingsPollOn turn on polling functionality
-func (pp *pipelineProvider) SettingsPollOn(c echo.Context) error {
+func (pp *PipelineProvider) SettingsPollOn(c echo.Context) error {
 	settingsStore := pp.deps.SettingsStore
 
 	configStore, err := settingsStore.SettingsGet()
@@ -35,7 +35,7 @@ func (pp *pipelineProvider) SettingsPollOn(c echo.Context) error {
 }
 
 // SettingsPollOff turn off polling functionality.
-func (pp *pipelineProvider) SettingsPollOff(c echo.Context) error {
+func (pp *PipelineProvider) SettingsPollOff(c echo.Context) error {
 	settingsStore := pp.deps.SettingsStore
 
 	configStore, err := settingsStore.SettingsGet()
@@ -63,7 +63,7 @@ type pollStatus struct {
 }
 
 // SettingsPollGet get status of polling functionality.
-func (pp *pipelineProvider) SettingsPollGet(c echo.Context) error {
+func (pp *PipelineProvider) SettingsPollGet(c echo.Context) error {
 	settingsStore := pp.deps.SettingsStore
 
 	configStore, err := settingsStore.SettingsGet()

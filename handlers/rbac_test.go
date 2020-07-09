@@ -66,8 +66,6 @@ func (e *mockRBACSvc) DetachRole(username string, role string) error {
 }
 
 func Test_rbacHandler_addRole(t *testing.T) {
-	handlerService := NewGaiaHandler(Dependencies{})
-
 	handler := rbacHandler{
 		svc: &mockRBACSvc{},
 	}
@@ -79,7 +77,6 @@ func Test_rbacHandler_addRole(t *testing.T) {
 	}()
 
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	t.Run("success (200) if add is successful", func(t *testing.T) {
 		body := `[
@@ -157,8 +154,6 @@ func Test_rbacHandler_addRole(t *testing.T) {
 }
 
 func Test_rbacHandler_deleteRole(t *testing.T) {
-	handlerService := NewGaiaHandler(Dependencies{})
-
 	handler := rbacHandler{
 		svc: &mockRBACSvc{},
 	}
@@ -170,7 +165,6 @@ func Test_rbacHandler_deleteRole(t *testing.T) {
 	}()
 
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	t.Run("success (200) if role is present", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodDelete, "/", nil)
@@ -214,8 +208,6 @@ func Test_rbacHandler_deleteRole(t *testing.T) {
 }
 
 func Test_rbacHandler_getAllRoles(t *testing.T) {
-	handlerService := NewGaiaHandler(Dependencies{})
-
 	handler := rbacHandler{
 		svc: &mockRBACSvc{},
 	}
@@ -227,7 +219,6 @@ func Test_rbacHandler_getAllRoles(t *testing.T) {
 	}()
 
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
@@ -241,8 +232,6 @@ func Test_rbacHandler_getAllRoles(t *testing.T) {
 }
 
 func Test_rbacHandler_getUserAttachedRoles(t *testing.T) {
-	handlerService := NewGaiaHandler(Dependencies{})
-
 	handler := rbacHandler{
 		svc: &mockRBACSvc{},
 	}
@@ -254,7 +243,6 @@ func Test_rbacHandler_getUserAttachedRoles(t *testing.T) {
 	}()
 
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	t.Run("success (200) if user is present", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -298,8 +286,6 @@ func Test_rbacHandler_getUserAttachedRoles(t *testing.T) {
 }
 
 func Test_rbacHandler_getRolesAttachedUsers(t *testing.T) {
-	handlerService := NewGaiaHandler(Dependencies{})
-
 	handler := rbacHandler{
 		svc: &mockRBACSvc{},
 	}
@@ -311,7 +297,6 @@ func Test_rbacHandler_getRolesAttachedUsers(t *testing.T) {
 	}()
 
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	t.Run("success (200) if role is present", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -355,8 +340,6 @@ func Test_rbacHandler_getRolesAttachedUsers(t *testing.T) {
 }
 
 func Test_rbacHandler_attachRole(t *testing.T) {
-	handlerService := NewGaiaHandler(Dependencies{})
-
 	handler := rbacHandler{
 		svc: &mockRBACSvc{},
 	}
@@ -368,7 +351,6 @@ func Test_rbacHandler_attachRole(t *testing.T) {
 	}()
 
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	t.Run("success (200) if role is present", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "/", nil)
@@ -426,8 +408,6 @@ func Test_rbacHandler_attachRole(t *testing.T) {
 }
 
 func Test_rbacHandler_detachRole(t *testing.T) {
-	handlerService := NewGaiaHandler(Dependencies{})
-
 	handler := rbacHandler{
 		svc: &mockRBACSvc{},
 	}
@@ -439,7 +419,6 @@ func Test_rbacHandler_detachRole(t *testing.T) {
 	}()
 
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	t.Run("success (200) if role is present", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodDelete, "/", nil)

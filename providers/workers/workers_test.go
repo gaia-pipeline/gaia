@@ -1,4 +1,4 @@
-package handlers
+package workers
 
 import (
 	"bytes"
@@ -12,7 +12,6 @@ import (
 	"github.com/labstack/echo"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/handlers/providers/workers"
 	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/services"
@@ -23,19 +22,6 @@ import (
 type mockStorageService struct {
 	worker gaia.Worker
 	gStore.GaiaStore
-}
-
-type registerWorker struct {
-	Secret string   `json:"secret"`
-	Name   string   `json:"name"`
-	Tags   []string `json:"tags"`
-}
-
-type registerResponse struct {
-	UniqueID string `json:"uniqueid"`
-	Cert     string `json:"cert"`
-	Key      string `json:"key"`
-	CACert   string `json:"cacert"`
 }
 
 func (m *mockStorageService) WorkerPut(worker *gaia.Worker) error {
@@ -74,7 +60,7 @@ func TestRegisterWorker(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot initialize certificate service: %v", err)
 	}
-	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil, Certificate: ca})
+	wp := NewWorkerProvider(Dependencies{Scheduler: nil, Certificate: ca})
 	// Initialize vault
 	v, err := services.DefaultVaultService()
 	if err != nil {
@@ -94,16 +80,8 @@ func TestRegisterWorker(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       nil,
-		PipelineService: nil,
-		Certificate:     ca,
-	})
 	// Initialize echo
 	e := echo.New()
-	if err := handlerService.InitHandlers(e); err != nil {
-		t.Fatal(err)
-	}
 
 	// Test with wrong global secret
 	t.Run("wrong global secret", func(t *testing.T) {
@@ -234,17 +212,9 @@ func TestDeregisterWorker(t *testing.T) {
 	}
 
 	ca, _ := security.InitCA()
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       nil,
-		PipelineService: nil,
-		Certificate:     ca,
-	})
 	// Initialize echo
 	e := echo.New()
-	if err := handlerService.InitHandlers(e); err != nil {
-		t.Fatal(err)
-	}
-	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil, Certificate: ca})
+	wp := NewWorkerProvider(Dependencies{Scheduler: nil, Certificate: ca})
 
 	// Test with non-existing worker
 	t.Run("non-existing worker", func(t *testing.T) {
@@ -351,17 +321,9 @@ func TestGetWorkerRegisterSecret(t *testing.T) {
 		t.Fatal(err)
 	}
 	ca, _ := security.InitCA()
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       nil,
-		PipelineService: nil,
-		Certificate:     ca,
-	})
 	// Initialize echo
 	e := echo.New()
-	if err := handlerService.InitHandlers(e); err != nil {
-		t.Fatal(err)
-	}
-	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil, Certificate: ca})
+	wp := NewWorkerProvider(Dependencies{Scheduler: nil, Certificate: ca})
 	// Test get global worker secret
 	t.Run("global secret success", func(t *testing.T) {
 		req := httptest.NewRequest(echo.GET, "/api/"+gaia.APIVersion+"/worker/secret", nil)
@@ -384,14 +346,6 @@ func TestGetWorkerRegisterSecret(t *testing.T) {
 			t.Fatalf("returned global worker secret is incorrect. Got %s want %s", string(bodyBytes[:]), string(secret[:]))
 		}
 	})
-}
-
-type workerStatusOverviewRespoonse struct {
-	ActiveWorker    int   `json:"activeworker"`
-	SuspendedWorker int   `json:"suspendedworker"`
-	InactiveWorker  int   `json:"inactiveworker"`
-	FinishedRuns    int64 `json:"finishedruns"`
-	QueueSize       int   `json:"queuesize"`
 }
 
 func TestGetWorkerStatusOverview(t *testing.T) {
@@ -447,20 +401,12 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       scheduler,
-		PipelineService: nil,
-		Certificate:     ca,
-	})
 	// Initialize echo
 	e := echo.New()
-	if err := handlerService.InitHandlers(e); err != nil {
-		t.Fatal(err)
-	}
 
 	// Test empty worker status overview
 	{
-		wp := workers.NewWorkerProvider(workers.Dependencies{
+		wp := NewWorkerProvider(Dependencies{
 			Scheduler:   scheduler,
 			Certificate: ca,
 		})
@@ -501,7 +447,7 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 
 	// Test with registered worker
 	{
-		wp := workers.NewWorkerProvider(workers.Dependencies{
+		wp := NewWorkerProvider(Dependencies{
 			Scheduler:   scheduler,
 			Certificate: ca,
 		})
@@ -606,19 +552,11 @@ func TestGetWorker(t *testing.T) {
 		t.Fatal(err)
 	}
 	ca, _ := security.InitCA()
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       nil,
-		PipelineService: nil,
-		Certificate:     ca,
-	})
 	// Initialize echo
 	e := echo.New()
-	if err := handlerService.InitHandlers(e); err != nil {
-		t.Fatal(err)
-	}
 
 	t.Run("get worker success", func(t *testing.T) {
-		wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil, Certificate: ca})
+		wp := NewWorkerProvider(Dependencies{Scheduler: nil, Certificate: ca})
 		workerName := "my-worker"
 		body := registerWorker{
 			Name:   workerName,
@@ -700,17 +638,9 @@ func TestResetWorkerRegisterSecret(t *testing.T) {
 		t.Fatal(err)
 	}
 	ca, _ := security.InitCA()
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       nil,
-		PipelineService: nil,
-		Certificate:     ca,
-	})
 	// Initialize echo
 	e := echo.New()
-	if err := handlerService.InitHandlers(e); err != nil {
-		t.Fatal(err)
-	}
-	wp := workers.NewWorkerProvider(workers.Dependencies{Scheduler: nil, Certificate: ca})
+	wp := NewWorkerProvider(Dependencies{Scheduler: nil, Certificate: ca})
 	// Test reset global worker secret
 	t.Run("global secret reset success", func(t *testing.T) {
 		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/worker/secret", nil)

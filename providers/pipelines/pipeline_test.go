@@ -1,4 +1,4 @@
-package handlers
+package pipelines
 
 import (
 	"bytes"
@@ -12,8 +12,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
@@ -51,18 +49,12 @@ func TestPipelineGitLSRemote(t *testing.T) {
 		Scheduler: &mockScheduleService{},
 	})
 
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
-	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+	pp := NewPipelineProvider(Dependencies{
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
 	})
 
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	t.Run("fails with invalid data", func(t *testing.T) {
 		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/gitlsremote", nil)
@@ -138,18 +130,12 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 		Scheduler: &mockScheduleService{},
 	})
 
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
-	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+	pp := NewPipelineProvider(Dependencies{
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
 	})
 
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	t.Run("invalid hostconfig for github in known_hosts file", func(t *testing.T) {
 		buf := new(bytes.Buffer)
@@ -212,12 +198,7 @@ func TestPipelineUpdate(t *testing.T) {
 		Scheduler: &mockScheduleService{},
 	})
 
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
-	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+	pp := NewPipelineProvider(Dependencies{
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
 	})
@@ -234,7 +215,6 @@ func TestPipelineUpdate(t *testing.T) {
 
 	// Initialize echo
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	pipeline1 := gaia.Pipeline{
 		ID:                1,
@@ -379,19 +359,13 @@ func TestPipelineDelete(t *testing.T) {
 		Scheduler: &mockScheduleService{},
 	})
 
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
-	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+	pp := NewPipelineProvider(Dependencies{
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
 	})
 
 	// Initialize echo
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:      1,
@@ -466,19 +440,13 @@ func TestPipelineStart(t *testing.T) {
 		Scheduler: &mockScheduleService{},
 	})
 
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
-	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+	pp := NewPipelineProvider(Dependencies{
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
 	})
 
 	// Initialize echo
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:      1,
@@ -503,7 +471,7 @@ func TestPipelineStart(t *testing.T) {
 
 		pRun := new(gaia.PipelineRun)
 		pRun.ID = 999
-		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		pp := NewPipelineProvider(Dependencies{
 			Scheduler:       &mockScheduleService{pipelineRun: pRun},
 			PipelineService: pipelineService,
 		})
@@ -534,7 +502,7 @@ func TestPipelineStart(t *testing.T) {
 
 		pRun := new(gaia.PipelineRun)
 		pRun.ID = 999
-		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		pp := NewPipelineProvider(Dependencies{
 			Scheduler:       &mockScheduleService{pipelineRun: pRun, err: errors.New("failed to run pipeline")},
 			PipelineService: pipelineService,
 		})
@@ -565,7 +533,7 @@ func TestPipelineStart(t *testing.T) {
 }
 
 type mockPipelineService struct {
-	pipeline.Service
+	pipeline.Servicer
 	err error
 }
 
@@ -586,18 +554,8 @@ func TestPipelinePull(t *testing.T) {
 	ap := pipeline.NewActivePipelines()
 	pipeline.GlobalActivePipelines = ap
 
-	pipelineService := pipeline.NewGaiaPipelineService(pipeline.Dependencies{
-		Scheduler: &mockScheduleService{},
-	})
-
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
 	// Initialize echo
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:      1,
@@ -622,7 +580,7 @@ func TestPipelinePull(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetParamNames("pipelineid")
 		c.SetParamValues("1")
-		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		pp := NewPipelineProvider(Dependencies{
 			Scheduler:       &mockScheduleService{},
 			PipelineService: &mockPipelineService{},
 		})
@@ -666,10 +624,6 @@ func TestHookReceive(t *testing.T) {
 		Scheduler: &mockScheduleService{},
 	})
 
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
 	defer func() {
 		gaia.Cfg = nil
 		_ = os.RemoveAll(dataDir)
@@ -681,7 +635,7 @@ func TestHookReceive(t *testing.T) {
 		VaultPath: dataDir,
 		HomePath:  dataDir,
 	}
-	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+	pp := NewPipelineProvider(Dependencies{
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
 	})
@@ -708,8 +662,6 @@ func TestHookReceive(t *testing.T) {
 	}
 
 	ap.Append(p)
-
-	_ = handlerService.InitHandlers(e)
 
 	t.Run("successfully extracting path information from payload", func(t *testing.T) {
 		payload, _ := ioutil.ReadFile(filepath.Join("fixtures", "hook_basic_push_payload.json"))
@@ -793,14 +745,8 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		Scheduler: &mockScheduleService{},
 	})
 
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
 	// Initialize echo
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:           1,
@@ -832,7 +778,7 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		c.SetParamValues("1", "triggerToken")
 		pRun := new(gaia.PipelineRun)
 		pRun.ID = 999
-		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		pp := NewPipelineProvider(Dependencies{
 			Scheduler:       &mockScheduleService{pipelineRun: pRun},
 			PipelineService: pipelineService,
 		})
@@ -862,7 +808,7 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		c.SetParamValues("1", "triggerToken")
 		pRun := new(gaia.PipelineRun)
 		pRun.ID = 999
-		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		pp := NewPipelineProvider(Dependencies{
 			Scheduler:       &mockScheduleService{pipelineRun: pRun},
 			PipelineService: pipelineService,
 		})
@@ -892,7 +838,7 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		c.SetParamValues("1", "invalid")
 		pRun := new(gaia.PipelineRun)
 		pRun.ID = 999
-		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		pp := NewPipelineProvider(Dependencies{
 			Scheduler:       &mockScheduleService{pipelineRun: pRun},
 			PipelineService: pipelineService,
 		})
@@ -921,7 +867,7 @@ func TestPipelineRemoteTrigger(t *testing.T) {
 		c.SetParamValues("1", "invalid")
 		pRun := new(gaia.PipelineRun)
 		pRun.ID = 999
-		pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+		pp := NewPipelineProvider(Dependencies{
 			Scheduler:       &mockScheduleService{pipelineRun: pRun},
 			PipelineService: pipelineService,
 		})
@@ -962,14 +908,8 @@ func TestPipelineResetToken(t *testing.T) {
 		Scheduler: &mockScheduleService{},
 	})
 
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
 	// Initialize echo
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:           1,
@@ -989,7 +929,7 @@ func TestPipelineResetToken(t *testing.T) {
 	c.SetParamValues("1")
 	pRun := new(gaia.PipelineRun)
 	pRun.ID = 999
-	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+	pp := NewPipelineProvider(Dependencies{
 		Scheduler:       &mockScheduleService{pipelineRun: pRun},
 		PipelineService: pipelineService,
 	})
@@ -1029,19 +969,13 @@ func TestPipelineCheckPeriodicSchedules(t *testing.T) {
 		Scheduler: &mockScheduleService{},
 	})
 
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
-	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+	pp := NewPipelineProvider(Dependencies{
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
 	})
 
 	// Initialize echo
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	t.Run("invalid cron added", func(t *testing.T) {
 		body := []string{
@@ -1106,19 +1040,13 @@ func TestPipelineNameValidation(t *testing.T) {
 		Scheduler: &mockScheduleService{},
 	})
 
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
-	pp := pipelines.NewPipelineProvider(pipelines.Dependencies{
+	pp := NewPipelineProvider(Dependencies{
 		Scheduler:       &mockScheduleService{},
 		PipelineService: pipelineService,
 	})
 
 	// Initialize echo
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	p := gaia.Pipeline{
 		ID:      1,

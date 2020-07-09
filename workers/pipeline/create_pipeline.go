@@ -43,7 +43,7 @@ var (
 // CreatePipeline is the main function which executes step by step the creation
 // of a plugin.
 // After each step, the status is written to store and can be retrieved via API.
-func (s *gaiaPipelineService) CreatePipeline(p *gaia.CreatePipeline) {
+func (s *GaiaPipelineService) CreatePipeline(p *gaia.CreatePipeline) {
 	gitToken := p.GitHubToken
 	p.GitHubToken = ""
 	storeService, _ := services.StorageService()

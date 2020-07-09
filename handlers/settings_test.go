@@ -13,12 +13,23 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/handlers/providers/pipelines"
+	"github.com/gaia-pipeline/gaia/providers/pipelines"
 	"github.com/gaia-pipeline/gaia/workers/pipeline"
+	"github.com/gaia-pipeline/gaia/workers/scheduler/service"
 )
 
 type status struct {
 	Status bool
+}
+
+type mockScheduleService struct {
+	service.GaiaScheduler
+	pipelineRun *gaia.PipelineRun
+	err         error
+}
+
+func (ms *mockScheduleService) SchedulePipeline(p *gaia.Pipeline, startReason string, args []*gaia.Argument) (*gaia.PipelineRun, error) {
+	return ms.pipelineRun, ms.err
 }
 
 type mockSettingStoreService struct {
@@ -50,11 +61,6 @@ func TestSetPollerToggle(t *testing.T) {
 		Scheduler: &mockScheduleService{},
 	})
 
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
 	get := func() (*gaia.StoreConfig, error) {
 		return nil, nil
 	}
@@ -70,7 +76,6 @@ func TestSetPollerToggle(t *testing.T) {
 	})
 	// // Initialize echo
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	t.Run("switching it on twice should fail", func(t2 *testing.T) {
 		req := httptest.NewRequest(echo.POST, "/", nil)
@@ -203,11 +208,6 @@ func TestGettingSettingFromDBTakesPrecedence(t *testing.T) {
 		Scheduler: &mockScheduleService{},
 	})
 
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
 	get := func() (*gaia.StoreConfig, error) {
 		return &gaia.StoreConfig{
 			Poll: true,
@@ -225,7 +225,6 @@ func TestGettingSettingFromDBTakesPrecedence(t *testing.T) {
 	})
 
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	req := httptest.NewRequest(echo.GET, "/", nil)
 	req.Header.Set("Content-Type", "application/json")
@@ -261,11 +260,6 @@ func TestSettingPollerOnAlsoSavesSettingsInDB(t *testing.T) {
 		Scheduler: &mockScheduleService{},
 	})
 
-	handlerService := NewGaiaHandler(Dependencies{
-		Scheduler:       &mockScheduleService{},
-		PipelineService: pipelineService,
-	})
-
 	get := func() (*gaia.StoreConfig, error) {
 		return &gaia.StoreConfig{
 			Poll: true,
@@ -285,7 +279,6 @@ func TestSettingPollerOnAlsoSavesSettingsInDB(t *testing.T) {
 	})
 
 	e := echo.New()
-	_ = handlerService.InitHandlers(e)
 
 	req := httptest.NewRequest(echo.POST, "/", nil)
 	req.Header.Set("Content-Type", "application/json")

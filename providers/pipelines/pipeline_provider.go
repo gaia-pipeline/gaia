@@ -11,17 +11,18 @@ import (
 // Dependencies define providers and services which this service needs.
 type Dependencies struct {
 	Scheduler       service.GaiaScheduler
-	PipelineService pipeline.Service
+	PipelineService pipeline.Servicer
 	SettingsStore   store.SettingsStore
 }
 
-type pipelineProvider struct {
+// PipelineProvider is a provider for all pipeline related operations.
+type PipelineProvider struct {
 	deps Dependencies
 }
 
-// PipelineProvider defines functionality which this provider provides.
+// PipelineProviderer defines functionality which this provider provides.
 // These are used by the handler service.
-type PipelineProvider interface {
+type PipelineProviderer interface {
 	PipelineGitLSRemote(c echo.Context) error
 	CreatePipeline(c echo.Context) error
 	CreatePipelineGetAll(c echo.Context) error
@@ -49,6 +50,6 @@ type PipelineProvider interface {
 }
 
 // NewPipelineProvider creates a new provider with the needed dependencies.
-func NewPipelineProvider(deps Dependencies) PipelineProvider {
-	return &pipelineProvider{deps: deps}
+func NewPipelineProvider(deps Dependencies) *PipelineProvider {
+	return &PipelineProvider{deps: deps}
 }
