@@ -19,6 +19,28 @@ import (
 	gStore "github.com/gaia-pipeline/gaia/store"
 )
 
+type mockUserStorageService struct {
+	gStore.GaiaStore
+	user *gaia.User
+	err  error
+}
+
+func (m *mockUserStorageService) UserAuth(u *gaia.User, updateLastLogin bool) (*gaia.User, error) {
+	return m.user, m.err
+}
+
+func (m *mockUserStorageService) UserGet(username string) (*gaia.User, error) {
+	return m.user, m.err
+}
+
+func (m *mockUserStorageService) UserPut(u *gaia.User, encryptPassword bool) error {
+	return nil
+}
+
+func (m *mockUserStorageService) UserPermissionsGet(username string) (*gaia.UserPermission, error) {
+	return &gaia.UserPermission{}, nil
+}
+
 func TestUserLoginHMACKey(t *testing.T) {
 	tmp, _ := ioutil.TempDir("", "TestUserLoginHMACKey")
 	dataDir := tmp
@@ -50,7 +72,12 @@ func TestUserLoginHMACKey(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handlers := NewUserHandler(nil, nil)
+	ms := &mockUserStorageService{user: &gaia.User{
+		Username: "username",
+		Password: "password",
+	}, err: nil}
+
+	handlers := NewUserHandler(ms, nil)
 	if err := handlers.UserLogin(c); err != nil {
 		t.Fatal(err)
 	}
@@ -104,28 +131,6 @@ func TestDeleteUserNotAllowedForAutoUser(t *testing.T) {
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
 	}
-}
-
-type mockUserStorageService struct {
-	gStore.GaiaStore
-	user *gaia.User
-	err  error
-}
-
-func (m *mockUserStorageService) UserAuth(u *gaia.User, updateLastLogin bool) (*gaia.User, error) {
-	return m.user, m.err
-}
-
-func (m *mockUserStorageService) UserGet(username string) (*gaia.User, error) {
-	return m.user, m.err
-}
-
-func (m *mockUserStorageService) UserPut(u *gaia.User, encryptPassword bool) error {
-	return nil
-}
-
-func (m *mockUserStorageService) UserPermissionsGet(username string) (*gaia.UserPermission, error) {
-	return &gaia.UserPermission{}, nil
 }
 
 func TestResetAutoUserTriggerToken(t *testing.T) {
@@ -221,8 +226,6 @@ func TestUserLoginRSAKey(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	handlers := NewUserHandler(ms, nil)
-	_ = handlers.UserPutPermissions(c)
-
 	if err := handlers.UserLogin(c); err != nil {
 		t.Fatal(err)
 	}
