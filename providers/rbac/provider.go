@@ -9,14 +9,17 @@ import (
 	"github.com/gaia-pipeline/gaia/security/rbac"
 )
 
+// Provider represents the RBAC provider.
 type Provider struct {
 	svc rbac.Service
 }
 
+// NewProvider creates a new Provider.
 func NewProvider(svc rbac.Service) *Provider {
 	return &Provider{svc: svc}
 }
 
+// AddRole adds an RBAC role using the RBAC service.
 func (h *Provider) AddRole(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
@@ -37,6 +40,7 @@ func (h *Provider) AddRole(c echo.Context) error {
 	return c.String(http.StatusOK, "Role created successfully.")
 }
 
+// DeleteRole deletes an RBAC role using the RBAC service.
 func (h *Provider) DeleteRole(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
@@ -51,10 +55,12 @@ func (h *Provider) DeleteRole(c echo.Context) error {
 	return c.String(http.StatusOK, "Role deleted successfully.")
 }
 
+// GetAllRoles gets all RBAC roles.
 func (h *Provider) GetAllRoles(c echo.Context) error {
 	return c.JSON(http.StatusOK, h.svc.GetAllRoles())
 }
 
+// GetUserAttachedRoles gets all roles attached to a specific user.
 func (h *Provider) GetUserAttachedRoles(c echo.Context) error {
 	username := c.Param("username")
 	if username == "" {
@@ -70,6 +76,7 @@ func (h *Provider) GetUserAttachedRoles(c echo.Context) error {
 	return c.JSON(http.StatusOK, roles)
 }
 
+// GetRolesAttachedUsers gets all users attached to a role.
 func (h *Provider) GetRolesAttachedUsers(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
@@ -85,6 +92,7 @@ func (h *Provider) GetRolesAttachedUsers(c echo.Context) error {
 	return c.JSON(http.StatusOK, roles)
 }
 
+// AttachRole attches a role to a user.
 func (h *Provider) AttachRole(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
@@ -104,6 +112,7 @@ func (h *Provider) AttachRole(c echo.Context) error {
 	return c.String(http.StatusOK, "Role attached successfully.")
 }
 
+// DetachRole deteches a role from a user.
 func (h *Provider) DetachRole(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {

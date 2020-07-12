@@ -157,8 +157,10 @@ const (
 	StartReasonScheduled = "scheduled"
 )
 
+// JwtExpiry is the default JWT expiry.
 const JwtExpiry = 12 * 60 * 60
 
+// JwtCustomClaims is the custom JWT claims for a Gaia session.
 type JwtCustomClaims struct {
 	Username string   `json:"username"`
 	Roles    []string `json:"roles"`

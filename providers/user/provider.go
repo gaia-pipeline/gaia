@@ -21,6 +21,7 @@ type Provider struct {
 	RBACSvc rbac.Service
 }
 
+// NewProvider creates a new provider.
 func NewProvider(store store.GaiaStore, RBACSvc rbac.Service) *Provider {
 	return &Provider{Store: store, RBACSvc: RBACSvc}
 }

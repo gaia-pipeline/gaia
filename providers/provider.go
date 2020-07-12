@@ -4,6 +4,7 @@ import (
 	"github.com/labstack/echo"
 )
 
+// RBACProvider provides all the handler endpoints for RBAC actions.
 type RBACProvider interface {
 	AddRole(c echo.Context) error
 	DeleteRole(c echo.Context) error
@@ -14,6 +15,7 @@ type RBACProvider interface {
 	DetachRole(c echo.Context) error
 }
 
+// UserProvider provides all the handler endpoints for User actions.
 type UserProvider interface {
 	UserLogin(c echo.Context) error
 	UserGetAll(c echo.Context) error
