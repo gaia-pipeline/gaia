@@ -1,4 +1,4 @@
-package handlers
+package user
 
 import (
 	"crypto/rsa"
@@ -15,30 +15,19 @@ import (
 	"github.com/gaia-pipeline/gaia/store"
 )
 
-// jwtExpiry defines how long the produced jwt tokens
-// are valid. By default 12 hours.
-const jwtExpiry = 12 * 60 * 60
-
-type jwtCustomClaims struct {
-	Username string   `json:"username"`
-	Roles    []string `json:"roles"`
-	jwt.StandardClaims
-}
-
-// UserHandler represents the user handlers and contains any dependencies required by the handlers.
-type UserHandler struct {
+// Provider represents the user handlers and contains any dependencies required by the handlers.
+type Provider struct {
 	Store   store.GaiaStore
 	RBACSvc rbac.Service
 }
 
-// NewUserHandler creates a new UserHandlers.
-func NewUserHandler(store store.GaiaStore, RBACSvc rbac.Service) *UserHandler {
-	return &UserHandler{Store: store, RBACSvc: RBACSvc}
+func NewProvider(store store.GaiaStore, RBACSvc rbac.Service) *Provider {
+	return &Provider{Store: store, RBACSvc: RBACSvc}
 }
 
 // UserLogin authenticates the user with
 // the given credentials.
-func (h *UserHandler) UserLogin(c echo.Context) error {
+func (h *Provider) UserLogin(c echo.Context) error {
 	u := &gaia.User{}
 	if err := c.Bind(u); err != nil {
 		gaia.Cfg.Logger.Debug("error reading json during UserLogin", "error", err.Error())
@@ -58,11 +47,11 @@ func (h *UserHandler) UserLogin(c echo.Context) error {
 	}
 
 	// Setup custom claims
-	claims := jwtCustomClaims{
+	claims := gaia.JwtCustomClaims{
 		Username: user.Username,
 		Roles:    perms.Roles,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Unix() + jwtExpiry,
+			ExpiresAt: time.Now().Unix() + gaia.JwtExpiry,
 			IssuedAt:  time.Now().Unix(),
 			Subject:   "Gaia Session Token",
 		},
@@ -94,7 +83,7 @@ func (h *UserHandler) UserLogin(c echo.Context) error {
 }
 
 // UserGetAll returns all users stored in store.
-func (h *UserHandler) UserGetAll(c echo.Context) error {
+func (h *Provider) UserGetAll(c echo.Context) error {
 	// Get all users
 	users, err := h.Store.UserGetAll()
 	if err != nil {
@@ -112,7 +101,7 @@ type changePasswordRequest struct {
 }
 
 // UserChangePassword changes the password from a user.
-func (h *UserHandler) UserChangePassword(c echo.Context) error {
+func (h *Provider) UserChangePassword(c echo.Context) error {
 	// Get required parameters
 	r := &changePasswordRequest{}
 	if err := c.Bind(r); err != nil {
@@ -149,7 +138,7 @@ func (h *UserHandler) UserChangePassword(c echo.Context) error {
 
 // UserResetTriggerToken will generate and save a new Remote trigger token
 // for a given user.
-func (h *UserHandler) UserResetTriggerToken(c echo.Context) error {
+func (h *Provider) UserResetTriggerToken(c echo.Context) error {
 	username := c.Param("username")
 	if username == "" {
 		return c.String(http.StatusBadRequest, "Invalid username given")
@@ -176,7 +165,7 @@ func (h *UserHandler) UserResetTriggerToken(c echo.Context) error {
 }
 
 // UserDelete deletes the given user
-func (h *UserHandler) UserDelete(c echo.Context) error {
+func (h *Provider) UserDelete(c echo.Context) error {
 	username := c.Param("username")
 
 	if username == "" {
@@ -203,7 +192,7 @@ func (h *UserHandler) UserDelete(c echo.Context) error {
 }
 
 // UserAdd adds a new user to the store.
-func (h *UserHandler) UserAdd(c echo.Context) error {
+func (h *Provider) UserAdd(c echo.Context) error {
 	// Get user information required for add
 	u := &gaia.User{}
 	if err := c.Bind(u); err != nil {
@@ -232,7 +221,7 @@ func (h *UserHandler) UserAdd(c echo.Context) error {
 }
 
 // UserGetPermissions returns the permissions for a user.
-func (h *UserHandler) UserGetPermissions(c echo.Context) error {
+func (h *Provider) UserGetPermissions(c echo.Context) error {
 	u := c.Param("username")
 
 	perms, err := h.Store.UserPermissionsGet(u)
@@ -244,7 +233,7 @@ func (h *UserHandler) UserGetPermissions(c echo.Context) error {
 }
 
 // UserPutPermissions adds or updates permissions for a user.
-func (h *UserHandler) UserPutPermissions(c echo.Context) error {
+func (h *Provider) UserPutPermissions(c echo.Context) error {
 	var perms *gaia.UserPermission
 	if err := c.Bind(&perms); err != nil {
 		return c.String(http.StatusBadRequest, "Invalid parameters given for request")

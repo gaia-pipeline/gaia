@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/gaia-pipeline/gaia/providers"
 	"github.com/gaia-pipeline/gaia/providers/pipelines"
 	"github.com/gaia-pipeline/gaia/providers/workers"
 	"github.com/gaia-pipeline/gaia/security"
@@ -15,6 +16,8 @@ type Dependencies struct {
 	Scheduler        service.GaiaScheduler
 	PipelineService  pipeline.Servicer
 	PipelineProvider pipelines.PipelineProviderer
+	UserProvider     providers.UserProvider
+	RBACProvider     providers.RBACProvider
 	WorkerProvider   workers.WorkerProviderer
 	Certificate      security.CAAPI
 	RBACService      rbac.Service

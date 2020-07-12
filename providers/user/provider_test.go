@@ -1,4 +1,4 @@
-package handlers
+package user
 
 import (
 	"bytes"
@@ -77,8 +77,8 @@ func TestUserLoginHMACKey(t *testing.T) {
 		Password: "password",
 	}, err: nil}
 
-	handlers := NewUserHandler(ms, nil)
-	if err := handlers.UserLogin(c); err != nil {
+	provider := NewProvider(ms, nil)
+	if err := provider.UserLogin(c); err != nil {
 		t.Fatal(err)
 	}
 
@@ -125,8 +125,8 @@ func TestDeleteUserNotAllowedForAutoUser(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handlers := NewUserHandler(nil, nil)
-	_ = handlers.UserDelete(c)
+	provider := NewProvider(nil, nil)
+	_ = provider.UserDelete(c)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
@@ -160,8 +160,8 @@ func TestResetAutoUserTriggerToken(t *testing.T) {
 		c.SetParamNames("username")
 		c.SetParamValues("auto")
 
-		handlers := NewUserHandler(ms, nil)
-		_ = handlers.UserResetTriggerToken(c)
+		provider := NewProvider(ms, nil)
+		_ = provider.UserResetTriggerToken(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v; error: %s", http.StatusOK, rec.Code, rec.Body.String())
@@ -180,8 +180,8 @@ func TestResetAutoUserTriggerToken(t *testing.T) {
 		c.SetParamNames("username")
 		c.SetParamValues("auto2")
 
-		handlers := NewUserHandler(nil, nil)
-		_ = handlers.UserResetTriggerToken(c)
+		provider := NewProvider(nil, nil)
+		_ = provider.UserResetTriggerToken(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v; error: %s", http.StatusBadRequest, rec.Code, rec.Body.String())
@@ -225,8 +225,8 @@ func TestUserLoginRSAKey(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handlers := NewUserHandler(ms, nil)
-	if err := handlers.UserLogin(c); err != nil {
+	provider := NewProvider(ms, nil)
+	if err := provider.UserLogin(c); err != nil {
 		t.Fatal(err)
 	}
 
@@ -289,8 +289,8 @@ func TestUserPutPermissions(t *testing.T) {
 	c.SetParamNames("username")
 	c.SetParamValues("test-user")
 
-	handlers := NewUserHandler(ms, nil)
-	_ = handlers.UserPutPermissions(c)
+	provider := NewProvider(ms, nil)
+	_ = provider.UserPutPermissions(c)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("code is %d. expected %d", rec.Code, http.StatusOK)
@@ -319,8 +319,8 @@ func TestUserPutPermissionsError(t *testing.T) {
 	c.SetParamNames("username")
 	c.SetParamValues("test-user")
 
-	handlers := NewUserHandler(ms, nil)
-	_ = handlers.UserPutPermissions(c)
+	provider := NewProvider(ms, nil)
+	_ = provider.UserPutPermissions(c)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("code is %d. expected %d", rec.Code, http.StatusBadRequest)
@@ -346,8 +346,8 @@ func TestUserGetPermissions(t *testing.T) {
 	c.SetParamNames("username")
 	c.SetParamValues("test-user")
 
-	handlers := NewUserHandler(ms, nil)
-	_ = handlers.UserGetPermissions(c)
+	provider := NewProvider(ms, nil)
+	_ = provider.UserGetPermissions(c)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("code is %d. expected %d", rec.Code, http.StatusOK)
@@ -369,8 +369,8 @@ func TestUserGetPermissionsErrors(t *testing.T) {
 	c.SetParamNames("username")
 	c.SetParamValues("test-user")
 
-	handlers := NewUserHandler(ms, nil)
-	_ = handlers.UserGetPermissions(c)
+	provider := NewProvider(ms, nil)
+	_ = provider.UserGetPermissions(c)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("code is %d. expected %d", rec.Code, http.StatusBadRequest)

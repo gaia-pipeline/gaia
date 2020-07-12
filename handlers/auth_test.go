@@ -128,11 +128,11 @@ func TestAuthBarrierHMACTokenWithHMACKey(t *testing.T) {
 		JWTKey: []byte("hmac-jwt-key"),
 	}
 
-	claims := jwtCustomClaims{
+	claims := gaia.JwtCustomClaims{
 		Username: "test-user",
 		Roles:    []string{},
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Unix() + jwtExpiry,
+			ExpiresAt: time.Now().Unix() + gaia.JwtExpiry,
 			IssuedAt:  time.Now().Unix(),
 			Subject:   "Gaia Session Token",
 		},
@@ -164,11 +164,11 @@ func TestAuthBarrierRSATokenWithRSAKey(t *testing.T) {
 		JWTKey: key,
 	}
 
-	claims := jwtCustomClaims{
+	claims := gaia.JwtCustomClaims{
 		Username: "test-user",
 		Roles:    []string{},
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Unix() + jwtExpiry,
+			ExpiresAt: time.Now().Unix() + gaia.JwtExpiry,
 			IssuedAt:  time.Now().Unix(),
 			Subject:   "Gaia Session Token",
 		},
@@ -199,11 +199,11 @@ func TestAuthBarrierHMACTokenWithRSAKey(t *testing.T) {
 		JWTKey: &rsa.PrivateKey{},
 	}
 
-	claims := jwtCustomClaims{
+	claims := gaia.JwtCustomClaims{
 		Username: "test-user",
 		Roles:    []string{},
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Unix() + jwtExpiry,
+			ExpiresAt: time.Now().Unix() + gaia.JwtExpiry,
 			IssuedAt:  time.Now().Unix(),
 			Subject:   "Gaia Session Token",
 		},
@@ -242,11 +242,11 @@ func TestAuthBarrierRSATokenWithHMACKey(t *testing.T) {
 		JWTKey: []byte("hmac-jwt-key"),
 	}
 
-	claims := jwtCustomClaims{
+	claims := gaia.JwtCustomClaims{
 		Username: "test-user",
 		Roles:    []string{},
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Unix() + jwtExpiry,
+			ExpiresAt: time.Now().Unix() + gaia.JwtExpiry,
 			IssuedAt:  time.Now().Unix(),
 			Subject:   "Gaia Session Token",
 		},
@@ -298,11 +298,11 @@ func TestAuthBarrierNoPerms(t *testing.T) {
 		JWTKey: []byte("hmac-jwt-key"),
 	}
 
-	claims := jwtCustomClaims{
+	claims := gaia.JwtCustomClaims{
 		Username: "test-user",
 		Roles:    []string{},
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Unix() + jwtExpiry,
+			ExpiresAt: time.Now().Unix() + gaia.JwtExpiry,
 			IssuedAt:  time.Now().Unix(),
 			Subject:   "Gaia Session Token",
 		},
@@ -333,11 +333,11 @@ func TestAuthBarrierAllPerms(t *testing.T) {
 		JWTKey: []byte("hmac-jwt-key"),
 	}
 
-	claims := jwtCustomClaims{
+	claims := gaia.JwtCustomClaims{
 		Username: "test-user",
 		Roles:    []string{"CatOneGetSingle", "CatOnePostSingle", "CatTwoGetSingle", "CatTwoPostSingle"},
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Unix() + jwtExpiry,
+			ExpiresAt: time.Now().Unix() + gaia.JwtExpiry,
 			IssuedAt:  time.Now().Unix(),
 			Subject:   "Gaia Session Token",
 		},
@@ -386,11 +386,11 @@ func Test_AuthMiddleware_Enforcer_PermissionDenied(t *testing.T) {
 		JWTKey: []byte("hmac-jwt-key"),
 	}
 
-	claims := jwtCustomClaims{
+	claims := gaia.JwtCustomClaims{
 		Username: "enforcer-perms-err",
 		Roles:    []string{},
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Unix() + jwtExpiry,
+			ExpiresAt: time.Now().Unix() + gaia.JwtExpiry,
 			IssuedAt:  time.Now().Unix(),
 			Subject:   "Gaia Session Token",
 		},
@@ -420,11 +420,11 @@ func Test_AuthMiddleware_Enforcer_UnknownError(t *testing.T) {
 	}
 	gaia.Cfg.Logger = hclog.NewNullLogger()
 
-	claims := jwtCustomClaims{
+	claims := gaia.JwtCustomClaims{
 		Username: "enforcer-err",
 		Roles:    []string{},
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Unix() + jwtExpiry,
+			ExpiresAt: time.Now().Unix() + gaia.JwtExpiry,
 			IssuedAt:  time.Now().Unix(),
 			Subject:   "Gaia Session Token",
 		},

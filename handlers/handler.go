@@ -34,19 +34,14 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 
 	// Endpoints for Gaia primary instance
 	if gaia.Cfg.Mode == gaia.ModeServer {
-		// Users
-		userHandler := NewUserHandler(s.deps.Store, s.deps.RBACService)
-
-		apiGrp.POST("login", userHandler.UserLogin)
-
-		apiAuthGrp.GET("users", userHandler.UserGetAll)
-		apiAuthGrp.POST("user/password", userHandler.UserChangePassword)
-		apiAuthGrp.DELETE("user/:username", userHandler.UserDelete)
-		apiAuthGrp.GET("user/:username/permissions", userHandler.UserGetPermissions)
-		apiAuthGrp.PUT("user/:username/permissions", userHandler.UserPutPermissions)
-		apiAuthGrp.POST("user", userHandler.UserAdd)
-		apiAuthGrp.PUT("user/:username/reset-trigger-token", userHandler.UserResetTriggerToken)
-
+		apiGrp.POST("login", s.deps.UserProvider.UserLogin)
+		apiAuthGrp.GET("users", s.deps.UserProvider.UserGetAll)
+		apiAuthGrp.POST("user/password", s.deps.UserProvider.UserChangePassword)
+		apiAuthGrp.DELETE("user/:username", s.deps.UserProvider.UserDelete)
+		apiAuthGrp.GET("user/:username/permissions", s.deps.UserProvider.UserGetPermissions)
+		apiAuthGrp.PUT("user/:username/permissions", s.deps.UserProvider.UserPutPermissions)
+		apiAuthGrp.POST("user", s.deps.UserProvider.UserAdd)
+		apiAuthGrp.PUT("user/:username/reset-trigger-token", s.deps.UserProvider.UserResetTriggerToken)
 		apiAuthGrp.GET("permission", PermissionGetAll)
 
 		// Pipelines
@@ -88,19 +83,15 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		apiAuthGrp.POST("secret", SetSecret)
 		apiAuthGrp.PUT("secret/update", SetSecret)
 
-		// RBAC
-		rbacHandler := rbacHandler{
-			svc: s.deps.RBACService,
-		}
 		// RBAC - Management
-		apiAuthGrp.GET("rbac/roles", rbacHandler.getAllRoles)
-		apiAuthGrp.PUT("rbac/roles/:role", rbacHandler.addRole)
-		apiAuthGrp.DELETE("rbac/roles/:role", rbacHandler.deleteRole)
-		apiAuthGrp.PUT("rbac/roles/:role/attach/:username", rbacHandler.attachRole)
-		apiAuthGrp.DELETE("rbac/roles/:role/attach/:username", rbacHandler.detachRole)
-		apiAuthGrp.GET("rbac/roles/:role/attached", rbacHandler.getRolesAttachedUsers)
+		apiAuthGrp.GET("rbac/roles", s.deps.RBACProvider.GetAllRoles)
+		apiAuthGrp.PUT("rbac/roles/:role", s.deps.RBACProvider.AddRole)
+		apiAuthGrp.DELETE("rbac/roles/:role", s.deps.RBACProvider.DeleteRole)
+		apiAuthGrp.PUT("rbac/roles/:role/attach/:username", s.deps.RBACProvider.DetachRole)
+		apiAuthGrp.DELETE("rbac/roles/:role/attach/:username", s.deps.RBACProvider.DetachRole)
+		apiAuthGrp.GET("rbac/roles/:role/attached", s.deps.RBACProvider.GetRolesAttachedUsers)
 		// RBAC - Users
-		apiAuthGrp.GET("users/:username/rbac/roles", rbacHandler.getUserAttachedRoles)
+		apiAuthGrp.GET("users/:username/rbac/roles", s.deps.RBACProvider.GetUserAttachedRoles)
 	}
 
 	// Worker
