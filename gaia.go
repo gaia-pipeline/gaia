@@ -4,6 +4,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/robfig/cron"
 )
@@ -155,6 +156,16 @@ const (
 	// StartReasonScheduled label for pipelines which were triggered automated process, i.e. cron job.
 	StartReasonScheduled = "scheduled"
 )
+
+// JwtExpiry is the default JWT expiry.
+const JwtExpiry = 12 * 60 * 60
+
+// JwtCustomClaims is the custom JWT claims for a Gaia session.
+type JwtCustomClaims struct {
+	Username string   `json:"username"`
+	Roles    []string `json:"roles"`
+	jwt.StandardClaims
+}
 
 // User is the user object
 type User struct {

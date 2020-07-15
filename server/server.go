@@ -20,6 +20,8 @@ import (
 	"github.com/gaia-pipeline/gaia/handlers"
 	"github.com/gaia-pipeline/gaia/plugin"
 	"github.com/gaia-pipeline/gaia/providers/pipelines"
+	rbacProvider "github.com/gaia-pipeline/gaia/providers/rbac"
+	userProvider "github.com/gaia-pipeline/gaia/providers/user"
 	"github.com/gaia-pipeline/gaia/providers/workers"
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/security/rbac"
@@ -266,6 +268,8 @@ func Start() (err error) {
 		PipelineService: pipelineService,
 		SettingsStore:   store,
 	})
+	rbacPrv := rbacProvider.NewProvider(rbacService)
+	userPrv := userProvider.NewProvider(store, rbacService)
 	// initialize the worker provider
 	workerProvider := workers.NewWorkerProvider(workers.Dependencies{
 		Scheduler:   schedulerService,
@@ -277,6 +281,8 @@ func Start() (err error) {
 		PipelineService:  pipelineService,
 		PipelineProvider: pipelineProvider,
 		WorkerProvider:   workerProvider,
+		RBACProvider:     rbacPrv,
+		UserProvider:     userPrv,
 		Certificate:      ca,
 		RBACService:      rbacService,
 		Store:            store,

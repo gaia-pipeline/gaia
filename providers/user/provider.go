@@ -1,4 +1,4 @@
-package handlers
+package user
 
 import (
 	"crypto/rsa"
@@ -6,27 +6,29 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/labstack/echo"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/rolehelper"
 	"github.com/gaia-pipeline/gaia/security"
-	"github.com/gaia-pipeline/gaia/services"
-	"github.com/labstack/echo"
+	"github.com/gaia-pipeline/gaia/security/rbac"
+	"github.com/gaia-pipeline/gaia/store"
 )
 
-// jwtExpiry defines how long the produced jwt tokens
-// are valid. By default 12 hours.
-const jwtExpiry = 12 * 60 * 60
+// Provider represents the user handlers and contains any dependencies required by the handlers.
+type Provider struct {
+	Store   store.GaiaStore
+	RBACSvc rbac.Service
+}
 
-type jwtCustomClaims struct {
-	Username string   `json:"username"`
-	Roles    []string `json:"roles"`
-	jwt.StandardClaims
+// NewProvider creates a new provider.
+func NewProvider(store store.GaiaStore, RBACSvc rbac.Service) *Provider {
+	return &Provider{Store: store, RBACSvc: RBACSvc}
 }
 
 // UserLogin authenticates the user with
 // the given credentials.
-func UserLogin(c echo.Context) error {
-	storeService, _ := services.StorageService()
+func (h *Provider) UserLogin(c echo.Context) error {
 	u := &gaia.User{}
 	if err := c.Bind(u); err != nil {
 		gaia.Cfg.Logger.Debug("error reading json during UserLogin", "error", err.Error())
@@ -34,23 +36,23 @@ func UserLogin(c echo.Context) error {
 	}
 
 	// Authenticate user
-	user, err := storeService.UserAuth(u, true)
+	user, err := h.Store.UserAuth(u, true)
 	if err != nil || user == nil {
 		gaia.Cfg.Logger.Info("invalid credentials provided", "username", u.Username)
 		return c.String(http.StatusForbidden, "invalid username and/or password")
 	}
 
-	perms, err := storeService.UserPermissionsGet(u.Username)
+	perms, err := h.Store.UserPermissionsGet(u.Username)
 	if err != nil {
 		return err
 	}
 
 	// Setup custom claims
-	claims := jwtCustomClaims{
+	claims := gaia.JwtCustomClaims{
 		Username: user.Username,
 		Roles:    perms.Roles,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Unix() + jwtExpiry,
+			ExpiresAt: time.Now().Unix() + gaia.JwtExpiry,
 			IssuedAt:  time.Now().Unix(),
 			Subject:   "Gaia Session Token",
 		},
@@ -82,10 +84,9 @@ func UserLogin(c echo.Context) error {
 }
 
 // UserGetAll returns all users stored in store.
-func UserGetAll(c echo.Context) error {
+func (h *Provider) UserGetAll(c echo.Context) error {
 	// Get all users
-	storeService, _ := services.StorageService()
-	users, err := storeService.UserGetAll()
+	users, err := h.Store.UserGetAll()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -101,24 +102,23 @@ type changePasswordRequest struct {
 }
 
 // UserChangePassword changes the password from a user.
-func UserChangePassword(c echo.Context) error {
+func (h *Provider) UserChangePassword(c echo.Context) error {
 	// Get required parameters
 	r := &changePasswordRequest{}
-	storeService, _ := services.StorageService()
 	if err := c.Bind(r); err != nil {
 		return c.String(http.StatusBadRequest, "Invalid parameters given for password change request")
 	}
 
 	// Compare old password with current password of user by simply calling auth method.
 	// First get user obj
-	user, err := storeService.UserGet(r.Username)
+	user, err := h.Store.UserGet(r.Username)
 	if err != nil {
 		return c.String(http.StatusBadRequest, "Cannot find user with the given username")
 	}
 
 	// Simply call auth by changing password
 	user.Password = r.OldPassword
-	u, err := storeService.UserAuth(user, false)
+	u, err := h.Store.UserAuth(user, false)
 	if err != nil {
 		return c.String(http.StatusPreconditionFailed, "Wrong password given for password change")
 	}
@@ -130,8 +130,7 @@ func UserChangePassword(c echo.Context) error {
 
 	// Change password
 	u.Password = r.NewPassword
-	err = storeService.UserPut(u, true)
-	if err != nil {
+	if err := h.Store.UserPut(u, true); err != nil {
 		return c.String(http.StatusInternalServerError, "Cannot update user in store")
 	}
 
@@ -140,17 +139,16 @@ func UserChangePassword(c echo.Context) error {
 
 // UserResetTriggerToken will generate and save a new Remote trigger token
 // for a given user.
-func UserResetTriggerToken(c echo.Context) error {
-	// Get user which we should reset the token for
-	u := c.Param("username")
-	if u == "" {
+func (h *Provider) UserResetTriggerToken(c echo.Context) error {
+	username := c.Param("username")
+	if username == "" {
 		return c.String(http.StatusBadRequest, "Invalid username given")
 	}
-	if u != "auto" {
+	if username != "auto" {
 		return c.String(http.StatusBadRequest, "Only auto user can have a token reset")
 	}
-	ss, _ := services.StorageService()
-	user, err := ss.UserGet(u)
+
+	user, err := h.Store.UserGet(username)
 	if err != nil {
 		return c.String(http.StatusBadRequest, "User not found")
 	}
@@ -159,7 +157,7 @@ func UserResetTriggerToken(c echo.Context) error {
 	}
 
 	user.TriggerToken = security.GenerateRandomUUIDV5()
-	err = ss.UserPut(user, true)
+	err = h.Store.UserPut(user, true)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Error while saving user")
 	}
@@ -168,25 +166,26 @@ func UserResetTriggerToken(c echo.Context) error {
 }
 
 // UserDelete deletes the given user
-func UserDelete(c echo.Context) error {
-	// Get user which we should delete
-	u := c.Param("username")
-	if u == "" {
+func (h *Provider) UserDelete(c echo.Context) error {
+	username := c.Param("username")
+
+	if username == "" {
 		return c.String(http.StatusBadRequest, "Invalid username given")
 	}
-	storeService, _ := services.StorageService()
-	if u == "auto" {
+
+	if username == "auto" {
 		return c.String(http.StatusBadRequest, "Auto user cannot be deleted")
 	}
-	// Delete user
-	err := storeService.UserDelete(u)
-	if err != nil {
+
+	if err := h.Store.UserDelete(username); err != nil {
 		return c.String(http.StatusNotFound, err.Error())
 	}
 
-	// Delete permissions
-	err = storeService.UserPermissionsDelete(u)
-	if err != nil {
+	if err := h.Store.UserPermissionsDelete(username); err != nil {
+		return c.String(http.StatusNotFound, err.Error())
+	}
+
+	if err := h.RBACSvc.DeleteUser(username); err != nil {
 		return c.String(http.StatusNotFound, err.Error())
 	}
 
@@ -194,17 +193,16 @@ func UserDelete(c echo.Context) error {
 }
 
 // UserAdd adds a new user to the store.
-func UserAdd(c echo.Context) error {
+func (h *Provider) UserAdd(c echo.Context) error {
 	// Get user information required for add
 	u := &gaia.User{}
 	if err := c.Bind(u); err != nil {
 		return c.String(http.StatusBadRequest, "Invalid parameters given for add user request")
 	}
-	storeService, _ := services.StorageService()
 
 	// Add user
 	u.LastLogin = time.Now()
-	err := storeService.UserPut(u, true)
+	err := h.Store.UserPut(u, true)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -215,7 +213,7 @@ func UserAdd(c echo.Context) error {
 		Roles:    rolehelper.FlattenUserCategoryRoles(rolehelper.DefaultUserRoles),
 		Groups:   []string{},
 	}
-	err = storeService.UserPermissionsPut(perms)
+	err = h.Store.UserPermissionsPut(perms)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -224,26 +222,27 @@ func UserAdd(c echo.Context) error {
 }
 
 // UserGetPermissions returns the permissions for a user.
-func UserGetPermissions(c echo.Context) error {
+func (h *Provider) UserGetPermissions(c echo.Context) error {
 	u := c.Param("username")
-	storeService, _ := services.StorageService()
-	perms, err := storeService.UserPermissionsGet(u)
+
+	perms, err := h.Store.UserPermissionsGet(u)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
+
 	return c.JSON(http.StatusOK, perms)
 }
 
 // UserPutPermissions adds or updates permissions for a user.
-func UserPutPermissions(c echo.Context) error {
+func (h *Provider) UserPutPermissions(c echo.Context) error {
 	var perms *gaia.UserPermission
 	if err := c.Bind(&perms); err != nil {
 		return c.String(http.StatusBadRequest, "Invalid parameters given for request")
 	}
-	storeService, _ := services.StorageService()
-	err := storeService.UserPermissionsPut(perms)
-	if err != nil {
+
+	if err := h.Store.UserPermissionsPut(perms); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
+
 	return c.String(http.StatusOK, "Permissions have been updated")
 }

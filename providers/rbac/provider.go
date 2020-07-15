@@ -1,4 +1,4 @@
-package handlers
+package rbac
 
 import (
 	"net/http"
@@ -9,11 +9,18 @@ import (
 	"github.com/gaia-pipeline/gaia/security/rbac"
 )
 
-type rbacHandler struct {
+// Provider represents the RBAC provider.
+type Provider struct {
 	svc rbac.Service
 }
 
-func (h *rbacHandler) addRole(c echo.Context) error {
+// NewProvider creates a new Provider.
+func NewProvider(svc rbac.Service) *Provider {
+	return &Provider{svc: svc}
+}
+
+// AddRole adds an RBAC role using the RBAC service.
+func (h *Provider) AddRole(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
 		return c.String(http.StatusBadRequest, "Must provide role.")
@@ -33,7 +40,8 @@ func (h *rbacHandler) addRole(c echo.Context) error {
 	return c.String(http.StatusOK, "Role created successfully.")
 }
 
-func (h *rbacHandler) deleteRole(c echo.Context) error {
+// DeleteRole deletes an RBAC role using the RBAC service.
+func (h *Provider) DeleteRole(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
 		return c.String(http.StatusBadRequest, "Must provide role.")
@@ -47,11 +55,13 @@ func (h *rbacHandler) deleteRole(c echo.Context) error {
 	return c.String(http.StatusOK, "Role deleted successfully.")
 }
 
-func (h *rbacHandler) getAllRoles(c echo.Context) error {
+// GetAllRoles gets all RBAC roles.
+func (h *Provider) GetAllRoles(c echo.Context) error {
 	return c.JSON(http.StatusOK, h.svc.GetAllRoles())
 }
 
-func (h *rbacHandler) getUserAttachedRoles(c echo.Context) error {
+// GetUserAttachedRoles gets all roles attached to a specific user.
+func (h *Provider) GetUserAttachedRoles(c echo.Context) error {
 	username := c.Param("username")
 	if username == "" {
 		return c.String(http.StatusBadRequest, "Must provide username.")
@@ -66,7 +76,8 @@ func (h *rbacHandler) getUserAttachedRoles(c echo.Context) error {
 	return c.JSON(http.StatusOK, roles)
 }
 
-func (h *rbacHandler) getRolesAttachedUsers(c echo.Context) error {
+// GetRolesAttachedUsers gets all users attached to a role.
+func (h *Provider) GetRolesAttachedUsers(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
 		return c.String(http.StatusBadRequest, "Must provide role.")
@@ -81,7 +92,8 @@ func (h *rbacHandler) getRolesAttachedUsers(c echo.Context) error {
 	return c.JSON(http.StatusOK, roles)
 }
 
-func (h *rbacHandler) attachRole(c echo.Context) error {
+// AttachRole attches a role to a user.
+func (h *Provider) AttachRole(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
 		return c.String(http.StatusBadRequest, "Must provide role.")
@@ -100,7 +112,8 @@ func (h *rbacHandler) attachRole(c echo.Context) error {
 	return c.String(http.StatusOK, "Role attached successfully.")
 }
 
-func (h *rbacHandler) detachRole(c echo.Context) error {
+// DetachRole deteches a role from a user.
+func (h *Provider) DetachRole(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
 		return c.String(http.StatusBadRequest, "Must provide role.")

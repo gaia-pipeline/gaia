@@ -1,4 +1,4 @@
-package handlers
+package user
 
 import (
 	"bytes"
@@ -16,9 +16,30 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/services"
 	gStore "github.com/gaia-pipeline/gaia/store"
 )
+
+type mockUserStorageService struct {
+	gStore.GaiaStore
+	user *gaia.User
+	err  error
+}
+
+func (m *mockUserStorageService) UserAuth(u *gaia.User, updateLastLogin bool) (*gaia.User, error) {
+	return m.user, m.err
+}
+
+func (m *mockUserStorageService) UserGet(username string) (*gaia.User, error) {
+	return m.user, m.err
+}
+
+func (m *mockUserStorageService) UserPut(u *gaia.User, encryptPassword bool) error {
+	return nil
+}
+
+func (m *mockUserStorageService) UserPermissionsGet(username string) (*gaia.UserPermission, error) {
+	return &gaia.UserPermission{}, nil
+}
 
 func TestUserLoginHMACKey(t *testing.T) {
 	tmp, _ := ioutil.TempDir("", "TestUserLoginHMACKey")
@@ -51,7 +72,13 @@ func TestUserLoginHMACKey(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	if err := UserLogin(c); err != nil {
+	ms := &mockUserStorageService{user: &gaia.User{
+		Username: "username",
+		Password: "password",
+	}, err: nil}
+
+	provider := NewProvider(ms, nil)
+	if err := provider.UserLogin(c); err != nil {
 		t.Fatal(err)
 	}
 
@@ -98,25 +125,12 @@ func TestDeleteUserNotAllowedForAutoUser(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	_ = UserDelete(c)
+	provider := NewProvider(nil, nil)
+	_ = provider.UserDelete(c)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
 	}
-}
-
-type mockUserStorageService struct {
-	gStore.GaiaStore
-	user *gaia.User
-	err  error
-}
-
-func (m mockUserStorageService) UserGet(username string) (*gaia.User, error) {
-	return m.user, m.err
-}
-
-func (m mockUserStorageService) UserPut(u *gaia.User, encryptPassword bool) error {
-	return nil
 }
 
 func TestResetAutoUserTriggerToken(t *testing.T) {
@@ -137,9 +151,7 @@ func TestResetAutoUserTriggerToken(t *testing.T) {
 		user := gaia.User{}
 		user.Username = "auto"
 		user.TriggerToken = "triggerToken"
-		m := mockUserStorageService{user: &user, err: nil}
-		services.MockStorageService(&m)
-		defer services.MockStorageService(nil)
+		ms := &mockUserStorageService{user: &user, err: nil}
 		e := echo.New()
 		req := httptest.NewRequest(echo.PUT, "/api/"+gaia.APIVersion+"/user/auto/reset-trigger-token", nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -148,7 +160,8 @@ func TestResetAutoUserTriggerToken(t *testing.T) {
 		c.SetParamNames("username")
 		c.SetParamValues("auto")
 
-		_ = UserResetTriggerToken(c)
+		provider := NewProvider(ms, nil)
+		_ = provider.UserResetTriggerToken(c)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected response code %v got %v; error: %s", http.StatusOK, rec.Code, rec.Body.String())
@@ -167,7 +180,8 @@ func TestResetAutoUserTriggerToken(t *testing.T) {
 		c.SetParamNames("username")
 		c.SetParamValues("auto2")
 
-		_ = UserResetTriggerToken(c)
+		provider := NewProvider(nil, nil)
+		_ = provider.UserResetTriggerToken(c)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected response code %v got %v; error: %s", http.StatusBadRequest, rec.Code, rec.Body.String())
@@ -194,6 +208,10 @@ func TestUserLoginRSAKey(t *testing.T) {
 		DataPath: dataDir,
 		Mode:     gaia.ModeServer,
 	}
+	ms := &mockUserStorageService{user: &gaia.User{
+		Username: "username",
+		Password: "password",
+	}, err: nil}
 
 	e := echo.New()
 
@@ -207,7 +225,8 @@ func TestUserLoginRSAKey(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	if err := UserLogin(c); err != nil {
+	provider := NewProvider(ms, nil)
+	if err := provider.UserLogin(c); err != nil {
 		t.Fatal(err)
 	}
 
@@ -255,8 +274,6 @@ func TestUserPutPermissions(t *testing.T) {
 		},
 	}
 
-	services.MockStorageService(ms)
-
 	bts, _ := json.Marshal(&gaia.UserPermission{
 		Username: "test-user",
 		Roles:    []string{"TestRole"},
@@ -271,7 +288,9 @@ func TestUserPutPermissions(t *testing.T) {
 	c.SetPath("/api/v1/user/:username/permissions")
 	c.SetParamNames("username")
 	c.SetParamValues("test-user")
-	_ = UserPutPermissions(c)
+
+	provider := NewProvider(ms, nil)
+	_ = provider.UserPutPermissions(c)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("code is %d. expected %d", rec.Code, http.StatusOK)
@@ -285,8 +304,6 @@ func TestUserPutPermissionsError(t *testing.T) {
 		},
 	}
 
-	services.MockStorageService(ms)
-
 	bts, _ := json.Marshal(&gaia.UserPermission{
 		Username: "test-user",
 		Roles:    []string{"TestRole"},
@@ -301,7 +318,9 @@ func TestUserPutPermissionsError(t *testing.T) {
 	c.SetPath("/api/v1/user/:username/permissions")
 	c.SetParamNames("username")
 	c.SetParamValues("test-user")
-	_ = UserPutPermissions(c)
+
+	provider := NewProvider(ms, nil)
+	_ = provider.UserPutPermissions(c)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("code is %d. expected %d", rec.Code, http.StatusBadRequest)
@@ -319,8 +338,6 @@ func TestUserGetPermissions(t *testing.T) {
 		},
 	}
 
-	services.MockStorageService(ms)
-
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
@@ -328,7 +345,9 @@ func TestUserGetPermissions(t *testing.T) {
 	c.SetPath("/api/v1/user/:username/permissions")
 	c.SetParamNames("username")
 	c.SetParamValues("test-user")
-	_ = UserGetPermissions(c)
+
+	provider := NewProvider(ms, nil)
+	_ = provider.UserGetPermissions(c)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("code is %d. expected %d", rec.Code, http.StatusOK)
@@ -342,8 +361,6 @@ func TestUserGetPermissionsErrors(t *testing.T) {
 		},
 	}
 
-	services.MockStorageService(ms)
-
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
@@ -351,7 +368,9 @@ func TestUserGetPermissionsErrors(t *testing.T) {
 	c.SetPath("/api/v1/user/:username/permissions")
 	c.SetParamNames("username")
 	c.SetParamValues("test-user")
-	_ = UserGetPermissions(c)
+
+	provider := NewProvider(ms, nil)
+	_ = provider.UserGetPermissions(c)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("code is %d. expected %d", rec.Code, http.StatusBadRequest)

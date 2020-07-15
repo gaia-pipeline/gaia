@@ -1,9 +1,5 @@
 package rbac
 
-import "errors"
-
-var errNotEnabled = errors.New("rbac is not enabled")
-
 type noOpService struct{}
 
 // NewNoOpService is used to instantiated a noOpService for when rbac enabled=false.
@@ -19,12 +15,12 @@ func (n noOpService) Enforce(username, method, path string, params map[string]st
 
 // AddRole that errors since rbac is not enabled.
 func (n noOpService) AddRole(role string, roleRules []RoleRule) error {
-	return errNotEnabled
+	return nil
 }
 
 // DeleteRole that errors since rbac is not enabled.
 func (n noOpService) DeleteRole(role string) error {
-	return errNotEnabled
+	return nil
 }
 
 // GetAllRoles that returns nothing since rbac is not enabled.
@@ -34,20 +30,24 @@ func (n noOpService) GetAllRoles() []string {
 
 // GetUserAttachedRoles that errors since rbac is not enabled.
 func (n noOpService) GetUserAttachedRoles(username string) ([]string, error) {
-	return nil, errNotEnabled
+	return nil, nil
 }
 
 // GetRoleAttachedUsers that errors since rbac is not enabled.
 func (n noOpService) GetRoleAttachedUsers(role string) ([]string, error) {
-	return nil, errNotEnabled
+	return nil, nil
 }
 
 // AttachRole that errors since rbac is not enabled.
 func (n noOpService) AttachRole(username string, role string) error {
-	return errNotEnabled
+	return nil
 }
 
 // DetachRole that errors since rbac is not enabled.
 func (n noOpService) DetachRole(username string, role string) error {
-	return errNotEnabled
+	return nil
+}
+
+func (n noOpService) DeleteUser(username string) error {
+	return nil
 }

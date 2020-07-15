@@ -1,4 +1,4 @@
-package handlers
+package rbac
 
 import (
 	"bytes"
@@ -65,8 +65,8 @@ func (e *mockRBACSvc) DetachRole(username string, role string) error {
 	return errors.New("an error")
 }
 
-func Test_rbacHandler_addRole(t *testing.T) {
-	handler := rbacHandler{
+func Test_rbacHandler_AddRole(t *testing.T) {
+	handler := Provider{
 		svc: &mockRBACSvc{},
 	}
 
@@ -101,7 +101,7 @@ func Test_rbacHandler_addRole(t *testing.T) {
 		c.SetParamNames("role")
 		c.SetParamValues("success")
 
-		err := handler.addRole(c)
+		err := handler.AddRole(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusOK)
 		assert.Equal(t, rec.Body.String(), "Role created successfully.")
@@ -114,7 +114,7 @@ func Test_rbacHandler_addRole(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/v1/rbac/roles/:role")
 
-		err := handler.addRole(c)
+		err := handler.AddRole(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusBadRequest)
 		assert.Equal(t, rec.Body.String(), "Must provide role.")
@@ -130,7 +130,7 @@ func Test_rbacHandler_addRole(t *testing.T) {
 		c.SetParamNames("role")
 		c.SetParamValues("success")
 
-		err := handler.addRole(c)
+		err := handler.AddRole(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusBadRequest)
 		assert.Equal(t, rec.Body.String(), "Invalid body provided.")
@@ -146,15 +146,15 @@ func Test_rbacHandler_addRole(t *testing.T) {
 		c.SetParamNames("role")
 		c.SetParamValues("error")
 
-		err := handler.addRole(c)
+		err := handler.AddRole(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusInternalServerError)
 		assert.Equal(t, rec.Body.String(), "An error occurred while adding the role.")
 	})
 }
 
-func Test_rbacHandler_deleteRole(t *testing.T) {
-	handler := rbacHandler{
+func Test_Provider_DeleteRole(t *testing.T) {
+	handler := Provider{
 		svc: &mockRBACSvc{},
 	}
 
@@ -174,7 +174,7 @@ func Test_rbacHandler_deleteRole(t *testing.T) {
 		c.SetParamNames("role")
 		c.SetParamValues("delme")
 
-		err := handler.deleteRole(c)
+		err := handler.DeleteRole(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusOK)
 		assert.Equal(t, rec.Body.String(), "Role deleted successfully.")
@@ -186,7 +186,7 @@ func Test_rbacHandler_deleteRole(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/v1/rbac/roles/:role")
 
-		err := handler.deleteRole(c)
+		err := handler.DeleteRole(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusBadRequest)
 		assert.Equal(t, rec.Body.String(), "Must provide role.")
@@ -200,15 +200,15 @@ func Test_rbacHandler_deleteRole(t *testing.T) {
 		c.SetParamNames("role")
 		c.SetParamValues("error")
 
-		err := handler.deleteRole(c)
+		err := handler.DeleteRole(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusInternalServerError)
 		assert.Equal(t, rec.Body.String(), "An error occurred while deleting the role.")
 	})
 }
 
-func Test_rbacHandler_getAllRoles(t *testing.T) {
-	handler := rbacHandler{
+func Test_Provider_getAllRoles(t *testing.T) {
+	handler := Provider{
 		svc: &mockRBACSvc{},
 	}
 
@@ -225,14 +225,14 @@ func Test_rbacHandler_getAllRoles(t *testing.T) {
 	c := e.NewContext(req, rec)
 	c.SetPath("/api/v1/rbac/roles")
 
-	err := handler.getAllRoles(c)
+	err := handler.GetAllRoles(c)
 	assert.NoError(t, err)
 	assert.Equal(t, rec.Code, http.StatusOK)
 	assert.Equal(t, rec.Body.String(), "[\"role-a\",\"role-b\"]\n")
 }
 
-func Test_rbacHandler_getUserAttachedRoles(t *testing.T) {
-	handler := rbacHandler{
+func Test_Provider_getUserAttachedRoles(t *testing.T) {
+	handler := Provider{
 		svc: &mockRBACSvc{},
 	}
 
@@ -252,7 +252,7 @@ func Test_rbacHandler_getUserAttachedRoles(t *testing.T) {
 		c.SetParamNames("username")
 		c.SetParamValues("test")
 
-		err := handler.getUserAttachedRoles(c)
+		err := handler.GetUserAttachedRoles(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusOK)
 		assert.Equal(t, rec.Body.String(), "[\"role-a\",\"role-b\"]\n")
@@ -264,7 +264,7 @@ func Test_rbacHandler_getUserAttachedRoles(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/v1/users/:username/rbac/roles")
 
-		err := handler.getUserAttachedRoles(c)
+		err := handler.GetUserAttachedRoles(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusBadRequest)
 		assert.Equal(t, rec.Body.String(), "Must provide username.")
@@ -278,15 +278,15 @@ func Test_rbacHandler_getUserAttachedRoles(t *testing.T) {
 		c.SetParamNames("username")
 		c.SetParamValues("error")
 
-		err := handler.getUserAttachedRoles(c)
+		err := handler.GetUserAttachedRoles(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusInternalServerError)
 		assert.Equal(t, rec.Body.String(), "An error occurred while getting the roles.")
 	})
 }
 
-func Test_rbacHandler_getRolesAttachedUsers(t *testing.T) {
-	handler := rbacHandler{
+func Test_Provider_GetRolesAttachedUsers(t *testing.T) {
+	handler := Provider{
 		svc: &mockRBACSvc{},
 	}
 
@@ -306,7 +306,7 @@ func Test_rbacHandler_getRolesAttachedUsers(t *testing.T) {
 		c.SetParamNames("role")
 		c.SetParamValues("test")
 
-		err := handler.getRolesAttachedUsers(c)
+		err := handler.GetRolesAttachedUsers(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusOK)
 		assert.Equal(t, rec.Body.String(), "[\"user-a\",\"user-b\"]\n")
@@ -318,7 +318,7 @@ func Test_rbacHandler_getRolesAttachedUsers(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/v1/rbac/roles/:role/attached")
 
-		err := handler.getRolesAttachedUsers(c)
+		err := handler.GetRolesAttachedUsers(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusBadRequest)
 		assert.Equal(t, rec.Body.String(), "Must provide role.")
@@ -332,15 +332,15 @@ func Test_rbacHandler_getRolesAttachedUsers(t *testing.T) {
 		c.SetParamNames("role")
 		c.SetParamValues("error")
 
-		err := handler.getRolesAttachedUsers(c)
+		err := handler.GetRolesAttachedUsers(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusInternalServerError)
 		assert.Equal(t, rec.Body.String(), "An error occurred while getting the users.")
 	})
 }
 
-func Test_rbacHandler_attachRole(t *testing.T) {
-	handler := rbacHandler{
+func Test_Provider_attachRole(t *testing.T) {
+	provider := Provider{
 		svc: &mockRBACSvc{},
 	}
 
@@ -360,7 +360,7 @@ func Test_rbacHandler_attachRole(t *testing.T) {
 		c.SetParamNames("role", "username")
 		c.SetParamValues("test-role", "test-user")
 
-		err := handler.attachRole(c)
+		err := provider.AttachRole(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusOK)
 		assert.Equal(t, rec.Body.String(), "Role attached successfully.")
@@ -372,7 +372,7 @@ func Test_rbacHandler_attachRole(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/v1/rbac/roles/:role/attach/:username")
 
-		err := handler.attachRole(c)
+		err := provider.AttachRole(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusBadRequest)
 		assert.Equal(t, rec.Body.String(), "Must provide role.")
@@ -386,7 +386,7 @@ func Test_rbacHandler_attachRole(t *testing.T) {
 		c.SetParamNames("role")
 		c.SetParamValues("test-role")
 
-		err := handler.attachRole(c)
+		err := provider.AttachRole(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusBadRequest)
 		assert.Equal(t, rec.Body.String(), "Must provide username.")
@@ -400,15 +400,15 @@ func Test_rbacHandler_attachRole(t *testing.T) {
 		c.SetParamNames("role", "username")
 		c.SetParamValues("error", "error")
 
-		err := handler.attachRole(c)
+		err := provider.AttachRole(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusInternalServerError)
 		assert.Equal(t, rec.Body.String(), "An error occurred while attaching the role.")
 	})
 }
 
-func Test_rbacHandler_detachRole(t *testing.T) {
-	handler := rbacHandler{
+func Test_Provider_detachRole(t *testing.T) {
+	handler := Provider{
 		svc: &mockRBACSvc{},
 	}
 
@@ -428,7 +428,7 @@ func Test_rbacHandler_detachRole(t *testing.T) {
 		c.SetParamNames("role", "username")
 		c.SetParamValues("test-role", "test-user")
 
-		err := handler.detachRole(c)
+		err := handler.DetachRole(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusOK)
 		assert.Equal(t, rec.Body.String(), "Role detached successfully.")
@@ -440,7 +440,7 @@ func Test_rbacHandler_detachRole(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/v1/rbac/roles/:role/attach/:username")
 
-		err := handler.detachRole(c)
+		err := handler.DetachRole(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusBadRequest)
 		assert.Equal(t, rec.Body.String(), "Must provide role.")
@@ -454,7 +454,7 @@ func Test_rbacHandler_detachRole(t *testing.T) {
 		c.SetParamNames("role")
 		c.SetParamValues("test-role")
 
-		err := handler.detachRole(c)
+		err := handler.DetachRole(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusBadRequest)
 		assert.Equal(t, rec.Body.String(), "Must provide username.")
@@ -468,7 +468,7 @@ func Test_rbacHandler_detachRole(t *testing.T) {
 		c.SetParamNames("role", "username")
 		c.SetParamValues("error", "error")
 
-		err := handler.detachRole(c)
+		err := handler.DetachRole(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusInternalServerError)
 		assert.Equal(t, rec.Body.String(), "An error occurred while detaching the role.")
