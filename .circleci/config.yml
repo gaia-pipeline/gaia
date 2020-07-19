@@ -89,6 +89,7 @@ jobs:
           path: gaia-linux-amd64
 
   push_test_image:
+    machine: true
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
       - image: circleci/golang:1.13.8
