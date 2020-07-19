@@ -117,7 +117,7 @@ jobs:
       - run:
           name: Push image to testing repository
           command: |
-            docker build -t gaiapipeline/testing:$CIRCLE_PR_NUMBER-$CIRCLE_BRANCH ./docker -f ./docker/Dockerfile
+            docker build -t gaiapipeline/testing:$CIRCLE_BUILD_NUM-$CIRCLE_BRANCH ./docker -f ./docker/Dockerfile
             echo "$DOCKERHUB_GAIA_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             docker push gaiapipeline/testing:$CIRCLE_BUILD_NUM-$CIRCLE_BRANCH
 
