@@ -130,7 +130,6 @@ workflows:
       - acceptance_tests
       - compile
       - push_test_image:
-        filters:
-          branches:
-            ignore:
-              - master
+          filters:
+              branches:
+                ignore: master
