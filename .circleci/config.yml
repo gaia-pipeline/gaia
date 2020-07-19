@@ -129,8 +129,6 @@ workflows:
       - test_and_coverage
       - acceptance_tests
       - compile
-  push_test_image:
-    jobs:
       - push_test_image:
         filters:
           branches:
