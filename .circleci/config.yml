@@ -88,6 +88,39 @@ jobs:
       - store_artifacts:
           path: gaia-linux-amd64
 
+  push_test_image:
+    working_directory: /go/src/github.com/gaia-pipeline/gaia
+    docker:
+      - image: circleci/golang:1.13.8
+        environment:
+          GO111MODULE: "on"
+    steps:
+      - checkout
+      - run:
+          name: Install nvm, node, and npm
+          command: |
+            wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash
+            echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV
+            touch $HOME/.nvmrc
+            echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV
+      - run:
+          name: Compile frontend and final binary
+          command: |
+            cd frontend
+            nvm install v12.6.0
+            npm cache clean --force
+            cd ..
+            make download
+            make release
+      - store_artifacts:
+          path: gaia-linux-amd64
+      - run:
+          name: Push image to testing repository
+          command: |
+            docker build -t gaiapipeline/testing:$CIRCLE_PR_NUMBER-$CIRCLE_BRANCH ./docker -f ./docker/Dockerfile
+            echo "$DOCKERHUB_GAIA_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            docker push gaiapipeline/testing:$CIRCLE_PR_NUMBER-$CIRCLE_BRANCH
+
 workflows:
   version: 2
   test_and_compile:
@@ -96,3 +129,10 @@ workflows:
       - test_and_coverage
       - acceptance_tests
       - compile
+  push_test_image:
+    jobs:
+      - push_test_image:
+        filters:
+          branches:
+            ignore:
+              - master
