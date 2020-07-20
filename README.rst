@@ -433,4 +433,3 @@ If you have any questions feel free to contact us on `slack`_.
 .. |sh-settings| image:: https://github.com/gaia-pipeline/gaia/blob/master/screenshots/settings.png
     :alt: gaia settings screenshot
     :width: 650px
-
