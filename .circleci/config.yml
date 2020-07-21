@@ -94,14 +94,6 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install Go
-          command: |
-            cd ~
-            wget https://golang.org/dl/go1.13.14.src.tar.gz
-            tar -xvf go1.13.3.linux-amd64.tar.gz
-            sudo mv go /usr/local
-            export GOROOT=/usr/local/go
-      - run:
           name: Install nvm, node, and npm
           command: |
             wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash
