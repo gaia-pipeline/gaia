@@ -87,14 +87,21 @@ jobs:
             make release
       - store_artifacts:
           path: gaia-linux-amd64
+
   push_test_image:
     machine:
-      - image: ubuntu-1604:201903-01
-        environment:
-          GO111MODULE: "on"
+      - image: ubuntu-1604:202007-01
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     steps:
       - checkout
+      - run:
+          name: Install Go
+          command: |
+            apt-get update
+            wget https://golang.org/dl/go1.13.14.src.tar.gz
+            tar -xvf go1.13.3.linux-amd64.tar.gz
+            mv go /usr/local
+            export GOROOT=/usr/local/go
       - run:
           name: Install nvm, node, and npm
           command: |
@@ -105,6 +112,7 @@ jobs:
       - run:
           name: Compile frontend and final binary
           command: |
+            export GO111MODULE="on"
             cd frontend
             nvm install v12.6.0
             npm cache clean --force
