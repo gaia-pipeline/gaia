@@ -89,8 +89,7 @@ jobs:
           path: gaia-linux-amd64
 
   push_test_image:
-    machine:
-      - image: ubuntu-1604:202007-01
+    machine: true
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     steps:
       - checkout
