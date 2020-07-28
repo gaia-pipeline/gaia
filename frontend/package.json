@@ -1,6 +1,6 @@
 {
   "name": "gaia",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Build powerful pipelines in any programming language.",
   "repository": "gaia-pipeline/gaia",
   "homepage": "https://github.com/gaia-pipeline/gaia",
