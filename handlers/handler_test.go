@@ -54,6 +54,7 @@ func TestInitHandler(t *testing.T) {
 		VaultPath: dataDir,
 		HomePath:  dataDir,
 		Mode:      gaia.ModeServer,
+		DevMode:   true,
 	}
 	e := echo.New()
 
