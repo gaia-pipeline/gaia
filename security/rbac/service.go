@@ -3,14 +3,21 @@ package rbac
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
-	"github.com/casbin/casbin/v2/persist"
 	"gopkg.in/yaml.v2"
 
 	"github.com/gaia-pipeline/gaia/helper/assethelper"
 )
+
+// rolePrefix is the prefix we give to the policy lines in the Casbin model for a role.
+//  Roles are saved following this structure:
+//  p, role:myrole, *, get-thing, *, allow
+//  But individual user policies could look like:
+//  p, myuser, *, get-thing, *, allow
+const rolePrefix = "role:"
 
 type (
 	apiMapping struct {
@@ -23,7 +30,8 @@ type (
 		Resource string `json:"resource"`
 	}
 
-	apiLookup         map[string]apiLookupEndpoint
+	// APILookup is a map that can be used for quick lookup of the API endpoints that a secured using RBAC.
+	APILookup         map[string]apiLookupEndpoint
 	apiLookupEndpoint struct {
 		Param   string            `yaml:"param"`
 		Methods map[string]string `yaml:"methods"`
@@ -51,54 +59,36 @@ type (
 	}
 
 	enforcerService struct {
-		adapter       persist.BatchAdapter
 		enforcer      casbin.IEnforcer
-		rbacapiLookup apiLookup
+		rbacAPILookup APILookup
 	}
 )
 
 // NewEnforcerSvc creates a new EnforcerService.
-func NewEnforcerSvc(debug bool, adapter persist.BatchAdapter) (Service, error) {
-	model, err := loadModel()
-	if err != nil {
-		return nil, fmt.Errorf("error loading model: %w", err)
-	}
-
-	enforcer, err := casbin.NewEnforcer(model, adapter)
-	if err != nil {
-		return nil, fmt.Errorf("error instantiating casbin enforcer: %w", err)
-	}
-
-	if debug {
-		enforcer.EnableLog(true)
-	}
-
-	rbacapiMappings, err := loadAPIMappings()
-	if err != nil {
-		return nil, fmt.Errorf("error loading rbac api mappings: %w", err)
-	}
-
+func NewEnforcerSvc(enforcer casbin.IEnforcer, rbacAPILookup APILookup) Service {
 	return &enforcerService{
 		enforcer:      enforcer,
-		rbacapiLookup: rbacapiMappings,
-	}, nil
+		rbacAPILookup: rbacAPILookup,
+	}
 }
 
-func loadModel() (model.Model, error) {
+// LoadModel loads the rbac model string from the assethelper and parses it into a Casbin model.Model.
+func LoadModel() (model.Model, error) {
 	modelStr, err := assethelper.LoadRBACModel()
 	if err != nil {
 		return nil, fmt.Errorf("error loading rbac model from assethelper: %w", err)
 	}
 
-	model, err := model.NewModelFromString(modelStr)
+	m, err := model.NewModelFromString(modelStr)
 	if err != nil {
 		return nil, fmt.Errorf("error creating model from string: %w", err)
 	}
 
-	return model, nil
+	return m, nil
 }
 
-func loadAPIMappings() (apiLookup, error) {
+// LoadAPILookup loads our yaml based RBACApiMappings and transforms them into a quicker lookup map.
+func LoadAPILookup() (APILookup, error) {
 	mappings, err := assethelper.LoadRBACAPIMappings()
 	if err != nil {
 		return nil, fmt.Errorf("error loading loading api mapping from assethelper: %w", err)
@@ -109,7 +99,7 @@ func loadAPIMappings() (apiLookup, error) {
 		return nil, fmt.Errorf("error unmarshalling api mappings yaml: %w", err)
 	}
 
-	endpoints := apiLookup{}
+	endpoints := APILookup{}
 	for mappingPath, mapping := range apiMappings {
 		for _, e := range mapping.Endpoints {
 			path, hasPath := endpoints[e.Path]
@@ -139,8 +129,12 @@ func (e *enforcerService) DeleteRole(role string) error {
 	return nil
 }
 
-// AddRole adds a role.
+// AddRole adds a role into the RBAC model with the name role:myrole'.
 func (e *enforcerService) AddRole(role string, roleRules []RoleRule) error {
+	if !strings.HasPrefix(role, rolePrefix) {
+		return fmt.Errorf("role must be prefixed with '%s'", rolePrefix)
+	}
+
 	rules := [][]string{}
 	for _, p := range roleRules {
 		r := []string{role, p.Namespace, p.Action, p.Resource, p.Effect}
@@ -158,9 +152,16 @@ func (e *enforcerService) AddRole(role string, roleRules []RoleRule) error {
 	return nil
 }
 
-// GetAllRoles gets all roles.
+// GetAllRoles gets all roles. Here we actually call e.enforcer.GetAllSubjects() as roles are defined as subjects of
+// the RBAC model. The e.enforcer.GetAllRoles() only gets roles that have actually been assigned to a user.
 func (e *enforcerService) GetAllRoles() []string {
-	return e.enforcer.GetAllRoles()
+	roles := []string{}
+	for _, sub := range e.enforcer.GetAllSubjects() {
+		if strings.HasPrefix(sub, rolePrefix) {
+			roles = append(roles, sub)
+		}
+	}
+	return roles
 }
 
 // GetUserAttachedRoles gets all roles attached to a specific user.
@@ -183,20 +184,24 @@ func (e *enforcerService) GetRoleAttachedUsers(role string) ([]string, error) {
 
 // AttachRole attaches a role to a user.
 func (e *enforcerService) AttachRole(username string, role string) error {
-	if _, err := e.enforcer.AddRoleForUser(username, role); err != nil {
+	hasRole, err := e.enforcer.AddRoleForUser(username, role)
+	if err != nil {
 		return fmt.Errorf("error attatching role to user: %w", err)
+	}
+	if hasRole {
+		return errors.New("user already has the role attached")
 	}
 	return nil
 }
 
 // DetachRole detaches a role from a user.
 func (e *enforcerService) DetachRole(username string, role string) error {
-	exists, err := e.enforcer.DeleteRoleForUser(username, role)
+	hasRole, err := e.enforcer.DeleteRoleForUser(username, role)
 	if err != nil {
 		return fmt.Errorf("error detatching role from user: %w", err)
 	}
-	if !exists {
-		return errors.New("role does not exists for user")
+	if !hasRole {
+		return errors.New("role not attached to user")
 	}
 	return nil
 }
