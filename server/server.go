@@ -261,9 +261,10 @@ func Start() (err error) {
 
 	rbacService, err := initRBACService(store)
 	if err != nil {
-		gaia.Cfg.Logger.Error("error initializing rbac service", "error", err)
+		gaia.Cfg.Logger.Error("error initializing rbac service", "error", err.Error())
 		return err
 	}
+
 	pipelineProvider := pipelines.NewPipelineProvider(pipelines.Dependencies{
 		Scheduler:       schedulerService,
 		PipelineService: pipelineService,
@@ -373,8 +374,7 @@ func initRBACService(store store.GaiaStore) (rbac.Service, error) {
 	if !gaia.Cfg.RBACEnabled {
 		settings, err := store.SettingsGet()
 		if err != nil {
-			gaia.Cfg.Logger.Error("failed to get settings", "error", err.Error())
-			return nil, err
+			return nil, fmt.Errorf("failed to get store settings: %w", err)
 		}
 
 		if !settings.RBACEnabled {
@@ -399,5 +399,6 @@ func initRBACService(store store.GaiaStore) (rbac.Service, error) {
 	}
 
 	enforcer.EnableLog(gaia.Cfg.RBACDebug)
+
 	return rbac.NewEnforcerSvc(enforcer, apiLookup), nil
 }
