@@ -106,8 +106,8 @@ func (pp *PipelineProvider) GitWebHook(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "unable to open vault: "+err.Error())
 	}
 
-	h, err := parse(c.Request())
 	c.Request().Header.Set("Content-type", "application/json")
+	h, err := parse(c.Request())
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
