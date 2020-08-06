@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"io/ioutil"
+	"log"
 	"strings"
 	"testing"
 
@@ -134,6 +135,7 @@ func TestCreatePipeline(t *testing.T) {
 	defer func() { services.MockStorageService(nil) }()
 	cp := new(gaia.CreatePipeline)
 	cp.Pipeline.Name = "test"
+	cp.Pipeline.ID = 1
 	cp.Pipeline.Type = gaia.PTypeGolang
 	cp.Pipeline.Repo = &gaia.GitRepo{URL: "https://github.com/gaia-pipeline/pipeline-test"}
 	pipelineService := NewGaiaPipelineService(Dependencies{
@@ -141,6 +143,7 @@ func TestCreatePipeline(t *testing.T) {
 	})
 	pipelineService.CreatePipeline(cp)
 	if cp.StatusType != gaia.CreatePipelineSuccess {
+		log.Println("Output: ", cp.Output)
 		t.Fatal("pipeline status was not success. was: ", cp.StatusType)
 	}
 }

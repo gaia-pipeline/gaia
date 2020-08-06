@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	refHead = "refs/heads"
+	refHead          = "refs/heads"
+	secretNamePrefix = "GITHUB_WEBHOOK_SECRET_"
 )
 
 // GitLSRemote get remote branches from a git repo
@@ -240,7 +241,8 @@ func NewGithubClient(httpClient *gohttp.Client, repoMock GithubRepoService) Gith
 	}
 }
 
-func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoService) error {
+func createGithubWebhook(token string, repo *gaia.GitRepo, id string, gitRepo GithubRepoService) error {
+	name := secretNamePrefix + id
 	vault, err := services.DefaultVaultService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("unable to initialize vault: ", "error", err.Error())
@@ -260,10 +262,10 @@ func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoSer
 	tc := oauth2.NewClient(ctx, ts)
 	config := make(map[string]interface{})
 	config["url"] = gaia.Cfg.Hostname + "/api/" + gaia.APIVersion + "/pipeline/githook"
-	secret, err := vault.Get("GITHUB_WEBHOOK_SECRET")
+	secret, err := vault.Get(name)
 	if err != nil {
 		secret = []byte(generateWebhookSecret())
-		vault.Add("GITHUB_WEBHOOK_SECRET", secret)
+		vault.Add(name, secret)
 		err = vault.SaveSecrets()
 		if err != nil {
 			return err
