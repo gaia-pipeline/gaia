@@ -62,7 +62,7 @@ func verifySignature(secret []byte, signature string, body []byte) bool {
 	return hmac.Equal(expected, actual)
 }
 
-func parse(req *http.Request) (Hook, error) {
+func checkHeaders(req *http.Request) (Hook, error) {
 	h := Hook{}
 
 	if h.Signature = req.Header.Get("x-hub-signature"); len(h.Signature) == 0 {
@@ -83,15 +83,7 @@ func parse(req *http.Request) (Hook, error) {
 	if h.ID = req.Header.Get("x-github-delivery"); len(h.ID) == 0 {
 		return Hook{}, errors.New("no event id")
 	}
-
-	body, err := ioutil.ReadAll(req.Body)
-
-	if err != nil {
-		return Hook{}, err
-	}
-
-	h.Payload = body
-	return h, err
+	return h, nil
 }
 
 // GitWebHook handles callbacks from GitHub's webhook system.
@@ -106,8 +98,11 @@ func (pp *PipelineProvider) GitWebHook(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "unable to open vault: "+err.Error())
 	}
 
-	c.Request().Header.Set("Content-type", "application/json")
-	h, err := parse(c.Request())
+	req := c.Request()
+	req.Header.Set("Content-type", "application/json")
+	defer req.Body.Close()
+
+	h, err := checkHeaders(req)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
@@ -116,6 +111,11 @@ func (pp *PipelineProvider) GitWebHook(c echo.Context) error {
 	}
 
 	p := Payload{}
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	h.Payload = body
 	if err := json.Unmarshal(h.Payload, &p); err != nil {
 		return c.String(http.StatusBadRequest, "error in unmarshalling json payload")
 	}
