@@ -145,7 +145,7 @@ func (pp *PipelineProvider) GitWebHook(c echo.Context) error {
 	}
 
 	if !verifySignature(secret, h.Signature, h.Payload) {
-		return errors.New("invalid signature")
+		return c.String(http.StatusBadRequest, "invalid signature")
 	}
 
 	if migrate {
@@ -160,7 +160,7 @@ func (pp *PipelineProvider) GitWebHook(c echo.Context) error {
 	uniqueFolder, err := pipelinehelper.GetLocalDestinationForPipeline(*foundPipeline)
 	if err != nil {
 		gaia.Cfg.Logger.Error("Pipeline type invalid", "type", foundPipeline.Type)
-		return err
+		return c.String(http.StatusInternalServerError, "pipeline type invalid")
 	}
 	foundPipeline.Repo.LocalDest = uniqueFolder
 	err = pp.deps.PipelineService.UpdateRepository(foundPipeline)
