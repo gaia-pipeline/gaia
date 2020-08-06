@@ -119,7 +119,6 @@ func (pp *PipelineProvider) GitWebHook(c echo.Context) error {
 	if err := json.Unmarshal(h.Payload, &p); err != nil {
 		return c.String(http.StatusBadRequest, "error in unmarshalling json payload")
 	}
-
 	var foundPipeline *gaia.Pipeline
 	for _, pipe := range pipeline.GlobalActivePipelines.GetAll() {
 		if pipe.Repo.URL == p.Repo.GitURL || pipe.Repo.URL == p.Repo.HTMLURL || pipe.Repo.URL == p.Repo.SSHURL {
@@ -130,7 +129,6 @@ func (pp *PipelineProvider) GitWebHook(c echo.Context) error {
 	if foundPipeline == nil {
 		return c.String(http.StatusInternalServerError, "pipeline not found")
 	}
-
 	id := strconv.Itoa(foundPipeline.ID)
 	secret, err := vault.Get(gaia.SecretNamePrefix + id)
 	migrate := false
@@ -143,7 +141,6 @@ func (pp *PipelineProvider) GitWebHook(c echo.Context) error {
 		migrate = true
 		err = nil
 	}
-
 	if !verifySignature(secret, h.Signature, h.Payload) {
 		return c.String(http.StatusBadRequest, "invalid signature")
 	}
