@@ -447,7 +447,7 @@ func TestCreateGithubWebhook(t *testing.T) {
 		mock.Owner = "gaia-pipeline"
 		mock.Repo = "gaia"
 
-		err := createGithubWebhook("asdf", &repo, "", mock)
+		err := createGithubWebhook("asdf", &repo, "1", mock)
 		if err != nil {
 			t.Fatal("did not expect error to occur. was: ", err)
 		}
