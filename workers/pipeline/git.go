@@ -148,8 +148,18 @@ func (s *GaiaPipelineService) UpdateRepository(pipe *gaia.Pipeline) error {
 		},
 	}
 	createPipeline.Pipeline = *pipe
-	_ = b.ExecuteBuild(createPipeline)
-	_ = b.CopyBinary(createPipeline)
+	if err := b.ExecuteBuild(createPipeline); err != nil {
+		gaia.Cfg.Logger.Error("error while executing the build", "error", err.Error())
+		return err
+	}
+	if err := b.CopyBinary(createPipeline); err != nil {
+		gaia.Cfg.Logger.Error("error while copying binary to plugin folder", "error", err.Error())
+		return err
+	}
+	if err := b.SavePipeline(pipe); err != nil {
+		gaia.Cfg.Logger.Error("failed to save pipeline", "error", err.Error())
+		return err
+	}
 	gaia.Cfg.Logger.Debug("successfully updated: ", "message", pipe.Name)
 	return nil
 }
