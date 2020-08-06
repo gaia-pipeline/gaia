@@ -12,9 +12,9 @@ type EndpointEnforcer interface {
 	Enforce(username, method, path string, params map[string]string) error
 }
 
-// Enforce uses the echo.Context to enforce RBAC. Uses the apiLookup to apply policies to specific endpoints.
+// Enforce uses the echo.Context to enforce RBAC. Uses the APILookup to apply policies to specific endpoints.
 func (e *enforcerService) Enforce(username, method, path string, params map[string]string) error {
-	group := e.rbacapiLookup
+	group := e.rbacAPILookup
 
 	endpoint, ok := group[path]
 	if !ok {

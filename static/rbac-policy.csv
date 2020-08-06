@@ -5,7 +5,23 @@
 
 p, role:admin, *, *, *, allow
 
-p, role:readonly, *, get, *, allow
+p, role:readonly, pipelines, list-created, *, allow
+p, role:readonly, pipelines, list, *, allow
+p, role:readonly, pipelines, list-latest, *, allow
+p, role:readonly, pipelines, get, *, allow
+p, role:readonly, pipelines:runs, get-latest-run, *, allow
+p, role:readonly, pipelines:runs, get-run, *, allow
+p, role:readonly, pipelines:runs, get-latest, *, allow
+p, role:readonly, pipelines:runs, get-latest-run, *, allow
+p, role:readonly, secrets, list, *, allow
+p, role:readonly, users, list, *, allow
+p, role:readonly, workers, status-list, *, allow
+p, role:readonly, workers, list, *, allow
+p, role:readonly, workers, get-secret, *, allow
+p, role:readonly, workers, get-status, *, allow
+p, role:readonly, settings, get, *, allow
+p, role:readonly, rbac:roles, list, *, allow
+p, role:readonly, rbac:roles, get-attached, *, allow
+p, role:readonly, users, get-roles, *, allow
 
 g, admin, role:admin
-g, readonly, role:readonly

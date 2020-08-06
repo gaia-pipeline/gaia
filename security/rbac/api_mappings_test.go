@@ -247,7 +247,7 @@ func Test_RBACAPIMappings(t *testing.T) {
 		},
 	}
 
-	mappings, _ := loadAPIMappings()
+	mappings, _ := LoadAPILookup()
 
 	for _, tt := range test {
 		t.Run(fmt.Sprintf("test mapping route:%s:%s", tt.method, tt.path), func(t *testing.T) {

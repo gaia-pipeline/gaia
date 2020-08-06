@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/casbin/casbin/v2"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo"
@@ -260,9 +261,10 @@ func Start() (err error) {
 
 	rbacService, err := initRBACService(store)
 	if err != nil {
-		gaia.Cfg.Logger.Error("error initializing rbac service", "error", err)
+		gaia.Cfg.Logger.Error("error initializing rbac service", "error", err.Error())
 		return err
 	}
+
 	pipelineProvider := pipelines.NewPipelineProvider(pipelines.Dependencies{
 		Scheduler:       schedulerService,
 		PipelineService: pipelineService,
@@ -367,11 +369,12 @@ func findExecutablePath() (string, error) {
 }
 
 func initRBACService(store store.GaiaStore) (rbac.Service, error) {
+	gaia.Cfg.Logger.Info(fmt.Sprintf("rbac enabled: %v", gaia.Cfg.RBACEnabled))
+
 	if !gaia.Cfg.RBACEnabled {
 		settings, err := store.SettingsGet()
 		if err != nil {
-			gaia.Cfg.Logger.Error("failed to get settings", "error", err.Error())
-			return nil, err
+			return nil, fmt.Errorf("failed to get store settings: %w", err)
 		}
 
 		if !settings.RBACEnabled {
@@ -380,11 +383,22 @@ func initRBACService(store store.GaiaStore) (rbac.Service, error) {
 		}
 	}
 
-	svc, err := rbac.NewEnforcerSvc(gaia.Cfg.RBACDebug, store.CasbinStore())
+	model, err := rbac.LoadModel()
 	if err != nil {
-		gaia.Cfg.Logger.Error("failed to create new enforcer", "error", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("error loading model: %w", err)
 	}
-	gaia.Cfg.Logger.Info("rbac enabled")
-	return svc, nil
+
+	apiLookup, err := rbac.LoadAPILookup()
+	if err != nil {
+		return nil, fmt.Errorf("error loading rbac api lookup: %w", err)
+	}
+
+	enforcer, err := casbin.NewEnforcer(model, store.CasbinStore())
+	if err != nil {
+		return nil, fmt.Errorf("error instantiating casbin enforcer: %w", err)
+	}
+
+	enforcer.EnableLog(gaia.Cfg.RBACDebug)
+
+	return rbac.NewEnforcerSvc(enforcer, apiLookup), nil
 }

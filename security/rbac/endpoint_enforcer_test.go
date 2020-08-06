@@ -15,7 +15,7 @@ type mockEnforcer struct {
 	casbin.IEnforcer
 }
 
-var mappings = apiLookup{
+var mappings = APILookup{
 	"/api/v1/pipeline/:pipelineid": {
 		Methods: map[string]string{
 			"GET": "pipelines/get",
@@ -45,7 +45,7 @@ func Test_EnforcerService_Enforce_ValidEnforcement(t *testing.T) {
 
 	svc := enforcerService{
 		enforcer:      &mockEnforcer{},
-		rbacapiLookup: mappings,
+		rbacAPILookup: mappings,
 	}
 
 	err := svc.Enforce("admin", "GET", "/api/v1/pipelines/:pipelineid", map[string]string{"pipelineid": "test"})
@@ -62,7 +62,7 @@ func Test_EnforcerService_Enforce_FailedEnforcement(t *testing.T) {
 
 	svc := enforcerService{
 		enforcer:      &mockEnforcer{},
-		rbacapiLookup: mappings,
+		rbacAPILookup: mappings,
 	}
 
 	err := svc.Enforce("failed", "GET", "/api/v1/pipeline/:pipelineid", map[string]string{"pipelineid": "test"})
@@ -79,7 +79,7 @@ func Test_EnforcerService_Enforce_ErrorEnforcement(t *testing.T) {
 
 	svc := enforcerService{
 		enforcer:      &mockEnforcer{},
-		rbacapiLookup: mappings,
+		rbacAPILookup: mappings,
 	}
 
 	err := svc.Enforce("error", "GET", "/api/v1/pipeline/:pipelineid", map[string]string{"pipelineid": "test"})
@@ -96,7 +96,7 @@ func Test_EnforcerService_Enforce_EndpointParamMissing(t *testing.T) {
 
 	svc := enforcerService{
 		enforcer:      &mockEnforcer{},
-		rbacapiLookup: mappings,
+		rbacAPILookup: mappings,
 	}
 
 	err := svc.Enforce("readonly", "GET", "/api/v1/pipeline/:pipelineid", map[string]string{})
