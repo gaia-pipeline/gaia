@@ -133,12 +133,28 @@ func (pp *PipelineProvider) GitWebHook(c echo.Context) error {
 
 	id := strconv.Itoa(foundPipeline.ID)
 	secret, err := vault.Get(gaia.SecretNamePrefix + id)
+	migrate := false
 	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
+		// Backwards compatibility, check if there is a secret using the old name.
+		secret, err = vault.Get(gaia.LegacySecretName)
+		if err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+		migrate = true
+		err = nil
 	}
 
 	if !verifySignature(secret, h.Signature, h.Payload) {
 		return errors.New("invalid signature")
+	}
+
+	if migrate {
+		// Migrate the secret to a new value using the new format after verification of the signature succeeded.
+		// We don't want to migrate an incorrect secret.
+		vault.Add(gaia.SecretNamePrefix+id, secret)
+		if err := vault.SaveSecrets(); err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
 	}
 
 	uniqueFolder, err := pipelinehelper.GetLocalDestinationForPipeline(*foundPipeline)
