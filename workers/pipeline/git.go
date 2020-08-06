@@ -112,14 +112,6 @@ func (s *GaiaPipelineService) UpdateRepository(pipe *gaia.Pipeline) error {
 	}
 
 	tree, _ := r.Worktree()
-	// Clean the worktree. Because of various builds, it can happen that the local folder if polluted.
-	// For example go build tends to edit the go.mod file.
-	if err := tree.Reset(&git.ResetOptions{
-		Mode: git.HardReset,
-	}); err != nil {
-		gaia.Cfg.Logger.Error("failed to reset worktree", "error", err.Error())
-		return err
-	}
 
 	o := &git.PullOptions{
 		ReferenceName: plumbing.ReferenceName(pipe.Repo.SelectedBranch),
@@ -136,14 +128,21 @@ func (s *GaiaPipelineService) UpdateRepository(pipe *gaia.Pipeline) error {
 				return err
 			}
 			o.Auth = auth
-			err = tree.Pull(o)
-			if err != nil {
+			if err := tree.Pull(o); err != nil {
 				return err
 			}
 		} else if strings.Contains(err.Error(), "worktree contains unstaged changes") {
-			// ignore this error, the pull overwrote everything anyways.
-			gaia.Cfg.Logger.Error("worktree contains unstaged changes", "error", err.Error())
-			return err
+			gaia.Cfg.Logger.Error("worktree contains unstaged changes, resetting", "error", err.Error())
+			// Clean the worktree. Because of various builds, it can happen that the local folder if polluted.
+			// For example go build tends to edit the go.mod file.
+			if err := tree.Reset(&git.ResetOptions{
+				Mode: git.HardReset,
+			}); err != nil {
+				gaia.Cfg.Logger.Error("failed to reset worktree", "error", err.Error())
+				return err
+			}
+			// Success, move on.
+			err = nil
 		} else {
 			// It's also an error if the repo is already up to date so we just move on.
 			gaia.Cfg.Logger.Error("error while doing a pull request: ", "error", err.Error())
