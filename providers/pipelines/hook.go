@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo"
@@ -61,7 +62,7 @@ func verifySignature(secret []byte, signature string, body []byte) bool {
 	return hmac.Equal(expected, actual)
 }
 
-func parse(secret []byte, req *http.Request) (Hook, error) {
+func parse(req *http.Request) (Hook, error) {
 	h := Hook{}
 
 	if h.Signature = req.Header.Get("x-hub-signature"); len(h.Signature) == 0 {
@@ -89,10 +90,6 @@ func parse(secret []byte, req *http.Request) (Hook, error) {
 		return Hook{}, err
 	}
 
-	if !verifySignature(secret, h.Signature, body) {
-		return Hook{}, errors.New("Invalid signature")
-	}
-
 	h.Payload = body
 	return h, err
 }
@@ -109,12 +106,7 @@ func (pp *PipelineProvider) GitWebHook(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "unable to open vault: "+err.Error())
 	}
 
-	secret, err := vault.Get("GITHUB_WEBHOOK_SECRET")
-	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-
-	h, err := parse(secret, c.Request())
+	h, err := parse(c.Request())
 	c.Request().Header.Set("Content-type", "application/json")
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
@@ -138,6 +130,17 @@ func (pp *PipelineProvider) GitWebHook(c echo.Context) error {
 	if foundPipeline == nil {
 		return c.String(http.StatusInternalServerError, "pipeline not found")
 	}
+
+	id := strconv.Itoa(foundPipeline.ID)
+	secret, err := vault.Get(gaia.SecretNamePrefix + id)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	if !verifySignature(secret, h.Signature, h.Payload) {
+		return errors.New("invalid signature")
+	}
+
 	uniqueFolder, err := pipelinehelper.GetLocalDestinationForPipeline(*foundPipeline)
 	if err != nil {
 		gaia.Cfg.Logger.Error("Pipeline type invalid", "type", foundPipeline.Type)

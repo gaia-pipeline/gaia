@@ -155,6 +155,9 @@ const (
 
 	// StartReasonScheduled label for pipelines which were triggered automated process, i.e. cron job.
 	StartReasonScheduled = "scheduled"
+
+	// SecretNamePrefix defines the prefix for github secrets for pipelines.
+	SecretNamePrefix = "GITHUB_WEBHOOK_SECRET_"
 )
 
 // JwtExpiry is the default JWT expiry.
