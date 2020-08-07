@@ -138,9 +138,18 @@ func (b *BuildPipelineRuby) ExecuteBuild(p *gaia.CreatePipeline) error {
 		return err
 	}
 
+	// fallback to the old method because we don't have a uuid based gem file.
+	if gemfile == nil {
+		gemfile, err = findGemFileByGlob(localDest, "*.gem")
+		if err != nil {
+			gaia.Cfg.Logger.Error("cannot find final gem file after build", "path", p.Pipeline.Repo.LocalDest)
+			return err
+		}
+	}
+
 	// if we found more or less than one gem file for the given uuid then we have a problem.
 	if len(gemfile) != 1 {
-		gaia.Cfg.Logger.Debug("cannot find gem file in cloned repo", "foundGemFiles", len(gemfile), "gems", gemfile)
+		gaia.Cfg.Logger.Debug("cannot find gem file in cloned repo", "gems", gemfile)
 		return errors.New("cannot find gem file in cloned repo")
 	}
 
@@ -148,8 +157,6 @@ func (b *BuildPipelineRuby) ExecuteBuild(p *gaia.CreatePipeline) error {
 	// This will be used during pipeline verification phase which will happen after this step.
 	p.Pipeline.ExecPath = gemfile[0]
 	b.GemfileName = gemfile[0]
-
-	gaia.Cfg.Logger.Debug("Using the following gemfile as recent artifact", "gem", p.Pipeline.ExecPath)
 	return nil
 }
 
@@ -177,7 +184,6 @@ func filterPathContentBySuffix(path, suffix string) ([]string, error) {
 // returns all files with full path which have the same glob like provided.
 func findGemFileByGlob(path, glob string) ([]string, error) {
 	fullPath := filepath.Join(path, glob)
-	gaia.Cfg.Logger.Debug("Looking for gem files under given path and glob", "glob", fullPath)
 	return filepath.Glob(fullPath)
 }
 
