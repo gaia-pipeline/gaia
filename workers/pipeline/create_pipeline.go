@@ -3,6 +3,7 @@ package pipeline
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -158,7 +159,8 @@ func (s *GaiaPipelineService) CreatePipeline(p *gaia.CreatePipeline) {
 
 	if !gaia.Cfg.Poll && len(gitToken) > 0 {
 		// if there is a githubtoken provided, that means that a webhook was requested to be added.
-		err = createGithubWebhook(gitToken, p.Pipeline.Repo, nil)
+		id := strconv.Itoa(p.Pipeline.ID)
+		err = createGithubWebhook(gitToken, p.Pipeline.Repo, id, nil)
 		if err != nil {
 			gaia.Cfg.Logger.Error("error while creating webhook for repository", "error", err.Error())
 			return
@@ -192,7 +194,7 @@ func ValidatePipelineName(pName string) error {
 
 		// Check if pipeline name is already in use.
 		for _, activePipeline := range GlobalActivePipelines.GetAll() {
-			if strings.ToLower(s) == strings.ToLower(activePipeline.Name) {
+			if strings.EqualFold(s, activePipeline.Name) {
 				return errPipelineNameInUse
 			}
 		}

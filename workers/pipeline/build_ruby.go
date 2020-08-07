@@ -29,7 +29,8 @@ const gemInitFile = "gaia.rb"
 
 // BuildPipelineRuby is the real implementation of BuildPipeline for Ruby
 type BuildPipelineRuby struct {
-	Type gaia.PipelineType
+	Type        gaia.PipelineType
+	GemfileName string
 }
 
 // PrepareEnvironment prepares the environment before we start the build process.
@@ -131,22 +132,31 @@ func (b *BuildPipelineRuby) ExecuteBuild(p *gaia.CreatePipeline) error {
 	}
 
 	// Search for resulting gem file.
-	gemfile, err := filterPathContentBySuffix(localDest, ".gem")
+	gemfile, err := findGemFileByGlob(localDest, uuid+"*.gem")
 	if err != nil {
 		gaia.Cfg.Logger.Error("cannot find final gem file after build", "path", p.Pipeline.Repo.LocalDest)
 		return err
 	}
 
-	// if we found more or less than one gem file then we have a problem.
+	// fallback to the old method because we don't have a uuid based gem file.
+	if gemfile == nil {
+		gemfile, err = findGemFileByGlob(localDest, "*.gem")
+		if err != nil {
+			gaia.Cfg.Logger.Error("cannot find final gem file after build", "path", p.Pipeline.Repo.LocalDest)
+			return err
+		}
+	}
+
+	// if we found more or less than one gem file for the given uuid then we have a problem.
 	if len(gemfile) != 1 {
-		gaia.Cfg.Logger.Debug("cannot find gem file in cloned repo", "foundGemFiles", len(gemfile), "gems", gemfile)
+		gaia.Cfg.Logger.Debug("cannot find gem file in cloned repo", "gems", gemfile)
 		return errors.New("cannot find gem file in cloned repo")
 	}
 
 	// Build has been finished. Set execution path to the build result archive.
 	// This will be used during pipeline verification phase which will happen after this step.
 	p.Pipeline.ExecPath = gemfile[0]
-
+	b.GemfileName = gemfile[0]
 	return nil
 }
 
@@ -170,18 +180,19 @@ func filterPathContentBySuffix(path, suffix string) ([]string, error) {
 	return filteredFiles, nil
 }
 
+// findGemFileByGlob reads the whole directory given by path and
+// returns all files with full path which have the same glob like provided.
+func findGemFileByGlob(path, glob string) ([]string, error) {
+	fullPath := filepath.Join(path, glob)
+	return filepath.Glob(fullPath)
+}
+
 // CopyBinary copies the final compiled binary to the
 // destination folder.
 func (b *BuildPipelineRuby) CopyBinary(p *gaia.CreatePipeline) error {
-	// Search for resulting gem file.
-	gemfile, err := filterPathContentBySuffix(p.Pipeline.Repo.LocalDest, ".gem")
-	if err != nil {
-		gaia.Cfg.Logger.Error("cannot find final gem file during copy", "path", p.Pipeline.Repo.LocalDest)
-		return err
-	}
-
 	// Define src and destination
-	src := gemfile[0]
+	src := b.GemfileName
+	gaia.Cfg.Logger.Debug("Copying over ruby gem file", "gem", src)
 	dest := filepath.Join(gaia.Cfg.PipelinePath, pipelinehelper.AppendTypeToName(p.Pipeline.Name, p.Pipeline.Type))
 
 	// Copy binary

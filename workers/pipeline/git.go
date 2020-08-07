@@ -7,6 +7,7 @@ import (
 	"errors"
 	gohttp "net/http"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -95,6 +96,10 @@ func GitLSRemote(repo *gaia.GitRepo) error {
 // UpdateRepository takes a git type repository and updates
 // it by pulling in new code if it's available.
 func (s *GaiaPipelineService) UpdateRepository(pipe *gaia.Pipeline) error {
+	gaia.Cfg.Logger.Debug("updating repository for pipeline type", "type", pipe.Type)
+	if pipe.Type == gaia.PTypeNodeJS {
+		pipe.Repo.LocalDest = filepath.Join(pipe.Repo.LocalDest, nodeJSInternalCloneFolder)
+	}
 	r, err := git.PlainOpen(pipe.Repo.LocalDest)
 	if err != nil {
 		// We don't stop gaia working because of an automated update failed.
@@ -110,7 +115,9 @@ func (s *GaiaPipelineService) UpdateRepository(pipe *gaia.Pipeline) error {
 		gaia.Cfg.Logger.Error("error getting auth info while doing a pull request: ", "error", err.Error())
 		return err
 	}
+
 	tree, _ := r.Worktree()
+
 	o := &git.PullOptions{
 		ReferenceName: plumbing.ReferenceName(pipe.Repo.SelectedBranch),
 		SingleBranch:  true,
@@ -126,12 +133,20 @@ func (s *GaiaPipelineService) UpdateRepository(pipe *gaia.Pipeline) error {
 				return err
 			}
 			o.Auth = auth
-			err = tree.Pull(o)
-			if err != nil {
+			if err := tree.Pull(o); err != nil {
 				return err
 			}
 		} else if strings.Contains(err.Error(), "worktree contains unstaged changes") {
-			// ignore this error, the pull overwrote everything anyways.
+			gaia.Cfg.Logger.Error("worktree contains unstaged changes, resetting", "error", err.Error())
+			// Clean the worktree. Because of various builds, it can happen that the local folder if polluted.
+			// For example go build tends to edit the go.mod file.
+			if err := tree.Reset(&git.ResetOptions{
+				Mode: git.HardReset,
+			}); err != nil {
+				gaia.Cfg.Logger.Error("failed to reset worktree", "error", err.Error())
+				return err
+			}
+			// Success, move on.
 			err = nil
 		} else {
 			// It's also an error if the repo is already up to date so we just move on.
@@ -142,14 +157,19 @@ func (s *GaiaPipelineService) UpdateRepository(pipe *gaia.Pipeline) error {
 
 	gaia.Cfg.Logger.Debug("updating pipeline: ", "message", pipe.Name)
 	b := newBuildPipeline(pipe.Type)
-	createPipeline := &gaia.CreatePipeline{
-		Pipeline: gaia.Pipeline{
-			Repo: &gaia.GitRepo{},
-		},
+	createPipeline := &gaia.CreatePipeline{Pipeline: *pipe}
+	if err := b.ExecuteBuild(createPipeline); err != nil {
+		gaia.Cfg.Logger.Error("error while executing the build", "error", err.Error())
+		return err
 	}
-	createPipeline.Pipeline = *pipe
-	_ = b.ExecuteBuild(createPipeline)
-	_ = b.CopyBinary(createPipeline)
+	if err := b.SavePipeline(&createPipeline.Pipeline); err != nil {
+		gaia.Cfg.Logger.Error("failed to save pipeline", "error", err.Error())
+		return err
+	}
+	if err := b.CopyBinary(createPipeline); err != nil {
+		gaia.Cfg.Logger.Error("error while copying binary to plugin folder", "error", err.Error())
+		return err
+	}
 	gaia.Cfg.Logger.Debug("successfully updated: ", "message", pipe.Name)
 	return nil
 }
@@ -240,7 +260,8 @@ func NewGithubClient(httpClient *gohttp.Client, repoMock GithubRepoService) Gith
 	}
 }
 
-func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoService) error {
+func createGithubWebhook(token string, repo *gaia.GitRepo, id string, gitRepo GithubRepoService) error {
+	name := gaia.SecretNamePrefix + id
 	vault, err := services.DefaultVaultService()
 	if err != nil {
 		gaia.Cfg.Logger.Error("unable to initialize vault: ", "error", err.Error())
@@ -260,10 +281,10 @@ func createGithubWebhook(token string, repo *gaia.GitRepo, gitRepo GithubRepoSer
 	tc := oauth2.NewClient(ctx, ts)
 	config := make(map[string]interface{})
 	config["url"] = gaia.Cfg.Hostname + "/api/" + gaia.APIVersion + "/pipeline/githook"
-	secret, err := vault.Get("GITHUB_WEBHOOK_SECRET")
+	secret, err := vault.Get(name)
 	if err != nil {
 		secret = []byte(generateWebhookSecret())
-		vault.Add("GITHUB_WEBHOOK_SECRET", secret)
+		vault.Add(name, secret)
 		err = vault.SaveSecrets()
 		if err != nil {
 			return err

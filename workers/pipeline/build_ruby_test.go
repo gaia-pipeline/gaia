@@ -150,6 +150,7 @@ func TestCopyBinaryRuby(t *testing.T) {
 	p.Pipeline.Type = gaia.PTypeRuby
 	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: tmp}
 	src := filepath.Join(tmp, "test.gem")
+	b.GemfileName = src
 	dst := pipelinehelper.AppendTypeToName(p.Pipeline.Name, p.Pipeline.Type)
 	f, _ := os.Create(src)
 	defer f.Close()
@@ -184,6 +185,7 @@ func TestCopyBinarySrcDoesNotExistRuby(t *testing.T) {
 	p.Pipeline.Name = "main"
 	p.Pipeline.Type = gaia.PTypeRuby
 	p.Pipeline.Repo = &gaia.GitRepo{LocalDest: "/noneexistent"}
+	b.GemfileName = "/noneexistent"
 	err := b.CopyBinary(p)
 	if err == nil {
 		t.Fatal("error was expected when copying binary but none occurred ")

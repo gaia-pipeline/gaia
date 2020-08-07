@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo"
@@ -61,7 +62,7 @@ func verifySignature(secret []byte, signature string, body []byte) bool {
 	return hmac.Equal(expected, actual)
 }
 
-func parse(secret []byte, req *http.Request) (Hook, error) {
+func checkHeaders(req *http.Request) (Hook, error) {
 	h := Hook{}
 
 	if h.Signature = req.Header.Get("x-hub-signature"); len(h.Signature) == 0 {
@@ -82,19 +83,7 @@ func parse(secret []byte, req *http.Request) (Hook, error) {
 	if h.ID = req.Header.Get("x-github-delivery"); len(h.ID) == 0 {
 		return Hook{}, errors.New("no event id")
 	}
-
-	body, err := ioutil.ReadAll(req.Body)
-
-	if err != nil {
-		return Hook{}, err
-	}
-
-	if !verifySignature(secret, h.Signature, body) {
-		return Hook{}, errors.New("Invalid signature")
-	}
-
-	h.Payload = body
-	return h, err
+	return h, nil
 }
 
 // GitWebHook handles callbacks from GitHub's webhook system.
@@ -109,13 +98,11 @@ func (pp *PipelineProvider) GitWebHook(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "unable to open vault: "+err.Error())
 	}
 
-	secret, err := vault.Get("GITHUB_WEBHOOK_SECRET")
-	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
-	}
+	req := c.Request()
+	req.Header.Set("Content-type", "application/json")
+	defer req.Body.Close()
 
-	h, err := parse(secret, c.Request())
-	c.Request().Header.Set("Content-type", "application/json")
+	h, err := checkHeaders(req)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
@@ -124,10 +111,14 @@ func (pp *PipelineProvider) GitWebHook(c echo.Context) error {
 	}
 
 	p := Payload{}
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	h.Payload = body
 	if err := json.Unmarshal(h.Payload, &p); err != nil {
 		return c.String(http.StatusBadRequest, "error in unmarshalling json payload")
 	}
-
 	var foundPipeline *gaia.Pipeline
 	for _, pipe := range pipeline.GlobalActivePipelines.GetAll() {
 		if pipe.Repo.URL == p.Repo.GitURL || pipe.Repo.URL == p.Repo.HTMLURL || pipe.Repo.URL == p.Repo.SSHURL {
@@ -138,10 +129,35 @@ func (pp *PipelineProvider) GitWebHook(c echo.Context) error {
 	if foundPipeline == nil {
 		return c.String(http.StatusInternalServerError, "pipeline not found")
 	}
+	id := strconv.Itoa(foundPipeline.ID)
+	secret, err := vault.Get(gaia.SecretNamePrefix + id)
+	migrate := false
+	if err != nil {
+		// Backwards compatibility, check if there is a secret using the old name.
+		secret, err = vault.Get(gaia.LegacySecretName)
+		if err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+		migrate = true
+		err = nil
+	}
+	if !verifySignature(secret, h.Signature, h.Payload) {
+		return c.String(http.StatusBadRequest, "invalid signature")
+	}
+
+	if migrate {
+		// Migrate the secret to a new value using the new format after verification of the signature succeeded.
+		// We don't want to migrate an incorrect secret.
+		vault.Add(gaia.SecretNamePrefix+id, secret)
+		if err := vault.SaveSecrets(); err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+	}
+
 	uniqueFolder, err := pipelinehelper.GetLocalDestinationForPipeline(*foundPipeline)
 	if err != nil {
 		gaia.Cfg.Logger.Error("Pipeline type invalid", "type", foundPipeline.Type)
-		return err
+		return c.String(http.StatusInternalServerError, "pipeline type invalid")
 	}
 	foundPipeline.Repo.LocalDest = uniqueFolder
 	err = pp.deps.PipelineService.UpdateRepository(foundPipeline)
