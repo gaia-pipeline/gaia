@@ -1,5 +1,155 @@
 basePath: /api/v1
 definitions:
+  gaia.Argument:
+    properties:
+      desc:
+        type: string
+      key:
+        type: string
+      type:
+        type: string
+      value:
+        type: string
+    type: object
+  gaia.CreatePipeline:
+    properties:
+      created:
+        type: string
+      githubtoken:
+        type: string
+      id:
+        type: string
+      output:
+        type: string
+      pipeline:
+        $ref: '#/definitions/gaia.Pipeline'
+        type: object
+      status:
+        type: integer
+      statustype:
+        type: string
+    type: object
+  gaia.GitRepo:
+    properties:
+      branches:
+        items:
+          type: string
+        type: array
+      password:
+        type: string
+      privatekey:
+        $ref: '#/definitions/gaia.PrivateKey'
+        type: object
+      selectedbranch:
+        type: string
+      url:
+        type: string
+      user:
+        type: string
+    type: object
+  gaia.Job:
+    properties:
+      args:
+        items:
+          $ref: '#/definitions/gaia.Argument'
+        type: array
+      dependson:
+        items:
+          $ref: '#/definitions/gaia.Job'
+        type: array
+      desc:
+        type: string
+      failpipeline:
+        type: boolean
+      id:
+        type: integer
+      status:
+        type: string
+      title:
+        type: string
+    type: object
+  gaia.Pipeline:
+    properties:
+      created:
+        type: string
+      docker:
+        type: boolean
+      execpath:
+        type: string
+      id:
+        type: integer
+      jobs:
+        items:
+          $ref: '#/definitions/gaia.Job'
+        type: array
+      name:
+        type: string
+      notvalid:
+        type: boolean
+      periodicschedules:
+        items:
+          type: string
+        type: array
+      repo:
+        $ref: '#/definitions/gaia.GitRepo'
+        type: object
+      sha256sum:
+        items:
+          type: integer
+        type: array
+      tags:
+        items:
+          type: string
+        type: array
+      trigger_token:
+        type: string
+      type:
+        type: string
+      uuid:
+        type: string
+    type: object
+  gaia.PipelineRun:
+    properties:
+      docker:
+        type: boolean
+      dockerworkerid:
+        type: string
+      finishdate:
+        type: string
+      id:
+        type: integer
+      jobs:
+        items:
+          $ref: '#/definitions/gaia.Job'
+        type: array
+      pipelineid:
+        type: integer
+      pipelinetags:
+        items:
+          type: string
+        type: array
+      pipelinetype:
+        type: string
+      scheduledate:
+        type: string
+      startdate:
+        type: string
+      started_reason:
+        type: string
+      status:
+        type: string
+      uniqueid:
+        type: string
+    type: object
+  gaia.PrivateKey:
+    properties:
+      key:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
   gaia.User:
     properties:
       display_name:
@@ -29,6 +179,30 @@ definitions:
         type: array
       username:
         type: string
+    type: object
+  pipelines.Payload:
+    properties:
+      repository:
+        $ref: '#/definitions/pipelines.Repository'
+        type: object
+    type: object
+  pipelines.Repository:
+    properties:
+      git_url:
+        type: string
+      html_url:
+        type: string
+      ssh_url:
+        type: string
+    type: object
+  pipelines.getAllWithLatestRun:
+    properties:
+      p:
+        $ref: '#/definitions/gaia.Pipeline'
+        type: object
+      r:
+        $ref: '#/definitions/gaia.PipelineRun'
+        type: object
     type: object
   user.changePasswordRequest:
     properties:
@@ -74,18 +248,416 @@ paths:
           schema:
             $ref: '#/definitions/gaia.User'
         "400":
-          description: Bad Request
+          description: error reading json
           schema:
             type: string
         "403":
-          description: Forbidden
+          description: credentials provided
           schema:
             type: string
         "500":
-          description: Internal Server Error
+          description: '{creating jwt token|signing jwt token}'
           schema:
             type: string
       summary: User Login
+      tags:
+      - users
+  /pipeline:
+    post:
+      consumes:
+      - application/json
+      description: Starts creating a pipeline given all the data asynchronously.
+      parameters:
+      - description: Create pipeline details
+        in: body
+        name: CreatePipelineRequest
+        required: true
+        schema:
+          $ref: '#/definitions/gaia.CreatePipeline'
+      produces:
+      - text/plain
+      responses:
+        "200": {}
+        "400":
+          description: Failed to bind, validation error and invalid details
+          schema:
+            type: string
+        "500":
+          description: Internal error while saving create pipeline run
+          schema:
+            type: string
+      summary: Create pipeline.
+      tags:
+      - pipelines
+  /pipeline/{pipelineid}:
+    delete:
+      consumes:
+      - text/plain
+      description: Accepts a pipeline id and deletes it from the store. It also removes
+        the binary inside the pipeline folder.
+      parameters:
+      - description: The ID of the pipeline.
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Pipeline has been deleted
+          schema:
+            type: string
+        "400":
+          description: Error while deleting the pipeline
+          schema:
+            type: string
+        "404":
+          description: The pipeline with the given ID was not found
+          schema:
+            type: string
+        "500":
+          description: Internal error while deleting and removing the pipeline from
+            store and disk
+          schema:
+            type: string
+      summary: Delete a pipeline.
+      tags:
+      - pipelines
+    get:
+      consumes:
+      - text/plain
+      description: Get pipeline information based on ID.
+      parameters:
+      - description: The ID of the pipeline
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gaia.Pipeline'
+        "400":
+          description: The given pipeline id is not valid
+          schema:
+            type: string
+        "404":
+          description: Pipeline not found with the given id
+          schema:
+            type: string
+      summary: Get pipeline information.
+      tags:
+      - pipelines
+    put:
+      consumes:
+      - application/json
+      description: Update a pipeline by its ID.
+      parameters:
+      - description: PipelineUpdate request
+        in: body
+        name: PipelineUpdateRequest
+        required: true
+        schema:
+          $ref: '#/definitions/gaia.Pipeline'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Pipeline has been updated
+          schema:
+            type: string
+        "400":
+          description: Error while updating the pipeline
+          schema:
+            type: string
+        "404":
+          description: The pipeline with the given ID was not found
+          schema:
+            type: string
+        "500":
+          description: Internal error while updating and building the new pipeline
+            information
+          schema:
+            type: string
+      summary: Update pipeline.
+      tags:
+      - pipelines
+  /pipeline/{pipelineid}/{pipelinetoken}/trigger:
+    post:
+      consumes:
+      - text/plain
+      description: Using a trigger token, start a pipeline run. This endpoint does
+        not require authentication.
+      parameters:
+      - description: The ID of the pipeline.
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      - description: The trigger token for this pipeline.
+        in: query
+        name: pipelinetoken
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: 'Trigger successful for pipeline: {pipelinename}'
+          schema:
+            type: string
+        "400":
+          description: Error while triggering pipeline
+          schema:
+            type: string
+        "403":
+          description: Invalid trigger token
+          schema:
+            type: string
+      security:
+      - "": []
+      summary: Trigger a pipeline.
+      tags:
+      - pipelines
+  /pipeline/{pipelineid}/pull:
+    post:
+      consumes:
+      - text/plain
+      description: Pull new code using the repository of the pipeline.
+      parameters:
+      - description: The ID of the pipeline.
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200": {}
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Update the underlying repository of the pipeline.
+      tags:
+      - pipelines
+  /pipeline/{pipelineid}/reset-trigger-token:
+    put:
+      consumes:
+      - text/plain
+      description: Generates a new remote trigger token for a given pipeline.
+      parameters:
+      - description: The ID of the pipeline.
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: 'Trigger successful for pipeline: {pipelinename}'
+          schema:
+            type: string
+        "400":
+          description: Invalid pipeline id
+          schema:
+            type: string
+        "404":
+          description: Pipeline not found
+          schema:
+            type: string
+        "500":
+          description: Internal storage error
+          schema:
+            type: string
+      summary: Reset trigger token.
+      tags:
+      - pipelines
+  /pipeline/{pipelineid}/start:
+    post:
+      consumes:
+      - application/json
+      description: Starts a pipeline with a given ID and arguments for that pipeline
+        and returns created/scheduled status.
+      parameters:
+      - description: The ID of the pipeline.
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      - description: Optional arguments of the pipeline.
+        in: body
+        name: args
+        schema:
+          $ref: '#/definitions/gaia.Argument'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gaia.PipelineRun'
+        "400":
+          description: 'Various failures regarding starting the pipeline like: invalid
+            id, invalid docker value and schedule errors'
+          schema:
+            type: string
+        "404":
+          description: Pipeline not found
+          schema:
+            type: string
+      summary: Start a pipeline.
+      tags:
+      - pipelines
+  /pipeline/created:
+    get:
+      description: Get a list of all pipelines which are about to be compiled and
+        which have been compiled.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/gaia.CreatePipeline'
+            type: array
+        "500":
+          description: Internal error while retrieving create pipeline data.
+          schema:
+            type: string
+      summary: Get all create pipelines.
+      tags:
+      - pipelines
+  /pipeline/githook:
+    post:
+      consumes:
+      - application/json
+      description: This is the global endpoint which will handle all github webhook
+        callbacks.
+      parameters:
+      - description: A github webhook payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/pipelines.Payload'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: successfully processed event
+          schema:
+            type: string
+        "400":
+          description: Bind error and schedule errors
+          schema:
+            type: string
+        "500":
+          description: Various internal errors running and triggering and rebuilding
+            pipelines. Please check the logs for more information.
+          schema:
+            type: string
+      summary: Handle github webhook callbacks.
+      tags:
+      - pipelines
+  /pipeline/gitlsremote:
+    post:
+      consumes:
+      - application/json
+      description: Checks for available git remote branches which in turn verifies
+        repository access.
+      parameters:
+      - description: The repository details
+        in: body
+        name: PipelineGitLSRemoteRequest
+        required: true
+        schema:
+          $ref: '#/definitions/gaia.GitRepo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Available branches
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Failed to bind body
+          schema:
+            type: string
+        "403":
+          description: No access
+          schema:
+            type: string
+      summary: Check for repository access.
+      tags:
+      - pipelines
+  /pipeline/latest:
+    get:
+      description: Returns the latest of all registered pipelines included with the
+        latest run.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pipelines.getAllWithLatestRun'
+        "500":
+          description: Internal error while getting latest run
+          schema:
+            type: string
+      summary: Returns the latest run.
+      tags:
+      - pipelines
+  /pipeline/name:
+    get:
+      description: Returns all registered pipelines.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/gaia.Pipeline'
+            type: array
+      summary: Returns all registered pipelines.
+      tags:
+      - pipelines
+  /pipeline/periodicschedules:
+    post:
+      consumes:
+      - application/json
+      description: Returns the latest of all registered pipelines included with the
+        latest run.
+      parameters:
+      - description: A list of valid cronjob specs
+        in: body
+        name: schedules
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200": {}
+        "400":
+          description: Bind error and schedule errors
+          schema:
+            type: string
+      summary: Returns the latest run.
+      tags:
+      - pipelines
   /user:
     post:
       consumes:
@@ -102,20 +674,22 @@ paths:
       - text/plain
       responses:
         "200":
-          description: OK
+          description: User has been added
           schema:
             type: string
         "400":
-          description: Bad Request
+          description: Invalid parameters given for add user request
           schema:
             type: string
         "500":
-          description: Internal Server Error
+          description: '{User put failed|User permission put error}'
           schema:
             type: string
       summary: Add user.
-  /user/:username/delete:
-    put:
+      tags:
+      - users
+  /user/{username}/delete:
+    delete:
       consumes:
       - text/plain
       description: Delete a given user.
@@ -133,16 +707,18 @@ paths:
           schema:
             type: string
         "400":
-          description: Bad Request
+          description: '{Invalid username given|Auto user cannot be deleted}'
           schema:
             type: string
         "404":
-          description: Not Found
+          description: '{User not found|Permission not found|Rbac not found}'
           schema:
             type: string
       summary: Delete user.
-  /user/:username/permissions:
-    post:
+      tags:
+      - users
+  /user/{username}/permissions:
+    get:
       consumes:
       - text/plain
       description: Get permissions of the user.
@@ -158,12 +734,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/gaia.User'
+            $ref: '#/definitions/gaia.UserPermission'
         "400":
-          description: Bad Request
+          description: Failed to get permission
           schema:
             type: string
       summary: Get permission of the user.
+      tags:
+      - users
     put:
       consumes:
       - application/json
@@ -178,15 +756,17 @@ paths:
       - text/plain
       responses:
         "200":
-          description: OK
+          description: Permissions have been updated
           schema:
-            $ref: '#/definitions/gaia.UserPermission'
+            type: string
         "400":
-          description: Bad Request
+          description: '{Invalid parameters given for request|Permissions put failed}'
           schema:
             type: string
       summary: Adds or updates permissions for a user.
-  /user/:username/reset-trigger-token:
+      tags:
+      - users
+  /user/{username}/reset-trigger-token:
     put:
       consumes:
       - text/plain
@@ -205,7 +785,8 @@ paths:
           schema:
             type: string
         "400":
-          description: Bad Request
+          description: '{Invalid username given|Only auto user can have a token reset|User
+            not found|Error retrieving user}'
           schema:
             type: string
         "500":
@@ -213,6 +794,8 @@ paths:
           schema:
             type: string
       summary: Generate new remote trigger token.
+      tags:
+      - users
   /user/password:
     post:
       consumes:
@@ -233,7 +816,9 @@ paths:
           schema:
             type: string
         "400":
-          description: Bad Request
+          description: '{Invalid parameters given for password change request|Cannot
+            find user with the given username|New password does not match new password
+            confirmation}'
           schema:
             type: string
         "412":
@@ -245,6 +830,8 @@ paths:
           schema:
             type: string
       summary: Change password for user.
+      tags:
+      - users
   /users:
     get:
       consumes:
@@ -266,6 +853,8 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get all users
+      tags:
+      - users
 securityDefinitions:
   ApiKeyAuth:
     in: header
