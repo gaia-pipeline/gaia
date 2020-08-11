@@ -66,6 +66,90 @@
                 }
             }
         },
+        "/user/:username/reset-trigger-token": {
+            "put": {
+                "description": "Generates and saves a new remote trigger token for a given user.",
+                "consumes": [
+                    "text/plain"
+                ],
+                "summary": "Generate new remote trigger token.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The username to reset the token for",
+                        "name": "username",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/password": {
+            "post": {
+                "description": "Changes the password of the given user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "summary": "Change password for user.",
+                "parameters": [
+                    {
+                        "description": "UserChangePassword request",
+                        "name": "UserChangePasswordRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.changePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "412": {
+                        "description": "Precondition Failed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "security": [
@@ -121,6 +205,23 @@
                     "type": "string"
                 },
                 "trigger_token": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "user.changePasswordRequest": {
+            "type": "object",
+            "properties": {
+                "newpassword": {
+                    "type": "string"
+                },
+                "newpasswordconf": {
+                    "type": "string"
+                },
+                "oldpassword": {
                     "type": "string"
                 },
                 "username": {

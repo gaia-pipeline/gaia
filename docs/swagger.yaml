@@ -17,6 +17,17 @@ definitions:
       username:
         type: string
     type: object
+  user.changePasswordRequest:
+    properties:
+      newpassword:
+        type: string
+      newpasswordconf:
+        type: string
+      oldpassword:
+        type: string
+      username:
+        type: string
+    type: object
 host: gaia-pipeline.io
 info:
   contact:
@@ -62,6 +73,61 @@ paths:
           schema:
             type: string
       summary: User Login
+  /user/:username/reset-trigger-token:
+    put:
+      consumes:
+      - text/plain
+      description: Generates and saves a new remote trigger token for a given user.
+      parameters:
+      - description: The username to reset the token for
+        in: query
+        name: username
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Generate new remote trigger token.
+  /user/password:
+    post:
+      consumes:
+      - application/json
+      description: Changes the password of the given user.
+      parameters:
+      - description: UserChangePassword request
+        in: body
+        name: UserChangePasswordRequest
+        required: true
+        schema:
+          $ref: '#/definitions/user.changePasswordRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "412":
+          description: Precondition Failed
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Change password for user.
   /users:
     get:
       consumes:

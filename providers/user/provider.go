@@ -26,8 +26,6 @@ func NewProvider(store store.GaiaStore, RBACSvc rbac.Service) *Provider {
 	return &Provider{Store: store, RBACSvc: RBACSvc}
 }
 
-// UserLogin authenticates the user with
-// the given credentials.
 // UserLogin authenticates the user with the given credentials.
 // @Summary User Login
 // @Description Returns an authenticated user.
@@ -122,6 +120,17 @@ type changePasswordRequest struct {
 }
 
 // UserChangePassword changes the password from a user.
+// @Summary Change password for user.
+// @Description Changes the password of the given user.
+// @Accept json
+// @Param UserChangePasswordRequest body changePasswordRequest true "UserChangePassword request"
+// @Success 200 {string} string Password has been changed
+// @Failure 400 {string} string Invalid parameters given for password change request
+// @Failure 400 {string} string Cannot find user with the given username
+// @Failure 400 {string} string New password does not match new password confirmation
+// @Failure 412 {string} string Wrong password given for password change
+// @Failure 500 {string} string Cannot update user in store
+// @Router /user/password [post]
 func (h *Provider) UserChangePassword(c echo.Context) error {
 	// Get required parameters
 	r := &changePasswordRequest{}
@@ -159,6 +168,17 @@ func (h *Provider) UserChangePassword(c echo.Context) error {
 
 // UserResetTriggerToken will generate and save a new Remote trigger token
 // for a given user.
+// @Summary Generate new remote trigger token.
+// @Description Generates and saves a new remote trigger token for a given user.
+// @Accept plain
+// @Param username query string true "The username to reset the token for"
+// @Success 200 {string} string Token reset
+// @Failure 400 {string} string Invalid username given
+// @Failure 400 {string} string Only auto user can have a token reset
+// @Failure 400 {string} string User not found
+// @Failure 400 {string} string Error retrieving user
+// @Failure 500 {string} string Error while saving user
+// @Router /user/:username/reset-trigger-token [put]
 func (h *Provider) UserResetTriggerToken(c echo.Context) error {
 	username := c.Param("username")
 	if username == "" {
