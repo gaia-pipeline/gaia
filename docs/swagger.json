@@ -66,10 +66,165 @@
                 }
             }
         },
+        "/user": {
+            "post": {
+                "description": "Adds a new user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "summary": "Add user.",
+                "parameters": [
+                    {
+                        "description": "UserAdd request",
+                        "name": "UserAddRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/gaia.User"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/:username/delete": {
+            "put": {
+                "description": "Delete a given user.",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "summary": "Delete user.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The username to delete",
+                        "name": "username",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/:username/permissions": {
+            "put": {
+                "description": "Adds or updates permissions for a user..",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "summary": "Adds or updates permissions for a user.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The username to get permission for",
+                        "name": "username",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gaia.UserPermission"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Get permissions of the user.",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get permission of the user.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The username to get permission for",
+                        "name": "username",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gaia.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/user/:username/reset-trigger-token": {
             "put": {
                 "description": "Generates and saves a new remote trigger token for a given user.",
                 "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
                     "text/plain"
                 ],
                 "summary": "Generate new remote trigger token.",
@@ -109,6 +264,9 @@
                 "description": "Changes the password of the given user.",
                 "consumes": [
                     "application/json"
+                ],
+                "produces": [
+                    "text/plain"
                 ],
                 "summary": "Change password for user.",
                 "parameters": [
@@ -206,6 +364,26 @@
                 },
                 "trigger_token": {
                     "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "gaia.UserPermission": {
+            "type": "object",
+            "properties": {
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "username": {
                     "type": "string"

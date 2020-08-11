@@ -123,6 +123,7 @@ type changePasswordRequest struct {
 // @Summary Change password for user.
 // @Description Changes the password of the given user.
 // @Accept json
+// @Produce plain
 // @Param UserChangePasswordRequest body changePasswordRequest true "UserChangePassword request"
 // @Success 200 {string} string Password has been changed
 // @Failure 400 {string} string Invalid parameters given for password change request
@@ -171,6 +172,7 @@ func (h *Provider) UserChangePassword(c echo.Context) error {
 // @Summary Generate new remote trigger token.
 // @Description Generates and saves a new remote trigger token for a given user.
 // @Accept plain
+// @Produce plain
 // @Param username query string true "The username to reset the token for"
 // @Success 200 {string} string Token reset
 // @Failure 400 {string} string Invalid username given
@@ -206,6 +208,18 @@ func (h *Provider) UserResetTriggerToken(c echo.Context) error {
 }
 
 // UserDelete deletes the given user
+// @Summary Delete user.
+// @Description Delete a given user.
+// @Accept plain
+// @Produce plain
+// @Param username query string true "The username to delete"
+// @Success 200 {string} string User has been deleted
+// @Failure 400 {string} string Invalid username given
+// @Failure 400 {string} string Auto user cannot be deleted
+// @Failure 404 {string} string User not found
+// @Failure 404 {string} string Permission not found
+// @Failure 404 {string} string Rbac not found
+// @Router /user/:username/delete [put]
 func (h *Provider) UserDelete(c echo.Context) error {
 	username := c.Param("username")
 
@@ -233,6 +247,16 @@ func (h *Provider) UserDelete(c echo.Context) error {
 }
 
 // UserAdd adds a new user to the store.
+// @Summary Add user.
+// @Description Adds a new user.
+// @Accept json
+// @Produce plain
+// @Param UserAddRequest body gaia.User true "UserAdd request"
+// @Success 200 {string} string User has been added
+// @Failure 400 {string} string Invalid parameters given for add user request
+// @Failure 500 {string} string User put failed
+// @Failure 500 {string} string User permission put error
+// @Router /user [post]
 func (h *Provider) UserAdd(c echo.Context) error {
 	// Get user information required for add
 	u := &gaia.User{}
@@ -262,6 +286,14 @@ func (h *Provider) UserAdd(c echo.Context) error {
 }
 
 // UserGetPermissions returns the permissions for a user.
+// @Summary Get permission of the user.
+// @Description Get permissions of the user.
+// @Accept plain
+// @Produce json
+// @Param username query string true "The username to get permission for"
+// @Success 200 {object} gaia.User
+// @Failure 400 {string} string Failed to get permission
+// @Router /user/:username/permissions [post]
 func (h *Provider) UserGetPermissions(c echo.Context) error {
 	u := c.Param("username")
 
@@ -274,6 +306,15 @@ func (h *Provider) UserGetPermissions(c echo.Context) error {
 }
 
 // UserPutPermissions adds or updates permissions for a user.
+// @Summary Adds or updates permissions for a user.
+// @Description Adds or updates permissions for a user..
+// @Accept json
+// @Produce plain
+// @Param username query string true "The username to get permission for"
+// @Success 200 {object} gaia.UserPermission
+// @Failure 400 {string} string Invalid parameters given for request
+// @Failure 400 {string} string Permissions put failed
+// @Router /user/:username/permissions [put]
 func (h *Provider) UserPutPermissions(c echo.Context) error {
 	var perms *gaia.UserPermission
 	if err := c.Bind(&perms); err != nil {

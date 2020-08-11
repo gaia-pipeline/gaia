@@ -17,6 +17,19 @@ definitions:
       username:
         type: string
     type: object
+  gaia.UserPermission:
+    properties:
+      groups:
+        items:
+          type: string
+        type: array
+      roles:
+        items:
+          type: string
+        type: array
+      username:
+        type: string
+    type: object
   user.changePasswordRequest:
     properties:
       newpassword:
@@ -73,6 +86,106 @@ paths:
           schema:
             type: string
       summary: User Login
+  /user:
+    post:
+      consumes:
+      - application/json
+      description: Adds a new user.
+      parameters:
+      - description: UserAdd request
+        in: body
+        name: UserAddRequest
+        required: true
+        schema:
+          $ref: '#/definitions/gaia.User'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Add user.
+  /user/:username/delete:
+    put:
+      consumes:
+      - text/plain
+      description: Delete a given user.
+      parameters:
+      - description: The username to delete
+        in: query
+        name: username
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Delete user.
+  /user/:username/permissions:
+    post:
+      consumes:
+      - text/plain
+      description: Get permissions of the user.
+      parameters:
+      - description: The username to get permission for
+        in: query
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gaia.User'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Get permission of the user.
+    put:
+      consumes:
+      - application/json
+      description: Adds or updates permissions for a user..
+      parameters:
+      - description: The username to get permission for
+        in: query
+        name: username
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gaia.UserPermission'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Adds or updates permissions for a user.
   /user/:username/reset-trigger-token:
     put:
       consumes:
@@ -84,6 +197,8 @@ paths:
         name: username
         required: true
         type: string
+      produces:
+      - text/plain
       responses:
         "200":
           description: OK
@@ -110,6 +225,8 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/user.changePasswordRequest'
+      produces:
+      - text/plain
       responses:
         "200":
           description: OK
