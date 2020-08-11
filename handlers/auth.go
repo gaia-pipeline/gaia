@@ -23,7 +23,6 @@ var (
 func authMiddleware(authCfg *AuthConfig) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			gaia.Cfg.Logger.Debug("In the auth middleware.")
 			token, err := getToken(c)
 			if err != nil {
 				return c.String(http.StatusUnauthorized, err.Error())
