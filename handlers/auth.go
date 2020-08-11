@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/rolehelper"
@@ -23,6 +23,7 @@ var (
 func authMiddleware(authCfg *AuthConfig) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			gaia.Cfg.Logger.Debug("In the auth middleware.")
 			token, err := getToken(c)
 			if err != nil {
 				return c.String(http.StatusUnauthorized, err.Error())

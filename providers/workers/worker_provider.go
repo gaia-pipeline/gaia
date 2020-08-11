@@ -1,7 +1,7 @@
 package workers
 
 import (
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/gaia-pipeline/gaia/security"
 	"github.com/gaia-pipeline/gaia/workers/scheduler/service"

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/rolehelper"
@@ -28,6 +28,18 @@ func NewProvider(store store.GaiaStore, RBACSvc rbac.Service) *Provider {
 
 // UserLogin authenticates the user with
 // the given credentials.
+// UserLogin authenticates the user with the given credentials.
+// @Summary User Login
+// @Description Returns an authenticated user.
+// @Accept json
+// @Produce json
+// @Param UserLoginRequest body gaia.User true "UserLogin request"
+// @Success 200 {object} gaia.User
+// @Failure 400 {string} string error reading json
+// @Failure 403 {string} string credentials provided
+// @Failure 500 {string} string creating jwt token
+// @Failure 500 {string} string signing jwt token
+// @Router /login [post]
 func (h *Provider) UserLogin(c echo.Context) error {
 	u := &gaia.User{}
 	if err := c.Bind(u); err != nil {
@@ -84,6 +96,14 @@ func (h *Provider) UserLogin(c echo.Context) error {
 }
 
 // UserGetAll returns all users stored in store.
+// @Summary Get all users
+// @Description Returns a list of registered users.
+// @Accept json
+// @Produce json
+// @Success 200 {array} gaia.User
+// @Security ApiKeyAuth
+// @Failure 500 {string} string Unable to connect to database.
+// @Router /users [get]
 func (h *Provider) UserGetAll(c echo.Context) error {
 	// Get all users
 	users, err := h.Store.UserGetAll()

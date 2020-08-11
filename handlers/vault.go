@@ -6,7 +6,7 @@ import (
 	"github.com/gaia-pipeline/gaia/helper/stringhelper"
 
 	"github.com/gaia-pipeline/gaia/services"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 type addSecret struct {

@@ -1,7 +1,7 @@
 package providers
 
 import (
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 // RBACProvider provides all the handler endpoints for RBAC actions.
