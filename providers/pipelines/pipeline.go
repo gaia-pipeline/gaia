@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/robfig/cron"
 
 	"github.com/gaia-pipeline/gaia"
@@ -37,6 +37,17 @@ var (
 
 // PipelineGitLSRemote checks for available git remote branches.
 // This is the perfect way to check if we have access to a given repo.
+// @Summary Check for repository access.
+// @Description Checks for available git remote branches which in turn verifies repository access.
+// @Tags pipelines
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param PipelineGitLSRemoteRequest body gaia.GitRepo true "The repository details"
+// @Success 200 {array} string "Available branches"
+// @Failure 400 {string} string "Failed to bind body"
+// @Failure 403 {string} string "No access"
+// @Router /pipeline/gitlsremote [post]
 func (pp *PipelineProvider) PipelineGitLSRemote(c echo.Context) error {
 	repo := &gaia.GitRepo{}
 	if err := c.Bind(repo); err != nil {
@@ -55,6 +66,17 @@ func (pp *PipelineProvider) PipelineGitLSRemote(c echo.Context) error {
 
 // CreatePipeline accepts all data needed to create a pipeline.
 // It then starts the create pipeline execution process async.
+// @Summary Create pipeline.
+// @Description Starts creating a pipeline given all the data asynchronously.
+// @Tags pipelines
+// @Accept json
+// @Produce plain
+// @Security ApiKeyAuth
+// @Param CreatePipelineRequest body gaia.CreatePipeline true "Create pipeline details"
+// @Success 200
+// @Failure 400 {string} string "Failed to bind, validation error and invalid details"
+// @Failure 500 {string} string "Internal error while saving create pipeline run"
+// @Router /pipeline [post]
 func (pp *PipelineProvider) CreatePipeline(c echo.Context) error {
 	storeService, _ := services.StorageService()
 	p := &gaia.CreatePipeline{}
@@ -97,6 +119,14 @@ func (pp *PipelineProvider) CreatePipeline(c echo.Context) error {
 // CreatePipelineGetAll returns a json array of
 // all pipelines which are about to get compiled and
 // all pipelines which have been compiled.
+// @Summary Get all create pipelines.
+// @Description Get a list of all pipelines which are about to be compiled and which have been compiled.
+// @Tags pipelines
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {array} gaia.CreatePipeline
+// @Failure 500 {string} string "Internal error while retrieving create pipeline data."
+// @Router /pipeline/created [get]
 func (pp *PipelineProvider) CreatePipelineGetAll(c echo.Context) error {
 	// Get all create pipelines
 	storeService, _ := services.StorageService()
@@ -112,6 +142,16 @@ func (pp *PipelineProvider) CreatePipelineGetAll(c echo.Context) error {
 
 // PipelineNameAvailable looks up if the given pipeline name is
 // available and valid.
+// @Summary Pipeline name validation.
+// @Description Looks up if the given pipeline name is available and valid.
+// @Tags pipelines
+// @Accept plain
+// @Produce json
+// @Security ApiKeyAuth
+// @Param name query string true "The name of the pipeline to validate"
+// @Success 200
+// @Failure 400 {string} string "Pipeline name validation errors"
+// @Router /pipeline/name [get]
 func (pp *PipelineProvider) PipelineNameAvailable(c echo.Context) error {
 	pName := c.QueryParam("name")
 	if err := pipeline.ValidatePipelineName(pName); err != nil {
@@ -122,6 +162,13 @@ func (pp *PipelineProvider) PipelineNameAvailable(c echo.Context) error {
 }
 
 // PipelineGetAll returns all registered pipelines.
+// @Summary Returns all registered pipelines.
+// @Description Returns all registered pipelines.
+// @Tags pipelines
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {array} gaia.Pipeline
+// @Router /pipeline/name [get]
 func (pp *PipelineProvider) PipelineGetAll(c echo.Context) error {
 	// Get all active pipelines
 	pipelines := pipeline.GlobalActivePipelines.GetAll()
@@ -136,6 +183,17 @@ func (pp *PipelineProvider) PipelineGetAll(c echo.Context) error {
 }
 
 // PipelineGet accepts a pipeline id and returns the pipeline object.
+// @Summary Get pipeline information.
+// @Description Get pipeline information based on ID.
+// @Tags pipelines
+// @Accept plain
+// @Produce json
+// @Security ApiKeyAuth
+// @Param pipelineid query string true "The ID of the pipeline"
+// @Success 200 {object} gaia.Pipeline
+// @Failure 400 {string} string "The given pipeline id is not valid"
+// @Failure 404 {string} string "Pipeline not found with the given id"
+// @Router /pipeline/{pipelineid} [get]
 func (pp *PipelineProvider) PipelineGet(c echo.Context) error {
 	pipelineIDStr := c.Param("pipelineid")
 
@@ -157,6 +215,18 @@ func (pp *PipelineProvider) PipelineGet(c echo.Context) error {
 }
 
 // PipelineUpdate updates the given pipeline.
+// @Summary Update pipeline.
+// @Description Update a pipeline by its ID.
+// @Tags pipelines
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param PipelineUpdateRequest body gaia.Pipeline true "PipelineUpdate request"
+// @Success 200 {string} string "Pipeline has been updated"
+// @Failure 400 {string} string "Error while updating the pipeline"
+// @Failure 404 {string} string "The pipeline with the given ID was not found"
+// @Failure 500 {string} string "Internal error while updating and building the new pipeline information"
+// @Router /pipeline/{pipelineid} [put]
 func (pp *PipelineProvider) PipelineUpdate(c echo.Context) error {
 	storeService, _ := services.StorageService()
 	p := gaia.Pipeline{}
@@ -276,6 +346,18 @@ func stringSliceEqual(a, b []string) bool {
 
 // PipelineDelete accepts a pipeline id and deletes it from the
 // store. It also removes the binary inside the pipeline folder.
+// @Summary Delete a pipeline.
+// @Description Accepts a pipeline id and deletes it from the store. It also removes the binary inside the pipeline folder.
+// @Tags pipelines
+// @Accept plain
+// @Produce plain
+// @Security ApiKeyAuth
+// @Param pipelineid query string true "The ID of the pipeline."
+// @Success 200 {string} string "Pipeline has been deleted"
+// @Failure 400 {string} string "Error while deleting the pipeline"
+// @Failure 404 {string} string "The pipeline with the given ID was not found"
+// @Failure 500 {string} string "Internal error while deleting and removing the pipeline from store and disk"
+// @Router /pipeline/{pipelineid} [delete]
 func (pp *PipelineProvider) PipelineDelete(c echo.Context) error {
 	storeService, _ := services.StorageService()
 	pipelineIDStr := c.Param("pipelineid")
@@ -329,6 +411,17 @@ func (pp *PipelineProvider) PipelineDelete(c echo.Context) error {
 // This endpoint does not require authentication. It will use a TOKEN
 // that is specific to a pipeline. It can only be used by the `auto`
 // user.
+// @Summary Trigger a pipeline.
+// @Description Using a trigger token, start a pipeline run. This endpoint does not require authentication.
+// @Tags pipelines
+// @Accept plain
+// @Produce plain
+// @Param pipelineid query string true "The ID of the pipeline."
+// @Param pipelinetoken query string true "The trigger token for this pipeline."
+// @Success 200 {string} string "Trigger successful for pipeline: {pipelinename}"
+// @Failure 400 {string} string "Error while triggering pipeline"
+// @Failure 403 {string} string "Invalid trigger token"
+// @Router /pipeline/{pipelineid}/{pipelinetoken}/trigger [post]
 func (pp *PipelineProvider) PipelineTrigger(c echo.Context) error {
 	err := pp.PipelineTriggerAuth(c)
 	if err != nil {
@@ -376,6 +469,18 @@ func (pp *PipelineProvider) PipelineTrigger(c echo.Context) error {
 
 // PipelineResetToken generates a new remote trigger token for a given
 // pipeline.
+// @Summary Reset trigger token.
+// @Description Generates a new remote trigger token for a given pipeline.
+// @Tags pipelines
+// @Accept plain
+// @Produce plain
+// @Security ApiKeyAuth
+// @Param pipelineid query string true "The ID of the pipeline."
+// @Success 200 {string} string "Trigger successful for pipeline: {pipelinename}"
+// @Failure 400 {string} string "Invalid pipeline id"
+// @Failure 404 {string} string "Pipeline not found"
+// @Failure 500 {string} string "Internal storage error"
+// @Router /pipeline/{pipelineid}/reset-trigger-token [put]
 func (pp *PipelineProvider) PipelineResetToken(c echo.Context) error {
 	// Check here against the pipeline's token.
 	pipelineIDStr := c.Param("pipelineid")
@@ -396,7 +501,7 @@ func (pp *PipelineProvider) PipelineResetToken(c echo.Context) error {
 	}
 
 	if foundPipeline.Name == "" {
-		return c.String(http.StatusBadRequest, "Pipeline not found.")
+		return c.String(http.StatusNotFound, "Pipeline not found.")
 	}
 
 	foundPipeline.TriggerToken = security.GenerateRandomUUIDV5()
@@ -437,6 +542,18 @@ func (pp *PipelineProvider) PipelineTriggerAuth(c echo.Context) error {
 // PipelineStart starts a pipeline by the given id.
 // It accepts arguments for the given pipeline.
 // Afterwards it returns the created/scheduled pipeline run.
+// @Summary Start a pipeline.
+// @Description Starts a pipeline with a given ID and arguments for that pipeline and returns created/scheduled status.
+// @Tags pipelines
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param pipelineid query string true "The ID of the pipeline."
+// @Param args body gaia.Argument false "Optional arguments of the pipeline."
+// @Success 200 {object} gaia.PipelineRun
+// @Failure 400 {string} string "Various failures regarding starting the pipeline like: invalid id, invalid docker value and schedule errors"
+// @Failure 404 {string} string "Pipeline not found"
+// @Router /pipeline/{pipelineid}/start [post]
 func (pp *PipelineProvider) PipelineStart(c echo.Context) error {
 	pipelineIDStr := c.Param("pipelineid")
 
@@ -492,6 +609,16 @@ func (pp *PipelineProvider) PipelineStart(c echo.Context) error {
 // PipelinePull does a pull on the remote repository
 // which contains the code for this pipeline. This is so the user
 // won't have to wait for polling or a hook.
+// @Summary Update the underlying repository of the pipeline.
+// @Description Pull new code using the repository of the pipeline.
+// @Tags pipelines
+// @Accept plain
+// @Produce plain
+// @Security ApiKeyAuth
+// @Param pipelineid query string true "The ID of the pipeline."
+// @Success 200
+// @Failure 400 {string} string
+// @Router /pipeline/{pipelineid}/pull [post]
 func (pp *PipelineProvider) PipelinePull(c echo.Context) error {
 	pipelineIDStr := c.Param("pipelineid")
 
@@ -555,6 +682,14 @@ type getAllWithLatestRun struct {
 
 // PipelineGetAllWithLatestRun returns the latest of all registered pipelines
 // included with the latest run.
+// @Summary Returns the latest run.
+// @Description Returns the latest of all registered pipelines included with the latest run.
+// @Tags pipelines
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} getAllWithLatestRun
+// @Failure 500 {string} string "Internal error while getting latest run"
+// @Router /pipeline/latest [get]
 func (pp *PipelineProvider) PipelineGetAllWithLatestRun(c echo.Context) error {
 	// Get all active pipelines
 	storeService, _ := services.StorageService()
@@ -585,6 +720,16 @@ func (pp *PipelineProvider) PipelineGetAllWithLatestRun(c echo.Context) error {
 }
 
 // PipelineCheckPeriodicSchedules validates the added periodic schedules.
+// @Summary Returns the latest run.
+// @Description Returns the latest of all registered pipelines included with the latest run.
+// @Tags pipelines
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param schedules body []string true "A list of valid cronjob specs"
+// @Success 200
+// @Failure 400 {string} string "Bind error and schedule errors"
+// @Router /pipeline/periodicschedules [post]
 func (pp *PipelineProvider) PipelineCheckPeriodicSchedules(c echo.Context) error {
 	var pSchedules []string
 	if err := c.Bind(&pSchedules); err != nil {

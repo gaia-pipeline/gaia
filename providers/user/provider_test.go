@@ -12,7 +12,7 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	hclog "github.com/hashicorp/go-hclog"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 
 	"github.com/gaia-pipeline/gaia"

@@ -1,0 +1,1763 @@
+basePath: /api/v1
+definitions:
+  gaia.Argument:
+    properties:
+      desc:
+        type: string
+      key:
+        type: string
+      type:
+        type: string
+      value:
+        type: string
+    type: object
+  gaia.CreatePipeline:
+    properties:
+      created:
+        type: string
+      githubtoken:
+        type: string
+      id:
+        type: string
+      output:
+        type: string
+      pipeline:
+        $ref: '#/definitions/gaia.Pipeline'
+        type: object
+      status:
+        type: integer
+      statustype:
+        type: string
+    type: object
+  gaia.GitRepo:
+    properties:
+      branches:
+        items:
+          type: string
+        type: array
+      password:
+        type: string
+      privatekey:
+        $ref: '#/definitions/gaia.PrivateKey'
+        type: object
+      selectedbranch:
+        type: string
+      url:
+        type: string
+      user:
+        type: string
+    type: object
+  gaia.Job:
+    properties:
+      args:
+        items:
+          $ref: '#/definitions/gaia.Argument'
+        type: array
+      dependson:
+        items:
+          $ref: '#/definitions/gaia.Job'
+        type: array
+      desc:
+        type: string
+      failpipeline:
+        type: boolean
+      id:
+        type: integer
+      status:
+        type: string
+      title:
+        type: string
+    type: object
+  gaia.Pipeline:
+    properties:
+      created:
+        type: string
+      docker:
+        type: boolean
+      execpath:
+        type: string
+      id:
+        type: integer
+      jobs:
+        items:
+          $ref: '#/definitions/gaia.Job'
+        type: array
+      name:
+        type: string
+      notvalid:
+        type: boolean
+      periodicschedules:
+        items:
+          type: string
+        type: array
+      repo:
+        $ref: '#/definitions/gaia.GitRepo'
+        type: object
+      sha256sum:
+        items:
+          type: integer
+        type: array
+      tags:
+        items:
+          type: string
+        type: array
+      trigger_token:
+        type: string
+      type:
+        type: string
+      uuid:
+        type: string
+    type: object
+  gaia.PipelineRun:
+    properties:
+      docker:
+        type: boolean
+      dockerworkerid:
+        type: string
+      finishdate:
+        type: string
+      id:
+        type: integer
+      jobs:
+        items:
+          $ref: '#/definitions/gaia.Job'
+        type: array
+      pipelineid:
+        type: integer
+      pipelinetags:
+        items:
+          type: string
+        type: array
+      pipelinetype:
+        type: string
+      scheduledate:
+        type: string
+      startdate:
+        type: string
+      started_reason:
+        type: string
+      status:
+        type: string
+      uniqueid:
+        type: string
+    type: object
+  gaia.PrivateKey:
+    properties:
+      key:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  gaia.User:
+    properties:
+      display_name:
+        type: string
+      jwtexpiry:
+        type: integer
+      lastlogin:
+        type: string
+      password:
+        type: string
+      tokenstring:
+        type: string
+      trigger_token:
+        type: string
+      username:
+        type: string
+    type: object
+  gaia.UserPermission:
+    properties:
+      groups:
+        items:
+          type: string
+        type: array
+      roles:
+        items:
+          type: string
+        type: array
+      username:
+        type: string
+    type: object
+  gaia.UserRole:
+    properties:
+      api_endpoints:
+        items:
+          $ref: '#/definitions/gaia.UserRoleEndpoint'
+        type: array
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  gaia.UserRoleCategory:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/gaia.UserRole'
+        type: array
+    type: object
+  gaia.UserRoleEndpoint:
+    properties:
+      method:
+        type: string
+      path:
+        type: string
+    type: object
+  gaia.Worker:
+    properties:
+      finishedruns:
+        type: integer
+      lastcontact:
+        type: string
+      name:
+        type: string
+      registerdate:
+        type: string
+      slots:
+        type: integer
+      status:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      uniqueid:
+        type: string
+    type: object
+  handlers.addSecret:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
+  handlers.rbacGetResponse:
+    properties:
+      enabled:
+        type: boolean
+    type: object
+  handlers.rbacPutRequest:
+    properties:
+      enabled:
+        type: boolean
+    type: object
+  handlers.updateSecret:
+    properties:
+      key:
+        type: string
+      newvalue:
+        type: string
+    type: object
+  pipelines.Payload:
+    properties:
+      repository:
+        $ref: '#/definitions/pipelines.Repository'
+        type: object
+    type: object
+  pipelines.Repository:
+    properties:
+      git_url:
+        type: string
+      html_url:
+        type: string
+      ssh_url:
+        type: string
+    type: object
+  pipelines.getAllWithLatestRun:
+    properties:
+      p:
+        $ref: '#/definitions/gaia.Pipeline'
+        type: object
+      r:
+        $ref: '#/definitions/gaia.PipelineRun'
+        type: object
+    type: object
+  pipelines.jobLogs:
+    properties:
+      finished:
+        type: boolean
+      log:
+        type: string
+    type: object
+  pipelines.pollStatus:
+    properties:
+      status:
+        type: boolean
+    type: object
+  user.changePasswordRequest:
+    properties:
+      newpassword:
+        type: string
+      newpasswordconf:
+        type: string
+      oldpassword:
+        type: string
+      username:
+        type: string
+    type: object
+  workers.registerResponse:
+    properties:
+      cacert:
+        type: string
+      cert:
+        type: string
+      key:
+        type: string
+      uniqueid:
+        type: string
+    type: object
+  workers.registerWorker:
+    properties:
+      name:
+        type: string
+      secret:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+  workers.workerStatusOverviewResponse:
+    properties:
+      activeworker:
+        type: integer
+      finishedruns:
+        type: integer
+      inactiveworker:
+        type: integer
+      queuesize:
+        type: integer
+      suspendedworker:
+        type: integer
+    type: object
+info:
+  contact:
+    name: API Support
+    url: https://github.com/gaia-pipeline/gaia
+  description: This is the API that the Gaia Admin UI uses.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://github.com/gaia-pipeline/gaia/blob/master/LICENSE
+  title: Gaia API
+  version: "1.0"
+paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Returns an authenticated user.
+      parameters:
+      - description: UserLogin request
+        in: body
+        name: UserLoginRequest
+        required: true
+        schema:
+          $ref: '#/definitions/gaia.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gaia.User'
+        "400":
+          description: error reading json
+          schema:
+            type: string
+        "403":
+          description: credentials provided
+          schema:
+            type: string
+        "500":
+          description: '{creating jwt token|signing jwt token}'
+          schema:
+            type: string
+      summary: User Login
+      tags:
+      - users
+  /permission:
+    get:
+      description: Returns a list of all the roles available.
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/gaia.UserRoleCategory'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: Returns a list of default roles.
+      tags:
+      - rbac
+  /pipeline:
+    post:
+      consumes:
+      - application/json
+      description: Starts creating a pipeline given all the data asynchronously.
+      parameters:
+      - description: Create pipeline details
+        in: body
+        name: CreatePipelineRequest
+        required: true
+        schema:
+          $ref: '#/definitions/gaia.CreatePipeline'
+      produces:
+      - text/plain
+      responses:
+        "200": {}
+        "400":
+          description: Failed to bind, validation error and invalid details
+          schema:
+            type: string
+        "500":
+          description: Internal error while saving create pipeline run
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Create pipeline.
+      tags:
+      - pipelines
+  /pipeline/{pipelineid}:
+    delete:
+      consumes:
+      - text/plain
+      description: Accepts a pipeline id and deletes it from the store. It also removes
+        the binary inside the pipeline folder.
+      parameters:
+      - description: The ID of the pipeline.
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Pipeline has been deleted
+          schema:
+            type: string
+        "400":
+          description: Error while deleting the pipeline
+          schema:
+            type: string
+        "404":
+          description: The pipeline with the given ID was not found
+          schema:
+            type: string
+        "500":
+          description: Internal error while deleting and removing the pipeline from
+            store and disk
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a pipeline.
+      tags:
+      - pipelines
+    get:
+      consumes:
+      - text/plain
+      description: Get pipeline information based on ID.
+      parameters:
+      - description: The ID of the pipeline
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gaia.Pipeline'
+        "400":
+          description: The given pipeline id is not valid
+          schema:
+            type: string
+        "404":
+          description: Pipeline not found with the given id
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get pipeline information.
+      tags:
+      - pipelines
+    put:
+      consumes:
+      - application/json
+      description: Update a pipeline by its ID.
+      parameters:
+      - description: PipelineUpdate request
+        in: body
+        name: PipelineUpdateRequest
+        required: true
+        schema:
+          $ref: '#/definitions/gaia.Pipeline'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Pipeline has been updated
+          schema:
+            type: string
+        "400":
+          description: Error while updating the pipeline
+          schema:
+            type: string
+        "404":
+          description: The pipeline with the given ID was not found
+          schema:
+            type: string
+        "500":
+          description: Internal error while updating and building the new pipeline
+            information
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Update pipeline.
+      tags:
+      - pipelines
+  /pipeline/{pipelineid}/{pipelinetoken}/trigger:
+    post:
+      consumes:
+      - text/plain
+      description: Using a trigger token, start a pipeline run. This endpoint does
+        not require authentication.
+      parameters:
+      - description: The ID of the pipeline.
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      - description: The trigger token for this pipeline.
+        in: query
+        name: pipelinetoken
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: 'Trigger successful for pipeline: {pipelinename}'
+          schema:
+            type: string
+        "400":
+          description: Error while triggering pipeline
+          schema:
+            type: string
+        "403":
+          description: Invalid trigger token
+          schema:
+            type: string
+      summary: Trigger a pipeline.
+      tags:
+      - pipelines
+  /pipeline/{pipelineid}/pull:
+    post:
+      consumes:
+      - text/plain
+      description: Pull new code using the repository of the pipeline.
+      parameters:
+      - description: The ID of the pipeline.
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200": {}
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Update the underlying repository of the pipeline.
+      tags:
+      - pipelines
+  /pipeline/{pipelineid}/reset-trigger-token:
+    put:
+      consumes:
+      - text/plain
+      description: Generates a new remote trigger token for a given pipeline.
+      parameters:
+      - description: The ID of the pipeline.
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: 'Trigger successful for pipeline: {pipelinename}'
+          schema:
+            type: string
+        "400":
+          description: Invalid pipeline id
+          schema:
+            type: string
+        "404":
+          description: Pipeline not found
+          schema:
+            type: string
+        "500":
+          description: Internal storage error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Reset trigger token.
+      tags:
+      - pipelines
+  /pipeline/{pipelineid}/start:
+    post:
+      consumes:
+      - application/json
+      description: Starts a pipeline with a given ID and arguments for that pipeline
+        and returns created/scheduled status.
+      parameters:
+      - description: The ID of the pipeline.
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      - description: Optional arguments of the pipeline.
+        in: body
+        name: args
+        schema:
+          $ref: '#/definitions/gaia.Argument'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gaia.PipelineRun'
+        "400":
+          description: 'Various failures regarding starting the pipeline like: invalid
+            id, invalid docker value and schedule errors'
+          schema:
+            type: string
+        "404":
+          description: Pipeline not found
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Start a pipeline.
+      tags:
+      - pipelines
+  /pipeline/created:
+    get:
+      description: Get a list of all pipelines which are about to be compiled and
+        which have been compiled.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/gaia.CreatePipeline'
+            type: array
+        "500":
+          description: Internal error while retrieving create pipeline data.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get all create pipelines.
+      tags:
+      - pipelines
+  /pipeline/githook:
+    post:
+      consumes:
+      - application/json
+      description: This is the global endpoint which will handle all github webhook
+        callbacks.
+      parameters:
+      - description: A github webhook payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/pipelines.Payload'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: successfully processed event
+          schema:
+            type: string
+        "400":
+          description: Bind error and schedule errors
+          schema:
+            type: string
+        "500":
+          description: Various internal errors running and triggering and rebuilding
+            pipelines. Please check the logs for more information.
+          schema:
+            type: string
+      summary: Handle github webhook callbacks.
+      tags:
+      - pipelines
+  /pipeline/gitlsremote:
+    post:
+      consumes:
+      - application/json
+      description: Checks for available git remote branches which in turn verifies
+        repository access.
+      parameters:
+      - description: The repository details
+        in: body
+        name: PipelineGitLSRemoteRequest
+        required: true
+        schema:
+          $ref: '#/definitions/gaia.GitRepo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Available branches
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Failed to bind body
+          schema:
+            type: string
+        "403":
+          description: No access
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Check for repository access.
+      tags:
+      - pipelines
+  /pipeline/latest:
+    get:
+      description: Returns the latest of all registered pipelines included with the
+        latest run.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pipelines.getAllWithLatestRun'
+        "500":
+          description: Internal error while getting latest run
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Returns the latest run.
+      tags:
+      - pipelines
+  /pipeline/name:
+    get:
+      description: Returns all registered pipelines.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/gaia.Pipeline'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: Returns all registered pipelines.
+      tags:
+      - pipelines
+  /pipeline/periodicschedules:
+    post:
+      consumes:
+      - application/json
+      description: Returns the latest of all registered pipelines included with the
+        latest run.
+      parameters:
+      - description: A list of valid cronjob specs
+        in: body
+        name: schedules
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200": {}
+        "400":
+          description: Bind error and schedule errors
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Returns the latest run.
+      tags:
+      - pipelines
+  /pipelinerun/{pipelineid}:
+    get:
+      consumes:
+      - text/plain
+      description: Returns all runs about the given pipeline.
+      parameters:
+      - description: ID of the pipeline
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: a list of pipeline runes
+          schema:
+            items:
+              $ref: '#/definitions/gaia.PipelineRun'
+            type: array
+        "400":
+          description: Invalid pipeline id
+          schema:
+            type: string
+        "500":
+          description: Error retrieving all pipeline runs.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get all pipeline runs.
+      tags:
+      - pipelinerun
+  /pipelinerun/{pipelineid}/{runid}:
+    get:
+      consumes:
+      - text/plain
+      description: Returns details about a specific pipeline run.
+      parameters:
+      - description: ID of the pipeline
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      - description: ID of the pipeline run
+        in: query
+        name: runid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gaia.PipelineRun'
+        "400":
+          description: Invalid pipeline or pipeline not found.
+          schema:
+            type: string
+        "404":
+          description: Pipeline Run not found.
+          schema:
+            type: string
+        "500":
+          description: Something went wrong while getting pipeline run.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get Pipeline run.
+      tags:
+      - pipelinerun
+  /pipelinerun/{pipelineid}/{runid}/log:
+    get:
+      consumes:
+      - text/plain
+      description: Returns logs from a pipeline run.
+      parameters:
+      - description: ID of the pipeline
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      - description: ID of the run
+        in: query
+        name: runid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: logs
+          schema:
+            $ref: '#/definitions/pipelines.jobLogs'
+        "400":
+          description: Invalid pipeline id or run id or pipeline not found
+          schema:
+            type: string
+        "500":
+          description: cannot read pipeline run log file
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get logs for pipeline run.
+      tags:
+      - pipelinerun
+  /pipelinerun/{pipelineid}/{runid}/stop:
+    post:
+      consumes:
+      - text/plain
+      description: Stops a pipeline run.
+      parameters:
+      - description: ID of the pipeline
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      - description: ID of the pipeline run
+        in: query
+        name: runid
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: pipeline successfully stopped
+          schema:
+            type: string
+        "400":
+          description: Invalid pipeline id or run id
+          schema:
+            type: string
+        "404":
+          description: Pipeline Run not found.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Stop a pipeline run.
+      tags:
+      - pipelinerun
+  /pipelinerun/{pipelineid}/latest:
+    get:
+      consumes:
+      - text/plain
+      description: Returns the latest run of a pipeline, given by id.
+      parameters:
+      - description: ID of the pipeline
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: the latest pipeline run
+          schema:
+            $ref: '#/definitions/gaia.PipelineRun'
+        "400":
+          description: Invalid pipeline id
+          schema:
+            type: string
+        "500":
+          description: error getting latest run or cannot read pipeline run log file
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get latest pipeline runs.
+      tags:
+      - pipelinerun
+  /rbac/roles:
+    get:
+      description: Gets all RBAC roles.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: All the roles.
+          schema:
+            items:
+              type: string
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: Gets all RBAC roles.
+      tags:
+      - rbac
+  /rbac/roles/{role}:
+    delete:
+      consumes:
+      - text/plain
+      description: Deletes an RBAC role using the RBAC service.
+      parameters:
+      - description: The name of the rule
+        in: query
+        name: role
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Role deleted successfully.
+          schema:
+            type: string
+        "400":
+          description: Must provide role.
+          schema:
+            type: string
+        "500":
+          description: An error occurred while deleting the role.
+          schema:
+            type: string
+      summary: Delete an RBAC role.
+      tags:
+      - rbac
+    put:
+      consumes:
+      - text/plain
+      description: Adds an RBAC role using the RBAC service.
+      parameters:
+      - description: Name of the role
+        in: query
+        name: role
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Role created successfully.
+          schema:
+            type: string
+        "400":
+          description: Must provide role.
+          schema:
+            type: string
+        "500":
+          description: An error occurred while adding the role.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Adds an RBAC role.
+      tags:
+      - rbac
+  /rbac/roles/{role}/attach/{username}:
+    delete:
+      consumes:
+      - text/plain
+      description: Detach role to user.
+      parameters:
+      - description: The role
+        in: query
+        name: role
+        required: true
+        type: string
+      - description: The username of the user
+        in: query
+        name: username
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Role detached successfully.
+          schema:
+            type: string
+        "400":
+          description: Must provide role or username.
+          schema:
+            type: string
+        "500":
+          description: An error occurred while detaching the role.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Detach role to user.
+      tags:
+      - rbac
+    put:
+      consumes:
+      - text/plain
+      description: Attach role to user.
+      parameters:
+      - description: The role
+        in: query
+        name: role
+        required: true
+        type: string
+      - description: The username of the user
+        in: query
+        name: username
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Role attached successfully.
+          schema:
+            type: string
+        "400":
+          description: Must provide role or username.
+          schema:
+            type: string
+        "500":
+          description: An error occurred while attaching the role.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Attach role to user.
+      tags:
+      - rbac
+  /rbac/roles/{role}/attached:
+    get:
+      consumes:
+      - text/plain
+      description: Gets a user attached to a role.
+      parameters:
+      - description: The role for the user
+        in: query
+        name: role
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Attached users for the role
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Must provide role.
+          schema:
+            type: string
+        "500":
+          description: An error occurred while getting the user.
+          schema:
+            type: string
+      summary: Gets a user attached to a role.
+      tags:
+      - rbac
+  /secret:
+    post:
+      consumes:
+      - application/json
+      description: Creates a secret.
+      parameters:
+      - description: The secret to create
+        in: body
+        name: secret
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.addSecret'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: secret successfully set
+          schema:
+            type: string
+        "400":
+          description: Error binding or key is reserved.
+          schema:
+            type: string
+        "500":
+          description: Cannot get or load secrets
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Create a secret.
+      tags:
+      - secrets
+  /secret/:key:
+    delete:
+      description: Removes a secret from the vault.
+      parameters:
+      - description: Key
+        in: body
+        name: key
+        required: true
+        schema:
+          type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: secret successfully deleted
+          schema:
+            type: string
+        "400":
+          description: key is reserved and cannot be deleted
+          schema:
+            type: string
+        "500":
+          description: Cannot get or load secrets
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Removes a secret from the vault..
+      tags:
+      - secrets
+  /secrets:
+    get:
+      description: Retrieves all secrets from the vault.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Secrets
+          schema:
+            items:
+              $ref: '#/definitions/handlers.addSecret'
+            type: array
+        "500":
+          description: Cannot get or load secrets
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: List all secrets.
+      tags:
+      - secrets
+  /settings/poll:
+    get:
+      description: Gets the status of the poll setting.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Poll status
+          schema:
+            $ref: '#/definitions/pipelines.pollStatus'
+        "500":
+          description: Internal server error while getting setting.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get the status of the poll setting.
+      tags:
+      - settings
+  /settings/poll/off:
+    post:
+      description: Turns off the polling functionality for Gaia which periodically
+        checks if there is new code to deploy for all pipelines.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Polling is turned off.
+          schema:
+            type: string
+        "400":
+          description: Error while toggling poll setting.
+          schema:
+            type: string
+        "500":
+          description: Internal server error while getting setting.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Turn off polling functionality.
+      tags:
+      - settings
+  /settings/poll/on:
+    post:
+      description: Turns on the polling functionality for Gaia which periodically
+        checks if there is new code to deploy for all pipelines.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Polling is turned on.
+          schema:
+            type: string
+        "400":
+          description: Error while toggling poll setting.
+          schema:
+            type: string
+        "500":
+          description: Internal server error while getting setting.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Turn on polling functionality.
+      tags:
+      - settings
+  /settings/rbac:
+    get:
+      description: Get the given RBAC settings.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.rbacGetResponse'
+        "500":
+          description: Something went wrong while saving or retrieving rbac settings.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get RBAC settings
+      tags:
+      - settings
+    put:
+      consumes:
+      - application/json
+      description: Save the given RBAC settings.
+      parameters:
+      - description: RBAC setting details.
+        in: body
+        name: RbacPutRequest
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.rbacPutRequest'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Settings have been updated.
+          schema:
+            type: string
+        "400":
+          description: Invalid body.
+          schema:
+            type: string
+        "500":
+          description: Something went wrong while saving or retrieving rbac settings.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Put RBAC settings
+      tags:
+      - settings
+  /user:
+    post:
+      consumes:
+      - application/json
+      description: Adds a new user.
+      parameters:
+      - description: UserAdd request
+        in: body
+        name: UserAddRequest
+        required: true
+        schema:
+          $ref: '#/definitions/gaia.User'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: User has been added
+          schema:
+            type: string
+        "400":
+          description: Invalid parameters given for add user request
+          schema:
+            type: string
+        "500":
+          description: '{User put failed|User permission put error}'
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Add user.
+      tags:
+      - users
+  /user/{username}/delete:
+    delete:
+      consumes:
+      - text/plain
+      description: Delete a given user.
+      parameters:
+      - description: The username to delete
+        in: query
+        name: username
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: '{Invalid username given|Auto user cannot be deleted}'
+          schema:
+            type: string
+        "404":
+          description: '{User not found|Permission not found|Rbac not found}'
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Delete user.
+      tags:
+      - users
+  /user/{username}/permissions:
+    get:
+      consumes:
+      - text/plain
+      description: Get permissions of the user.
+      parameters:
+      - description: The username to get permission for
+        in: query
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gaia.UserPermission'
+        "400":
+          description: Failed to get permission
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get permission of the user.
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Adds or updates permissions for a user..
+      parameters:
+      - description: The username to get permission for
+        in: query
+        name: username
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Permissions have been updated
+          schema:
+            type: string
+        "400":
+          description: '{Invalid parameters given for request|Permissions put failed}'
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Adds or updates permissions for a user.
+      tags:
+      - users
+  /user/{username}/reset-trigger-token:
+    put:
+      consumes:
+      - text/plain
+      description: Generates and saves a new remote trigger token for a given user.
+      parameters:
+      - description: The username to reset the token for
+        in: query
+        name: username
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: '{Invalid username given|Only auto user can have a token reset|User
+            not found|Error retrieving user}'
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Generate new remote trigger token.
+      tags:
+      - users
+  /user/password:
+    post:
+      consumes:
+      - application/json
+      description: Changes the password of the given user.
+      parameters:
+      - description: UserChangePassword request
+        in: body
+        name: UserChangePasswordRequest
+        required: true
+        schema:
+          $ref: '#/definitions/user.changePasswordRequest'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: '{Invalid parameters given for password change request|Cannot
+            find user with the given username|New password does not match new password
+            confirmation}'
+          schema:
+            type: string
+        "412":
+          description: Precondition Failed
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Change password for user.
+      tags:
+      - users
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Returns a list of registered users.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/gaia.User'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get all users
+      tags:
+      - users
+  /users/{username}/rbac/roles:
+    get:
+      consumes:
+      - text/plain
+      description: Gets all roles for a user.
+      parameters:
+      - description: The username of the user
+        in: query
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Attached roles to a user
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Must provide username.
+          schema:
+            type: string
+        "500":
+          description: An error occurred while getting the roles.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Gets all roles for a user.
+      tags:
+      - rbac
+  /worker:
+    get:
+      description: Gets all workers.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: A list of workers.
+          schema:
+            items:
+              $ref: '#/definitions/gaia.Worker'
+            type: array
+        "500":
+          description: Cannot get memdb service from service store.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get all workers.
+      tags:
+      - workers
+  /worker/{workerid}:
+    delete:
+      consumes:
+      - application/json
+      description: Deregister an existing worker.
+      parameters:
+      - description: The id of the worker to deregister.
+        in: query
+        name: workerid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Worker has been successfully deregistered.
+          schema:
+            type: string
+        "400":
+          description: Worker id is missing or worker not registered.
+          schema:
+            type: string
+        "500":
+          description: Cannot get memdb service from service store or failed to delete
+            worker.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Deregister and existing worker.
+      tags:
+      - workers
+  /worker/register:
+    post:
+      consumes:
+      - application/json
+      description: Allows new workers to register themself at this Gaia instance.
+      parameters:
+      - description: Worker details
+        in: body
+        name: RegisterWorkerRequest
+        required: true
+        schema:
+          $ref: '#/definitions/workers.registerWorker'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Details of the registered worker.
+          schema:
+            $ref: '#/definitions/workers.registerResponse'
+        "400":
+          description: Invalid arguments of the worker.
+          schema:
+            type: string
+        "403":
+          description: Wrong global worker secret provided.
+          schema:
+            type: string
+        "500":
+          description: Various internal services like, certs, vault and generating
+            new secrets.
+          schema:
+            type: string
+      summary: Register a new worker.
+      tags:
+      - workers
+  /worker/secret:
+    get:
+      description: Returns the global secret for registering new worker.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Cannot get worker secret from vault.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get worker register secret.
+      tags:
+      - workers
+    post:
+      description: Generates a new global worker registration secret.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: global worker registration secret has been successfully reset
+          schema:
+            type: string
+        "500":
+          description: Vault related internal problems.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Reset worker register secret.
+      tags:
+      - workers
+  /worker/status:
+    get:
+      description: Returns general status information about all workers.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The worker status overview response.
+          schema:
+            $ref: '#/definitions/workers.workerStatusOverviewResponse'
+        "500":
+          description: Cannot get memdb service from service store.
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get worker status overview.
+      tags:
+      - workers
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

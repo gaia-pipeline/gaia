@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/go-hclog"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/gaia-pipeline/gaia"
 )
@@ -40,7 +40,7 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		_ = SetSecret(c)
+		_ = CreateSecret(c)
 
 		if rec.Code != http.StatusCreated {
 			t.Fatalf("expected response code %v got %v", http.StatusCreated, rec.Code)
@@ -58,7 +58,7 @@ func TestVaultWorkflowAddListDelete(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		_ = SetSecret(c)
+		_ = UpdateSecret(c)
 
 		if rec.Code != http.StatusCreated {
 			t.Fatalf("expected response code %v got %v", http.StatusCreated, rec.Code)

@@ -8,7 +8,7 @@ import (
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/gofrs/uuid"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/security"
@@ -35,6 +35,17 @@ type registerResponse struct {
 
 // RegisterWorker allows new workers to register themself at this Gaia instance.
 // It accepts a secret and returns valid certificates (base64 encoded) for further mTLS connection.
+// @Summary Register a new worker.
+// @Description Allows new workers to register themself at this Gaia instance.
+// @Tags workers
+// @Accept json
+// @Produce json
+// @Param RegisterWorkerRequest body registerWorker true "Worker details"
+// @Success 200 {object} registerResponse "Details of the registered worker."
+// @Failure 400 {string} string "Invalid arguments of the worker."
+// @Failure 403 {string} string "Wrong global worker secret provided."
+// @Failure 500 {string} string "Various internal services like, certs, vault and generating new secrets."
+// @Router /worker/register [post]
 func (wp *WorkerProvider) RegisterWorker(c echo.Context) error {
 	worker := registerWorker{}
 	if err := c.Bind(&worker); err != nil {
@@ -126,6 +137,17 @@ func (wp *WorkerProvider) RegisterWorker(c echo.Context) error {
 }
 
 // DeregisterWorker deregister a registered worker.
+// @Summary Deregister and existing worker.
+// @Description Deregister an existing worker.
+// @Tags workers
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param workerid query string true "The id of the worker to deregister."
+// @Success 200 {string} string "Worker has been successfully deregistered."
+// @Failure 400 {string} string "Worker id is missing or worker not registered."
+// @Failure 500 {string} string "Cannot get memdb service from service store or failed to delete worker."
+// @Router /worker/{workerid} [delete]
 func (wp *WorkerProvider) DeregisterWorker(c echo.Context) error {
 	workerID := c.Param("workerid")
 	if workerID == "" {
@@ -155,6 +177,14 @@ func (wp *WorkerProvider) DeregisterWorker(c echo.Context) error {
 }
 
 // GetWorkerRegisterSecret returns the global secret for registering new worker.
+// @Summary Get worker register secret.
+// @Description Returns the global secret for registering new worker.
+// @Tags workers
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {string} string
+// @Failure 500 {string} string "Cannot get worker secret from vault."
+// @Router /worker/secret [get]
 func (wp *WorkerProvider) GetWorkerRegisterSecret(c echo.Context) error {
 	globalSecret, err := getWorkerSecret()
 	if err != nil {
@@ -182,7 +212,7 @@ func getWorkerSecret() (string, error) {
 	return string(secret[:]), nil
 }
 
-type workerStatusOverviewRespoonse struct {
+type workerStatusOverviewResponse struct {
 	ActiveWorker    int   `json:"activeworker"`
 	SuspendedWorker int   `json:"suspendedworker"`
 	InactiveWorker  int   `json:"inactiveworker"`
@@ -191,8 +221,16 @@ type workerStatusOverviewRespoonse struct {
 }
 
 // GetWorkerStatusOverview returns general status information about all workers.
+// @Summary Get worker status overview.
+// @Description Returns general status information about all workers.
+// @Tags workers
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} workerStatusOverviewResponse "The worker status overview response."
+// @Failure 500 {string} string "Cannot get memdb service from service store."
+// @Router /worker/status [get]
 func (wp *WorkerProvider) GetWorkerStatusOverview(c echo.Context) error {
-	response := workerStatusOverviewRespoonse{}
+	response := workerStatusOverviewResponse{}
 
 	// Get memdb service
 	db, err := services.DefaultMemDBService()
@@ -224,6 +262,14 @@ func (wp *WorkerProvider) GetWorkerStatusOverview(c echo.Context) error {
 }
 
 // GetWorker returns all workers.
+// @Summary Get all workers.
+// @Description Gets all workers.
+// @Tags workers
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {array} gaia.Worker "A list of workers."
+// @Failure 500 {string} string "Cannot get memdb service from service store."
+// @Router /worker [get]
 func (wp *WorkerProvider) GetWorker(c echo.Context) error {
 	// Get memdb service
 	db, err := services.DefaultMemDBService()
@@ -236,6 +282,14 @@ func (wp *WorkerProvider) GetWorker(c echo.Context) error {
 }
 
 // ResetWorkerRegisterSecret generates a new global worker registration secret
+// @Summary Reset worker register secret.
+// @Description Generates a new global worker registration secret.
+// @Tags workers
+// @Produce plain
+// @Security ApiKeyAuth
+// @Success 200 {string} string "global worker registration secret has been successfully reset"
+// @Failure 500 {string} string "Vault related internal problems."
+// @Router /worker/secret [post]
 func (wp *WorkerProvider) ResetWorkerRegisterSecret(c echo.Context) error {
 	// Get vault service
 	v, err := services.DefaultVaultService()

@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/helper/pipelinehelper"
@@ -87,6 +87,16 @@ func checkHeaders(req *http.Request) (Hook, error) {
 }
 
 // GitWebHook handles callbacks from GitHub's webhook system.
+// @Summary Handle github webhook callbacks.
+// @Description This is the global endpoint which will handle all github webhook callbacks.
+// @Tags pipelines
+// @Accept json
+// @Produce plain
+// @Param payload body Payload true "A github webhook payload"
+// @Success 200 {string} string "successfully processed event"
+// @Failure 400 {string} string "Bind error and schedule errors"
+// @Failure 500 {string} string "Various internal errors running and triggering and rebuilding pipelines. Please check the logs for more information."
+// @Router /pipeline/githook [post]
 func (pp *PipelineProvider) GitWebHook(c echo.Context) error {
 	vault, err := services.DefaultVaultService()
 	if err != nil {
