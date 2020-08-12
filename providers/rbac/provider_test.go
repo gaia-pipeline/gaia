@@ -306,7 +306,7 @@ func Test_Provider_GetRolesAttachedUsers(t *testing.T) {
 		c.SetParamNames("role")
 		c.SetParamValues("test")
 
-		err := handler.GetRolesAttachedUsers(c)
+		err := handler.GetRoleAttachedUsers(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusOK)
 		assert.Equal(t, rec.Body.String(), "[\"user-a\",\"user-b\"]\n")
@@ -318,7 +318,7 @@ func Test_Provider_GetRolesAttachedUsers(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.SetPath("/api/v1/rbac/roles/:role/attached")
 
-		err := handler.GetRolesAttachedUsers(c)
+		err := handler.GetRoleAttachedUsers(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusBadRequest)
 		assert.Equal(t, rec.Body.String(), "Must provide role.")
@@ -332,7 +332,7 @@ func Test_Provider_GetRolesAttachedUsers(t *testing.T) {
 		c.SetParamNames("role")
 		c.SetParamValues("error")
 
-		err := handler.GetRolesAttachedUsers(c)
+		err := handler.GetRoleAttachedUsers(c)
 		assert.NoError(t, err)
 		assert.Equal(t, rec.Code, http.StatusInternalServerError)
 		assert.Equal(t, rec.Body.String(), "An error occurred while getting the users.")

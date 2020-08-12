@@ -180,6 +180,13 @@ definitions:
       username:
         type: string
     type: object
+  handlers.addSecret:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
   handlers.rbacGetResponse:
     properties:
       enabled:
@@ -189,6 +196,13 @@ definitions:
     properties:
       enabled:
         type: boolean
+    type: object
+  handlers.updateSecret:
+    properties:
+      key:
+        type: string
+      newvalue:
+        type: string
     type: object
   pipelines.Payload:
     properties:
@@ -213,6 +227,13 @@ definitions:
       r:
         $ref: '#/definitions/gaia.PipelineRun'
         type: object
+    type: object
+  pipelines.jobLogs:
+    properties:
+      finished:
+        type: boolean
+      log:
+        type: string
     type: object
   pipelines.pollStatus:
     properties:
@@ -673,6 +694,419 @@ paths:
       summary: Returns the latest run.
       tags:
       - pipelines
+  /pipelinerun/{pipelineid}:
+    get:
+      consumes:
+      - text/plain
+      description: Returns all runs about the given pipeline.
+      parameters:
+      - description: ID of the pipeline
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: a list of pipeline runes
+          schema:
+            items:
+              $ref: '#/definitions/gaia.PipelineRun'
+            type: array
+        "400":
+          description: Invalid pipeline id
+          schema:
+            type: string
+        "500":
+          description: Error retrieving all pipeline runs.
+          schema:
+            type: string
+      summary: Get all pipeline runs.
+      tags:
+      - pipelinerun
+  /pipelinerun/{pipelineid}/{runid}:
+    get:
+      consumes:
+      - text/plain
+      description: Returns details about a specific pipeline run.
+      parameters:
+      - description: ID of the pipeline
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      - description: ID of the pipeline run
+        in: query
+        name: runid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gaia.PipelineRun'
+        "400":
+          description: Invalid pipeline or pipeline not found.
+          schema:
+            type: string
+        "404":
+          description: Pipeline Run not found.
+          schema:
+            type: string
+        "500":
+          description: Something went wrong while getting pipeline run.
+          schema:
+            type: string
+      summary: Get Pipeline run.
+      tags:
+      - pipelinerun
+  /pipelinerun/{pipelineid}/{runid}/log:
+    get:
+      consumes:
+      - text/plain
+      description: Returns logs from a pipeline run.
+      parameters:
+      - description: ID of the pipeline
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      - description: ID of the run
+        in: query
+        name: runid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: logs
+          schema:
+            $ref: '#/definitions/pipelines.jobLogs'
+        "400":
+          description: Invalid pipeline id or run id or pipeline not found
+          schema:
+            type: string
+        "500":
+          description: cannot read pipeline run log file
+          schema:
+            type: string
+      summary: Get logs for pipeline run.
+      tags:
+      - pipelinerun
+  /pipelinerun/{pipelineid}/{runid}/stop:
+    post:
+      consumes:
+      - text/plain
+      description: Stops a pipeline run.
+      parameters:
+      - description: ID of the pipeline
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      - description: ID of the pipeline run
+        in: query
+        name: runid
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: pipeline successfully stopped
+          schema:
+            type: string
+        "400":
+          description: Invalid pipeline id or run id
+          schema:
+            type: string
+        "404":
+          description: Pipeline Run not found.
+          schema:
+            type: string
+      summary: Stop a pipeline run.
+      tags:
+      - pipelinerun
+  /pipelinerun/{pipelineid}/latest:
+    get:
+      consumes:
+      - text/plain
+      description: Returns the latest run of a pipeline, given by id.
+      parameters:
+      - description: ID of the pipeline
+        in: query
+        name: pipelineid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: the latest pipeline run
+          schema:
+            $ref: '#/definitions/gaia.PipelineRun'
+        "400":
+          description: Invalid pipeline id
+          schema:
+            type: string
+        "500":
+          description: error getting latest run or cannot read pipeline run log file
+          schema:
+            type: string
+      summary: Get latest pipeline runs.
+      tags:
+      - pipelinerun
+  /rbac/roles:
+    get:
+      description: Gets all RBAC roles.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: All the roles.
+          schema:
+            items:
+              type: string
+            type: array
+      summary: Gets all RBAC roles.
+      tags:
+      - rbac
+  /rbac/roles/{role}:
+    delete:
+      consumes:
+      - text/plain
+      description: Deletes an RBAC role using the RBAC service.
+      parameters:
+      - description: The name of the rule
+        in: query
+        name: role
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Role deleted successfully.
+          schema:
+            type: string
+        "400":
+          description: Must provide role.
+          schema:
+            type: string
+        "500":
+          description: An error occurred while deleting the role.
+          schema:
+            type: string
+      summary: Delete an RBAC role.
+      tags:
+      - rbac
+    put:
+      consumes:
+      - text/plain
+      description: Adds an RBAC role using the RBAC service.
+      parameters:
+      - description: Name of the role
+        in: query
+        name: role
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Role created successfully.
+          schema:
+            type: string
+        "400":
+          description: Must provide role.
+          schema:
+            type: string
+        "500":
+          description: An error occurred while adding the role.
+          schema:
+            type: string
+      summary: Adds an RBAC role.
+      tags:
+      - rbac
+  /rbac/roles/{role}/attach/{username}:
+    delete:
+      consumes:
+      - text/plain
+      description: Detach role to user.
+      parameters:
+      - description: The role
+        in: query
+        name: role
+        required: true
+        type: string
+      - description: The username of the user
+        in: query
+        name: username
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Role detached successfully.
+          schema:
+            type: string
+        "400":
+          description: Must provide role or username.
+          schema:
+            type: string
+        "500":
+          description: An error occurred while detaching the role.
+          schema:
+            type: string
+      summary: Detach role to user.
+      tags:
+      - rbac
+    put:
+      consumes:
+      - text/plain
+      description: Attach role to user.
+      parameters:
+      - description: The role
+        in: query
+        name: role
+        required: true
+        type: string
+      - description: The username of the user
+        in: query
+        name: username
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Role attached successfully.
+          schema:
+            type: string
+        "400":
+          description: Must provide role or username.
+          schema:
+            type: string
+        "500":
+          description: An error occurred while attaching the role.
+          schema:
+            type: string
+      summary: Attach role to user.
+      tags:
+      - rbac
+  /rbac/roles/{role}/attached:
+    get:
+      consumes:
+      - text/plain
+      description: Gets a user attached to a role.
+      parameters:
+      - description: The role for the user
+        in: query
+        name: role
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Attached users for the role
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Must provide role.
+          schema:
+            type: string
+        "500":
+          description: An error occurred while getting the user.
+          schema:
+            type: string
+      summary: Gets a user attached to a role.
+      tags:
+      - rbac
+  /secret:
+    post:
+      consumes:
+      - application/json
+      description: Creates a secret.
+      parameters:
+      - description: The secret to create
+        in: body
+        name: secret
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.addSecret'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: secret successfully set
+          schema:
+            type: string
+        "400":
+          description: Error binding or key is reserved.
+          schema:
+            type: string
+        "500":
+          description: Cannot get or load secrets
+          schema:
+            type: string
+      summary: Create a secret.
+      tags:
+      - secrets
+  /secret/:key:
+    delete:
+      description: Removes a secret from the vault.
+      parameters:
+      - description: Key
+        in: body
+        name: key
+        required: true
+        schema:
+          type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: secret successfully deleted
+          schema:
+            type: string
+        "400":
+          description: key is reserved and cannot be deleted
+          schema:
+            type: string
+        "500":
+          description: Cannot get or load secrets
+          schema:
+            type: string
+      summary: Removes a secret from the vault..
+      tags:
+      - secrets
+  /secrets:
+    get:
+      description: Retrieves all secrets from the vault.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Secrets
+          schema:
+            items:
+              $ref: '#/definitions/handlers.addSecret'
+            type: array
+        "500":
+          description: Cannot get or load secrets
+          schema:
+            type: string
+      summary: List all secrets.
+      tags:
+      - secrets
   /settings/poll:
     get:
       description: Gets the status of the poll setting.
@@ -744,10 +1178,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/handlers.rbacGetResponse'
-        "400":
-          description: Invalid body.
-          schema:
-            type: string
         "500":
           description: Something went wrong while saving or retrieving rbac settings.
           schema:
@@ -981,6 +1411,37 @@ paths:
       summary: Get all users
       tags:
       - users
+  /users/{username}/rbac/roles:
+    get:
+      consumes:
+      - text/plain
+      description: Gets all roles for a user.
+      parameters:
+      - description: The username of the user
+        in: query
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Attached roles to a user
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Must provide username.
+          schema:
+            type: string
+        "500":
+          description: An error occurred while getting the roles.
+          schema:
+            type: string
+      summary: Gets all roles for a user.
+      tags:
+      - rbac
 securityDefinitions:
   ApiKeyAuth:
     in: header

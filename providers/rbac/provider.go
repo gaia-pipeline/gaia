@@ -20,6 +20,16 @@ func NewProvider(svc rbac.Service) *Provider {
 }
 
 // AddRole adds an RBAC role using the RBAC service.
+// @Summary Adds an RBAC role.
+// @Description Adds an RBAC role using the RBAC service.
+// @Tags rbac
+// @Accept plain
+// @Produce plain
+// @Param role query string true "Name of the role"
+// @Success 200 {string} string "Role created successfully."
+// @Failure 400 {string} string "Must provide role."
+// @Failure 500 {string} string "An error occurred while adding the role."
+// @Router /rbac/roles/{role} [put]
 func (h *Provider) AddRole(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
@@ -41,6 +51,16 @@ func (h *Provider) AddRole(c echo.Context) error {
 }
 
 // DeleteRole deletes an RBAC role using the RBAC service.
+// @Summary Delete an RBAC role.
+// @Description Deletes an RBAC role using the RBAC service.
+// @Tags rbac
+// @Accept plain
+// @Produce plain
+// @Param role query string true "The name of the rule"
+// @Success 200 {string} string "Role deleted successfully."
+// @Failure 400 {string} string "Must provide role."
+// @Failure 500 {string} string "An error occurred while deleting the role."
+// @Router /rbac/roles/{role} [delete]
 func (h *Provider) DeleteRole(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
@@ -56,11 +76,27 @@ func (h *Provider) DeleteRole(c echo.Context) error {
 }
 
 // GetAllRoles gets all RBAC roles.
+// @Summary Gets all RBAC roles.
+// @Description Gets all RBAC roles.
+// @Tags rbac
+// @Produce plain
+// @Success 200 {array} string "All the roles."
+// @Router /rbac/roles [get]
 func (h *Provider) GetAllRoles(c echo.Context) error {
 	return c.JSON(http.StatusOK, h.svc.GetAllRoles())
 }
 
-// GetUserAttachedRoles gets all roles attached to a specific user.
+// GetUserAttachedRoles gets all roles for a user.
+// @Summary Gets all roles for a user.
+// @Description Gets all roles for a user.
+// @Tags rbac
+// @Accept plain
+// @Produce json
+// @Param username query string true "The username of the user"
+// @Success 200 {array} string "Attached roles to a user"
+// @Failure 400 {string} string "Must provide username."
+// @Failure 500 {string} string "An error occurred while getting the roles."
+// @Router /users/{username}/rbac/roles [get]
 func (h *Provider) GetUserAttachedRoles(c echo.Context) error {
 	username := c.Param("username")
 	if username == "" {
@@ -76,23 +112,44 @@ func (h *Provider) GetUserAttachedRoles(c echo.Context) error {
 	return c.JSON(http.StatusOK, roles)
 }
 
-// GetRolesAttachedUsers gets all users attached to a role.
-func (h *Provider) GetRolesAttachedUsers(c echo.Context) error {
+// GetRoleAttachedUsers gets a user attached to a role.
+// @Summary Gets a user attached to a role.
+// @Description Gets a user attached to a role.
+// @Tags rbac
+// @Accept plain
+// @Produce json
+// @Param role query string true "The role for the user"
+// @Success 200 {array} string "Attached users for the role"
+// @Failure 400 {string} string "Must provide role."
+// @Failure 500 {string} string "An error occurred while getting the user."
+// @Router /rbac/roles/{role}/attached [get]
+func (h *Provider) GetRoleAttachedUsers(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
 		return c.String(http.StatusBadRequest, "Must provide role.")
 	}
 
-	roles, err := h.svc.GetRoleAttachedUsers(role)
+	users, err := h.svc.GetRoleAttachedUsers(role)
 	if err != nil {
-		gaia.Cfg.Logger.Error("error roles attached to user", "role", role, "error", err.Error())
+		gaia.Cfg.Logger.Error("error users attached to user", "role", role, "error", err.Error())
 		return c.String(http.StatusInternalServerError, "An error occurred while getting the users.")
 	}
 
-	return c.JSON(http.StatusOK, roles)
+	return c.JSON(http.StatusOK, users)
 }
 
-// AttachRole attches a role to a user.
+// AttachRole attaches a role to a user.
+// @Summary Attach role to user.
+// @Description Attach role to user.
+// @Tags rbac
+// @Accept plain
+// @Produce plain
+// @Param role query string true "The role"
+// @Param username query string true "The username of the user"
+// @Success 200 {string} string "Role attached successfully."
+// @Failure 400 {string} string "Must provide role or username."
+// @Failure 500 {string} string "An error occurred while attaching the role."
+// @Router /rbac/roles/{role}/attach/{username} [put]
 func (h *Provider) AttachRole(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {
@@ -112,7 +169,18 @@ func (h *Provider) AttachRole(c echo.Context) error {
 	return c.String(http.StatusOK, "Role attached successfully.")
 }
 
-// DetachRole deteches a role from a user.
+// DetachRole detaches a role from a user.
+// @Summary Detach role to user.
+// @Description Detach role to user.
+// @Tags rbac
+// @Accept plain
+// @Produce plain
+// @Param role query string true "The role"
+// @Param username query string true "The username of the user"
+// @Success 200 {string} string "Role detached successfully."
+// @Failure 400 {string} string "Must provide role or username."
+// @Failure 500 {string} string "An error occurred while detaching the role."
+// @Router /rbac/roles/{role}/attach/{username} [delete]
 func (h *Provider) DetachRole(c echo.Context) error {
 	role := c.Param("role")
 	if role == "" {

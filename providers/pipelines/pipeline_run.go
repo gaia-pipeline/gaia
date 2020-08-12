@@ -188,7 +188,7 @@ func (pp *PipelineProvider) PipelineGetLatestRun(c echo.Context) error {
 // @Success 200 {object} jobLogs "logs"
 // @Failure 400 {string} string "Invalid pipeline id or run id or pipeline not found"
 // @Failure 500 {string} string "cannot read pipeline run log file"
-// @Router /pipelinerun/:pipelineid/:runid/log [get]
+// @Router /pipelinerun/{pipelineid}/{runid}/log [get]
 func (pp *PipelineProvider) GetJobLogs(c echo.Context) error {
 	// Get parameters and validate
 	storeService, _ := services.StorageService()

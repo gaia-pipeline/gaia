@@ -10,7 +10,7 @@ type RBACProvider interface {
 	DeleteRole(c echo.Context) error
 	GetAllRoles(c echo.Context) error
 	GetUserAttachedRoles(c echo.Context) error
-	GetRolesAttachedUsers(c echo.Context) error
+	GetRoleAttachedUsers(c echo.Context) error
 	AttachRole(c echo.Context) error
 	DetachRole(c echo.Context) error
 }

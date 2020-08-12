@@ -81,16 +81,16 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		// Secrets
 		apiAuthGrp.GET("secrets", ListSecrets)
 		apiAuthGrp.DELETE("secret/:key", RemoveSecret)
-		apiAuthGrp.POST("secret", SetSecret)
-		apiAuthGrp.PUT("secret/update", SetSecret)
+		apiAuthGrp.POST("secret", CreateSecret)
+		apiAuthGrp.PUT("secret/update", UpdateSecret)
 
 		// RBAC - Management
 		apiAuthGrp.GET("rbac/roles", s.deps.RBACProvider.GetAllRoles)
 		apiAuthGrp.PUT("rbac/roles/:role", s.deps.RBACProvider.AddRole)
 		apiAuthGrp.DELETE("rbac/roles/:role", s.deps.RBACProvider.DeleteRole)
-		apiAuthGrp.PUT("rbac/roles/:role/attach/:username", s.deps.RBACProvider.DetachRole)
+		apiAuthGrp.PUT("rbac/roles/:role/attach/:username", s.deps.RBACProvider.AttachRole)
 		apiAuthGrp.DELETE("rbac/roles/:role/attach/:username", s.deps.RBACProvider.DetachRole)
-		apiAuthGrp.GET("rbac/roles/:role/attached", s.deps.RBACProvider.GetRolesAttachedUsers)
+		apiAuthGrp.GET("rbac/roles/:role/attached", s.deps.RBACProvider.GetRoleAttachedUsers)
 		// RBAC - Users
 		apiAuthGrp.GET("users/:username/rbac/roles", s.deps.RBACProvider.GetUserAttachedRoles)
 
