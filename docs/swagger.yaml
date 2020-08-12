@@ -180,6 +180,16 @@ definitions:
       username:
         type: string
     type: object
+  handlers.rbacGetResponse:
+    properties:
+      enabled:
+        type: boolean
+    type: object
+  handlers.rbacPutRequest:
+    properties:
+      enabled:
+        type: boolean
+    type: object
   pipelines.Payload:
     properties:
       repository:
@@ -203,6 +213,11 @@ definitions:
       r:
         $ref: '#/definitions/gaia.PipelineRun'
         type: object
+    type: object
+  pipelines.pollStatus:
+    properties:
+      status:
+        type: boolean
     type: object
   user.changePasswordRequest:
     properties:
@@ -658,6 +673,117 @@ paths:
       summary: Returns the latest run.
       tags:
       - pipelines
+  /settings/poll:
+    get:
+      description: Gets the status of the poll setting.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Poll status
+          schema:
+            $ref: '#/definitions/pipelines.pollStatus'
+        "500":
+          description: Internal server error while getting setting.
+          schema:
+            type: string
+      summary: Get the status of the poll setting.
+      tags:
+      - settings
+  /settings/poll/off:
+    post:
+      description: Turns off the polling functionality for Gaia which periodically
+        checks if there is new code to deploy for all pipelines.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Polling is turned off.
+          schema:
+            type: string
+        "400":
+          description: Error while toggling poll setting.
+          schema:
+            type: string
+        "500":
+          description: Internal server error while getting setting.
+          schema:
+            type: string
+      summary: Turn off polling functionality.
+      tags:
+      - settings
+  /settings/poll/on:
+    post:
+      description: Turns on the polling functionality for Gaia which periodically
+        checks if there is new code to deploy for all pipelines.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Polling is turned on.
+          schema:
+            type: string
+        "400":
+          description: Error while toggling poll setting.
+          schema:
+            type: string
+        "500":
+          description: Internal server error while getting setting.
+          schema:
+            type: string
+      summary: Turn on polling functionality.
+      tags:
+      - settings
+  /settings/rbac:
+    get:
+      description: Get the given RBAC settings.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.rbacGetResponse'
+        "400":
+          description: Invalid body.
+          schema:
+            type: string
+        "500":
+          description: Something went wrong while saving or retrieving rbac settings.
+          schema:
+            type: string
+      summary: Get RBAC settings
+      tags:
+      - settings
+    put:
+      consumes:
+      - application/json
+      description: Save the given RBAC settings.
+      parameters:
+      - description: RBAC setting details.
+        in: body
+        name: RbacPutRequest
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.rbacPutRequest'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Settings have been updated.
+          schema:
+            type: string
+        "400":
+          description: Invalid body.
+          schema:
+            type: string
+        "500":
+          description: Something went wrong while saving or retrieving rbac settings.
+          schema:
+            type: string
+      summary: Put RBAC settings
+      tags:
+      - settings
   /user:
     post:
       consumes:

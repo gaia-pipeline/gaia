@@ -23,6 +23,16 @@ type rbacPutRequest struct {
 	Enabled bool `json:"enabled"`
 }
 
+// @Summary Put RBAC settings
+// @Description Save the given RBAC settings.
+// @Tags settings
+// @Accept json
+// @Produce plain
+// @Param RbacPutRequest body rbacPutRequest true "RBAC setting details."
+// @Success 200 {string} string "Settings have been updated."
+// @Failure 400 {string} string "Invalid body."
+// @Failure 500 {string} string "Something went wrong while saving or retrieving rbac settings."
+// @Router /settings/rbac [put]
 func (h *settingsHandler) rbacPut(c echo.Context) error {
 	var request rbacPutRequest
 	if err := c.Bind(&request); err != nil {
@@ -50,6 +60,13 @@ type rbacGetResponse struct {
 	Enabled bool `json:"enabled"`
 }
 
+// @Summary Get RBAC settings
+// @Description Get the given RBAC settings.
+// @Tags settings
+// @Produce json
+// @Success 200 {object} rbacGetResponse
+// @Failure 500 {string} string "Something went wrong while saving or retrieving rbac settings."
+// @Router /settings/rbac [get]
 func (h *settingsHandler) rbacGet(c echo.Context) error {
 	settings, err := h.store.SettingsGet()
 	if err != nil {

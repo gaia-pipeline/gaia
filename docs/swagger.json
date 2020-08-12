@@ -654,6 +654,172 @@
                 }
             }
         },
+        "/settings/poll": {
+            "get": {
+                "description": "Gets the status of the poll setting.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "settings"
+                ],
+                "summary": "Get the status of the poll setting.",
+                "responses": {
+                    "200": {
+                        "description": "Poll status",
+                        "schema": {
+                            "$ref": "#/definitions/pipelines.pollStatus"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error while getting setting.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/settings/poll/off": {
+            "post": {
+                "description": "Turns off the polling functionality for Gaia which periodically checks if there is new code to deploy for all pipelines.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "settings"
+                ],
+                "summary": "Turn off polling functionality.",
+                "responses": {
+                    "200": {
+                        "description": "Polling is turned off.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Error while toggling poll setting.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error while getting setting.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/settings/poll/on": {
+            "post": {
+                "description": "Turns on the polling functionality for Gaia which periodically checks if there is new code to deploy for all pipelines.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "settings"
+                ],
+                "summary": "Turn on polling functionality.",
+                "responses": {
+                    "200": {
+                        "description": "Polling is turned on.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Error while toggling poll setting.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error while getting setting.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/settings/rbac": {
+            "get": {
+                "description": "Get the given RBAC settings.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "settings"
+                ],
+                "summary": "Get RBAC settings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.rbacGetResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid body.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Something went wrong while saving or retrieving rbac settings.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Save the given RBAC settings.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "settings"
+                ],
+                "summary": "Put RBAC settings",
+                "parameters": [
+                    {
+                        "description": "RBAC setting details.",
+                        "name": "RbacPutRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.rbacPutRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Settings have been updated.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid body.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Something went wrong while saving or retrieving rbac settings.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/user": {
             "post": {
                 "description": "Adds a new user.",
@@ -1226,6 +1392,22 @@
                 }
             }
         },
+        "handlers.rbacGetResponse": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "handlers.rbacPutRequest": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                }
+            }
+        },
         "pipelines.Payload": {
             "type": "object",
             "properties": {
@@ -1259,6 +1441,14 @@
                 "r": {
                     "type": "object",
                     "$ref": "#/definitions/gaia.PipelineRun"
+                }
+            }
+        },
+        "pipelines.pollStatus": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "boolean"
                 }
             }
         },
