@@ -29,6 +29,18 @@ type jobLogs struct {
 
 // PipelineRunGet returns details about a specific pipeline run.
 // Required parameters are pipelineid and runid.
+// @Summary Get Pipeline run.
+// @Description Returns details about a specific pipeline run.
+// @Tags pipelinerun
+// @Accept plain
+// @Produce json
+// @Param pipelineid query string true "ID of the pipeline"
+// @Param runid query string true "ID of the pipeline run"
+// @Success 200 {object} gaia.PipelineRun
+// @Failure 400 {string} string "Invalid pipeline or pipeline not found."
+// @Failure 404 {string} string "Pipeline Run not found."
+// @Failure 500 {string} string "Something went wrong while getting pipeline run."
+// @Router /pipelinerun/{pipelineid}/{runid} [get]
 func (pp *PipelineProvider) PipelineRunGet(c echo.Context) error {
 	// Convert string to int because id is int
 	storeService, _ := services.StorageService()
@@ -56,6 +68,17 @@ func (pp *PipelineProvider) PipelineRunGet(c echo.Context) error {
 }
 
 // PipelineStop stops a running pipeline.
+// @Summary Stop a pipeline run.
+// @Description Stops a pipeline run.
+// @Tags pipelinerun
+// @Accept plain
+// @Produce plain
+// @Param pipelineid query string true "ID of the pipeline"
+// @Param runid query string true "ID of the pipeline run"
+// @Success 200 {string} string "pipeline successfully stopped"
+// @Failure 400 {string} string "Invalid pipeline id or run id"
+// @Failure 404 {string} string "Pipeline Run not found."
+// @Router /pipelinerun/{pipelineid}/{runid}/stop [post]
 func (pp *PipelineProvider) PipelineStop(c echo.Context) error {
 	// Get parameters and validate
 	pipelineID := c.Param("pipelineid")
@@ -95,6 +118,16 @@ func (pp *PipelineProvider) PipelineStop(c echo.Context) error {
 }
 
 // PipelineGetAllRuns returns all runs about the given pipeline.
+// @Summary Get all pipeline runs.
+// @Description Returns all runs about the given pipeline.
+// @Tags pipelinerun
+// @Accept plain
+// @Produce json
+// @Param pipelineid query string true "ID of the pipeline"
+// @Success 200 {array} gaia.PipelineRun "a list of pipeline runes"
+// @Failure 400 {string} string "Invalid pipeline id"
+// @Failure 500 {string} string "Error retrieving all pipeline runs."
+// @Router /pipelinerun/{pipelineid} [get]
 func (pp *PipelineProvider) PipelineGetAllRuns(c echo.Context) error {
 	// Convert string to int because id is int
 	storeService, _ := services.StorageService()
@@ -113,6 +146,16 @@ func (pp *PipelineProvider) PipelineGetAllRuns(c echo.Context) error {
 }
 
 // PipelineGetLatestRun returns the latest run of a pipeline, given by id.
+// @Summary Get latest pipeline runs.
+// @Description Returns the latest run of a pipeline, given by id.
+// @Tags pipelinerun
+// @Accept plain
+// @Produce json
+// @Param pipelineid query string true "ID of the pipeline"
+// @Success 200 {object} gaia.PipelineRun "the latest pipeline run"
+// @Failure 400 {string} string "Invalid pipeline id"
+// @Failure 500 {string} string "error getting latest run or cannot read pipeline run log file"
+// @Router /pipelinerun/{pipelineid}/latest [get]
 func (pp *PipelineProvider) PipelineGetLatestRun(c echo.Context) error {
 	// Convert string to int because id is int
 	storeService, _ := services.StorageService()
@@ -135,6 +178,17 @@ func (pp *PipelineProvider) PipelineGetLatestRun(c echo.Context) error {
 // Required parameters:
 // pipelineid - Related pipeline id
 // pipelinerunid - Related pipeline run id
+// @Summary Get logs for pipeline run.
+// @Description Returns logs from a pipeline run.
+// @Tags pipelinerun
+// @Accept plain
+// @Produce json
+// @Param pipelineid query string true "ID of the pipeline"
+// @Param runid query string true "ID of the run"
+// @Success 200 {object} jobLogs "logs"
+// @Failure 400 {string} string "Invalid pipeline id or run id or pipeline not found"
+// @Failure 500 {string} string "cannot read pipeline run log file"
+// @Router /pipelinerun/:pipelineid/:runid/log [get]
 func (pp *PipelineProvider) GetJobLogs(c echo.Context) error {
 	// Get parameters and validate
 	storeService, _ := services.StorageService()
