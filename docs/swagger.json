@@ -1781,6 +1781,207 @@
                     }
                 }
             }
+        },
+        "/worker": {
+            "get": {
+                "description": "Gets all workers.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workers"
+                ],
+                "summary": "Get all workers.",
+                "responses": {
+                    "200": {
+                        "description": "A list of workers.",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/gaia.Worker"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Cannot get memdb service from service store.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/worker/register": {
+            "post": {
+                "description": "Allows new workers to register themself at this Gaia instance.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workers"
+                ],
+                "summary": "Register a new worker.",
+                "parameters": [
+                    {
+                        "description": "Worker details",
+                        "name": "RegisterWorkerRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/workers.registerWorker"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details of the registered worker.",
+                        "schema": {
+                            "$ref": "#/definitions/workers.registerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid arguments of the worker.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Wrong global worker secret provided.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Various internal services like, certs, vault and generating new secrets.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/worker/secret": {
+            "get": {
+                "description": "Returns the global secret for registering new worker.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workers"
+                ],
+                "summary": "Get worker register secret.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Cannot get worker secret from vault.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Generates a new global worker registration secret.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "workers"
+                ],
+                "summary": "Reset worker register secret.",
+                "responses": {
+                    "200": {
+                        "description": "global worker registration secret has been successfully reset",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Vault related internal problems.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/worker/status": {
+            "get": {
+                "description": "Returns general status information about all workers.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workers"
+                ],
+                "summary": "Get worker status overview.",
+                "responses": {
+                    "200": {
+                        "description": "The worker status overview response.",
+                        "schema": {
+                            "$ref": "#/definitions/workers.workerStatusOverviewResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Cannot get memdb service from service store.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/worker/{workerid}": {
+            "delete": {
+                "description": "Deregister an existing worker.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workers"
+                ],
+                "summary": "Deregister and existing worker.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The id of the worker to deregister.",
+                        "name": "workerid",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Worker has been successfully deregistered.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Worker id is missing or worker not registered.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Cannot get memdb service from service store or failed to delete worker.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -2057,6 +2258,38 @@
                 }
             }
         },
+        "gaia.Worker": {
+            "type": "object",
+            "properties": {
+                "finishedruns": {
+                    "type": "integer"
+                },
+                "lastcontact": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "registerdate": {
+                    "type": "string"
+                },
+                "slots": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "uniqueid": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.addSecret": {
             "type": "object",
             "properties": {
@@ -2164,6 +2397,60 @@
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "workers.registerResponse": {
+            "type": "object",
+            "properties": {
+                "cacert": {
+                    "type": "string"
+                },
+                "cert": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "uniqueid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workers.registerWorker": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "secret": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "workers.workerStatusOverviewResponse": {
+            "type": "object",
+            "properties": {
+                "activeworker": {
+                    "type": "integer"
+                },
+                "finishedruns": {
+                    "type": "integer"
+                },
+                "inactiveworker": {
+                    "type": "integer"
+                },
+                "queuesize": {
+                    "type": "integer"
+                },
+                "suspendedworker": {
+                    "type": "integer"
                 }
             }
         }

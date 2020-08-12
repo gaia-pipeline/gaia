@@ -180,6 +180,27 @@ definitions:
       username:
         type: string
     type: object
+  gaia.Worker:
+    properties:
+      finishedruns:
+        type: integer
+      lastcontact:
+        type: string
+      name:
+        type: string
+      registerdate:
+        type: string
+      slots:
+        type: integer
+      status:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      uniqueid:
+        type: string
+    type: object
   handlers.addSecret:
     properties:
       key:
@@ -250,6 +271,41 @@ definitions:
         type: string
       username:
         type: string
+    type: object
+  workers.registerResponse:
+    properties:
+      cacert:
+        type: string
+      cert:
+        type: string
+      key:
+        type: string
+      uniqueid:
+        type: string
+    type: object
+  workers.registerWorker:
+    properties:
+      name:
+        type: string
+      secret:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+  workers.workerStatusOverviewResponse:
+    properties:
+      activeworker:
+        type: integer
+      finishedruns:
+        type: integer
+      inactiveworker:
+        type: integer
+      queuesize:
+        type: integer
+      suspendedworker:
+        type: integer
     type: object
 host: gaia-pipeline.io
 info:
@@ -1442,6 +1498,140 @@ paths:
       summary: Gets all roles for a user.
       tags:
       - rbac
+  /worker:
+    get:
+      description: Gets all workers.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: A list of workers.
+          schema:
+            items:
+              $ref: '#/definitions/gaia.Worker'
+            type: array
+        "500":
+          description: Cannot get memdb service from service store.
+          schema:
+            type: string
+      summary: Get all workers.
+      tags:
+      - workers
+  /worker/{workerid}:
+    delete:
+      consumes:
+      - application/json
+      description: Deregister an existing worker.
+      parameters:
+      - description: The id of the worker to deregister.
+        in: query
+        name: workerid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Worker has been successfully deregistered.
+          schema:
+            type: string
+        "400":
+          description: Worker id is missing or worker not registered.
+          schema:
+            type: string
+        "500":
+          description: Cannot get memdb service from service store or failed to delete
+            worker.
+          schema:
+            type: string
+      summary: Deregister and existing worker.
+      tags:
+      - workers
+  /worker/register:
+    post:
+      consumes:
+      - application/json
+      description: Allows new workers to register themself at this Gaia instance.
+      parameters:
+      - description: Worker details
+        in: body
+        name: RegisterWorkerRequest
+        required: true
+        schema:
+          $ref: '#/definitions/workers.registerWorker'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Details of the registered worker.
+          schema:
+            $ref: '#/definitions/workers.registerResponse'
+        "400":
+          description: Invalid arguments of the worker.
+          schema:
+            type: string
+        "403":
+          description: Wrong global worker secret provided.
+          schema:
+            type: string
+        "500":
+          description: Various internal services like, certs, vault and generating
+            new secrets.
+          schema:
+            type: string
+      summary: Register a new worker.
+      tags:
+      - workers
+  /worker/secret:
+    get:
+      description: Returns the global secret for registering new worker.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Cannot get worker secret from vault.
+          schema:
+            type: string
+      summary: Get worker register secret.
+      tags:
+      - workers
+    post:
+      description: Generates a new global worker registration secret.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: global worker registration secret has been successfully reset
+          schema:
+            type: string
+        "500":
+          description: Vault related internal problems.
+          schema:
+            type: string
+      summary: Reset worker register secret.
+      tags:
+      - workers
+  /worker/status:
+    get:
+      description: Returns general status information about all workers.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The worker status overview response.
+          schema:
+            $ref: '#/definitions/workers.workerStatusOverviewResponse'
+        "500":
+          description: Cannot get memdb service from service store.
+          schema:
+            type: string
+      summary: Get worker status overview.
+      tags:
+      - workers
 securityDefinitions:
   ApiKeyAuth:
     in: header

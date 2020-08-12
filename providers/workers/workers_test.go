@@ -426,7 +426,7 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 		if err != nil {
 			t.Fatalf("cannot read response body: %s", err.Error())
 		}
-		resp := &workerStatusOverviewRespoonse{}
+		resp := &workerStatusOverviewResponse{}
 		if err := json.Unmarshal(bodyBytes, resp); err != nil {
 			t.Fatalf("failed to unmarshal response: %#v", bodyBytes)
 		}
@@ -490,7 +490,7 @@ func TestGetWorkerStatusOverview(t *testing.T) {
 		if err != nil {
 			t.Fatalf("cannot read response body: %s", err.Error())
 		}
-		resp := &workerStatusOverviewRespoonse{}
+		resp := &workerStatusOverviewResponse{}
 		if err := json.Unmarshal(bodyBytes, resp); err != nil {
 			t.Fatalf("failed to unmarshal response: %#v", bodyBytes)
 		}
