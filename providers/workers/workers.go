@@ -142,6 +142,7 @@ func (wp *WorkerProvider) RegisterWorker(c echo.Context) error {
 // @Tags workers
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param workerid query string true "The id of the worker to deregister."
 // @Success 200 {string} string "Worker has been successfully deregistered."
 // @Failure 400 {string} string "Worker id is missing or worker not registered."
@@ -180,6 +181,7 @@ func (wp *WorkerProvider) DeregisterWorker(c echo.Context) error {
 // @Description Returns the global secret for registering new worker.
 // @Tags workers
 // @Produce json
+// @Security ApiKeyAuth
 // @Success 200 {string} string
 // @Failure 500 {string} string "Cannot get worker secret from vault."
 // @Router /worker/secret [get]
@@ -223,6 +225,7 @@ type workerStatusOverviewResponse struct {
 // @Description Returns general status information about all workers.
 // @Tags workers
 // @Produce json
+// @Security ApiKeyAuth
 // @Success 200 {object} workerStatusOverviewResponse "The worker status overview response."
 // @Failure 500 {string} string "Cannot get memdb service from service store."
 // @Router /worker/status [get]
@@ -263,6 +266,7 @@ func (wp *WorkerProvider) GetWorkerStatusOverview(c echo.Context) error {
 // @Description Gets all workers.
 // @Tags workers
 // @Produce json
+// @Security ApiKeyAuth
 // @Success 200 {array} gaia.Worker "A list of workers."
 // @Failure 500 {string} string "Cannot get memdb service from service store."
 // @Router /worker [get]
@@ -282,6 +286,7 @@ func (wp *WorkerProvider) GetWorker(c echo.Context) error {
 // @Description Generates a new global worker registration secret.
 // @Tags workers
 // @Produce plain
+// @Security ApiKeyAuth
 // @Success 200 {string} string "global worker registration secret has been successfully reset"
 // @Failure 500 {string} string "Vault related internal problems."
 // @Router /worker/secret [post]

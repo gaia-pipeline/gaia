@@ -34,6 +34,7 @@ type jobLogs struct {
 // @Tags pipelinerun
 // @Accept plain
 // @Produce json
+// @Security ApiKeyAuth
 // @Param pipelineid query string true "ID of the pipeline"
 // @Param runid query string true "ID of the pipeline run"
 // @Success 200 {object} gaia.PipelineRun
@@ -73,6 +74,7 @@ func (pp *PipelineProvider) PipelineRunGet(c echo.Context) error {
 // @Tags pipelinerun
 // @Accept plain
 // @Produce plain
+// @Security ApiKeyAuth
 // @Param pipelineid query string true "ID of the pipeline"
 // @Param runid query string true "ID of the pipeline run"
 // @Success 200 {string} string "pipeline successfully stopped"
@@ -123,6 +125,7 @@ func (pp *PipelineProvider) PipelineStop(c echo.Context) error {
 // @Tags pipelinerun
 // @Accept plain
 // @Produce json
+// @Security ApiKeyAuth
 // @Param pipelineid query string true "ID of the pipeline"
 // @Success 200 {array} gaia.PipelineRun "a list of pipeline runes"
 // @Failure 400 {string} string "Invalid pipeline id"
@@ -151,6 +154,7 @@ func (pp *PipelineProvider) PipelineGetAllRuns(c echo.Context) error {
 // @Tags pipelinerun
 // @Accept plain
 // @Produce json
+// @Security ApiKeyAuth
 // @Param pipelineid query string true "ID of the pipeline"
 // @Success 200 {object} gaia.PipelineRun "the latest pipeline run"
 // @Failure 400 {string} string "Invalid pipeline id"
@@ -183,6 +187,7 @@ func (pp *PipelineProvider) PipelineGetLatestRun(c echo.Context) error {
 // @Tags pipelinerun
 // @Accept plain
 // @Produce json
+// @Security ApiKeyAuth
 // @Param pipelineid query string true "ID of the pipeline"
 // @Param runid query string true "ID of the run"
 // @Success 200 {object} jobLogs "logs"

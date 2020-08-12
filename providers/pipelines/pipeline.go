@@ -42,6 +42,7 @@ var (
 // @Tags pipelines
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param PipelineGitLSRemoteRequest body gaia.GitRepo true "The repository details"
 // @Success 200 {array} string "Available branches"
 // @Failure 400 {string} string "Failed to bind body"
@@ -70,6 +71,7 @@ func (pp *PipelineProvider) PipelineGitLSRemote(c echo.Context) error {
 // @Tags pipelines
 // @Accept json
 // @Produce plain
+// @Security ApiKeyAuth
 // @Param CreatePipelineRequest body gaia.CreatePipeline true "Create pipeline details"
 // @Success 200
 // @Failure 400 {string} string "Failed to bind, validation error and invalid details"
@@ -121,6 +123,7 @@ func (pp *PipelineProvider) CreatePipeline(c echo.Context) error {
 // @Description Get a list of all pipelines which are about to be compiled and which have been compiled.
 // @Tags pipelines
 // @Produce json
+// @Security ApiKeyAuth
 // @Success 200 {array} gaia.CreatePipeline
 // @Failure 500 {string} string "Internal error while retrieving create pipeline data."
 // @Router /pipeline/created [get]
@@ -144,6 +147,7 @@ func (pp *PipelineProvider) CreatePipelineGetAll(c echo.Context) error {
 // @Tags pipelines
 // @Accept plain
 // @Produce json
+// @Security ApiKeyAuth
 // @Param name query string true "The name of the pipeline to validate"
 // @Success 200
 // @Failure 400 {string} string "Pipeline name validation errors"
@@ -162,6 +166,7 @@ func (pp *PipelineProvider) PipelineNameAvailable(c echo.Context) error {
 // @Description Returns all registered pipelines.
 // @Tags pipelines
 // @Produce json
+// @Security ApiKeyAuth
 // @Success 200 {array} gaia.Pipeline
 // @Router /pipeline/name [get]
 func (pp *PipelineProvider) PipelineGetAll(c echo.Context) error {
@@ -183,6 +188,7 @@ func (pp *PipelineProvider) PipelineGetAll(c echo.Context) error {
 // @Tags pipelines
 // @Accept plain
 // @Produce json
+// @Security ApiKeyAuth
 // @Param pipelineid query string true "The ID of the pipeline"
 // @Success 200 {object} gaia.Pipeline
 // @Failure 400 {string} string "The given pipeline id is not valid"
@@ -214,6 +220,7 @@ func (pp *PipelineProvider) PipelineGet(c echo.Context) error {
 // @Tags pipelines
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param PipelineUpdateRequest body gaia.Pipeline true "PipelineUpdate request"
 // @Success 200 {string} string "Pipeline has been updated"
 // @Failure 400 {string} string "Error while updating the pipeline"
@@ -344,6 +351,7 @@ func stringSliceEqual(a, b []string) bool {
 // @Tags pipelines
 // @Accept plain
 // @Produce plain
+// @Security ApiKeyAuth
 // @Param pipelineid query string true "The ID of the pipeline."
 // @Success 200 {string} string "Pipeline has been deleted"
 // @Failure 400 {string} string "Error while deleting the pipeline"
@@ -408,7 +416,6 @@ func (pp *PipelineProvider) PipelineDelete(c echo.Context) error {
 // @Tags pipelines
 // @Accept plain
 // @Produce plain
-// @Security
 // @Param pipelineid query string true "The ID of the pipeline."
 // @Param pipelinetoken query string true "The trigger token for this pipeline."
 // @Success 200 {string} string "Trigger successful for pipeline: {pipelinename}"
@@ -467,6 +474,7 @@ func (pp *PipelineProvider) PipelineTrigger(c echo.Context) error {
 // @Tags pipelines
 // @Accept plain
 // @Produce plain
+// @Security ApiKeyAuth
 // @Param pipelineid query string true "The ID of the pipeline."
 // @Success 200 {string} string "Trigger successful for pipeline: {pipelinename}"
 // @Failure 400 {string} string "Invalid pipeline id"
@@ -539,6 +547,7 @@ func (pp *PipelineProvider) PipelineTriggerAuth(c echo.Context) error {
 // @Tags pipelines
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param pipelineid query string true "The ID of the pipeline."
 // @Param args body gaia.Argument false "Optional arguments of the pipeline."
 // @Success 200 {object} gaia.PipelineRun
@@ -605,6 +614,7 @@ func (pp *PipelineProvider) PipelineStart(c echo.Context) error {
 // @Tags pipelines
 // @Accept plain
 // @Produce plain
+// @Security ApiKeyAuth
 // @Param pipelineid query string true "The ID of the pipeline."
 // @Success 200
 // @Failure 400 {string} string
@@ -676,6 +686,7 @@ type getAllWithLatestRun struct {
 // @Description Returns the latest of all registered pipelines included with the latest run.
 // @Tags pipelines
 // @Produce json
+// @Security ApiKeyAuth
 // @Success 200 {object} getAllWithLatestRun
 // @Failure 500 {string} string "Internal error while getting latest run"
 // @Router /pipeline/latest [get]
@@ -714,6 +725,7 @@ func (pp *PipelineProvider) PipelineGetAllWithLatestRun(c echo.Context) error {
 // @Tags pipelines
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param schedules body []string true "A list of valid cronjob specs"
 // @Success 200
 // @Failure 400 {string} string "Bind error and schedule errors"

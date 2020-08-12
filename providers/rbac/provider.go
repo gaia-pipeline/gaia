@@ -25,6 +25,7 @@ func NewProvider(svc rbac.Service) *Provider {
 // @Tags rbac
 // @Accept plain
 // @Produce plain
+// @Security ApiKeyAuth
 // @Param role query string true "Name of the role"
 // @Success 200 {string} string "Role created successfully."
 // @Failure 400 {string} string "Must provide role."
@@ -80,6 +81,7 @@ func (h *Provider) DeleteRole(c echo.Context) error {
 // @Description Gets all RBAC roles.
 // @Tags rbac
 // @Produce plain
+// @Security ApiKeyAuth
 // @Success 200 {array} string "All the roles."
 // @Router /rbac/roles [get]
 func (h *Provider) GetAllRoles(c echo.Context) error {
@@ -92,6 +94,7 @@ func (h *Provider) GetAllRoles(c echo.Context) error {
 // @Tags rbac
 // @Accept plain
 // @Produce json
+// @Security ApiKeyAuth
 // @Param username query string true "The username of the user"
 // @Success 200 {array} string "Attached roles to a user"
 // @Failure 400 {string} string "Must provide username."
@@ -144,6 +147,7 @@ func (h *Provider) GetRoleAttachedUsers(c echo.Context) error {
 // @Tags rbac
 // @Accept plain
 // @Produce plain
+// @Security ApiKeyAuth
 // @Param role query string true "The role"
 // @Param username query string true "The username of the user"
 // @Success 200 {string} string "Role attached successfully."
@@ -175,6 +179,7 @@ func (h *Provider) AttachRole(c echo.Context) error {
 // @Tags rbac
 // @Accept plain
 // @Produce plain
+// @Security ApiKeyAuth
 // @Param role query string true "The role"
 // @Param username query string true "The username of the user"
 // @Success 200 {string} string "Role detached successfully."

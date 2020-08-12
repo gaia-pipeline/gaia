@@ -126,6 +126,7 @@ type changePasswordRequest struct {
 // @Tags users
 // @Accept json
 // @Produce plain
+// @Security ApiKeyAuth
 // @Param UserChangePasswordRequest body changePasswordRequest true "UserChangePassword request"
 // @Success 200 {string} string Password has been changed
 // @Failure 400 {string} string "{Invalid parameters given for password change request|Cannot find user with the given username|New password does not match new password confirmation}"
@@ -174,6 +175,7 @@ func (h *Provider) UserChangePassword(c echo.Context) error {
 // @Tags users
 // @Accept plain
 // @Produce plain
+// @Security ApiKeyAuth
 // @Param username query string true "The username to reset the token for"
 // @Success 200 {string} string Token reset
 // @Failure 400 {string} string "{Invalid username given|Only auto user can have a token reset|User not found|Error retrieving user}"
@@ -211,6 +213,7 @@ func (h *Provider) UserResetTriggerToken(c echo.Context) error {
 // @Tags users
 // @Accept plain
 // @Produce plain
+// @Security ApiKeyAuth
 // @Param username query string true "The username to delete"
 // @Success 200 {string} string User has been deleted
 // @Failure 400 {string} string "{Invalid username given|Auto user cannot be deleted}"
@@ -248,6 +251,7 @@ func (h *Provider) UserDelete(c echo.Context) error {
 // @Tags users
 // @Accept json
 // @Produce plain
+// @Security ApiKeyAuth
 // @Param UserAddRequest body gaia.User true "UserAdd request"
 // @Success 200 {string} string "User has been added"
 // @Failure 400 {string} string "Invalid parameters given for add user request"
@@ -287,6 +291,7 @@ func (h *Provider) UserAdd(c echo.Context) error {
 // @Tags users
 // @Accept plain
 // @Produce json
+// @Security ApiKeyAuth
 // @Param username query string true "The username to get permission for"
 // @Success 200 {object} gaia.UserPermission
 // @Failure 400 {string} string "Failed to get permission"
@@ -308,6 +313,7 @@ func (h *Provider) UserGetPermissions(c echo.Context) error {
 // @Tags users
 // @Accept json
 // @Produce plain
+// @Security ApiKeyAuth
 // @Param username query string true "The username to get permission for"
 // @Success 200 {string} string "Permissions have been updated"
 // @Failure 400 {string} string "{Invalid parameters given for request|Permissions put failed}"

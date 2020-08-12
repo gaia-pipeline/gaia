@@ -13,6 +13,7 @@ import (
 // @Description Turns on the polling functionality for Gaia which periodically checks if there is new code to deploy for all pipelines.
 // @Tags settings
 // @Produce plain
+// @Security ApiKeyAuth
 // @Success 200 {string} string "Polling is turned on."
 // @Failure 400 {string} string "Error while toggling poll setting."
 // @Failure 500 {string} string "Internal server error while getting setting."
@@ -47,6 +48,7 @@ func (pp *PipelineProvider) SettingsPollOn(c echo.Context) error {
 // @Description Turns off the polling functionality for Gaia which periodically checks if there is new code to deploy for all pipelines.
 // @Tags settings
 // @Produce plain
+// @Security ApiKeyAuth
 // @Success 200 {string} string "Polling is turned off."
 // @Failure 400 {string} string "Error while toggling poll setting."
 // @Failure 500 {string} string "Internal server error while getting setting."
@@ -83,6 +85,7 @@ type pollStatus struct {
 // @Description Gets the status of the poll setting.
 // @Tags settings
 // @Produce json
+// @Security ApiKeyAuth
 // @Success 200 {object} pollStatus "Poll status"
 // @Failure 500 {string} string "Internal server error while getting setting."
 // @Router /settings/poll [get]

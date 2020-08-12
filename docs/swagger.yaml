@@ -393,6 +393,8 @@ paths:
             items:
               $ref: '#/definitions/gaia.UserRoleCategory'
             type: array
+      security:
+      - ApiKeyAuth: []
       summary: Returns a list of default roles.
       tags:
       - rbac
@@ -420,6 +422,8 @@ paths:
           description: Internal error while saving create pipeline run
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Create pipeline.
       tags:
       - pipelines
@@ -455,6 +459,8 @@ paths:
             store and disk
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Delete a pipeline.
       tags:
       - pipelines
@@ -483,6 +489,8 @@ paths:
           description: Pipeline not found with the given id
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Get pipeline information.
       tags:
       - pipelines
@@ -517,6 +525,8 @@ paths:
             information
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Update pipeline.
       tags:
       - pipelines
@@ -552,8 +562,6 @@ paths:
           description: Invalid trigger token
           schema:
             type: string
-      security:
-      - "": []
       summary: Trigger a pipeline.
       tags:
       - pipelines
@@ -576,6 +584,8 @@ paths:
           description: Bad Request
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Update the underlying repository of the pipeline.
       tags:
       - pipelines
@@ -609,6 +619,8 @@ paths:
           description: Internal storage error
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Reset trigger token.
       tags:
       - pipelines
@@ -645,6 +657,8 @@ paths:
           description: Pipeline not found
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Start a pipeline.
       tags:
       - pipelines
@@ -665,6 +679,8 @@ paths:
           description: Internal error while retrieving create pipeline data.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Get all create pipelines.
       tags:
       - pipelines
@@ -730,6 +746,8 @@ paths:
           description: No access
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Check for repository access.
       tags:
       - pipelines
@@ -748,6 +766,8 @@ paths:
           description: Internal error while getting latest run
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Returns the latest run.
       tags:
       - pipelines
@@ -763,6 +783,8 @@ paths:
             items:
               $ref: '#/definitions/gaia.Pipeline'
             type: array
+      security:
+      - ApiKeyAuth: []
       summary: Returns all registered pipelines.
       tags:
       - pipelines
@@ -789,6 +811,8 @@ paths:
           description: Bind error and schedule errors
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Returns the latest run.
       tags:
       - pipelines
@@ -820,6 +844,8 @@ paths:
           description: Error retrieving all pipeline runs.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Get all pipeline runs.
       tags:
       - pipelinerun
@@ -858,6 +884,8 @@ paths:
           description: Something went wrong while getting pipeline run.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Get Pipeline run.
       tags:
       - pipelinerun
@@ -892,6 +920,8 @@ paths:
           description: cannot read pipeline run log file
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Get logs for pipeline run.
       tags:
       - pipelinerun
@@ -926,6 +956,8 @@ paths:
           description: Pipeline Run not found.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Stop a pipeline run.
       tags:
       - pipelinerun
@@ -955,6 +987,8 @@ paths:
           description: error getting latest run or cannot read pipeline run log file
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Get latest pipeline runs.
       tags:
       - pipelinerun
@@ -970,6 +1004,8 @@ paths:
             items:
               type: string
             type: array
+      security:
+      - ApiKeyAuth: []
       summary: Gets all RBAC roles.
       tags:
       - rbac
@@ -1027,6 +1063,8 @@ paths:
           description: An error occurred while adding the role.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Adds an RBAC role.
       tags:
       - rbac
@@ -1061,6 +1099,8 @@ paths:
           description: An error occurred while detaching the role.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Detach role to user.
       tags:
       - rbac
@@ -1094,6 +1134,8 @@ paths:
           description: An error occurred while attaching the role.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Attach role to user.
       tags:
       - rbac
@@ -1155,6 +1197,8 @@ paths:
           description: Cannot get or load secrets
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Create a secret.
       tags:
       - secrets
@@ -1183,6 +1227,8 @@ paths:
           description: Cannot get or load secrets
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Removes a secret from the vault..
       tags:
       - secrets
@@ -1202,6 +1248,8 @@ paths:
           description: Cannot get or load secrets
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: List all secrets.
       tags:
       - secrets
@@ -1219,6 +1267,8 @@ paths:
           description: Internal server error while getting setting.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Get the status of the poll setting.
       tags:
       - settings
@@ -1241,6 +1291,8 @@ paths:
           description: Internal server error while getting setting.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Turn off polling functionality.
       tags:
       - settings
@@ -1263,6 +1315,8 @@ paths:
           description: Internal server error while getting setting.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Turn on polling functionality.
       tags:
       - settings
@@ -1280,6 +1334,8 @@ paths:
           description: Something went wrong while saving or retrieving rbac settings.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Get RBAC settings
       tags:
       - settings
@@ -1309,6 +1365,8 @@ paths:
           description: Something went wrong while saving or retrieving rbac settings.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Put RBAC settings
       tags:
       - settings
@@ -1339,6 +1397,8 @@ paths:
           description: '{User put failed|User permission put error}'
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Add user.
       tags:
       - users
@@ -1368,6 +1428,8 @@ paths:
           description: '{User not found|Permission not found|Rbac not found}'
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Delete user.
       tags:
       - users
@@ -1393,6 +1455,8 @@ paths:
           description: Failed to get permission
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Get permission of the user.
       tags:
       - users
@@ -1417,6 +1481,8 @@ paths:
           description: '{Invalid parameters given for request|Permissions put failed}'
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Adds or updates permissions for a user.
       tags:
       - users
@@ -1447,6 +1513,8 @@ paths:
           description: Internal Server Error
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Generate new remote trigger token.
       tags:
       - users
@@ -1483,6 +1551,8 @@ paths:
           description: Internal Server Error
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Change password for user.
       tags:
       - users
@@ -1537,6 +1607,8 @@ paths:
           description: An error occurred while getting the roles.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Gets all roles for a user.
       tags:
       - rbac
@@ -1556,6 +1628,8 @@ paths:
           description: Cannot get memdb service from service store.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Get all workers.
       tags:
       - workers
@@ -1586,6 +1660,8 @@ paths:
             worker.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Deregister and existing worker.
       tags:
       - workers
@@ -1638,6 +1714,8 @@ paths:
           description: Cannot get worker secret from vault.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Get worker register secret.
       tags:
       - workers
@@ -1654,6 +1732,8 @@ paths:
           description: Vault related internal problems.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Reset worker register secret.
       tags:
       - workers
@@ -1671,6 +1751,8 @@ paths:
           description: Cannot get memdb service from service store.
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Get worker status overview.
       tags:
       - workers

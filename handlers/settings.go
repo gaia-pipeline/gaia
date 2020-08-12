@@ -28,6 +28,7 @@ type rbacPutRequest struct {
 // @Tags settings
 // @Accept json
 // @Produce plain
+// @Security ApiKeyAuth
 // @Param RbacPutRequest body rbacPutRequest true "RBAC setting details."
 // @Success 200 {string} string "Settings have been updated."
 // @Failure 400 {string} string "Invalid body."
@@ -64,6 +65,7 @@ type rbacGetResponse struct {
 // @Description Get the given RBAC settings.
 // @Tags settings
 // @Produce json
+// @Security ApiKeyAuth
 // @Success 200 {object} rbacGetResponse
 // @Failure 500 {string} string "Something went wrong while saving or retrieving rbac settings."
 // @Router /settings/rbac [get]

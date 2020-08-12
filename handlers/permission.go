@@ -11,6 +11,7 @@ import (
 // @Summary Returns a list of default roles.
 // @Description Returns a list of all the roles available.
 // @Tags rbac
+// @Security ApiKeyAuth
 // @Success 200 {array} gaia.UserRoleCategory
 // @Router /permission [get]
 func PermissionGetAll(c echo.Context) error {

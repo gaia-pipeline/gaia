@@ -25,6 +25,7 @@ type updateSecret struct {
 // @Tags secrets
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param secret body addSecret true "The secret to create"
 // @Success 201 {string} string "secret successfully set"
 // @Failure 400 {string} string "Error binding or key is reserved."
@@ -49,6 +50,7 @@ func CreateSecret(c echo.Context) error {
 // @Tags secrets
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param secret body updateSecret true "The secret to update with the new value"
 // @Success 201 {string} string "secret successfully set"
 // @Failure 400 {string} string "Error binding or key is reserved."
@@ -93,6 +95,7 @@ func upsertSecret(c echo.Context, key string, err error, value string) error {
 // @Description Retrieves all secrets from the vault.
 // @Tags secrets
 // @Produce json
+// @Security ApiKeyAuth
 // @Success 200 {array} addSecret "Secrets"
 // @Failure 500 {string} string "Cannot get or load secrets"
 // @Router /secrets [get]
@@ -124,6 +127,7 @@ func ListSecrets(c echo.Context) error {
 // @Description Removes a secret from the vault.
 // @Tags secrets
 // @Produce plain
+// @Security ApiKeyAuth
 // @Param key body string true "Key"
 // @Success 200 {string} string "secret successfully deleted"
 // @Failure 400 {string} string "key is reserved and cannot be deleted"
