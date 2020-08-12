@@ -22,7 +22,6 @@ import (
 // @in header
 // @name Authorization
 
-// @host gaia-pipeline.io
 // @BasePath /api/v1
 func main() {
 	// Start the server.

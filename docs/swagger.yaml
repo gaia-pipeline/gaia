@@ -336,7 +336,6 @@ definitions:
       suspendedworker:
         type: integer
     type: object
-host: gaia-pipeline.io
 info:
   contact:
     name: API Support
