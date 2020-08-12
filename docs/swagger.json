@@ -69,6 +69,26 @@
                 }
             }
         },
+        "/permission": {
+            "get": {
+                "description": "Returns a list of all the roles available.",
+                "tags": [
+                    "rbac"
+                ],
+                "summary": "Returns a list of default roles.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/gaia.UserRoleCategory"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/pipeline": {
             "post": {
                 "description": "Starts creating a pipeline given all the data asynchronously.",
@@ -2254,6 +2274,51 @@
                     }
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "gaia.UserRole": {
+            "type": "object",
+            "properties": {
+                "api_endpoints": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gaia.UserRoleEndpoint"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "gaia.UserRoleCategory": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gaia.UserRole"
+                    }
+                }
+            }
+        },
+        "gaia.UserRoleEndpoint": {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string"
+                },
+                "path": {
                     "type": "string"
                 }
             }

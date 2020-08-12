@@ -180,6 +180,35 @@ definitions:
       username:
         type: string
     type: object
+  gaia.UserRole:
+    properties:
+      api_endpoints:
+        items:
+          $ref: '#/definitions/gaia.UserRoleEndpoint'
+        type: array
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  gaia.UserRoleCategory:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/gaia.UserRole'
+        type: array
+    type: object
+  gaia.UserRoleEndpoint:
+    properties:
+      method:
+        type: string
+      path:
+        type: string
+    type: object
   gaia.Worker:
     properties:
       finishedruns:
@@ -354,6 +383,19 @@ paths:
       summary: User Login
       tags:
       - users
+  /permission:
+    get:
+      description: Returns a list of all the roles available.
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/gaia.UserRoleCategory'
+            type: array
+      summary: Returns a list of default roles.
+      tags:
+      - rbac
   /pipeline:
     post:
       consumes:
