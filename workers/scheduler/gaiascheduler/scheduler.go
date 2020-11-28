@@ -122,7 +122,7 @@ func NewScheduler(deps Dependencies) (*Scheduler, error) {
 		ca:                deps.CA,
 		vault:             deps.Vault,
 		freeWorkers:       new(int32),
-		killedPipelineRun: make(chan *gaia.PipelineRun, 0),
+		killedPipelineRun: make(chan *gaia.PipelineRun, 1),
 	}
 	return s, nil
 }
