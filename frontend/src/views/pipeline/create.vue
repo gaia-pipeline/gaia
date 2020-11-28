@@ -933,7 +933,7 @@ export default {
     height: 30px !important;
     border: none !important;
     margin: auto !important;
-    padding: auto !important;
+    padding: inherit !important;
   }
 
   .ti-new-tag-input {

@@ -93,6 +93,13 @@ type Scheduler struct {
 
 	// Atomic Counter that represents the current free workers
 	freeWorkers *int32
+
+	// Lock for scheduling
+	schedulerLock sync.RWMutex
+
+	// killedPipelineRun is used to signal the scheduler to abort a pipeline run.
+	// This has the size one for delayed guarantee of signal delivery.
+	killedPipelineRun chan *gaia.PipelineRun
 }
 
 // Dependencies defines the dependencies of the scheduler service.
@@ -115,6 +122,9 @@ func NewScheduler(deps Dependencies) (*Scheduler, error) {
 		ca:            deps.CA,
 		vault:         deps.Vault,
 		freeWorkers:   new(int32),
+		// killedPipelineRun is used to signal the scheduler to abort a pipeline run.
+		// This has the size one for delayed guarantee of signal delivery.
+		killedPipelineRun: make(chan *gaia.PipelineRun, 1),
 	}
 	return s, nil
 }
@@ -347,10 +357,6 @@ func (s *Scheduler) schedule() {
 	}
 }
 
-// killedPipelineRun is used to signal the scheduler to abort a pipeline run.
-// This has the size one for delayed guarantee of signal delivery.
-var killedPipelineRun = make(chan *gaia.PipelineRun, 1)
-
 // StopPipelineRun will prematurely cancel a pipeline run by killing all of its
 // jobs and running processes immediately.
 func (s *Scheduler) StopPipelineRun(p *gaia.Pipeline, runID int) error {
@@ -367,12 +373,10 @@ func (s *Scheduler) StopPipelineRun(p *gaia.Pipeline, runID int) error {
 	if err != nil {
 		return err
 	}
-	killedPipelineRun <- pr
+	s.killedPipelineRun <- pr
 
 	return nil
 }
-
-var schedulerLock = sync.RWMutex{}
 
 // SchedulePipeline schedules a pipeline. We create a new schedule object
 // and save it in our store. The scheduler will later pick this up and will continue the work.
@@ -384,8 +388,8 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, startedReason string, arg
 	// This means that one of the calls will take slightly longer (a couple of nanoseconds)
 	// while the other finishes to save the pipelinerun.
 	// This is to ensure that the highest ID for the next pipeline is calculated properly.
-	schedulerLock.Lock()
-	defer schedulerLock.Unlock()
+	s.schedulerLock.Lock()
+	defer s.schedulerLock.Unlock()
 
 	// Get highest public id used for this pipeline
 	highestID, err := s.storeService.PipelineGetRunHighestID(p)
@@ -633,7 +637,7 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS plugin.Plugin) {
 	finished := make(chan bool, 1)
 	for {
 		select {
-		case pr, ok := <-killedPipelineRun:
+		case pr, ok := <-s.killedPipelineRun:
 			if ok {
 				if pr.ID == r.ID {
 					for _, job := range r.Jobs {

@@ -41,7 +41,7 @@ func CreateSecret(c echo.Context) error {
 	key = s.Key
 	value = s.Value
 
-	return upsertSecret(c, key, err, value)
+	return upsertSecret(c, key, value)
 }
 
 // UpdateSecret updates a given secret
@@ -64,11 +64,11 @@ func UpdateSecret(c echo.Context) error {
 	}
 	key = s.Key
 	value = s.Value
-	return upsertSecret(c, key, err, value)
+	return upsertSecret(c, key, value)
 }
 
 // updates or creates a secret
-func upsertSecret(c echo.Context, key string, err error, value string) error {
+func upsertSecret(c echo.Context, key string, value string) error {
 	// Handle ignored special keys
 	if stringhelper.IsContainedInSlice(ignoredVaultKeys, key, true) {
 		return c.String(http.StatusBadRequest, "key is reserved and cannot be set/changed")

@@ -557,12 +557,6 @@ func (pp *PipelineProvider) PipelineTriggerAuth(c echo.Context) error {
 func (pp *PipelineProvider) PipelineStart(c echo.Context) error {
 	pipelineIDStr := c.Param("pipelineid")
 
-	// Decode content
-	content := echo.Map{}
-	if err := c.Bind(&content); err != nil {
-		return c.String(http.StatusBadRequest, "invalid content provided in request")
-	}
-
 	// Look for arguments.
 	// We do not check for errors here cause arguments are optional.
 	var args []*gaia.Argument
@@ -572,13 +566,6 @@ func (pp *PipelineProvider) PipelineStart(c echo.Context) error {
 	pipelineID, err := strconv.Atoi(pipelineIDStr)
 	if err != nil {
 		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
-	}
-	var docker bool
-	if _, ok := content["docker"]; ok {
-		docker, ok = content["docker"].(bool)
-		if !ok {
-			return c.String(http.StatusBadRequest, errWrongDockerValue.Error())
-		}
 	}
 
 	// Look up pipeline for the given id
@@ -591,7 +578,11 @@ func (pp *PipelineProvider) PipelineStart(c echo.Context) error {
 	}
 
 	// Overwrite docker setting
-	foundPipeline.Docker = docker
+	for _, a := range args {
+		if a.Key == "docker" {
+			foundPipeline.Docker = a.Value == "1"
+		}
+	}
 
 	if foundPipeline.Name != "" {
 		pipelineRun, err := pp.deps.Scheduler.SchedulePipeline(&foundPipeline, gaia.StartReasonManual, args)
