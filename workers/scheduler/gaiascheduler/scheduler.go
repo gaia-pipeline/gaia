@@ -115,16 +115,14 @@ type Dependencies struct {
 func NewScheduler(deps Dependencies) (*Scheduler, error) {
 	// Create new scheduler
 	s := &Scheduler{
-		scheduledRuns: make(chan gaia.PipelineRun, schedulerBufferLimit),
-		storeService:  deps.Store,
-		memDBService:  deps.DB,
-		pluginSystem:  deps.PS,
-		ca:            deps.CA,
-		vault:         deps.Vault,
-		freeWorkers:   new(int32),
-		// killedPipelineRun is used to signal the scheduler to abort a pipeline run.
-		// This has the size one for delayed guarantee of signal delivery.
-		killedPipelineRun: make(chan *gaia.PipelineRun, 1),
+		scheduledRuns:     make(chan gaia.PipelineRun, schedulerBufferLimit),
+		storeService:      deps.Store,
+		memDBService:      deps.DB,
+		pluginSystem:      deps.PS,
+		ca:                deps.CA,
+		vault:             deps.Vault,
+		freeWorkers:       new(int32),
+		killedPipelineRun: make(chan *gaia.PipelineRun, 0),
 	}
 	return s, nil
 }
