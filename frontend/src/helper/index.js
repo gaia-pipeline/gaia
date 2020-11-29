@@ -23,7 +23,7 @@ export default {
   StartPipeline (context, pipeline) {
     // Send start request
     context.$http
-      .post('/api/v1/pipeline/' + pipeline.id + '/start', { docker: pipeline.docker })
+      .post('/api/v1/pipeline/' + pipeline.id + '/start', [{ key: 'docker', value: this.docker ? '1' : '0' }])
       .then(response => {
         if (response.data) {
           context.$router.push({ path: '/pipeline/detail', query: { pipelineid: pipeline.id, runid: response.data.id } })

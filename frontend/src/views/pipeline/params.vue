@@ -95,7 +95,9 @@ export default {
 
     startPipeline () {
       // Add docker option
-      this.args.push({ docker: this.docker })
+      if (this.docker) {
+        this.args.push({ key: 'docker', value: this.docker ? '1' : '0' })
+      }
 
       // Send start request
       this.$http
