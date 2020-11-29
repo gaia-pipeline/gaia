@@ -95,6 +95,8 @@ type Scheduler struct {
 	freeWorkers *int32
 
 	// Lock for scheduling
+	schedulePipelineLock sync.RWMutex
+	// Lock for scheduling
 	schedulerLock sync.RWMutex
 
 	// killedPipelineRun is used to signal the scheduler to abort a pipeline run.
@@ -242,6 +244,9 @@ func (s *Scheduler) prepareAndExec(r gaia.PipelineRun) {
 
 // schedule looks in the store for new work and schedules it.
 func (s *Scheduler) schedule() {
+	s.schedulerLock.Lock()
+	defer s.schedulerLock.Unlock()
+
 	// Do we have space left in our buffer?
 	if s.CountScheduledRuns() >= schedulerBufferLimit {
 		// No space left. Exit.
@@ -342,7 +347,6 @@ func (s *Scheduler) schedule() {
 
 			// Reset the docker status manipulation
 			scheduled[id].Docker = true
-
 			storeUpdate(scheduled[id], gaia.RunScheduled)
 			continue
 		}
@@ -386,8 +390,8 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, startedReason string, arg
 	// This means that one of the calls will take slightly longer (a couple of nanoseconds)
 	// while the other finishes to save the pipelinerun.
 	// This is to ensure that the highest ID for the next pipeline is calculated properly.
-	s.schedulerLock.Lock()
-	defer s.schedulerLock.Unlock()
+	s.schedulePipelineLock.Lock()
+	defer s.schedulePipelineLock.Unlock()
 
 	// Get highest public id used for this pipeline
 	highestID, err := s.storeService.PipelineGetRunHighestID(p)
