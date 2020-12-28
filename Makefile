@@ -1,11 +1,13 @@
 NAME=gaia
-GO_LDFLAGS_STATIC=-ldflags "-s -w -extldflags -static"
+GO_LDFLAGS_STATIC="-s -w -extldflags -static"
 NAMESPACE=${NAME}
 RELEASE_NAME=${NAME}
 HELM_DIR=$(shell pwd)/helm
 TEST=$$(go list ./... | grep -v /vendor/ | grep /testacc)
 TEST_TIMEOUT_ACC?=20m
 TEST_TIMEOUT?=50s
+# Set the build dir, where built cross-compiled binaries will be output
+BUILDDIR := bin
 
 default: dev
 
@@ -29,7 +31,15 @@ static_assets:
 	rice embed-go
 
 compile_backend:
-	env GOOS=linux GOARCH=amd64 go build $(GO_LDFLAGS_STATIC) -o $(NAME)-linux-amd64 ./cmd/gaia/main.go
+	env GOOS=linux GOARCH=amd64 go build -ldflags $(GO_LDFLAGS_STATIC) -o $(NAME)-linux-amd64 ./cmd/gaia/main.go
+
+binaries:
+	CGO_ENABLED=0 gox \
+		-osarch="linux/amd64 linux/arm darwin/amd64 windows/amd64" \
+		-ldflags=${GO_LDFLAGS_STATIC} \
+		-output="$(BUILDDIR)/{{.OS}}/{{.Arch}}/$(NAME)" \
+		-tags="netgo" \
+		./cmd/gaia/.
 
 download:
 	go mod download
