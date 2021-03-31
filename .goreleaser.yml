@@ -8,6 +8,12 @@ builds:
       - linux
     goarch:
       - amd64
+  - main: ./cmd/gaia/main.go
+      binary: gaia-freebsd-amd64
+      goos:
+        - freebsd
+      goarch:
+        - amd64
 checksum:
   name_template: 'checksums.txt'
 release:
@@ -22,7 +28,7 @@ dockers:
   - image_templates:
     - "gaiapipeline/gaia:latest"
     - "gaiapipeline/gaia:{{ .Tag }}"
-    binaries: 
+    binaries:
     - gaia-linux-amd64
     dockerfile: docker/Dockerfile
     extra_files:
@@ -31,7 +37,7 @@ dockers:
   - image_templates:
     - "gaiapipeline/gaia:latest-go"
     - "gaiapipeline/gaia:{{ .Tag }}-go"
-    binaries: 
+    binaries:
     - gaia-linux-amd64
     dockerfile: docker/Dockerfile.golang
     extra_files:
@@ -39,7 +45,7 @@ dockers:
   - image_templates:
     - "gaiapipeline/gaia:latest-java"
     - "gaiapipeline/gaia:{{ .Tag }}-java"
-    binaries: 
+    binaries:
     - gaia-linux-amd64
     dockerfile: docker/Dockerfile.java
     extra_files:
@@ -48,7 +54,7 @@ dockers:
   - image_templates:
     - "gaiapipeline/gaia:latest-python"
     - "gaiapipeline/gaia:{{ .Tag }}-python"
-    binaries: 
+    binaries:
     - gaia-linux-amd64
     dockerfile: docker/Dockerfile.python
     extra_files:
@@ -56,7 +62,7 @@ dockers:
   - image_templates:
     - "gaiapipeline/gaia:latest-cpp"
     - "gaiapipeline/gaia:{{ .Tag }}-cpp"
-    binaries: 
+    binaries:
     - gaia-linux-amd64
     dockerfile: docker/Dockerfile.cpp
     extra_files:
