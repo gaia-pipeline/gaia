@@ -4,7 +4,7 @@
 
 |build-status| |go-report| |go-doc| |apache2| |chat| |codecov|
 
-Gaia is an open source automation platform which makes it easy and fun to build powerful pipelines in any programming language. Based on `HashiCorp's go-plugin`_ and `gRPC`_, gaia is efficient, fast, lightweight, and developer friendly. Gaia is currently alpha! `Do not use it for mission critical jobs yet!`_
+Gaia is an open source automation platform which makes it easy and fun to build powerful pipelines in any programming language. Based on `HashiCorp's go-plugin`_ and `gRPC`_, gaia is efficient, fast, lightweight, and developer friendly.
 
 Develop powerful `pipelines <What is a pipeline?_>`_ with the help of `SDKs <Why do I need an SDK?_>`_ and simply check-in your code into a git repository. Gaia automatically clones your code repository, compiles your code to a binary, and executes it on-demand. All results are streamed back and formatted as a user-friendly graphical output.
 
@@ -15,7 +15,7 @@ Motivation
 
 .. begin-motivation
 
-*Automation Engineer*, *DevOps*, *SRE*, *Cloud Engineer*,
+*Automation Engineer*, *DevOps Engineer*, *SRE*, *Cloud Engineer*,
 *Platform Engineer* - they all have one in common:
 The majority of tech people are not motivated to take up this work and they are hard to recruit.
 
@@ -30,13 +30,13 @@ How does it work?
 
 Gaia is based on `HashiCorp's go-plugin`_. It's a `plugin system`_ that uses `gRPC`_ to communicate over `HTTP/2`_. Initially, HashiCorp developed this tool for `Packer`_ but now it's heavily used by `Terraform`_, `Nomad`_, and `Vault`_ too.
 
-Plugins, which we named `pipelines <What is a pipeline?_>`_, are applications which can be written in any programming language, as long as `gRPC`_ is supported. All functions, which we call `jobs <What is a job?>`_, are exposed to Gaia and can form up a dependency graph which describes the order of execution.
+Plugins, also called `pipelines <What is a pipeline?_>`_, are applications which can be written in any programming language, as long as `gRPC`_ is supported. All functions, also called `jobs <What is a job?>`_, are exposed to Gaia and can form up a dependency graph that describes the order of execution.
 
-Pipelines can be compiled locally or simply over the build system. Gaia clones the git repository and automatically builds the included pipeline. If a change (`git push`_) happened, Gaia will automatically rebuild the pipeline for you*.
+Pipelines can be compiled locally or simply over the integrated build system. Gaia clones the git repository and automatically builds the included pipeline. If a change (`git push`_) happened, Gaia will automatically rebuild the pipeline for you*.
 
 After a pipeline has been started, all log output is returned back to Gaia and displayed in a detailed overview with their final result status.
 
-Gaia uses `boltDB` for storage. This makes the installation step super easy. No external database is currently required.
+Gaia uses `boltDB` for storage. This makes the installation process super easy. No external database is currently required.
 
 \* *This requires polling or webhook to be activated.*
 
@@ -103,7 +103,7 @@ To deploy gaia:
 
     make deploy-kube
 
-Usage
+Example Pipelines
 -----
 
 Go
@@ -115,7 +115,7 @@ Go
 
     import (
         "log"
-	    
+
 	sdk "github.com/gaia-pipeline/gosdk"
     )
 
@@ -286,7 +286,7 @@ Node.JS
 
 Pipelines are defined by jobs and a function usually represents a job. You can define as many jobs in your pipeline as you want.
 
-Every function accepts arguments. Those arguments can be requested from the pipeline itself and the values passed back in from the UI.
+Every function accepts arguments. Those arguments can be requested from the pipeline itself and the values are passed back in from the UI.
 
 Some pipeline jobs need a specific order of execution. `DependsOn` allows you to declare dependencies for every job.
 
@@ -307,9 +307,9 @@ Questions and Answers (Q&A)
 
 What problem solves **Gaia**?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Literally every tool which were designed for automation, continuous integration (CI), and continuous deployment (CD) like Spinnaker, Jenkins, Gitlab CI/CD, TravisCI, CircleCI, Codeship, Bamboo and many more, introduced their own configuration format. Some of them don't even support *configuration/automation as code*. This works well for simple tasks like running a ``go install`` or ``mvn clean install`` but in the real world there is more to do.
+Literally every tool that was designed for automation, continuous integration (CI), and continuous deployment (CD) like Spinnaker, Jenkins, Gitlab CI/CD, TravisCI, CircleCI, Codeship, Bamboo and many more, introduced their own configuration format. Some of them don't even support *configuration/automation as code*. This works well for simple tasks like running a ``go install`` or ``mvn clean install`` but in the real world there is more to do.
 
-Gaia is the first platform which does not limit the user and provides full support for almost all common programming languages without losing the features offered by todays CI/CD tools.
+Gaia is the first platform that does not limit the user and provides full support for almost all common programming languages without losing the features offered by todays CI/CD tools.
 
 What is a **pipeline**?
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -334,11 +334,9 @@ We are working hard to support as much programming languages as possible but our
 Roadmap
 =======
 
-Gaia is currently available as alpha version. We extremely recommend to not use it for mission critical jobs and for production yet. Things will change in the future and essential features may break.
+Gaia is currently available as beta version.
 
-One of the main issues currently is the lack of unit- and integration tests. This is on our to-do list and we are working on this topic with high priority.
-
-It is planned that other programming languages should be supported in the next few months. It is up to the community which languages will be supported next.
+Feel free to open a new GitHub issue to request a new feature.
 
 Contributing
 ============
