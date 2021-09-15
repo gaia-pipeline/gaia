@@ -11,7 +11,7 @@ import (
 	"syscall"
 
 	"github.com/casbin/casbin/v2"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo/v4"
 

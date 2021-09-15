@@ -4,8 +4,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/golang-jwt/jwt"
+	"github.com/hashicorp/go-hclog"
 	"github.com/robfig/cron"
 )
 

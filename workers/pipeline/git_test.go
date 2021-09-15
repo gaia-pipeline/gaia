@@ -11,10 +11,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/services"
 	"github.com/google/go-github/github"
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/services"
 )
 
 func TestGitCloneRepo(t *testing.T) {
@@ -67,11 +68,11 @@ func TestUpdateAllPipelinesAlreadyUpToDate(t *testing.T) {
 	})
 	repo := &gaia.GitRepo{
 		URL:            "https://github.com/gaia-pipeline/pipeline-test",
-		LocalDest:      "tmp",
+		LocalDest:      tmp,
 		SelectedBranch: "refs/heads/master",
 	}
 	// always ensure that tmp folder is cleaned up
-	defer os.RemoveAll("tmp")
+	defer os.RemoveAll(tmp)
 	err := gitCloneRepo(repo)
 	if err != nil {
 		t.Fatal(err)
@@ -81,7 +82,7 @@ func TestUpdateAllPipelinesAlreadyUpToDate(t *testing.T) {
 	p.Name = "main"
 	p.Repo = &gaia.GitRepo{}
 	p.Repo.SelectedBranch = "refs/heads/master"
-	p.Repo.LocalDest = "tmp"
+	p.Repo.LocalDest = tmp
 	GlobalActivePipelines = NewActivePipelines()
 	GlobalActivePipelines.Append(*p)
 	pipelineService := NewGaiaPipelineService(Dependencies{
@@ -112,7 +113,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 	})
 	repo := &gaia.GitRepo{
 		URL:            "github.com:gaia-pipeline/pipeline-test",
-		LocalDest:      "tmp",
+		LocalDest:      tmp,
 		SelectedBranch: "refs/heads/master",
 		PrivateKey: gaia.PrivateKey{
 			Key:      samplePrivateKey,
@@ -130,7 +131,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 	_ = os.Setenv("SSH_KNOWN_HOSTS", knownHostsLocation)
 
 	// always ensure that tmp folder is cleaned up
-	defer os.RemoveAll("tmp")
+	defer os.RemoveAll(tmp)
 	_ = gitCloneRepo(repo)
 	want := "knownhosts: key is unknown"
 	if !strings.Contains(b.String(), want) {
@@ -157,7 +158,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 	})
 	repo := &gaia.GitRepo{
 		URL:            "github.com:gaia-pipeline/pipeline-test",
-		LocalDest:      "tmp",
+		LocalDest:      tmp,
 		SelectedBranch: "refs/heads/master",
 		PrivateKey: gaia.PrivateKey{
 			Key:      samplePrivateKey,
@@ -165,7 +166,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 			Password: "",
 		},
 	}
-	hostConfig := "github.com,192.30.252.130 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+	hostConfig := "github.com,140.82.121.4 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
 	knownHostsLocation := filepath.Join(tmp, ".known_hosts")
 	err := ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), gaia.ExecutablePermission)
 	if err != nil {
@@ -175,17 +176,18 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 	_ = os.Setenv("SSH_KNOWN_HOSTS", knownHostsLocation)
 
 	// always ensure that tmp folder is cleaned up
-	defer os.RemoveAll("tmp")
+	defer os.RemoveAll(tmp)
 	_ = gitCloneRepo(repo)
 
 	p := new(gaia.Pipeline)
 	p.Name = "main"
 	p.Repo = &gaia.GitRepo{}
 	p.Repo.SelectedBranch = "refs/heads/master"
-	p.Repo.LocalDest = "tmp"
+	p.Repo.LocalDest = tmp
+	p.Type = gaia.PTypeGolang
 	GlobalActivePipelines = NewActivePipelines()
 	GlobalActivePipelines.Append(*p)
-	hostConfig = "invalid.com,192.30.252.130 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+	hostConfig = "invalid.com,140.82.121.4 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
 	err = ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), gaia.ExecutablePermission)
 	if err != nil {
 		t.Fatal(err)
@@ -213,11 +215,11 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 	})
 	repo := &gaia.GitRepo{
 		URL:            "https://github.com/gaia-pipeline/pipeline-test",
-		LocalDest:      "tmp",
+		LocalDest:      tmp,
 		SelectedBranch: "refs/heads/master",
 	}
 	// always ensure that tmp folder is cleaned up
-	defer os.RemoveAll("tmp")
+	defer os.RemoveAll(tmp)
 	err := gitCloneRepo(repo)
 	if err != nil {
 		t.Fatal(err)
@@ -227,12 +229,12 @@ func TestUpdateAllPipelinesAlreadyUpToDateWithMoreThanOnePipeline(t *testing.T) 
 	p1.Name = "main"
 	p1.Repo = &gaia.GitRepo{}
 	p1.Repo.SelectedBranch = "refs/heads/master"
-	p1.Repo.LocalDest = "tmp"
+	p1.Repo.LocalDest = tmp
 	p2 := new(gaia.Pipeline)
 	p2.Name = "main"
 	p2.Repo = &gaia.GitRepo{}
 	p2.Repo.SelectedBranch = "refs/heads/master"
-	p2.Repo.LocalDest = "tmp"
+	p2.Repo.LocalDest = tmp
 	GlobalActivePipelines = NewActivePipelines()
 	defer func() { GlobalActivePipelines = nil }()
 	GlobalActivePipelines.Append(*p1)
@@ -261,6 +263,14 @@ func TestGetAuthInfoWithUsernameAndPassword(t *testing.T) {
 }
 
 func TestGetAuthInfoWithPrivateKey(t *testing.T) {
+	tmp, _ := ioutil.TempDir("", "TestGetAuthInfoWithPrivateKey")
+	hostConfig := "github.com,140.82.121.4 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+	knownHostsLocation := filepath.Join(tmp, ".known_hosts")
+	err := ioutil.WriteFile(knownHostsLocation, []byte(hostConfig), gaia.ExecutablePermission)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = os.Setenv("SSH_KNOWN_HOSTS", knownHostsLocation)
 	samplePrivateKey := `
 -----BEGIN RSA PRIVATE KEY-----
 MD8CAQACCQDB9DczYvFuZQIDAQABAgkAtqAKvH9QoQECBQDjAl9BAgUA2rkqJQIE
@@ -277,7 +287,7 @@ Xbs5AQIEIzWnmQIFAOEml+E=
 		},
 		SelectedBranch: "refs/heads/master",
 	}
-	_, err := getAuthInfo(repoWithValidPrivateKey, nil)
+	_, err = getAuthInfo(repoWithValidPrivateKey, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -635,12 +645,12 @@ func TestGitLSRemote(t *testing.T) {
 	})
 	repo := &gaia.GitRepo{
 		URL:            "https://github.com/gaia-pipeline/pipeline-test",
-		LocalDest:      "tmp",
+		LocalDest:      tmp,
 		SelectedBranch: "refs/heads/master",
 	}
 
 	// always ensure that tmp folder is cleaned up
-	defer os.RemoveAll("tmp")
+	defer os.RemoveAll(tmp)
 	err := GitLSRemote(repo)
 	if err != nil {
 		t.Fatal(err)

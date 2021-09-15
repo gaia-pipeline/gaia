@@ -9,6 +9,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+
 	"github.com/gaia-pipeline/gaia"
 	"github.com/gaia-pipeline/gaia/security"
 )
@@ -53,7 +54,7 @@ func (w *Worker) SetupDockerWorker(workerImage string, workerSecret string) erro
 				"GAIA_WORKER_TAGS=" + fmt.Sprintf("%s,dockerworker", w.WorkerID),
 				"GAIA_WORKER_SECRET=" + workerSecret,
 			},
-		}, &container.HostConfig{}, nil, "")
+		}, &container.HostConfig{}, nil, nil, "")
 	}
 
 	// Create container

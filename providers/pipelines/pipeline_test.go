@@ -57,7 +57,7 @@ func TestPipelineGitLSRemote(t *testing.T) {
 	e := echo.New()
 
 	t.Run("fails with invalid data", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/gitlsremote", nil)
+		req := httptest.NewRequest(echo.POST, "/api/"+gaia.APIVersion+"/pipeline/gitlsremote", bytes.NewBuffer([]byte(`{"invalid"}`)))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -65,7 +65,7 @@ func TestPipelineGitLSRemote(t *testing.T) {
 		_ = pp.PipelineGitLSRemote(c)
 
 		if rec.Code != http.StatusBadRequest {
-			t.Fatalf("expected response code %v got %v", http.StatusOK, rec.Code)
+			t.Fatalf("expected response code %v got %v", http.StatusBadRequest, rec.Code)
 		}
 	})
 
