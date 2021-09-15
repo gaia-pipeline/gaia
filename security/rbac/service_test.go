@@ -40,11 +40,11 @@ func (m *mockCasbinEnforcer) GetUsersForRole(name string, domain ...string) ([]s
 	return m.getUsersForRoleFn(name, domain...)
 }
 
-func (m *mockCasbinEnforcer) AddRoleForUser(user string, role string) (bool, error) {
+func (m *mockCasbinEnforcer) AddRoleForUser(user string, role string, domain ...string) (bool, error) {
 	return m.addRoleForUserFn(user, role)
 }
 
-func (m *mockCasbinEnforcer) DeleteRoleForUser(user string, role string) (bool, error) {
+func (m *mockCasbinEnforcer) DeleteRoleForUser(user string, role string, domain ...string) (bool, error) {
 	return m.deleteRoleForUserFn(user, role)
 }
 

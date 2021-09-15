@@ -50,7 +50,7 @@ jobs:
   acceptance_tests:
     working_directory: /go/src/github.com/gaia-pipeline/gaia
     docker:
-        - image: gaiapipeline/circleci:0.0.6
+        - image: gaiapipeline/circleci:0.0.7
           environment:
             GO111MODULE: "on"
     steps:

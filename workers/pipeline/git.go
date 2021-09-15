@@ -106,7 +106,7 @@ func (s *GaiaPipelineService) UpdateRepository(pipe *gaia.Pipeline) error {
 	if err != nil {
 		// We don't stop gaia working because of an automated update failed.
 		// So we just move on.
-		gaia.Cfg.Logger.Error("error while opening repo: ", pipe.Repo.LocalDest, err.Error())
+		gaia.Cfg.Logger.Error("error while opening repo: ", "path", pipe.Repo.LocalDest, "error", err.Error())
 		return err
 	}
 	gaia.Cfg.Logger.Debug("checking pipeline: ", "message", pipe.Name)
