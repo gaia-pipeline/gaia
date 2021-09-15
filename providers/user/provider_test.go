@@ -10,8 +10,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	jwt "github.com/dgrijalva/jwt-go"
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/golang-jwt/jwt"
+	"github.com/hashicorp/go-hclog"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 
