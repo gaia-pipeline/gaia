@@ -37,7 +37,7 @@
     "core-js": "^2.6.5",
     "acorn": "^6.0.5",
     "animate.css": "3.7.2",
-    "axios": "^0.19.0",
+    "axios": "^0.21.2",
     "bulma": "^0.7.5",
     "font-awesome": "^4.7.0",
     "jdenticon": "^2.1.1",
