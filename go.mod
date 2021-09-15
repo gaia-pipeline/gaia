@@ -57,7 +57,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-go 1.13
+go 1.16
 
 replace github.com/swaggo/swag => github.com/swaggo/swag v1.6.10-0.20201104153820-3f47d68f8872
 
