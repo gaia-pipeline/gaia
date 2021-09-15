@@ -6,14 +6,13 @@ import (
 	"encoding/base64"
 	"errors"
 	gohttp "net/http"
+	"os"
 	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
 
-	"github.com/gaia-pipeline/gaia"
-	"github.com/gaia-pipeline/gaia/services"
 	"github.com/google/go-github/github"
 	gossh "golang.org/x/crypto/ssh"
 	"golang.org/x/oauth2"
@@ -23,6 +22,9 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/client"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
+
+	"github.com/gaia-pipeline/gaia"
+	"github.com/gaia-pipeline/gaia/services"
 )
 
 const (
@@ -199,12 +201,19 @@ func gitCloneRepo(repo *gaia.GitRepo) error {
 				return err
 			}
 			o.Auth = auth
+			// Remove the already checked out code.
+			if err := os.RemoveAll(repo.LocalDest); err != nil {
+				gaia.Cfg.Logger.Warn("Failed to clean partially checked out folder.", "error", err.Error(), "destination", repo.LocalDest)
+				return err
+			}
 			// Clone repo again with no host key verification.
 			_, err = git.PlainClone(repo.LocalDest, false, o)
 			if err != nil {
+				gaia.Cfg.Logger.Error("Failed to clone repository.", "error", err.Error(), "URL", repo.URL, "destination", repo.LocalDest)
 				return err
 			}
 		} else {
+			gaia.Cfg.Logger.Error("Failed to clone repository.", "error", err.Error(), "URL", repo.URL, "destination", repo.LocalDest)
 			return err
 		}
 	}
