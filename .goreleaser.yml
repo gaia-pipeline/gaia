@@ -3,14 +3,9 @@ before:
     - make compile_frontend static_assets
 builds:
   - main: ./cmd/gaia/main.go
-    binary: gaia-linux-amd64
+    binary: gaia-{{ .Os }}-{{ .Arch }}
     goos:
       - linux
-    goarch:
-      - amd64
-  - main: ./cmd/gaia/main.go
-    binary: gaia-freebsd-amd64
-    goos:
       - freebsd
     goarch:
       - amd64
