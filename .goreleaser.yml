@@ -9,11 +9,11 @@ builds:
     goarch:
       - amd64
   - main: ./cmd/gaia/main.go
-      binary: gaia-freebsd-amd64
-      goos:
-        - freebsd
-      goarch:
-        - amd64
+    binary: gaia-freebsd-amd64
+    goos:
+      - freebsd
+    goarch:
+      - amd64
 checksum:
   name_template: 'checksums.txt'
 release:
