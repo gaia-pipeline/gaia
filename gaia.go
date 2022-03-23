@@ -62,7 +62,10 @@ const (
 
 	// RunNotScheduled status
 	RunNotScheduled PipelineRunStatus = "not scheduled"
-
+	
+	// PausedScheduled status
+	PausedScheduled PipelineRunStatus = "paused"
+	
 	// RunScheduled status
 	RunScheduled PipelineRunStatus = "scheduled"
 
