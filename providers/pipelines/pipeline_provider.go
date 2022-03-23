@@ -47,6 +47,8 @@ type PipelineProviderer interface {
 	SettingsPollOn(c echo.Context) error
 	SettingsPollOff(c echo.Context) error
 	SettingsPollGet(c echo.Context) error
+	PipelinePause(c echo.Context) error
+	PipelineUnPause(c echo.Context) error
 }
 
 // NewPipelineProvider creates a new provider with the needed dependencies.
