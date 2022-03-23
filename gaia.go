@@ -266,7 +266,7 @@ type Argument struct {
 	Value       string `json:"value,omitempty"`
 }
 
-// Argument Add the timeout parameter to the pipeline unit:minutes
+// StartPipelineParam Add the timeout parameter to the pipeline unit:minutes
 type StartPipelineParam struct {
 	TimeOut int         `json:"timeout,omitempty"`
 	Arg     []*Argument `json:"arg,omitempty"`
