@@ -171,9 +171,10 @@ func (s *Scheduler) work() {
 // prepareAndExec does the preparation and starts the execution.
 func (s *Scheduler) prepareAndExec(r gaia.PipelineRun) {
 	// Check the pipeline status, if it is PausedScheduled, exit this execution
-	g, _ := s.storeService.PipelineGetRunByID(r.UniqueID)
-	if g.Status == gaia.PausedScheduled {
-		return
+	if g, err := s.storeService.PipelineGetRunByID(r.UniqueID); err == nil {
+		if g.Status == gaia.PausedScheduled {
+			return
+		}
 	}
 
 	// Mark the scheduled run as running
