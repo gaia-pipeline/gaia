@@ -80,7 +80,10 @@ const (
 
 	// RunReschedule status
 	RunReschedule PipelineRunStatus = "reschedule"
-
+	
+	// RunTimeOut status
+	RunTimeOut PipelineRunStatus = "timeout"
+	
 	// JobWaitingExec status
 	JobWaitingExec JobStatus = "waiting for execution"
 
@@ -230,6 +233,7 @@ type Pipeline struct {
 	Tags              []string     `json:"tags,omitempty"`
 	Docker            bool         `json:"docker"`
 	CronInst          *cron.Cron   `json:"-"`
+	TimeOut           int          `json:"timeout"`
 }
 
 // GitRepo represents a single git repository
@@ -260,6 +264,12 @@ type Argument struct {
 	Type        string `json:"type,omitempty"`
 	Key         string `json:"key,omitempty"`
 	Value       string `json:"value,omitempty"`
+}
+
+// Argument Add the timeout parameter to the pipeline unit:minutes
+type StartPipelineParam struct {
+	TimeOut int         `json:"timeout,omitempty"`
+	Arg     []*Argument `json:"arg,omitempty"`
 }
 
 // CreatePipeline represents a pipeline which is not yet
@@ -296,6 +306,7 @@ type PipelineRun struct {
 	PipelineTags   []string          `json:"pipelinetags,omitempty"`
 	Docker         bool              `json:"docker,omitempty"`
 	DockerWorkerID string            `json:"dockerworkerid,omitempty"`
+	TimeOut        int               `json:"timeout,omitempty"`
 }
 
 // Worker represents a single registered worker.
