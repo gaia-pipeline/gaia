@@ -1,3 +1,6 @@
+ARCHIVE NOTICE: Thank you everyone for all the fantastic things about Gaia. It has been a wonderful journey, but now, it must come to an end. If you are looking for something similar https://dagger.io/ has your back. Goodspeed, and goodluck!
+
+
 .. raw:: html
 
     <img src="https://gist.githubusercontent.com/michelvocks/ef3894f63c3bb004bca1a2fd5f7eb644/raw/40c5799d74a6f28af1874e726083a50a3ebd877d/gaia-logo-text.png" width="650px">
