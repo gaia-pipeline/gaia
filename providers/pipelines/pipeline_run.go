@@ -18,6 +18,9 @@ import (
 var (
 	// errPipelineRunNotFound is thrown when a pipeline run was not found with the given id
 	errPipelineRunNotFound = errors.New("pipeline run not found with the given id")
+
+	// errPipelineStatusCannotBeChange is thrown when a pipeline status cannot be changed with the given id
+	errPipelineStatusCannotBeChange = errors.New("pipeline status cannot be changed to paused")
 )
 
 // jobLogs represents the json format which is returned
@@ -239,4 +242,100 @@ func (pp *PipelineProvider) GetJobLogs(c echo.Context) error {
 
 	// Return logs
 	return c.JSON(http.StatusOK, jL)
+}
+
+// PipelinePause pause a running pipeline.
+// @Summary Pause a pipeline run.
+// @Description Pause a pipeline run.
+// @Tags pipelinerun
+// @Accept plain
+// @Produce plain
+// @Security ApiKeyAuth
+// @Param pipelineid query string true "ID of the pipeline"
+// @Param runid query string true "ID of the pipeline run"
+// @Success 200 {object} gaia.PipelineRun "pipeline run"
+// @Failure 400 {string} string "Invalid pipeline id or run id"
+// @Failure 404 {string} string "Pipeline Run not found."
+// @Router /pipelinerun/{pipelineid}/{runid}/pause [post]
+func (pp *PipelineProvider) PipelinePause(c echo.Context) error {
+	// Convert string to int because id is int
+	storeService, _ := services.StorageService()
+	pipelineID, err := strconv.Atoi(c.Param("pipelineid"))
+	if err != nil {
+		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
+	}
+
+	// Convert string to int because id is int
+	runID, err := strconv.Atoi(c.Param("runid"))
+	if err != nil {
+		return c.String(http.StatusBadRequest, errPipelineRunNotFound.Error())
+	}
+
+	// Find pipeline run in store
+	pipelineRun, err := storeService.PipelineGetRunByPipelineIDAndID(pipelineID, runID)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	// Only when pipelineRun is in the RunScheduled or  RunNotScheduled state can it be changed to the PausedScheduled state
+	if pipelineRun.Status == gaia.RunScheduled || pipelineRun.Status == gaia.RunNotScheduled {
+		pipelineRun.Status = gaia.PausedScheduled
+		err = storeService.PipelinePutRun(pipelineRun)
+		if err != nil {
+			return c.String(http.StatusInternalServerError, err.Error())
+		}
+	} else {
+		return c.String(http.StatusBadRequest, errPipelineStatusCannotBeChange.Error())
+	}
+
+	// Return pipeline run
+	return c.JSON(http.StatusOK, pipelineRun)
+}
+
+// PipelineUnPause unpause a running pipeline.
+// @Summary Unpause a pipeline run.
+// @Description Unpause a pipeline run.
+// @Tags pipelinerun
+// @Accept plain
+// @Produce plain
+// @Security ApiKeyAuth
+// @Param pipelineid query string true "ID of the pipeline"
+// @Param runid query string true "ID of the pipeline run"
+// @Success 200 {object} gaia.PipelineRun "pipeline run"
+// @Failure 400 {string} string "Invalid pipeline id or run id"
+// @Failure 404 {string} string "Pipeline Run not found."
+// @Router /pipelinerun/{pipelineid}/{runid}/unpause [post]
+func (pp *PipelineProvider) PipelineUnPause(c echo.Context) error {
+	// Convert string to int because id is int
+	storeService, _ := services.StorageService()
+	pipelineID, err := strconv.Atoi(c.Param("pipelineid"))
+	if err != nil {
+		return c.String(http.StatusBadRequest, errInvalidPipelineID.Error())
+	}
+
+	// Convert string to int because id is int
+	runID, err := strconv.Atoi(c.Param("runid"))
+	if err != nil {
+		return c.String(http.StatusBadRequest, errPipelineRunNotFound.Error())
+	}
+
+	// Find pipeline run in store
+	pipelineRun, err := storeService.PipelineGetRunByPipelineIDAndID(pipelineID, runID)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	// Only when pipelineRun is in the PausedScheduled state can it be changed to the RunNotScheduled state
+	if pipelineRun.Status == gaia.PausedScheduled {
+		pipelineRun.Status = gaia.RunNotScheduled
+		err = storeService.PipelinePutRun(pipelineRun)
+		if err != nil {
+			return c.String(http.StatusInternalServerError, err.Error())
+		}
+	} else {
+		return c.String(http.StatusBadRequest, errPipelineStatusCannotBeChange.Error())
+	}
+
+	// Return pipeline run
+	return c.JSON(http.StatusOK, pipelineRun)
 }

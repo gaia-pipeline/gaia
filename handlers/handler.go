@@ -77,6 +77,8 @@ func (s *GaiaHandler) InitHandlers(e *echo.Echo) error {
 		apiAuthGrp.GET("pipelinerun/:pipelineid", s.deps.PipelineProvider.PipelineGetAllRuns)
 		apiAuthGrp.GET("pipelinerun/:pipelineid/latest", s.deps.PipelineProvider.PipelineGetLatestRun)
 		apiAuthGrp.GET("pipelinerun/:pipelineid/:runid/log", s.deps.PipelineProvider.GetJobLogs)
+		apiAuthGrp.POST("pipelinerun/:pipelineid/:runid/pause", s.deps.PipelineProvider.PipelinePause)
+		apiAuthGrp.POST("pipelinerun/:pipelineid/:runid/unpause", s.deps.PipelineProvider.PipelineUnPause)
 
 		// Secrets
 		apiAuthGrp.GET("secrets", ListSecrets)
