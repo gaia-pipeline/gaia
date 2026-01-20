@@ -46,7 +46,7 @@
     "moment": "^2.24.0",
     "npm": "^6.9.2",
     "plotly.js": "^1.48.3",
-    "shelljs": "^0.8.3",
+    "shelljs": "^0.8.5",
     "vis": "^4.21.0",
     "vue": "^2.6.10",
     "vue-bulma-collapse-fixed": "^1.0.4",
