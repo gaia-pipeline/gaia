@@ -458,6 +458,7 @@ func (s *Scheduler) SchedulePipeline(p *gaia.Pipeline, startedReason string, arg
 		PipelineTags: p.Tags,
 		Docker:       p.Docker,
 		StartReason:  startedReason,
+		TimeOut:      p.TimeOut,
 	}
 
 	// Put run into store
@@ -579,11 +580,13 @@ func (s *Scheduler) executeScheduledJobs(r gaia.PipelineRun, pS plugin.Plugin) {
 			runFail = true
 		}
 	}
-
-	if runFail && r.Status != gaia.RunCancelled {
+	
+	if runFail && r.Status != gaia.RunCancelled && r.Status != gaia.RunTimeOut {
 		s.finishPipelineRun(&r, gaia.RunFailed)
 	} else if r.Status == gaia.RunCancelled {
 		s.finishPipelineRun(&r, gaia.RunCancelled)
+	} else if r.Status == gaia.RunTimeOut {
+		s.finishPipelineRun(&r, gaia.RunTimeOut)
 	} else {
 		s.finishPipelineRun(&r, gaia.RunSuccess)
 	}
@@ -631,6 +634,30 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS plugin.Plugin) {
 		}
 	}()
 
+	// This is usually used when a job failed and the whole pipeline
+	// should be timeout.
+	timeOutChan := make(chan bool)
+	if r.TimeOut > 0 {
+		// Create a new timeOutTicker (scheduled go routine) which periodically
+		// check pipeline timeout
+		timeOutTicker := time.NewTicker(time.Duration(r.TimeOut) * time.Minute)
+		go func() {
+			defer ticker.Stop()
+			for {
+				select {
+				case <-timeOutTicker.C:
+					timeOutChan <- true
+					close(timeOutChan)
+					return
+				case _, ok := <-pipelineFinished:
+					if !ok {
+						return
+					}
+				}
+			}
+		}()
+	}
+
 	// Separate channel to save updates about the status of job executions.
 	triggerSave := make(chan gaia.Job)
 
@@ -656,6 +683,22 @@ func (s *Scheduler) executeScheduler(r *gaia.PipelineRun, pS plugin.Plugin) {
 					finalize = true
 					return
 				}
+			}
+		case _, ok := <-timeOutChan:
+			if ok {
+				for _, job := range r.Jobs {
+					if job.Status == gaia.JobRunning || job.Status == gaia.JobWaitingExec {
+						job.Status = gaia.JobFailed
+						job.FailPipeline = true
+					}
+				}
+				r.Status = gaia.RunTimeOut
+				_ = s.storeService.PipelinePutRun(r)
+				close(done)
+				close(executeScheduler)
+				finished <- true
+				finalize = true
+				return
 			}
 		case <-finished:
 			close(pipelineFinished)

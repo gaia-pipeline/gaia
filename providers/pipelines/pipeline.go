@@ -549,7 +549,7 @@ func (pp *PipelineProvider) PipelineTriggerAuth(c echo.Context) error {
 // @Produce json
 // @Security ApiKeyAuth
 // @Param pipelineid query string true "The ID of the pipeline."
-// @Param args body gaia.Argument false "Optional arguments of the pipeline."
+// @Param args body gaia.StartPipelineParam false "Optional arguments of the pipeline."
 // @Success 200 {object} gaia.PipelineRun
 // @Failure 400 {string} string "Various failures regarding starting the pipeline like: invalid id, invalid docker value and schedule errors"
 // @Failure 404 {string} string "Pipeline not found"
@@ -559,8 +559,8 @@ func (pp *PipelineProvider) PipelineStart(c echo.Context) error {
 
 	// Look for arguments.
 	// We do not check for errors here cause arguments are optional.
-	var args []*gaia.Argument
-	_ = c.Bind(&args)
+	var param gaia.StartPipelineParam
+	_ = c.Bind(&param)
 
 	// Convert string to int because id is int
 	pipelineID, err := strconv.Atoi(pipelineIDStr)
@@ -578,14 +578,19 @@ func (pp *PipelineProvider) PipelineStart(c echo.Context) error {
 	}
 
 	// Overwrite docker setting
-	for _, a := range args {
+	for _, a := range param.Arg {
 		if a.Key == "docker" {
 			foundPipeline.Docker = a.Value == "1"
 		}
 	}
-
+	
+	// set foundPipeline for the given timeout
+	if param.TimeOut > 0 {
+		foundPipeline.TimeOut = param.TimeOut
+	}
+	
 	if foundPipeline.Name != "" {
-		pipelineRun, err := pp.deps.Scheduler.SchedulePipeline(&foundPipeline, gaia.StartReasonManual, args)
+		pipelineRun, err := pp.deps.Scheduler.SchedulePipeline(&foundPipeline, gaia.StartReasonManual, param.Arg)
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		} else if pipelineRun != nil {
