@@ -86,7 +86,7 @@ func NewVault(ca CAAPI, storer VaultStorer) (*Vault, error) {
 		return nil, err
 	}
 	if len(data) < keySize {
-		return nil, errors.New("key lenght should be longer than 32")
+		return nil, errors.New("key length should be longer than 32")
 	}
 	h := sha256.New()
 	_, _ = h.Write(data)
